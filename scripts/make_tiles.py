@@ -482,6 +482,108 @@ def make_tiles(entries, options, zoom_level, start_x, end_x):
 
     return tiles
 
+def flatten(listOfLists):
+    '''
+    Courtesy of 
+
+    http://stackoverflow.com/a/1077074/899470
+    '''
+
+    return list(it.chain.from_iterable(listOfLists))
+
+def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
+        aggregate_tile=lambda tile: tile):
+    '''
+    Create tiles by calculating tile indeces.
+
+    The first tile will encompass the entire data set, and each
+    subsequent tile will contain a fraction of that data.
+
+    :param dim_names: The names of the fields containing the positions of the data
+    :param max_zoom: The maximum zoom level
+    :param resolution: The resolution of the data
+    :param aggregate_tile: Condense the entries in a given tile 
+        (should operate on a single tile)
+    '''
+    epsilon = 0.0001    # for calculating the max width so that all entries
+                        # end up in the same top_level bucket
+
+    # O(n) get the maximum and minimum bounds of the data set
+    (mins, maxs) = data_bounds(entries, dim_names)
+    max_width = max(map(lambda x: x[1] - x[0] + epsilon, zip(mins, maxs)))
+
+    # get all the different zoom levels
+    zoom_levels = range(max_zoom+1)
+    zoom_widths = map(lambda x: max_width / 2 ** x, zoom_levels)
+
+    # if the resolution is provided, we could go from the bottom up
+    # and create zoom_widths that are multiples of the resolutions
+
+    print >>sys.stderr, "zoom_widths:", zip(zoom_levels, zoom_widths)
+
+    def place_in_tiles(entry):
+        '''
+        Place this entry into a set of tiles.
+        
+        :param entry: A data entry.
+        '''
+        values = []
+        for zoom_level, zoom_width in zip(zoom_levels, zoom_widths):
+            tile_pos = tuple( [zoom_level] + 
+                    map(lambda (dim_name, mind): int((entry[dim_name] - mind) / zoom_width),
+                           zip(dim_names, mins)))
+            values += [((tile_pos), entry)]
+        
+        print "values:", values
+        return values
+
+
+    # place each entry into a tile
+    # spark equivalent: flatmap
+    # so now we have a list like this: [((0,0,0), {'pos1':1, 'pos2':2, 'count':3}), ...]
+    tile_entries = flatten(map(place_in_tiles, entries))
+
+    # group by key (tile id (zl, x, y, ...))
+    # spark equivalent groupByKey
+    groups = it.groupby(sorted(tile_entries), lambda x: x[0])
+    for group in groups:
+        print "group:", group[0], list(group[1])
+
+    # add the tile meta-data
+    def add_tile_metadata((tile_id, tile_entries_iterator)):
+        '''
+        Add the tile's start and end data positions.
+        '''
+
+        # calculate where the tile values start along each dimension
+        tile_start_pos = map(lambda (z,(m,x)): m + x * (max_width / 2 ** z), 
+                it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
+
+        tile_end_pos = map(lambda (z,(m,x)): m + (x+1) * (max_width / 2 ** z), 
+                it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
+
+        # caclulate where the tile values end along each dimension
+        tile_data = {'shown': tile_entries_iterator,
+                     'zoom': tile_id[0],
+                     'tile_start_pos': tile_start_pos,
+                     'tile_end_pos': tile_end_pos}
+        return tile_data
+
+    groups = it.groupby(sorted(tile_entries), lambda x: x[0])
+    tiles_with_meta = map(add_tile_metadata, groups)
+
+    def aggregate_tile(entries, dim_names):
+        '''
+        Aggregate the data in a tile.
+
+        :entries: The entries in a single tile
+        :dim_names: The names of the dimensions in each tile
+        '''
+        pass
+
+    #print "tile_entries:", tile_entries
+    #print "groups:", map(lambda (key, value): list(value), groups)
+
 def main():
     usage = """
     python make_tiles.py input_file

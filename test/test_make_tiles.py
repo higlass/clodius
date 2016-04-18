@@ -59,12 +59,15 @@ def test_filter_entries():
 
     assert(len(filtered_data) == 0)
 
-def merge_dict_lists(a,b):
-    '''
-    Merge two dictionary lists.
-    '''
+def test_make_tiles_by_index():
+    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv')
+    dim_names = ['pos1', 'pos2']
+    
+    max_zoom = 2
 
+    mt.make_tiles_by_index(entries, dim_names, max_zoom)
 
+'''
 def test_make_tiles_recursively():
     entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv')
     dim_names = ['pos1', 'pos2']
@@ -79,4 +82,5 @@ def test_make_tiles_recursively():
             value_field = 'count')
 
     print "tiles:", tiles
+'''
 
