@@ -491,8 +491,17 @@ def flatten(listOfLists):
 
     return list(it.chain.from_iterable(listOfLists))
 
+def aggregate_tile_by_binning(tile, dim_names):
+    '''
+    Aggregate the data in a tile.
+
+    :entries: The entries in a single tile
+    :dim_names: The names of the dimensions in each tile
+    '''
+    pass
+
 def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
-        aggregate_tile=lambda tile: tile):
+        aggregate_tile=lambda tile,dim_names: tile):
     '''
     Create tiles by calculating tile indeces.
 
@@ -572,15 +581,8 @@ def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
     groups = it.groupby(sorted(tile_entries), lambda x: x[0])
     tiles_with_meta = map(add_tile_metadata, groups)
 
-    def aggregate_tile(entries, dim_names):
-        '''
-        Aggregate the data in a tile.
 
-        :entries: The entries in a single tile
-        :dim_names: The names of the dimensions in each tile
-        '''
-        pass
-
+    print >>sys.stderr, "tiles_with_meta:", tiles_with_meta
     #print "tile_entries:", tile_entries
     #print "groups:", map(lambda (key, value): list(value), groups)
 
