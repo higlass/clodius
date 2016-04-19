@@ -491,13 +491,46 @@ def flatten(listOfLists):
 
     return list(it.chain.from_iterable(listOfLists))
 
-def aggregate_tile_by_binning(tile, dim_names):
+def aggregate_tile_by_binning(tile, dim_names, bins_per_dimension = 16):
     '''
-    Aggregate the data in a tile.
+    Aggregate the data in a tile by placing it into a 16x16 array of bins.
 
     :entries: The entries in a single tile
     :dim_names: The names of the dimensions in each tile
+    :param tile_width: The width of each tile
     '''
+    mins = tile['tile_start_pos']
+    maxs = tile['tile_end_pos']
+
+    tile_width = max(map(lambda x: x[1] - x[0], zip(mins, maxs)))
+
+    bin_width = tile_width / bins_per_dimension
+
+    def place_in_bins(entry):
+        '''
+        Place this entry in a particular bin, based on its position
+        and the bin width.
+        '''
+        bin_pos = map(lambda (dim_name, mind): int((entry[dim_name] - mind) / bin_width),
+                      zip(dim_names, mins))
+        return [(bin_pos, entry)]
+
+    def sum_entry_counts(entry1, entry2):
+        '''
+        Combine two entries by suming their counts.
+
+        :param entry1: The contents of one bin.
+        :param entry2: the contents of another bin. 
+        '''
+        print >>sys.stderr, "entry1:", entry1
+        return (entry1[0], {'count': entry1[1]['count'] + entry2[1]['count']})
+
+    tile_entries = flatten(map(place_in_bins, tile['shown']))
+    groups = it.groupby(sorted(tile_entries), lambda x: x[0])
+    reduced_tiles = map(lambda x: reduce(sum_entry_counts, x[1]), groups)
+    print >>sys.stderr, "tile_entries:", tile_entries
+    print >>sys.stderr, "reduced_tiles", reduced_tiles
+
     pass
 
 def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
@@ -576,7 +609,7 @@ def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
                      'zoom': tile_id[0],
                      'tile_start_pos': tile_start_pos,
                      'tile_end_pos': tile_end_pos}
-        return tile_data
+        return (tile_id, tile_data)
 
     groups = it.groupby(sorted(tile_entries), lambda x: x[0])
     tiles_with_meta = map(add_tile_metadata, groups)

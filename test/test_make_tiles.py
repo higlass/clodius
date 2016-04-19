@@ -67,6 +67,20 @@ def test_make_tiles_by_index():
 
     mt.make_tiles_by_index(entries, dim_names, max_zoom)
 
+
+def test_aggregate_tile_by_binning():
+    '''
+    Aggregate data into bins
+    '''
+    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv')
+    dim_names = ['pos1', 'pos2']
+
+    tile = {'shown': entries,
+            'tile_start_pos': [2, 2],
+            'tile_end_pos': [10.01, 10.01]}
+
+    mt.aggregate_tile_by_binning(tile, dim_names, bins_per_dimension=2)
+
 '''
 def test_make_tiles_recursively():
     entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv')
