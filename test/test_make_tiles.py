@@ -1,3 +1,4 @@
+import shortuuid
 import sys
 
 sys.path.append("scripts")
@@ -42,7 +43,8 @@ def test_make_matrix_tiles():
     pass
 
 def test_filter_entries():
-    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv')
+    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv',
+                column_names = ['pos1', 'pos2', 'count'])
     filter_interval = ((2, 6), (2, 5))
     dim_names = ['pos1', 'pos2']
 
@@ -60,26 +62,58 @@ def test_filter_entries():
     assert(len(filtered_data) == 0)
 
 def test_make_tiles_by_index():
-    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv')
+    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv', 
+                column_names = ['pos1', 'pos2', 'count'])
     dim_names = ['pos1', 'pos2']
     
     max_zoom = 2
 
-    mt.make_tiles_by_index(entries, dim_names, max_zoom)
+    print "entries:", entries
+    tiles = mt.make_tiles_by_index(entries, dim_names, max_zoom,
+            value_field='count',
+            bins_per_dimension=2)
 
+    for key,value in tiles['tiles'].items():
+        print "tile:", key, value['shown']
 
 def test_aggregate_tile_by_binning():
     '''
     Aggregate data into bins
     '''
-    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv')
+    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv',
+                column_names = ['pos1', 'pos2', 'count'])
     dim_names = ['pos1', 'pos2']
+
+    # if the resolution is provided, we could go from the bottom up
+    # and create zoom_widths that are multiples of the resolutions
+    def consolidate_positions(entry):
+        '''
+        Place all of the dimensions in one array for this entry.
+        '''
+        value_field = 'count'
+        importance_field = 'count'
+
+        new_entry = {'pos': map(lambda dn: float(entry[dn]), dim_names),
+                      value_field: float(entry[value_field]),
+                      importance_field: float(entry[importance_field]),
+                      'uid': shortuuid.uuid() }
+        return new_entry
+
+    entries = map(consolidate_positions, entries)
+    print "entries:", entries
 
     tile = {'shown': entries,
             'tile_start_pos': [2, 2],
             'tile_end_pos': [10.01, 10.01]}
 
-    mt.aggregate_tile_by_binning(tile, dim_names, bins_per_dimension=2)
+    new_tile = mt.aggregate_tile_by_binning(tile, bins_per_dimension=2)
+
+    assert(len(new_tile['shown']) < 4)
+    assert(len(new_tile['shown']) > 1)
+
+    for data_point in new_tile['shown']:
+        assert(data_point['count'] in [2,2,4])
+
 
 '''
 def test_make_tiles_recursively():

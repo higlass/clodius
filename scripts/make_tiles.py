@@ -1,12 +1,12 @@
 #!/usr/bin/python
 
 import argparse
+import csv
 import collections as col
 import itertools as it
 import json
 import os
 import os.path as op
-import pandas as pd
 import random
 import shortuuid
 import sys
@@ -226,14 +226,10 @@ def load_entries_from_file(filename, column_names=None):
         try:
             json.load(f)
         except ValueError:
-            # not a JSON file
-            if column_names is None:
-                df = pd.read_csv(filename, delimiter='\t')
-            else:
-                df = pd.read_csv(filename, delimiter='\t', header=None)
-                df.columns = column_names
+            f.seek(0)
+            tsv_reader = csv.reader(f, delimiter='\t')
 
-            entries = map(lambda x: dict(zip(df.columns, x)), df.values)
+            entries = map(lambda x: dict(zip(column_names, x)), tsv_reader)
             
             sys.stderr.write(" done\n")
             sys.stderr.flush()
@@ -253,32 +249,28 @@ def make_tiles_from_file(filename, options):
     :return: An array of tiles, each in json format.
     '''
     dim_names = options.position.split(',')
-    resolutions = map(float,options.resolutions.split(','))
 
     if options.column_names is not None:
         options.column_names = options.column_names.split(',')
 
     entries = load_entries_from_file(filename, options.column_names)
 
-    tileset = make_all_tiles(entries, options.position.split(','), 
-            options.max_zoom, options.value,
-            options.min_value, options.max_value, 
-            options.importance, 
-            map(int, options.resolutions.split(',')) )
+    tileset = make_tiles_by_index(entries, options.position.split(','), 
+            options.max_zoom, options.value_field, options.importance_field,
+            bins_per_dimension=options.bins_per_dimension)
 
     with open(op.join(options.output_dir, 'tile_info.json'), 'w') as f:
         json.dump(tileset['tileset_info'], f, indent=2)
 
-    for zoom_tileset in tileset['tiles']:
-        for key in zoom_tileset:
-            outpath = op.join(options.output_dir, '/'.join(map(str, key)) + '.json')
-            outdir = op.dirname(outpath)
+    for key in tileset['tiles']:
+        outpath = op.join(options.output_dir, '/'.join(map(str, key)) + '.json')
+        outdir = op.dirname(outpath)
 
-            if not op.exists(outdir):
-                os.makedirs(outdir)
+        if not op.exists(outdir):
+            os.makedirs(outdir)
 
-            with open(outpath, 'w') as f:
-                json.dump(zoom_tileset[key], f, indent=2)
+        with open(outpath, 'w') as f:
+            json.dump(tileset['tiles'][key], f, indent=2)
     '''
     options.min_pos = min(map(lambda x: x[options.position], entries))
     options.max_pos = max(map(lambda x: x[options.position], entries))
@@ -287,17 +279,17 @@ def make_tiles_from_file(filename, options):
             start_x = options.min_pos, end_x = options.max_pos)
     '''
 
-def data_bounds(entries, dim_names):
+def data_bounds(entries, num_dims):
     '''
     Get the minimum and maximum values for a data set.
 
     :param entries: A list of dictionaries representing the data
-    :param dim_names: The names of the dimensions for which to get the bounds
+    :param num_dims: The number of dimensions in the data set
     :return: (mins, maxs)
     '''
 
-    mins = [min(map(lambda x: x[pos], entries)) for pos in dim_names]
-    maxs = [max(map(lambda x: x[pos], entries)) for pos in dim_names]
+    mins = [min(map(lambda x: x['pos'][i], entries)) for i in range(num_dims)]
+    maxs = [max(map(lambda x: x['pos'][i], entries)) for i in range(num_dims)]
 
     return (mins, maxs)
 
@@ -491,17 +483,20 @@ def flatten(listOfLists):
 
     return list(it.chain.from_iterable(listOfLists))
 
-def aggregate_tile_by_binning(tile, dim_names, bins_per_dimension = 16):
+def aggregate_tile_by_binning(tile, bins_per_dimension = 16, 
+        value_field='count'):
     '''
     Aggregate the data in a tile by placing it into a 16x16 array of bins.
 
     :entries: The entries in a single tile
-    :dim_names: The names of the dimensions in each tile
     :param tile_width: The width of each tile
     '''
     mins = tile['tile_start_pos']
     maxs = tile['tile_end_pos']
 
+    # the domain of the data that *can* be encompassed by this tile
+    # the actual data points don't necessarily need to span the whole
+    # domain
     tile_width = max(map(lambda x: x[1] - x[0], zip(mins, maxs)))
 
     bin_width = tile_width / bins_per_dimension
@@ -510,31 +505,58 @@ def aggregate_tile_by_binning(tile, dim_names, bins_per_dimension = 16):
         '''
         Place this entry in a particular bin, based on its position
         and the bin width.
+
+        :param entry: A single data point (as in one of the elements of the 'shown')
+                      array of a tile
         '''
-        bin_pos = map(lambda (dim_name, mind): int((entry[dim_name] - mind) / bin_width),
-                      zip(dim_names, mins))
+        bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
+                      enumerate(mins))
         return [(bin_pos, entry)]
 
     def sum_entry_counts(entry1, entry2):
         '''
         Combine two entries by suming their counts.
 
-        :param entry1: The contents of one bin.
+        :param entry1: The contents of one bin. 
+                       (Example: ([1, 0], {'count': 1, 'pos2': 4, 'pos1': 9}))
         :param entry2: the contents of another bin. 
+        :return: The sum of all the values for a particular bin
+                 (Example: same as entry1 but with different pos1 and pos2 values)
         '''
-        print >>sys.stderr, "entry1:", entry1
-        return (entry1[0], {'count': entry1[1]['count'] + entry2[1]['count']})
+        return (entry1[0], 
+                {value_field: entry1[1][value_field] + entry2[1][value_field]})
+        '''
+        return (entry1[0], {'pos': map(lambda (md, x): md + x * bin_width, 
+            zip(mins, entry1[0])),
+            'uid': shortuuid.uuid()} )
+        '''
 
     tile_entries = flatten(map(place_in_bins, tile['shown']))
     groups = it.groupby(sorted(tile_entries), lambda x: x[0])
+    # Example groups: [([0, 0], [[([0, 0], {'count': 1, 'pos2': 3, 'pos1': 2})]])]
+
+    # sum the counts in each bin
     reduced_tiles = map(lambda x: reduce(sum_entry_counts, x[1]), groups)
-    print >>sys.stderr, "tile_entries:", tile_entries
-    print >>sys.stderr, "reduced_tiles", reduced_tiles
+    reduced_tiles = map(lambda x: {'pos': map(lambda (md, x): md + x * bin_width, 
+                                              zip(mins, x[0])),
+                                   value_field: x[1][value_field],
+                                   'uid': shortuuid.uuid()}, reduced_tiles)
 
-    pass
+    # remove the id 
+    #reduced_tiles = map(lambda x: x[1], reduced_tiles)
 
-def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
-        aggregate_tile=lambda tile,dim_names: tile):
+    # return a brand spanking new tile
+    new_tile = {'tile_start_pos': tile['tile_start_pos'],
+                'tile_end_pos': tile['tile_end_pos'],
+                'shown': reduced_tiles }
+
+    return new_tile
+
+    
+
+def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count', 
+        importance_field='count', resolution=None,
+        aggregate_tile=lambda tile,dim_names: tile, bins_per_dimension=2):
     '''
     Create tiles by calculating tile indeces.
 
@@ -547,21 +569,35 @@ def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
     :param aggregate_tile: Condense the entries in a given tile 
         (should operate on a single tile)
     '''
+    print "bins_per_dimension:", bins_per_dimension
+
     epsilon = 0.0001    # for calculating the max width so that all entries
                         # end up in the same top_level bucket
 
+    # if the resolution is provided, we could go from the bottom up
+    # and create zoom_widths that are multiples of the resolutions
+    def consolidate_positions(entry):
+        '''
+        Place all of the dimensions in one array for this entry.
+        '''
+        value_field = 'count'
+        importance_field = 'count'
+
+        new_entry = {'pos': map(lambda dn: float(entry[dn]), dim_names),
+                      value_field: float(entry[value_field]),
+                      importance_field: float(entry[importance_field]),
+                      'uid': shortuuid.uuid() }
+        return new_entry
+
+    entries = map(consolidate_positions, entries)
+
     # O(n) get the maximum and minimum bounds of the data set
-    (mins, maxs) = data_bounds(entries, dim_names)
+    (mins, maxs) = data_bounds(entries, len(dim_names))
     max_width = max(map(lambda x: x[1] - x[0] + epsilon, zip(mins, maxs)))
 
     # get all the different zoom levels
     zoom_levels = range(max_zoom+1)
     zoom_widths = map(lambda x: max_width / 2 ** x, zoom_levels)
-
-    # if the resolution is provided, we could go from the bottom up
-    # and create zoom_widths that are multiples of the resolutions
-
-    print >>sys.stderr, "zoom_widths:", zip(zoom_levels, zoom_widths)
 
     def place_in_tiles(entry):
         '''
@@ -572,11 +608,10 @@ def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
         values = []
         for zoom_level, zoom_width in zip(zoom_levels, zoom_widths):
             tile_pos = tuple( [zoom_level] + 
-                    map(lambda (dim_name, mind): int((entry[dim_name] - mind) / zoom_width),
-                           zip(dim_names, mins)))
+                    map(lambda (i, mind): int((entry['pos'][i] - mind) / zoom_width),
+                           enumerate(mins)))
             values += [((tile_pos), entry)]
         
-        print "values:", values
         return values
 
 
@@ -588,8 +623,6 @@ def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
     # group by key (tile id (zl, x, y, ...))
     # spark equivalent groupByKey
     groups = it.groupby(sorted(tile_entries), lambda x: x[0])
-    for group in groups:
-        print "group:", group[0], list(group[1])
 
     # add the tile meta-data
     def add_tile_metadata((tile_id, tile_entries_iterator)):
@@ -605,19 +638,31 @@ def make_tiles_by_index(entries, dim_names, max_zoom, resolution=None,
                 it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
 
         # caclulate where the tile values end along each dimension
-        tile_data = {'shown': tile_entries_iterator,
+        tile_data = {'shown': list(map(lambda x: x[1], tile_entries_iterator)),
                      'zoom': tile_id[0],
                      'tile_start_pos': tile_start_pos,
                      'tile_end_pos': tile_end_pos}
+
         return (tile_id, tile_data)
 
     groups = it.groupby(sorted(tile_entries), lambda x: x[0])
     tiles_with_meta = map(add_tile_metadata, groups)
+    binned_tiles = map(lambda x: (x[0],
+                                  aggregate_tile_by_binning(x[1], 
+                                      bins_per_dimension=bins_per_dimension,
+                                      value_field = value_field)),
+                       tiles_with_meta)
 
+    tileset_info = {}
+    tileset_info['min_importance'] = (min(map(lambda x: float(x[importance_field]), entries)))
+    tileset_info['max_importance'] = (max(map(lambda x: float(x[importance_field]), entries)))
+    tileset_info['min_pos'] = mins
+    tileset_info['max_pos'] = maxs
+    tileset_info['max_value'] = max(map(lambda x: x[value_field], entries))
+    tileset_info['min_value'] = min(map(lambda x: x[value_field], entries))
+    tileset_info['max_zoom'] = max_zoom
 
-    print >>sys.stderr, "tiles_with_meta:", tiles_with_meta
-    #print "tile_entries:", tile_entries
-    #print "groups:", map(lambda (key, value): list(value), groups)
+    return {"tileset_info": tileset_info, "tiles": dict(binned_tiles)}
 
 def main():
     usage = """
@@ -631,9 +676,14 @@ def main():
     #parser.add_argument('-o', '--options', dest='some_option', default='yo', help="Place holder for a real option", type='str')
     #parser.add_argument('-u', '--useless', dest='uselesss', default=False, action='store_true', help='Another useless option')
     parser.add_argument('input_file')
+    parser.add_argument('-b', '--bins-per-dimension', 
+                        help='The number of bins to divide the data into',
+                        type=int)
     parser.add_argument('-i', '--importance', dest='importance_field', default='importance_field',
             help='The field in each JSON entry that indicates how important that entry is',
             type=str)
+    parser.add_argument('-v', '--value', dest='value_field', default='count',
+            help='The that has the value of each point. Used for aggregation and display')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-p', '--position', dest='position', default='position',
