@@ -1,13 +1,7 @@
 ## Create tiles for HiC data
 
 ```
-python scripts/make_tiles.py data/test.tsv -o output -v count -p pos1,pos2 -c pos1,pos2,count
-
-OUTPUT_DIR=~/projects/4DN_matrix-viewer/hi-z/jsons/tiles/; rm -rf $OUTPUT_DIR/*; python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2  -i count -b 2 test/data/simpleMatrix.tsv
-
-OUTPUT_DIR=~/projects/4DN_matrix-viewer/hi-z/jsons/tiles/; rm -rf $OUTPUT_DIR/*; python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -b 16 data/test.tsv
-
-OUTPUT_DIR=~/projects/4DN_matrix-viewer/hi-z/jsons/tiles/; rm -rf $OUTPUT_DIR/*; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -b 16 data/128k.raw
+OUTPUT_DIR=~/projects/4DN_matrix-viewer/hi-z/jsons/tiles/; rm -rf $OUTPUT_DIR/*; /usr/bin/time pypy scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -b 16 -r 100000 data/test.tsv
 ```
 
 ## Run tests

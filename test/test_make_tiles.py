@@ -73,8 +73,27 @@ def test_make_tiles_by_index():
             value_field='count',
             bins_per_dimension=2)
 
+    '''
     for key,value in tiles['tiles'].items():
         print "tile:", key, value['shown']
+    '''
+
+def test_make_tiles_with_resolution():
+    entries = mt.load_entries_from_file('test/data/smallFullMatrix.tsv', 
+                column_names = ['pos1', 'pos2', 'count'])
+
+    dim_names = ['pos1', 'pos2']
+    max_zoom = 1
+    tiles = mt.make_tiles_by_index(entries, dim_names, max_zoom,
+            value_field='count',
+            bins_per_dimension=2,
+            resolution=1)
+
+    for key,value in tiles['tiles'].items():
+        print "tile:", key, value['shown']
+        if key == (1,1,1):
+            assert(abs(value['shown'][0]['pos'][0] - 3.0) < 0.0001)
+            assert(abs(value['shown'][0]['pos'][1] - 3.0) < 0.0001)
 
 def test_aggregate_tile_by_binning():
     '''

@@ -4,3 +4,5 @@
 *.pyc
 data/
 output.tar
+profile.dat
+profile.png
