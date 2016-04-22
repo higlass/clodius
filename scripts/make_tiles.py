@@ -3,6 +3,7 @@
 import argparse
 import csv
 import collections as col
+import fpark
 import itertools as it
 import json
 import math
@@ -46,7 +47,8 @@ def load_entries_from_file(filename, column_names=None):
             f.seek(0)
             tsv_reader = csv.reader(f, delimiter='\t')
 
-            entries = map(lambda x: dict(zip(column_names, x)), tsv_reader)
+            entries = fpark.FakeSparkContext.parallelize(tsv_reader)
+            entries = entries.map(lambda x: dict(zip(column_names, x)))
             
             sys.stderr.write(" done\n")
             sys.stderr.flush()
@@ -105,41 +107,10 @@ def data_bounds(entries, num_dims):
     :param num_dims: The number of dimensions in the data set
     :return: (mins, maxs)
     '''
-
-    mins = [min(map(lambda x: x['pos'][i], entries)) for i in range(num_dims)]
-    maxs = [max(map(lambda x: x['pos'][i], entries)) for i in range(num_dims)]
+    mins = [min(entries.map(lambda x: x['pos'][i]).collect()) for i in range(num_dims)]
+    maxs = [max(entries.map(lambda x: x['pos'][i]).collect()) for i in range(num_dims)]
 
     return (mins, maxs)
-
-
-def filter_data(entries, dim_names, min_bounds, max_bounds):
-    '''
-    Filter a set of entries so the result contains only values
-    that are greater than or equal to min_bounds and less than
-    or equal to max_bounds.
-
-    :param entries: The data set
-    :param dim_names: The names of the different dimensions
-    :param min_bounds: The minimum bounds of the filtered data set
-    :param max_bounds: The maximum bounds of the filtered data set
-    :return: A filtered data set
-    '''
-    def convert_to_numbers(x):
-        for dim in dim_names:
-            x[dim] = float(x[dim])
-
-    map(convert_to_numbers, entries)
-
-    def filter_function(x):
-        for dim, minb, maxb in zip(dim_names, min_bounds, max_bounds):
-            if x[dim] < minb:
-                return False
-            if x[dim] >= maxb:
-                return False
-
-        return True
-
-    return filter(filter_function, entries)
 
 def flatten(listOfLists):
     '''
@@ -160,6 +131,8 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
     '''
     mins = tile['tile_start_pos']
     maxs = tile['tile_end_pos']
+
+    print "aggregating:", tile['shown'].collect()
 
     # the domain of the data that *can* be encompassed by this tile
     # the actual data points don't necessarily need to span the whole
@@ -183,8 +156,7 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
         for i, mind in enumerate(mins):
             print "entry['pos'][i]: {} bin_pos: {}".format(entry['pos'][i], bin_pos[i])
         '''
-
-        return [(bin_pos, entry)]
+        return [(tuple(bin_pos), entry)]
 
     def sum_entry_counts(entry1, entry2):
         '''
@@ -196,24 +168,29 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
         :return: The sum of all the values for a particular bin
                  (Example: same as entry1 but with different pos1 and pos2 values)
         '''
-        return (entry1[0], 
-                {value_field: entry1[1][value_field] + entry2[1][value_field]})
+        print "reducing:", entry1[value_field], entry2[value_field]
+        return {value_field: entry1[value_field] + entry2[value_field]}
         '''
         return (entry1[0], {'pos': map(lambda (md, x): md + x * bin_width, 
             zip(mins, entry1[0])),
             'uid': shortuuid.uuid()} )
         '''
 
-    tile_entries = flatten(map(place_in_bins, tile['shown']))
-    groups = it.groupby(sorted(tile_entries), lambda x: x[0])
+    #tile_entries = fpark.FakeSparkContext.parallelize(tile['shown']).flatMap(place_in_bins)
+    tile_entries = tile['shown'].flatMap(place_in_bins)
+    #tile_entries = flatten(map(place_in_bins, tile['shown']))
+    #groups = it.groupby(sorted(tile_entries), lambda x: x[0])
     # Example groups: [([0, 0], [[([0, 0], {'count': 1, 'pos2': 3, 'pos1': 2})]])]
 
     # sum the counts in each bin
-    reduced_tiles = map(lambda x: reduce(sum_entry_counts, x[1]), groups)
-    reduced_tiles = map(lambda x: {'pos': map(lambda (md, x): md + x * bin_width, 
+    #reduced_tiles = map(lambda x: reduce(sum_entry_counts, x[1]), groups)
+    reduced_tiles = tile_entries.reduceByKey(sum_entry_counts)
+    print "< reduced_tiles:", reduced_tiles.collect()
+    reduced_tiles = reduced_tiles.map(lambda x: {'pos': map(lambda (md, x): md + x * bin_width, 
                                               zip(mins, x[0])),
                                    value_field: x[1][value_field],
-                                   'uid': shortuuid.uuid()}, reduced_tiles)
+                                   'uid': shortuuid.uuid()})
+    print "> reduced_tiles:", reduced_tiles.collect()
 
     # remove the id 
     #reduced_tiles = map(lambda x: x[1], reduced_tiles)
@@ -221,10 +198,9 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
     # return a brand spanking new tile
     new_tile = {'tile_start_pos': tile['tile_start_pos'],
                 'tile_end_pos': tile['tile_end_pos'],
-                'shown': reduced_tiles }
+                'shown': reduced_tiles.collect() }
 
     return new_tile
-
     
 
 def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count', 
@@ -261,7 +237,7 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
                       'uid': shortuuid.uuid() }
         return new_entry
 
-    entries = map(consolidate_positions, entries)
+    entries = entries.map(consolidate_positions)
 
     # O(n) get the maximum and minimum bounds of the data set
     (mins, maxs) = data_bounds(entries, len(dim_names))
@@ -303,11 +279,13 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
     # place each entry into a tile
     # spark equivalent: flatmap
     # so now we have a list like this: [((0,0,0), {'pos1':1, 'pos2':2, 'count':3}), ...]
-    tile_entries = flatten(map(place_in_tiles, entries))
+    #tile_entries = flatten(map(place_in_tiles, entries))
+    tile_entries = entries.flatMap(place_in_tiles)
 
     # group by key (tile id (zl, x, y, ...))
     # spark equivalent groupByKey
-    groups = it.groupby(sorted(tile_entries), lambda x: x[0])
+    #groups = it.groupby(sorted(tile_entries), lambda x: x[0])
+    groups = tile_entries.groupByKey()
 
     # add the tile meta-data
     def add_tile_metadata((tile_id, tile_entries_iterator)):
@@ -323,32 +301,43 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
                 it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
 
         # caclulate where the tile values end along each dimension
-        tile_data = {'shown': list(map(lambda x: x[1], tile_entries_iterator)),
+        tile_data = {'shown': fpark.FakeSparkContext.parallelize(map(lambda x: x, tile_entries_iterator)),
                      'zoom': tile_id[0],
                      'tile_start_pos': tile_start_pos,
                      'tile_end_pos': tile_end_pos}
 
         return (tile_id, tile_data)
 
-    groups = it.groupby(sorted(tile_entries), lambda x: x[0])
-    tiles_with_meta = map(add_tile_metadata, groups)
-    binned_tiles = map(lambda x: (x[0],
+    #groups = it.groupby(sorted(tile_entries), lambda x: x[0])
+    #tiles_with_meta = map(add_tile_metadata, groups)
+    tiles_with_meta = groups.map(add_tile_metadata)
+    binned_tiles = tiles_with_meta.map(lambda x: (x[0],
                                   aggregate_tile_by_binning(x[1], 
                                       bins_per_dimension=bins_per_dimension,
-                                      value_field = value_field)),
-                       tiles_with_meta)
+                                      value_field = value_field)))
 
     tileset_info = {}
-    tileset_info['min_importance'] = (min(map(lambda x: float(x[importance_field]), entries)))
-    tileset_info['max_importance'] = (max(map(lambda x: float(x[importance_field]), entries)))
+
+    def reduce_max(a,b):
+        return max(a,b)
+
+    def reduce_min(a,b):
+        return min(a,b)
+
+    
+    tileset_info['max_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_max)
+    tileset_info['min_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_min)
+
+    tileset_info['max_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_max)
+    tileset_info['min_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_min)
+
     tileset_info['min_pos'] = mins
     tileset_info['max_pos'] = maxs
-    tileset_info['max_value'] = max(map(lambda x: x[value_field], entries))
-    tileset_info['min_value'] = min(map(lambda x: x[value_field], entries))
+
     tileset_info['max_zoom'] = max_zoom
     tileset_info['max_width'] = max_width
 
-    return {"tileset_info": tileset_info, "tiles": dict(binned_tiles)}
+    return {"tileset_info": tileset_info, "tiles": dict(binned_tiles.collect())}
 
 def main():
     usage = """

@@ -42,25 +42,6 @@ def test_make_matrix_tiles():
 
     pass
 
-def test_filter_entries():
-    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv',
-                column_names = ['pos1', 'pos2', 'count'])
-    filter_interval = ((2, 6), (2, 5))
-    dim_names = ['pos1', 'pos2']
-
-    filtered_data = mt.filter_data(entries, dim_names,
-            min_bounds = [x[0] for x in filter_interval],
-            max_bounds = [x[1] for x in filter_interval])
-
-    assert(len(filtered_data) == 1)  # should only contain {"pos1": 2, "pos2": 3, "count": 1}
-
-    filter_interval = ((2, 1), (2, 5))
-    filtered_data = mt.filter_data(entries, dim_names,
-            min_bounds = [x[0] for x in filter_interval],
-            max_bounds = [x[1] for x in filter_interval])
-
-    assert(len(filtered_data) == 0)
-
 def test_make_tiles_by_index():
     entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv', 
                 column_names = ['pos1', 'pos2', 'count'])
@@ -91,9 +72,11 @@ def test_make_tiles_with_resolution():
 
     for key,value in tiles['tiles'].items():
         print "tile:", key, value['shown']
+        '''
         if key == (1,1,1):
             assert(abs(value['shown'][0]['pos'][0] - 3.0) < 0.0001)
             assert(abs(value['shown'][0]['pos'][1] - 3.0) < 0.0001)
+        '''
 
 def test_aggregate_tile_by_binning():
     '''
@@ -118,7 +101,7 @@ def test_aggregate_tile_by_binning():
                       'uid': shortuuid.uuid() }
         return new_entry
 
-    entries = map(consolidate_positions, entries)
+    entries = entries.map(consolidate_positions)
     print "entries:", entries
 
     tile = {'shown': entries,
