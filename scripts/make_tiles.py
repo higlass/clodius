@@ -13,6 +13,8 @@ import random
 import shortuuid
 import sys
 
+sc = None
+
 def summarize_data(max_entries):
     '''
     Summarize the data into a maximum of max_entries.
@@ -26,7 +28,7 @@ def summarize_data(max_entries):
 
     return condense
 
-def load_entries_from_file(filename, column_names=None):
+def load_entries_from_file(filename, column_names=None, use_spark=False):
     '''
     Load a dataset from file.
 
@@ -40,15 +42,17 @@ def load_entries_from_file(filename, column_names=None):
     sys.stderr.write("Loading entries...")
     sys.stderr.flush()
 
-    with open(filename, 'r') as f:
-        try:
-            json.load(f)
-        except ValueError:
-            f.seek(0)
+    def add_column_names(x):
+        return dict(zip(column_names, x))
+
+    if use_spark:
+        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split('\t'))))
+    else:
+        with open(filename, 'r') as f:
             tsv_reader = csv.reader(f, delimiter='\t')
 
             entries = fpark.FakeSparkContext.parallelize(tsv_reader)
-            entries = entries.map(lambda x: dict(zip(column_names, x)))
+            entries = entries.map(add_column_names)
             
             sys.stderr.write(" done\n")
             sys.stderr.flush()
@@ -132,8 +136,6 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
     mins = tile['tile_start_pos']
     maxs = tile['tile_end_pos']
 
-    print "aggregating:", tile['shown'].collect()
-
     # the domain of the data that *can* be encompassed by this tile
     # the actual data points don't necessarily need to span the whole
     # domain
@@ -152,10 +154,6 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
         bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
                       enumerate(mins))
 
-        '''
-        for i, mind in enumerate(mins):
-            print "entry['pos'][i]: {} bin_pos: {}".format(entry['pos'][i], bin_pos[i])
-        '''
         return [(tuple(bin_pos), entry)]
 
     def sum_entry_counts(entry1, entry2):
@@ -168,30 +166,21 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
         :return: The sum of all the values for a particular bin
                  (Example: same as entry1 but with different pos1 and pos2 values)
         '''
-        print "reducing:", entry1[value_field], entry2[value_field]
         return {value_field: entry1[value_field] + entry2[value_field]}
         '''
         return (entry1[0], {'pos': map(lambda (md, x): md + x * bin_width, 
             zip(mins, entry1[0])),
             'uid': shortuuid.uuid()} )
         '''
-
-    #tile_entries = fpark.FakeSparkContext.parallelize(tile['shown']).flatMap(place_in_bins)
     tile_entries = tile['shown'].flatMap(place_in_bins)
-    #tile_entries = flatten(map(place_in_bins, tile['shown']))
-    #groups = it.groupby(sorted(tile_entries), lambda x: x[0])
-    # Example groups: [([0, 0], [[([0, 0], {'count': 1, 'pos2': 3, 'pos1': 2})]])]
 
     # sum the counts in each bin
     #reduced_tiles = map(lambda x: reduce(sum_entry_counts, x[1]), groups)
     reduced_tiles = tile_entries.reduceByKey(sum_entry_counts)
-    print "< reduced_tiles:", reduced_tiles.collect()
     reduced_tiles = reduced_tiles.map(lambda x: {'pos': map(lambda (md, x): md + x * bin_width, 
                                               zip(mins, x[0])),
                                    value_field: x[1][value_field],
                                    'uid': shortuuid.uuid()})
-    print "> reduced_tiles:", reduced_tiles.collect()
-
     # remove the id 
     #reduced_tiles = map(lambda x: x[1], reduced_tiles)
 
@@ -201,7 +190,6 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
                 'shown': reduced_tiles.collect() }
 
     return new_tile
-    
 
 def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
@@ -233,8 +221,7 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
 
         new_entry = {'pos': map(lambda dn: float(entry[dn]), dim_names),
                       value_field: float(entry[value_field]),
-                      importance_field: float(entry[importance_field]),
-                      'uid': shortuuid.uuid() }
+                      importance_field: float(entry[importance_field]) }
         return new_entry
 
     entries = entries.map(consolidate_positions)

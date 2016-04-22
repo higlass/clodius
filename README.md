@@ -143,3 +143,14 @@ for max_zoom in 2 3 4 5 6 7 8 9 10; do
     done;
 done;
 ```
+
+## Profiling
+
+To see where this script spends the majority of the time, profile it using:
+
+```
+OUTPUT_DIR=output; rm -rf $OUTPUT_DIR/*; ./scripts/pyprof.sh scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -b 512 --max-zoom 8 data/32k.raw
+```
+
+Note that to run this, you need to have
+[`gprof2dot`](https://github.com/jrfonseca/gprof2dot) installed.
