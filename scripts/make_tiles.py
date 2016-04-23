@@ -10,7 +10,7 @@ import math
 import os
 import os.path as op
 import random
-import shortuuid
+#import shortuuid
 import sys
 
 sc = None
