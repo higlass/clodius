@@ -185,9 +185,12 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
     #reduced_tiles = map(lambda x: x[1], reduced_tiles)
 
     # return a brand spanking new tile
+    '''
     new_tile = {'tile_start_pos': tile['tile_start_pos'],
                 'tile_end_pos': tile['tile_end_pos'],
                 'shown': reduced_tiles.collect() }
+    '''
+    new_tile = reduced_tiles.collect()
 
     return new_tile
 
@@ -241,7 +244,12 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
         max_max_zoom = math.ceil(math.log(bins_to_display_at_max_resolution) / math.log(2.))
 
         max_width = resolution * bins_per_dimension * 2 ** max_max_zoom
+        print "max_max_zoom:", max_max_zoom
 
+        '''
+        if max_max_zoom < max_zoom:
+            max_zoom = int(max_max_zoom)
+        '''
 
     # get all the different zoom levels
     zoom_levels = range(max_zoom+1)
