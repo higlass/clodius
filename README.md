@@ -131,14 +131,15 @@ To obtain benchmarks, run clodius using a variety of maximum zooms, bin_sizes
 and input data sizes:
 
 ```
-for max_zoom in 2 3 4 5 6 7 8 9 10; do
-    for bin_size in 8 16 32 64 128 256 512 1024; do 
+for max_zoom in 8; do
+    for bin_size in 256; do 
         for data_size in 16k 32k 64k 128k 256k; do  #256k 512k 1m 2m 4m; do 
             OUTPUT_DIR=output; rm -rf $OUTPUT_DIR/*;
-            time=`/usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -b ${bin_size} --max-zoom $max_zoom data/${data_size}.raw 2>&1 | grep user | awk '{ print $3}'`;
+            time=`/usr/bin/time pypy scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -b ${bin_size} --max-zoom $max_zoom data/${data_size}.raw 2>&1 | grep user | awk '{ print $3}'`;
             tar -cf output.tar output
+            num_files=`find output | wc -l`
             size=`ls -lh output.tar | awk '{ print $5}'`
-            echo $max_zoom $bin_size $data_size $time $size
+            echo $max_zoom $bin_size $num_files $data_size $time $size
         done;
     done;
 done;
