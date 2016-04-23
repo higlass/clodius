@@ -179,8 +179,8 @@ def aggregate_tile_by_binning(tile, bins_per_dimension = 16,
     reduced_tiles = tile_entries.reduceByKey(sum_entry_counts)
     reduced_tiles = reduced_tiles.map(lambda x: {'pos': map(lambda (md, x): md + x * bin_width, 
                                               zip(mins, x[0])),
-                                   value_field: x[1][value_field],
-                                   'uid': shortuuid.uuid()})
+                                   value_field: x[1][value_field] 
+                                   })
     # remove the id 
     #reduced_tiles = map(lambda x: x[1], reduced_tiles)
 
@@ -258,9 +258,30 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
             tile_pos = tuple( [zoom_level] + 
                     map(lambda (i, mind): int((entry['pos'][i] - mind) / zoom_width),
                            enumerate(mins)))
-            values += [((tile_pos), entry)]
-        
+            
+            ## We can actually place the tile in a bin right here and now
+            bin_width = zoom_width / bins_per_dimension
+            tile_mins = map(lambda (z,(m,x)): m + x * (max_width / 2 ** z), 
+                    it.izip(it.cycle([tile_pos[0]]), zip(mins, tile_pos[1:])))
+
+            bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
+                          enumerate(tile_mins))
+
+            values += [((tile_pos), { tuple(bin_pos) : entry[value_field]} )]
+
         return values
+    
+    def aggregate_bins_seq(s, d):
+        for (bin_pos, bin_val) in d.items():
+            s[bin_pos] += bin_val
+
+        return s
+
+    def aggregate_bins_comb(s1, s2):
+        for (bin_pos, bin_val) in s2.items():
+            s1[bin_pos] += bin_val
+
+        return s1
 
 
     # place each entry into a tile
@@ -268,40 +289,39 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
     # so now we have a list like this: [((0,0,0), {'pos1':1, 'pos2':2, 'count':3}), ...]
     #tile_entries = flatten(map(place_in_tiles, entries))
     tile_entries = entries.flatMap(place_in_tiles)
-
-    # group by key (tile id (zl, x, y, ...))
-    # spark equivalent groupByKey
-    #groups = it.groupby(sorted(tile_entries), lambda x: x[0])
-    groups = tile_entries.groupByKey()
+    tiles_aggregated = tile_entries.aggregateByKey(col.defaultdict(int),
+            aggregate_bins_seq, aggregate_bins_comb)
 
     # add the tile meta-data
     def add_tile_metadata((tile_id, tile_entries_iterator)):
         '''
         Add the tile's start and end data positions.
         '''
+        z = tile_id[0]
+        tile_width = max_width / 2 ** z
+        bin_width = tile_width / bins_per_dimension
 
         # calculate where the tile values start along each dimension
-        tile_start_pos = map(lambda (z,(m,x)): m + x * (max_width / 2 ** z), 
+        tile_start_pos = map(lambda (z,(m,x)): m + x * tile_width, 
                 it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
 
-        tile_end_pos = map(lambda (z,(m,x)): m + (x+1) * (max_width / 2 ** z), 
+        tile_end_pos = map(lambda (z,(m,x)): m + (x+1) * tile_width, 
                 it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
+
+        shown = []
+        for (bin_pos, bin_val) in tile_entries_iterator.items():
+            pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
+            shown += [{'pos': pos, value_field : bin_val}]
 
         # caclulate where the tile values end along each dimension
-        tile_data = {'shown': fpark.FakeSparkContext.parallelize(map(lambda x: x, tile_entries_iterator)),
+        tile_data = {'shown': shown,
                      'zoom': tile_id[0],
                      'tile_start_pos': tile_start_pos,
                      'tile_end_pos': tile_end_pos}
 
         return (tile_id, tile_data)
 
-    #groups = it.groupby(sorted(tile_entries), lambda x: x[0])
-    #tiles_with_meta = map(add_tile_metadata, groups)
-    tiles_with_meta = groups.map(add_tile_metadata)
-    binned_tiles = tiles_with_meta.map(lambda x: (x[0],
-                                  aggregate_tile_by_binning(x[1], 
-                                      bins_per_dimension=bins_per_dimension,
-                                      value_field = value_field)))
+    tiles_with_meta = tiles_aggregated.map(add_tile_metadata)
 
     tileset_info = {}
 
@@ -324,7 +344,7 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
     tileset_info['max_zoom'] = max_zoom
     tileset_info['max_width'] = max_width
 
-    return {"tileset_info": tileset_info, "tiles": dict(binned_tiles.collect())}
+    return {"tileset_info": tileset_info, "tiles": dict(tiles_with_meta.collect())}
 
 def main():
     usage = """

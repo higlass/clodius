@@ -154,3 +154,14 @@ OUTPUT_DIR=output; rm -rf $OUTPUT_DIR/*; ./scripts/pyprof.sh scripts/make_tiles.
 
 Note that to run this, you need to have
 [`gprof2dot`](https://github.com/jrfonseca/gprof2dot) installed.
+
+## Back of the envelope
+
+Human genome: ~4 billion = 2 ^ 32 base pairs
+
+One tile (at highest possible resolution): 256 = 2 ^ 8 base pairs
+
+We would need to allow a zoom level of 24 to display the genome at a resolution of 1 bp / pixel.
+
+To display it at 1K (~2 ^ 10) base pairs per pixel, we would need 14 zoom levels
+

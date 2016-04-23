@@ -48,6 +48,20 @@ class ParallelData:
 
         return ParallelData(reduced_buckets.items())
 
+    def aggregateByKey(self, start_val, seq_func, comb_func):
+        buckets = col.defaultdict(list)
+        for d in self.data:
+            buckets[d[0]].append(d[1])
+
+        reduced_buckets = dict()
+        for key in buckets:
+            comb_val = start_val.copy()
+            for val in buckets[key]:
+                comb_val = seq_func(comb_val, val)
+            reduced_buckets[key] = comb_val
+
+        return ParallelData(reduced_buckets.items())
+
     def reduce(self, func):
         return reduce(func, self.data)
 
