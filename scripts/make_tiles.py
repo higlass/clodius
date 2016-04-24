@@ -4,6 +4,7 @@ import argparse
 import csv
 import collections as col
 import fpark
+import gzip
 import itertools as it
 import json
 import math
@@ -46,7 +47,10 @@ def load_entries_from_file(filename, column_names=None, use_spark=False):
         return dict(zip(column_names, x))
 
     if use_spark:
+        from pyspark import SparkContext
+        sc = SparkContext(appName="Clodius")
         entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split('\t'))))
+        return entries
     else:
         with open(filename, 'r') as f:
             tsv_reader = csv.reader(f, delimiter='\t')
@@ -76,7 +80,8 @@ def make_tiles_from_file(filename, options):
     if options.column_names is not None:
         options.column_names = options.column_names.split(',')
 
-    entries = load_entries_from_file(filename, options.column_names)
+    entries = load_entries_from_file(filename, options.column_names,
+            options.use_spark)
 
     tileset = make_tiles_by_index(entries, options.position.split(','), 
             options.max_zoom, options.value_field, options.importance_field,
@@ -87,14 +92,14 @@ def make_tiles_from_file(filename, options):
         json.dump(tileset['tileset_info'], f, indent=2)
 
     for key in tileset['tiles']:
-        outpath = op.join(options.output_dir, '/'.join(map(str, key)) + '.json')
+        outpath = op.join(options.output_dir, '/'.join(map(str, key)) + '.json.gz')
         outdir = op.dirname(outpath)
 
         if not op.exists(outdir):
             os.makedirs(outdir)
 
-        with open(outpath, 'w') as f:
-            json.dump(tileset['tiles'][key], f, indent=2)
+        with gzip.open(outpath, 'w') as f:
+            f.write(json.dumps(tileset['tiles'][key],indent=2))
     '''
     options.min_pos = min(map(lambda x: x[options.position], entries))
     options.max_pos = max(map(lambda x: x[options.position], entries))
@@ -124,75 +129,6 @@ def flatten(listOfLists):
     '''
 
     return list(it.chain.from_iterable(listOfLists))
-
-def aggregate_tile_by_binning(tile, bins_per_dimension = 16, 
-        value_field='count'):
-    '''
-    Aggregate the data in a tile by placing it into a 16x16 array of bins.
-
-    :entries: The entries in a single tile
-    :param tile_width: The width of each tile
-    '''
-    mins = tile['tile_start_pos']
-    maxs = tile['tile_end_pos']
-
-    # the domain of the data that *can* be encompassed by this tile
-    # the actual data points don't necessarily need to span the whole
-    # domain
-    tile_width = max(map(lambda x: x[1] - x[0], zip(mins, maxs)))
-    bin_width = tile_width / bins_per_dimension
-
-    def place_in_bins(entry):
-        '''
-        Place this entry in a particular bin, based on its position
-        and the bin width.
-
-        :param entry: A single data point (as in one of the elements of the 'shown')
-                      array of a tile
-        '''
-
-        bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
-                      enumerate(mins))
-
-        return [(tuple(bin_pos), entry)]
-
-    def sum_entry_counts(entry1, entry2):
-        '''
-        Combine two entries by suming their counts.
-
-        :param entry1: The contents of one bin. 
-                       (Example: ([1, 0], {'count': 1, 'pos2': 4, 'pos1': 9}))
-        :param entry2: the contents of another bin. 
-        :return: The sum of all the values for a particular bin
-                 (Example: same as entry1 but with different pos1 and pos2 values)
-        '''
-        return {value_field: entry1[value_field] + entry2[value_field]}
-        '''
-        return (entry1[0], {'pos': map(lambda (md, x): md + x * bin_width, 
-            zip(mins, entry1[0])),
-            'uid': shortuuid.uuid()} )
-        '''
-    tile_entries = tile['shown'].flatMap(place_in_bins)
-
-    # sum the counts in each bin
-    #reduced_tiles = map(lambda x: reduce(sum_entry_counts, x[1]), groups)
-    reduced_tiles = tile_entries.reduceByKey(sum_entry_counts)
-    reduced_tiles = reduced_tiles.map(lambda x: {'pos': map(lambda (md, x): md + x * bin_width, 
-                                              zip(mins, x[0])),
-                                   value_field: x[1][value_field] 
-                                   })
-    # remove the id 
-    #reduced_tiles = map(lambda x: x[1], reduced_tiles)
-
-    # return a brand spanking new tile
-    '''
-    new_tile = {'tile_start_pos': tile['tile_start_pos'],
-                'tile_end_pos': tile['tile_end_pos'],
-                'shown': reduced_tiles.collect() }
-    '''
-    new_tile = reduced_tiles.collect()
-
-    return new_tile
 
 def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
@@ -244,16 +180,14 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
         max_max_zoom = math.ceil(math.log(bins_to_display_at_max_resolution) / math.log(2.))
 
         max_width = resolution * bins_per_dimension * 2 ** max_max_zoom
-        print "max_max_zoom:", max_max_zoom
 
-        '''
         if max_max_zoom < max_zoom:
             max_zoom = int(max_max_zoom)
-        '''
 
     # get all the different zoom levels
     zoom_levels = range(max_zoom+1)
     zoom_widths = map(lambda x: max_width / 2 ** x, zoom_levels)
+    zoom_level_widths = zip(zoom_levels, zoom_widths)
 
     def place_in_tiles(entry):
         '''
@@ -262,7 +196,7 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
         :param entry: A data entry.
         '''
         values = []
-        for zoom_level, zoom_width in zip(zoom_levels, zoom_widths):
+        for zoom_level, zoom_width in zoom_level_widths:
             tile_pos = tuple( [zoom_level] + 
                     map(lambda (i, mind): int((entry['pos'][i] - mind) / zoom_width),
                            enumerate(mins)))
@@ -275,18 +209,17 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
             bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
                           enumerate(tile_mins))
 
-            values += [((tile_pos), { tuple(bin_pos) : entry[value_field]} )]
+            values += [((tile_pos), ( tuple(bin_pos) , entry[value_field] ) )]
 
         return values
     
-    def aggregate_bins_seq(s, d):
-        for (bin_pos, bin_val) in d.items():
-            s[bin_pos] += bin_val
+    def aggregate_bins_seq(s, (bin_pos, bin_val)):
+        s[bin_pos] += bin_val
 
         return s
 
     def aggregate_bins_comb(s1, s2):
-        for (bin_pos, bin_val) in s2.items():
+        for (bin_pos, bin_val) in s2:
             s1[bin_pos] += bin_val
 
         return s1
@@ -297,6 +230,7 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
     # so now we have a list like this: [((0,0,0), {'pos1':1, 'pos2':2, 'count':3}), ...]
     #tile_entries = flatten(map(place_in_tiles, entries))
     tile_entries = entries.flatMap(place_in_tiles)
+    print "tile_entries.count():", tile_entries.count()
     tiles_aggregated = tile_entries.aggregateByKey(col.defaultdict(int),
             aggregate_bins_seq, aggregate_bins_comb)
 
@@ -322,10 +256,13 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
             shown += [{'pos': pos, value_field : bin_val}]
 
         # caclulate where the tile values end along each dimension
+        '''
         tile_data = {'shown': shown,
                      'zoom': tile_id[0],
                      'tile_start_pos': tile_start_pos,
                      'tile_end_pos': tile_end_pos}
+        '''
+        tile_data = shown
 
         return (tile_id, tile_data)
 
@@ -370,6 +307,8 @@ def main():
                         help='The number of bins to divide the data into',
                         default=None,
                         type=int)
+    parser.add_argument('--use-spark', default=False, action='store_true',
+                        help='Use spark to distribute the workload')
 
     parser.add_argument('-r', '--resolution', 
                         help='The resolution of the data (applies only to matrix data)',

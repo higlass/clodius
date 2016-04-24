@@ -8,6 +8,9 @@ class ParallelData:
     def map(self, func):
         return ParallelData(map(func, self.data))
 
+    def count(self):
+        return len(self.data)
+
     def groupByKey(self):
         '''
         When called on a dataset of (K, V) pairs, returns a dataset of (K, Iterable<V>) pairs. 
