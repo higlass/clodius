@@ -132,13 +132,14 @@ and input data sizes:
 
 ```
 for max_zoom in 14; do
-    for bin_size in 256; do 
-        for data_size in 16k 32k 64k 128k 256k 512k; do #1m 2m 4m; do 
-            OUTPUT_DIR=output; rm -rf $OUTPUT_DIR/*;
-            time=`/usr/bin/time -f "user: %U %M" pypy scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -b ${bin_size} --max-zoom $max_zoom data/${data_size}.raw 2>&1 | grep user | awk '{ print $2 " " $3}'`;
-            tar -chf output.tar output
+    for bin_size in 256; do
+        for data_size in 16k 32k 64k 128k 256k 512k 1m 2m 4m 8m 16m 32m; do # 16k 32k 64k 128k 256k 512k 1m 2m 4m; do #1m 2m 4m; do
+            OUTPUT_DIR=output;
+            rsync -a --delete blank/ output/
+            time=`/usr/bin/time -f "user: %E %M" /home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b ${bin_size} --max-zoom $max_zoom --use-spark data/${data_size}.raw | grep user | awk '{ print $2 " " $3}'`;
+            #time=`/usr/bin/time -f "user: %E %M" python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b ${bin_size} --max-zoom $max_zoom data/${data_size}.raw 2>&1 | grep user | awk '{ print $2 " " $3}'`;
             num_files=`find output/ | wc -l`
-            size=`du -h output.tar | awk '{ print $1}'`
+            size=`du --max-depth=0 -h output | awk '{ print $1}'`
             echo $max_zoom $bin_size $num_files $data_size $time $size
         done;
     done;

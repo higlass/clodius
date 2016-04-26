@@ -86,20 +86,14 @@ def make_tiles_from_file(filename, options):
     tileset = make_tiles_by_index(entries, options.position.split(','), 
             options.max_zoom, options.value_field, options.importance_field,
             bins_per_dimension=options.bins_per_dimension,
-            resolution=options.resolution)
+            resolution=options.resolution, output_dir=options.output_dir)
 
     with open(op.join(options.output_dir, 'tile_info.json'), 'w') as f:
         json.dump(tileset['tileset_info'], f, indent=2)
 
-    for key in tileset['tiles']:
-        outpath = op.join(options.output_dir, '/'.join(map(str, key)) + '.json.gz')
-        outdir = op.dirname(outpath)
+    return
 
-        if not op.exists(outdir):
-            os.makedirs(outdir)
 
-        with gzip.open(outpath, 'w') as f:
-            f.write(json.dumps(tileset['tiles'][key],indent=2))
     '''
     options.min_pos = min(map(lambda x: x[options.position], entries))
     options.max_pos = max(map(lambda x: x[options.position], entries))
@@ -133,7 +127,7 @@ def flatten(listOfLists):
 def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
-        bins_per_dimension=None):
+        bins_per_dimension=None, output_dir='.'):
     '''
     Create tiles by calculating tile indeces.
 
@@ -303,7 +297,23 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
     tileset_info['max_zoom'] = max_zoom
     tileset_info['max_width'] = max_width
 
-    return {"tileset_info": tileset_info, "tiles": dict(tiles_with_meta.collect())}
+
+    def save_tile(tile):
+        key = tile[0]
+        tile_value = tile[1]
+
+        outpath = op.join(output_dir, '/'.join(map(str, key)) + '.json.gz')
+        outdir = op.dirname(outpath)
+
+        if not op.exists(outdir):
+            os.makedirs(outdir)
+
+        with gzip.open(outpath, 'w') as f:
+            f.write(json.dumps(tile_value, indent=2))
+
+    tiles_with_meta.foreach(save_tile)
+
+    return {"tileset_info": tileset_info}
 
 def main():
     usage = """
