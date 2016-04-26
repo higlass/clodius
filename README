@@ -1,1 +1,0 @@
-OUTPUT_DIR=~/projects/4DN_matrix-viewer/hi-z/jsons/tiles/; rm -rf $OUTPUT_DIR/*; /usr/bin/time pypy scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -b 16 -r 100000 data/test.tsv
