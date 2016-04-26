@@ -181,6 +181,9 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
 
         max_width = resolution * bins_per_dimension * 2 ** max_max_zoom
 
+        if max_max_zoom < 0:
+            max_max_zoom = 0
+
         if max_max_zoom < max_zoom:
             max_zoom = int(max_max_zoom)
 
@@ -209,9 +212,16 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
             bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
                           enumerate(tile_mins))
 
-            values += [((tile_pos), ( tuple(bin_pos) , entry[value_field] ) )]
+            bin_dict = col.defaultdict(int)
+            bin_dict[tuple(bin_pos)] = entry[value_field]
+            values += [((tile_pos), bin_dict  )]
 
         return values
+
+    def reduce_bins(bins_a, bins_b):
+        for bin_pos in bins_b:
+            bins_a[bin_pos] += bins_b[bin_pos]
+        return bins_a
     
     def aggregate_bins_seq(s, (bin_pos, bin_val)):
         s[bin_pos] += bin_val
@@ -230,9 +240,13 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
     # so now we have a list like this: [((0,0,0), {'pos1':1, 'pos2':2, 'count':3}), ...]
     #tile_entries = flatten(map(place_in_tiles, entries))
     tile_entries = entries.flatMap(place_in_tiles)
-    print "tile_entries.count():", tile_entries.count()
+    #print "entries.count:", entries.count()
+    #print "tile_entries.count():", tile_entries.count()
+    '''
     tiles_aggregated = tile_entries.aggregateByKey(col.defaultdict(int),
             aggregate_bins_seq, aggregate_bins_comb)
+    '''
+    tiles_aggregated = tile_entries.reduceByKey(reduce_bins)
 
     # add the tile meta-data
     def add_tile_metadata((tile_id, tile_entries_iterator)):
