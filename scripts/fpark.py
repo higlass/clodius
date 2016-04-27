@@ -31,6 +31,9 @@ class ParallelData:
 
         return ParallelData(list(it.chain.from_iterable(result)))
 
+    def foreach(self, func):
+        map(func, self.data)
+
     def reduceByKey(self, func):
         '''
 

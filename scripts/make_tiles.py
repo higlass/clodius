@@ -302,13 +302,13 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
         key = tile[0]
         tile_value = tile[1]
 
-        outpath = op.join(output_dir, '/'.join(map(str, key)) + '.json.gz')
+        outpath = op.join(output_dir, '/'.join(map(str, key)) + '.json')
         outdir = op.dirname(outpath)
 
         if not op.exists(outdir):
             os.makedirs(outdir)
 
-        with gzip.open(outpath, 'w') as f:
+        with open(outpath, 'w') as f:
             f.write(json.dumps(tile_value, indent=2))
 
     tiles_with_meta.foreach(save_tile)
