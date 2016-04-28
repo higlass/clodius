@@ -117,7 +117,7 @@ test/data/smallfullMatrix.tsv
 Or, for a more realistic data set:
 
 ```
-OUTPUT_DIR=output; rm -rf $OUTPUT_DIR; python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 128 --max-zoom 14 data/128k.raw
+OUTPUT_DIR=output; rm -rf $OUTPUT_DIR; python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 128 --max-zoom 14 data/128k.raw; du --max-depth=0 -h output; find output/ | wc -l;
 ```
 
 The parameters:
