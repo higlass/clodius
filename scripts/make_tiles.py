@@ -309,6 +309,9 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
     tileset_info['max_zoom'] = max_zoom
     tileset_info['max_width'] = max_width
 
+    tileset_info['data_granularity'] = resolution
+    tileset_info['bins_per_dimension'] = bins_per_dimension
+
 
     def save_tile(tile):
         key = tile[0]
