@@ -86,7 +86,8 @@ def make_tiles_from_file(filename, options):
     tileset = make_tiles_by_index(entries, options.position.split(','), 
             options.max_zoom, options.value_field, options.importance_field,
             bins_per_dimension=options.bins_per_dimension,
-            resolution=options.resolution, output_dir=options.output_dir)
+            resolution=options.resolution, output_dir=options.output_dir,
+            gzip_output=options.gzip, output_format=options.output_format)
 
     with open(op.join(options.output_dir, 'tile_info.json'), 'w') as f:
         json.dump(tileset['tileset_info'], f, indent=2)
@@ -127,7 +128,8 @@ def flatten(listOfLists):
 def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
-        bins_per_dimension=None, output_dir='.'):
+        bins_per_dimension=None, output_dir='.',
+        gzip_output=False, output_format='sparse'):
     '''
     Create tiles by calculating tile indeces.
 
@@ -259,9 +261,19 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
                 it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
 
         shown = []
-        for (bin_pos, bin_val) in tile_entries_iterator.items():
-            pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
-            shown += [{'pos': pos, value_field : bin_val}]
+        if output_format == 'dense':
+            initial_values = [0 for i in range(bins_per_dimension ** len(dim_names))]
+
+            for (bin_pos, bin_val) in tile_entries_iterator.items():
+                index = sum([bp * bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
+                initial_values[index] = bin_val
+
+            shown = initial_values
+            pass
+        else:
+            for (bin_pos, bin_val) in tile_entries_iterator.items():
+                pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
+                shown += [{'pos': pos, value_field : bin_val}]
 
         # caclulate where the tile values end along each dimension
         '''
@@ -297,6 +309,9 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
     tileset_info['max_zoom'] = max_zoom
     tileset_info['max_width'] = max_width
 
+    tileset_info['data_granularity'] = resolution
+    tileset_info['bins_per_dimension'] = bins_per_dimension
+
 
     def save_tile(tile):
         key = tile[0]
@@ -308,8 +323,12 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
         if not op.exists(outdir):
             os.makedirs(outdir)
 
-        with open(outpath, 'w') as f:
-            f.write(json.dumps(tile_value, indent=2))
+        if gzip_output:
+            with gzip.open(outpath + ".gz", 'w') as f:
+                f.write(json.dumps(tile_value))
+        else:
+            with open(outpath, 'w') as f:
+                f.write(json.dumps(tile_value))
 
     tiles_with_meta.foreach(save_tile)
 
@@ -364,8 +383,16 @@ def main():
             help='The maximum x position', type=float)
     parser.add_argument('-o', '--output-dir', help='The directory to place the tiles',
                         required=True)
-    parser.add_argument('--min-value', help='The field which will be used to determinethe minimum value for any data point', default='min_y')
-    parser.add_argument('--max-value', help='The field which will be used to determine the maximum value for any data point', default='max_y')
+    parser.add_argument('--min-value', 
+            help='The field which will be used to determinethe minimum value for any data point', 
+            default='min_y')
+    parser.add_argument('--max-value', 
+            help='The field which will be used to determine the maximum value for any data point', 
+            default='max_y')
+    parser.add_argument('--gzip', help='Compress the output JSON files using gzip', 
+            action='store_true')
+    parser.add_argument('--output-format', 
+            help='The format for the output matrix, can be either "dense1", "densen" or "sparse"')
 
     args = parser.parse_args()
 
