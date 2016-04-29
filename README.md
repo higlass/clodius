@@ -72,7 +72,16 @@ to the tile number along the first dimension (0, 1, or 2), and the third (`y`)
 to the tile number along the third dimension (0, 1, or 2). If the input data
 was 1D, then the directory structure would have one less level.
 
-Each tile looks like this:
+#### Matrix data
+
+Gridded (matrix) data can be output in two forms: **sparse** and **dense**
+format. Sparse format is useful for representing matrices where few of values
+have non-zero values. In this format, we specify the location of each cell
+that has a value along with its value.
+
+##### Sparse Format
+
+
 
 ```
 {
@@ -83,17 +92,8 @@ Each tile looks like this:
         2.5,
         2.5
       ],
-      "uid": "LvntW7KwUPhsamwnuSH9qm"
     }
   ],
-  "tile_start_pos": [
-    2.5,
-    2.5
-  ],
-  "tile_end_pos": [
-    4.0,
-    4.0
-  ]
 }
 ```
 
@@ -102,6 +102,10 @@ for this tile. At lower zoom levels, densely packed data needs to be abstracted
 so that only a handful of data points are shown. This can be done by binning
 and aggregating by summing or simply picking the most "important" points in the
 area that this tile occupies.
+
+##### Dense Format
+
+
 
 ## Usage Example
 
@@ -117,7 +121,7 @@ test/data/smallfullMatrix.tsv
 Or, for a more realistic data set:
 
 ```
-OUTPUT_DIR=output; rm -rf $OUTPUT_DIR; python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 128 --max-zoom 14 data/128k.raw
+OUTPUT_DIR=output; rm -rf $OUTPUT_DIR; python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 128 --max-zoom 14 data/128k.raw --output-format dense
 ```
 
 The parameters:
