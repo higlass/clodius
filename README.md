@@ -72,6 +72,13 @@ to the tile number along the first dimension (0, 1, or 2), and the third (`y`)
 to the tile number along the third dimension (0, 1, or 2). If the input data
 was 1D, then the directory structure would have one less level.
 
+#### Compression
+
+The output tiles can be gzipped by using the `--gzip` option. This will
+compress each tile file and append `.gz` to its filename. Using this options is
+generally recommended whenever tiles contain repetitive data and storage is at
+a premium.
+
 #### Matrix data
 
 Gridded (matrix) data can be output in two forms: **sparse** and **dense**
@@ -81,7 +88,7 @@ that has a value along with its value.
 
 ##### Sparse Format
 
-
+Specified using the `--output-format sparse` option.
 
 ```
 {
@@ -105,7 +112,23 @@ area that this tile occupies.
 
 ##### Dense Format
 
+Specified using the `--output-format dense` option.
 
+The output of a single tile is just an array of values.
+
+```
+[3.0, 0, 2.0, 1.0]
+```
+
+The encoding from bin positions, to positions in the flat array is performed thusly:
+
+```
+for (bin_pos, bin_val) in tile_entries_iterator.items():
+    index = sum([bp * bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
+    initial_values[index] = bin_val
+```
+
+The translation from `index` to `bin_pos` is left as en exercise to the reader.
 
 ## Usage Example
 

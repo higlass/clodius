@@ -396,6 +396,9 @@ def main():
 
     args = parser.parse_args()
 
+    if args.output_format not in ['sparse', 'dense']:
+        print >>sys.stderr, 'ERROR: The output format must be one of "dense" or "sparse"'
+
     make_tiles_from_file(args.input_file, args)
 
 if __name__ == '__main__':
