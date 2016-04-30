@@ -128,7 +128,7 @@ def flatten(listOfLists):
 def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
-        bins_per_dimension=None, output_dir='.',
+        bins_per_dimension=None, output_dir=None,
         gzip_output=False, output_format='sparse'):
     '''
     Create tiles by calculating tile indeces.
@@ -330,9 +330,10 @@ def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count',
             with open(outpath, 'w') as f:
                 f.write(json.dumps(tile_value))
 
-    tiles_with_meta.foreach(save_tile)
+    if output_dir is not None:
+        tiles_with_meta.foreach(save_tile)
 
-    return {"tileset_info": tileset_info}
+    return {"tileset_info": tileset_info, "tiles": tiles_with_meta}
 
 def main():
     usage = """
