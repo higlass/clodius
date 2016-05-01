@@ -83,7 +83,7 @@ def make_tiles_from_file(filename, options):
     entries = load_entries_from_file(filename, options.column_names,
             options.use_spark)
 
-    tileset = make_tiles_by_index(entries, options.position.split(','), 
+    tileset = make_tiles_by_binning(entries, options.position.split(','), 
             options.max_zoom, options.value_field, options.importance_field,
             bins_per_dimension=options.bins_per_dimension,
             resolution=options.resolution, output_dir=options.output_dir,
@@ -125,7 +125,24 @@ def flatten(listOfLists):
 
     return list(it.chain.from_iterable(listOfLists))
 
-def make_tiles_by_index(entries, dim_names, max_zoom, value_field='count', 
+def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None,
+        max_entries_per_tile=10):
+    '''
+    Create a set of tiles by restricting the maximum number of entries that
+    can be shown on each tile. If there are too many entries that are assigned
+    to a particular tile, the lower importance ones will be removed.
+
+    :param entries: A list of dictionary containing the data which we wish to tile
+    :param dim_names: The names of the dimensions along which we wish to break
+                      up the tiles
+    :param max_zoom: If it's None, then we will automatically calculate the maximum
+                     zoom level such that all entries are shown.
+    :param importance_field: The field which contains the importance of the entries.
+    :return: A set of tiles
+    '''
+    pass
+
+def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
         bins_per_dimension=None, output_dir=None,

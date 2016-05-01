@@ -42,7 +42,7 @@ def test_make_matrix_tiles():
 
     pass
 
-def test_make_tiles_by_index():
+def test_make_tiles_by_binning():
     entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv', 
                 column_names = ['pos1', 'pos2', 'count'])
     dim_names = ['pos1', 'pos2']
@@ -50,7 +50,7 @@ def test_make_tiles_by_index():
     max_zoom = 2
 
     print "entries:", entries
-    tiles = mt.make_tiles_by_index(entries, dim_names, max_zoom,
+    tiles = mt.make_tiles_by_binning(entries, dim_names, max_zoom,
             value_field='count',
             bins_per_dimension=2)
 
@@ -66,7 +66,7 @@ def test_make_tiles_with_resolution():
     dim_names = ['pos1', 'pos2']
     max_zoom = 1
     # create sparse format tiles (default)
-    tiles = mt.make_tiles_by_index(entries, dim_names, max_zoom,
+    tiles = mt.make_tiles_by_binning(entries, dim_names, max_zoom,
             value_field='count',
             bins_per_dimension=2,
             resolution=1)
@@ -82,7 +82,7 @@ def test_make_tiles_with_resolution():
     assert('count' in tiles[0][1][0])
 
     # create dense format tiles
-    tiles = mt.make_tiles_by_index(entries, dim_names, max_zoom,
+    tiles = mt.make_tiles_by_binning(entries, dim_names, max_zoom,
             value_field='count',
             bins_per_dimension=2,
             output_format = 'dense',
@@ -93,3 +93,17 @@ def test_make_tiles_with_resolution():
         print "tile:", key, value
 
     assert(type(tiles[0][1][0] == float))
+
+def test_make_tiles_with_importance():
+    entries = mt.load_entries_from_file('test/data/smallRefGeneCounts.tsv',
+            column_names=['refseqid', 'chr', 'strand', 'txStart', 'txEnd', 'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds' 'count'])
+
+    #tiles = mt.make_tiles_by_importance(entries, dim_names, max_zoom, value_field
+    dim_names = ['txStart']
+    max_zoom = None
+
+    tiles = mt.make_tiles_by_importance(entries, dim_names = ['txStart'], 
+            max_zoom = None, 
+            importance_field='count', max_entries_per_tile=1)
+
+    print "entries:", entries.collect()
