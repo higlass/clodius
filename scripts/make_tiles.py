@@ -100,7 +100,7 @@ def data_bounds(entries, num_dims):
     return (mins, maxs)
 
 def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None,
-        max_entries_per_tile=10, output_dir=None, gzip=False):
+        max_entries_per_tile=10, output_dir=None, gzip_output=False):
     '''
     Create a set of tiles by restricting the maximum number of entries that
     can be shown on each tile. If there are too many entries that are assigned
@@ -419,8 +419,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.output_format not in ['sparse', 'dense']:
-        print >>sys.stderr, 'ERROR: The output format must be one of "dense" or "sparse"'
+    if not args.importance:
+        if args.output_format not in ['sparse', 'dense']:
+            print >>sys.stderr, 'ERROR: The output format must be one of "dense" or "sparse"'
 
     dim_names = args.position.split(',')
 
@@ -431,18 +432,17 @@ def main():
             args.use_spark)
 
     if args.importance:
-        tileset = make_tiles_by_binning(entries, args.position.split(','), 
-                args.max_zoom, args.value_field, args.importance_field,
-                bins_per_dimension=args.bins_per_dimension,
-                resolution=args.resolution, output_dir=args.output_dir,
-                gzip_output=args.gzip, output_format=args.output_format)
-    else:
         tileset = make_tiles_by_importance(entries, dim_names=args.position.split(','), 
                 max_zoom=args.max_zoom, 
                 importance_field=args.importance_field,
                 output_dir=args.output_dir,
                 gzip_output=args.gzip) 
-
+    else:
+        tileset = make_tiles_by_binning(entries, args.position.split(','), 
+                args.max_zoom, args.value_field, args.importance_field,
+                bins_per_dimension=args.bins_per_dimension,
+                resolution=args.resolution, output_dir=args.output_dir,
+                gzip_output=args.gzip, output_format=args.output_format)
 
     with open(op.join(args.output_dir, 'tile_info.json'), 'w') as f:
         json.dump(tileset['tileset_info'], f, indent=2)
