@@ -66,6 +66,7 @@ def load_entries_from_file(filename, column_names=None, use_spark=False):
     def add_column_names(x):
         return dict(zip(column_names, x))
 
+    global sc
     if use_spark:
         from pyspark import SparkContext
         sc = SparkContext(appName="Clodius")
@@ -75,7 +76,6 @@ def load_entries_from_file(filename, column_names=None, use_spark=False):
         with open(filename, 'r') as f:
             tsv_reader = csv.reader(f, delimiter='\t')
 
-            global sc
             sc = fpark.FakeSparkContext
             print "setting sc:", sc
             entries = sc.parallelize(tsv_reader)
@@ -415,7 +415,7 @@ def main():
     parser.add_argument('--gzip', help='Compress the output JSON files using gzip', 
             action='store_true')
     parser.add_argument('--output-format', 
-            help='The format for the output matrix, can be either "dense1", "densen" or "sparse"',
+            help='The format for the output matrix, can be either "dense" or "sparse"',
             default='sparse')
 
     args = parser.parse_args()
