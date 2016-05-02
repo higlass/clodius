@@ -97,15 +97,6 @@ def make_tiles_from_file(filename, options):
 
     return
 
-
-    '''
-    options.min_pos = min(map(lambda x: x[options.position], entries))
-    options.max_pos = max(map(lambda x: x[options.position], entries))
-
-    return make_tiles(entries, options, zoom_level = 0,
-            start_x = options.min_pos, end_x = options.max_pos)
-    '''
-
 def data_bounds(entries, num_dims):
     '''
     Get the minimum and maximum values for a data set.
@@ -118,15 +109,6 @@ def data_bounds(entries, num_dims):
     maxs = [max(entries.map(lambda x: x['pos'][i]).collect()) for i in range(num_dims)]
 
     return (mins, maxs)
-
-def flatten(listOfLists):
-    '''
-    Courtesy of 
-
-    http://stackoverflow.com/a/1077074/899470
-    '''
-
-    return list(it.chain.from_iterable(listOfLists))
 
 def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None,
         max_entries_per_tile=10):
@@ -196,16 +178,13 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
     tileset_info['max_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_max)
     tileset_info['min_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_min)
 
-    tileset_info['max_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_max)
-    tileset_info['min_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_min)
-
     tileset_info['min_pos'] = mins
     tileset_info['max_pos'] = maxs
 
     tileset_info['max_zoom'] = max_zoom
     tileset_info['max_width'] = max_width
 
-    return {"tileset_info": tileset_info, "tiles": tiles_with_meta}
+    return {"tileset_info": tileset_info, "tiles": reduced_tiles}
 
 def reduce_max(a,b):
     return max(a,b)
@@ -306,30 +285,11 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         for bin_pos in bins_b:
             bins_a[bin_pos] += bins_b[bin_pos]
         return bins_a
-    
-    def aggregate_bins_seq(s, (bin_pos, bin_val)):
-        s[bin_pos] += bin_val
-
-        return s
-
-    def aggregate_bins_comb(s1, s2):
-        for (bin_pos, bin_val) in s2:
-            s1[bin_pos] += bin_val
-
-        return s1
-
 
     # place each entry into a tile
     # spark equivalent: flatmap
     # so now we have a list like this: [((0,0,0), {'pos1':1, 'pos2':2, 'count':3}), ...]
-    #tile_entries = flatten(map(place_in_tiles, entries))
     tile_entries = entries.flatMap(place_in_tiles)
-    #print "entries.count:", entries.count()
-    #print "tile_entries.count():", tile_entries.count()
-    '''
-    tiles_aggregated = tile_entries.aggregateByKey(col.defaultdict(int),
-            aggregate_bins_seq, aggregate_bins_comb)
-    '''
     tiles_aggregated = tile_entries.reduceByKey(reduce_bins)
 
     # add the tile meta-data

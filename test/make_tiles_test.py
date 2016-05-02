@@ -109,3 +109,5 @@ def test_make_tiles_with_importance():
             importance_field='count', 
             max_entries_per_tile=1)
 
+    for (tile_pos, tile_values) in tiles['tiles'].collect():
+        assert(len(tile_values) <= 1)
