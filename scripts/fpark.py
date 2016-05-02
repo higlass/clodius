@@ -11,6 +11,21 @@ class ParallelData:
     def count(self):
         return len(self.data)
 
+    def union(self, other_data):
+        self.data = self.data + other_data.data
+        return self
+
+    def countByKey(self):
+        '''
+        Count the number of elements with a particular key.
+        '''
+        counts = col.defaultdict(int)
+
+        for d in self.data:
+            counts[d[0]] += 1
+
+        return counts
+
     def groupByKey(self):
         '''
         When called on a dataset of (K, V) pairs, returns a dataset of (K, Iterable<V>) pairs. 

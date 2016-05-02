@@ -55,7 +55,10 @@ def load_entries_from_file(filename, column_names=None, use_spark=False):
         with open(filename, 'r') as f:
             tsv_reader = csv.reader(f, delimiter='\t')
 
-            entries = fpark.FakeSparkContext.parallelize(tsv_reader)
+            global sc
+            sc = fpark.FakeSparkContext
+            print "setting sc:", sc
+            entries = sc.parallelize(tsv_reader)
             entries = entries.map(add_column_names)
             
             sys.stderr.write(" done\n")
@@ -140,7 +143,75 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
     :param importance_field: The field which contains the importance of the entries.
     :return: A set of tiles
     '''
-    pass
+    def add_pos(entry):
+        new_dict = entry
+        new_dict['pos'] = map(lambda dn: float(entry[dn]), dim_names)
+
+    entries.map(add_pos)
+
+    (mins, maxs) = data_bounds(entries, len(dim_names))
+    max_width = max(map(lambda x: x[1] - x[0], zip(mins, maxs)))
+
+    zoom_level = 0
+    tile_entries = sc.parallelize([])
+
+    if max_zoom is None:
+        # hopefully it'll end up being smaller than that
+        max_zoom = sys.maxint
+
+    # add zoom levels until we either reach the maximum zoom level or
+    # have no tiles that have more entries than max_entries_per_tile
+    while zoom_level < max_zoom:
+        zoom_width = max_width / 2**zoom_level
+
+        def place_in_tile(entry):
+            tile_pos = tuple( [zoom_level] + 
+                    map(lambda (i, mind): int((entry['pos'][i] - mind) / zoom_width),
+                           enumerate(mins)))
+
+            return ((tile_pos), [entry])
+
+        current_tile_entries = entries.map(place_in_tile)
+        current_max_entries_per_tile = max(current_tile_entries.countByKey().values())
+        tile_entries = tile_entries.union(current_tile_entries)
+
+        if current_max_entries_per_tile <= max_entries_per_tile:
+            break
+
+        zoom_level += 1
+
+    # all entries are broked up into ((tile_pos), [entry]) tuples
+    # we just need to reduce the tiles so that no tile contains more than
+    # max_entries_per_tile entries
+    # (notice that [entry] is an array), this format will be important when
+    # reducing to the most important values
+    def reduce_values_by_importance(entry1, entry2):
+        combined_entries = sorted(entry1 + entry2,
+                key=lambda x: x[importance_field])
+        return combined_entries[:max_entries_per_tile]
+
+    reduced_tiles = tile_entries.reduceByKey(reduce_values_by_importance)
+
+    tileset_info = {}
+    tileset_info['max_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_max)
+    tileset_info['min_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_min)
+
+    tileset_info['max_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_max)
+    tileset_info['min_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_min)
+
+    tileset_info['min_pos'] = mins
+    tileset_info['max_pos'] = maxs
+
+    tileset_info['max_zoom'] = max_zoom
+    tileset_info['max_width'] = max_width
+
+    return {"tileset_info": tileset_info, "tiles": tiles_with_meta}
+
+def reduce_max(a,b):
+    return max(a,b)
+
+def reduce_min(a,b):
+    return min(a,b)
 
 def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
@@ -307,11 +378,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     tileset_info = {}
 
-    def reduce_max(a,b):
-        return max(a,b)
-
-    def reduce_min(a,b):
-        return min(a,b)
 
     
     tileset_info['max_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_max)

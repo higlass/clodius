@@ -96,7 +96,9 @@ def test_make_tiles_with_resolution():
 
 def test_make_tiles_with_importance():
     entries = mt.load_entries_from_file('test/data/smallRefGeneCounts.tsv',
-            column_names=['refseqid', 'chr', 'strand', 'txStart', 'txEnd', 'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds' 'count'])
+            column_names=['refseqid', 'chr', 'strand', 'txStart', 'txEnd', 'genomeTxStart', 'genomeTxEnd', 'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds', 'count'])
+
+    print "entries:", entries.collect()
 
     #tiles = mt.make_tiles_by_importance(entries, dim_names, max_zoom, value_field
     dim_names = ['txStart']
@@ -104,6 +106,6 @@ def test_make_tiles_with_importance():
 
     tiles = mt.make_tiles_by_importance(entries, dim_names = ['txStart'], 
             max_zoom = None, 
-            importance_field='count', max_entries_per_tile=1)
+            importance_field='count', 
+            max_entries_per_tile=1)
 
-    print "entries:", entries.collect()
