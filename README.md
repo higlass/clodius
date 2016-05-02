@@ -138,7 +138,7 @@ following command:
 ```
 OUTPUT_DIR=output; rm -rf $OUTPUT_DIR/*; python scripts/make_tiles.py -o $OUTPUT_DIR \
 -v count -p pos1,pos2 -c pos1,pos2,count -i count -b 2 --max-zoom 1 \
-test/data/smallfullMatrix.tsv
+test/data/smallFullMatrix.tsv
 ```
 
 Or, for a more realistic data set:

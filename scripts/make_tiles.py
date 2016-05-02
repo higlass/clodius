@@ -415,7 +415,8 @@ def main():
     parser.add_argument('--gzip', help='Compress the output JSON files using gzip', 
             action='store_true')
     parser.add_argument('--output-format', 
-            help='The format for the output matrix, can be either "dense1", "densen" or "sparse"')
+            help='The format for the output matrix, can be either "dense1", "densen" or "sparse"',
+            default='sparse')
 
     args = parser.parse_args()
 
