@@ -29,6 +29,26 @@ def summarize_data(max_entries):
 
     return condense
 
+def save_tile_template(output_dir, gzip_output):
+    def save_tile(tile):
+        key = tile[0]
+        tile_value = tile[1]
+
+        outpath = op.join(output_dir, '/'.join(map(str, key)) + '.json')
+        outdir = op.dirname(outpath)
+
+        if not op.exists(outdir):
+            os.makedirs(outdir)
+
+        if gzip_output:
+            with gzip.open(outpath + ".gz", 'w') as f:
+                f.write(json.dumps(tile_value))
+        else:
+            with open(outpath, 'w') as f:
+                f.write(json.dumps(tile_value))
+
+    return save_tile
+
 def load_entries_from_file(filename, column_names=None, use_spark=False):
     '''
     Load a dataset from file.
@@ -66,37 +86,6 @@ def load_entries_from_file(filename, column_names=None, use_spark=False):
 
             return entries
 
-def make_tiles_from_file(filename, options):
-    '''
-    Create tiles for a dataset stored in a file.
-
-    The data set can be either in JSON or tsv format. We will first try loading
-    it as JSON and if that fails, we will default to tsv.
-
-    :param filename: The name of the file containing the data for which to
-                     make tiles.
-
-    :return: An array of tiles, each in json format.
-    '''
-    dim_names = options.position.split(',')
-
-    if options.column_names is not None:
-        options.column_names = options.column_names.split(',')
-
-    entries = load_entries_from_file(filename, options.column_names,
-            options.use_spark)
-
-    tileset = make_tiles_by_binning(entries, options.position.split(','), 
-            options.max_zoom, options.value_field, options.importance_field,
-            bins_per_dimension=options.bins_per_dimension,
-            resolution=options.resolution, output_dir=options.output_dir,
-            gzip_output=options.gzip, output_format=options.output_format)
-
-    with open(op.join(options.output_dir, 'tile_info.json'), 'w') as f:
-        json.dump(tileset['tileset_info'], f, indent=2)
-
-    return
-
 def data_bounds(entries, num_dims):
     '''
     Get the minimum and maximum values for a data set.
@@ -111,7 +100,7 @@ def data_bounds(entries, num_dims):
     return (mins, maxs)
 
 def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None,
-        max_entries_per_tile=10):
+        max_entries_per_tile=10, output_dir=None, gzip=False):
     '''
     Create a set of tiles by restricting the maximum number of entries that
     can be shown on each tile. If there are too many entries that are assigned
@@ -183,6 +172,10 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
 
     tileset_info['max_zoom'] = max_zoom
     tileset_info['max_width'] = max_width
+
+    if output_dir is not None:
+        save_tile = save_tile_template(output_dir, gzip_output)
+        reduced_tiles.foreach(save_tile)
 
     return {"tileset_info": tileset_info, "tiles": reduced_tiles}
 
@@ -355,25 +348,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     tileset_info['data_granularity'] = resolution
     tileset_info['bins_per_dimension'] = bins_per_dimension
 
-
-    def save_tile(tile):
-        key = tile[0]
-        tile_value = tile[1]
-
-        outpath = op.join(output_dir, '/'.join(map(str, key)) + '.json')
-        outdir = op.dirname(outpath)
-
-        if not op.exists(outdir):
-            os.makedirs(outdir)
-
-        if gzip_output:
-            with gzip.open(outpath + ".gz", 'w') as f:
-                f.write(json.dumps(tile_value))
-        else:
-            with open(outpath, 'w') as f:
-                f.write(json.dumps(tile_value))
-
     if output_dir is not None:
+        save_tile = save_tile_template(output_dir, gzip_output)
         tiles_with_meta.foreach(save_tile)
 
     return {"tileset_info": tileset_info, "tiles": tiles_with_meta}
@@ -401,6 +377,8 @@ def main():
                         help='The resolution of the data (applies only to matrix data)',
                         type=int)
 
+    tiling_type.add_argument('--importance', action='store_true', help='Create tiles by binning') 
+
     parser.add_argument('-i', '--importance', dest='importance_field', default='importance_field',
             help='The field in each JSON entry that indicates how important that entry is',
             type=str)
@@ -408,6 +386,7 @@ def main():
             help='The that has the value of each point. Used for aggregation and display')
 
     group = parser.add_mutually_exclusive_group()
+
     group.add_argument('-p', '--position', dest='position', default='position',
             help='Where this entry would be placed on the x axis',
             type=str)
@@ -443,7 +422,32 @@ def main():
     if args.output_format not in ['sparse', 'dense']:
         print >>sys.stderr, 'ERROR: The output format must be one of "dense" or "sparse"'
 
-    make_tiles_from_file(args.input_file, args)
+    dim_names = options.position.split(',')
+
+    if options.column_names is not None:
+        options.column_names = options.column_names.split(',')
+
+    entries = load_entries_from_file(filename, options.column_names,
+            options.use_spark)
+
+    if options.importance:
+        tileset = make_tiles_by_binning(entries, options.position.split(','), 
+                options.max_zoom, options.value_field, options.importance_field,
+                bins_per_dimension=options.bins_per_dimension,
+                resolution=options.resolution, output_dir=options.output_dir,
+                gzip_output=options.gzip, output_format=options.output_format)
+    else:
+        tileset = make_tiles_by_importance(entries, dim_names=options.position.split(','), 
+                max_zoom=options.max_zoom, 
+                importance_field=options.importance_field,
+                output_dir=options.output_dir,
+                gzip_output=options.gzip) 
+
+
+    with open(op.join(options.output_dir, 'tile_info.json'), 'w') as f:
+        json.dump(tileset['tileset_info'], f, indent=2)
+
+    
 
 if __name__ == '__main__':
     main()
