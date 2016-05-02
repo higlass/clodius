@@ -377,9 +377,9 @@ def main():
                         help='The resolution of the data (applies only to matrix data)',
                         type=int)
 
-    tiling_type.add_argument('--importance', action='store_true', help='Create tiles by binning') 
+    parser.add_argument('--importance', action='store_true', help='Create tiles by importance') 
 
-    parser.add_argument('-i', '--importance', dest='importance_field', default='importance_field',
+    parser.add_argument('-i', '--importance-field', dest='importance_field', default='importance_field',
             help='The field in each JSON entry that indicates how important that entry is',
             type=str)
     parser.add_argument('-v', '--value', dest='value_field', default='count',
@@ -422,29 +422,29 @@ def main():
     if args.output_format not in ['sparse', 'dense']:
         print >>sys.stderr, 'ERROR: The output format must be one of "dense" or "sparse"'
 
-    dim_names = options.position.split(',')
+    dim_names = args.position.split(',')
 
-    if options.column_names is not None:
-        options.column_names = options.column_names.split(',')
+    if args.column_names is not None:
+        args.column_names = args.column_names.split(',')
 
-    entries = load_entries_from_file(filename, options.column_names,
-            options.use_spark)
+    entries = load_entries_from_file(args.input_file, args.column_names,
+            args.use_spark)
 
-    if options.importance:
-        tileset = make_tiles_by_binning(entries, options.position.split(','), 
-                options.max_zoom, options.value_field, options.importance_field,
-                bins_per_dimension=options.bins_per_dimension,
-                resolution=options.resolution, output_dir=options.output_dir,
-                gzip_output=options.gzip, output_format=options.output_format)
+    if args.importance:
+        tileset = make_tiles_by_binning(entries, args.position.split(','), 
+                args.max_zoom, args.value_field, args.importance_field,
+                bins_per_dimension=args.bins_per_dimension,
+                resolution=args.resolution, output_dir=args.output_dir,
+                gzip_output=args.gzip, output_format=args.output_format)
     else:
-        tileset = make_tiles_by_importance(entries, dim_names=options.position.split(','), 
-                max_zoom=options.max_zoom, 
-                importance_field=options.importance_field,
-                output_dir=options.output_dir,
-                gzip_output=options.gzip) 
+        tileset = make_tiles_by_importance(entries, dim_names=args.position.split(','), 
+                max_zoom=args.max_zoom, 
+                importance_field=args.importance_field,
+                output_dir=args.output_dir,
+                gzip_output=args.gzip) 
 
 
-    with open(op.join(options.output_dir, 'tile_info.json'), 'w') as f:
+    with open(op.join(args.output_dir, 'tile_info.json'), 'w') as f:
         json.dump(tileset['tileset_info'], f, indent=2)
 
     
