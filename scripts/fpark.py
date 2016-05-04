@@ -1,5 +1,7 @@
 import collections as col
+import glob
 import itertools as it
+import os.path as op
 
 class ParallelData:
     def __init__(self, data):
@@ -99,3 +101,34 @@ class FakeSparkContext:
     @staticmethod
     def parallelize(data):
         return ParallelData(data)
+
+    @staticmethod
+    def singleTextFile(filename):
+        '''
+        Load a single file as a ParallelData set.
+
+        :param filename: A file to be loaded line by line
+        @return: A ParallelData object wrapping the lines in the file.
+        '''
+        with open(filename, 'r') as f:
+            return ParallelData(map(lambda x: x.strip(), f.readlines()))
+
+    @staticmethod
+    def textFile(filename):
+        '''
+        Load a filename as a text file. Filename can be either a single file
+        or a directory containing a multitude of 'part-*' files.
+
+        :param filename: The name of the file (or directory) containing the data which
+                         we want to load one by one
+        :return: A ParallelData object containing all of the lines of the file or files
+        '''
+        if op.isdir(filename):
+            parts_files = glob.glob(op.join(filename, 'part-*'))
+            p = FakeSparkContext.parallelize([])
+
+            for filename in parts_files:
+                p = p.union(FakeSparkContext.singleTextFile(filename))
+            return p
+        else:
+            return FakeSparkContext.singleTextFile(filename)

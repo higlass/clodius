@@ -448,8 +448,6 @@ def main():
     with open(op.join(args.output_dir, 'tile_info.json'), 'w') as f:
         json.dump(tileset['tileset_info'], f, indent=2)
 
-    
-
 if __name__ == '__main__':
     main()
 
