@@ -73,18 +73,11 @@ def load_entries_from_file(filename, column_names=None, use_spark=False):
         entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split('\t'))))
         return entries
     else:
-        with open(filename, 'r') as f:
-            tsv_reader = csv.reader(f, delimiter='\t')
-
-            sc = fpark.FakeSparkContext
-            print "setting sc:", sc
-            entries = sc.parallelize(tsv_reader)
-            entries = entries.map(add_column_names)
-            
-            sys.stderr.write(" done\n")
-            sys.stderr.flush()
-
-            return entries
+        sys.stderr.write("setting sc:")
+        sc = fpark.FakeSparkContext
+        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split('\t'))))
+        sys.stderr.write(" done\n")
+        return entries
 
 def data_bounds(entries, num_dims):
     '''
@@ -146,6 +139,7 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
         current_max_entries_per_tile = max(current_tile_entries.countByKey().values())
         tile_entries = tile_entries.union(current_tile_entries)
 
+        print "zoom_level", zoom_level, "current_max_entries_per_tile:", current_max_entries_per_tile
         if current_max_entries_per_tile <= max_entries_per_tile:
             break
 
@@ -398,7 +392,7 @@ def main():
         help='The maximum number of entries that can be displayed on a single tile',
         type=int)
     parser.add_argument('-c', '--column-names', dest='column_names', default=None)
-    parser.add_argument('-m', '--max-zoom', dest='max_zoom', default=5,
+    parser.add_argument('-m', '--max-zoom', dest='max_zoom', default=None,
             help='The maximum zoom level', type=int)
     parser.add_argument('--min-pos', dest='min_pos', default=None,
             help='The minimum x position', type=float)

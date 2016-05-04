@@ -91,6 +91,9 @@ class ParallelData:
     def collect(self):
         return self.data
 
+    def take(self, n):
+        return self.data[:n]
+
 class FakeSparkContext:
     '''
     Emulate a SparkContext for local processing.
