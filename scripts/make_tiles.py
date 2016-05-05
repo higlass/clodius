@@ -11,7 +11,7 @@ import math
 import os
 import os.path as op
 import random
-#import shortuuid
+import shortuuid
 import sys
 
 sc = None
@@ -93,7 +93,8 @@ def data_bounds(entries, num_dims):
     return (mins, maxs)
 
 def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None,
-        max_entries_per_tile=10, output_dir=None, gzip_output=False):
+        max_entries_per_tile=10, output_dir=None, gzip_output=False, add_uuid=False,
+        reverse_importance=False):
     '''
     Create a set of tiles by restricting the maximum number of entries that
     can be shown on each tile. If there are too many entries that are assigned
@@ -110,6 +111,9 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
     def add_pos(entry):
         new_dict = entry
         new_dict['pos'] = map(lambda dn: float(entry[dn]), dim_names)
+
+        if add_uuid:
+            new_dict['uuid'] = shortuuid.uuid()
 
     entries.map(add_pos)
 
@@ -141,6 +145,7 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
 
         print "zoom_level", zoom_level, "current_max_entries_per_tile:", current_max_entries_per_tile
         if current_max_entries_per_tile <= max_entries_per_tile:
+            max_zoom = zoom_level
             break
 
         zoom_level += 1
@@ -151,8 +156,12 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
     # (notice that [entry] is an array), this format will be important when
     # reducing to the most important values
     def reduce_values_by_importance(entry1, entry2):
-        combined_entries = sorted(entry1 + entry2,
-                key=lambda x: x[importance_field])
+        if reverse_importance:
+            combined_entries = sorted(entry1 + entry2,
+                    key=lambda x: -float(x[importance_field]))
+        else:
+            combined_entries = sorted(entry1 + entry2,
+                    key=lambda x: float(x[importance_field]))
         return combined_entries[:max_entries_per_tile]
 
     reduced_tiles = tile_entries.reduceByKey(reduce_values_by_importance)
@@ -411,6 +420,14 @@ def main():
     parser.add_argument('--output-format', 
             help='The format for the output matrix, can be either "dense" or "sparse"',
             default='sparse')
+    parser.add_argument('--add-uuid',
+            help='Add a uuid to each element',
+            action='store_true',
+            default=False)
+    parser.add_argument('--reverse-importance',
+            help='Reverse the ordering of the importance',
+            action='store_true',
+            default=False)
 
     args = parser.parse_args()
 
@@ -431,7 +448,8 @@ def main():
                 max_zoom=args.max_zoom, 
                 importance_field=args.importance_field,
                 output_dir=args.output_dir,
-                gzip_output=args.gzip) 
+                gzip_output=args.gzip, add_uuid=args.add_uuid,
+                reverse_importance=args.reverse_importance)
     else:
         tileset = make_tiles_by_binning(entries, args.position.split(','), 
                 args.max_zoom, args.value_field, args.importance_field,
