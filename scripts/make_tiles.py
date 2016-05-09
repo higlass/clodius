@@ -167,8 +167,8 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
     reduced_tiles = tile_entries.reduceByKey(reduce_values_by_importance)
 
     tileset_info = {}
-    tileset_info['max_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_max)
-    tileset_info['min_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_min)
+    tileset_info['max_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_max)
+    tileset_info['min_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_min)
 
     tileset_info['min_pos'] = mins
     tileset_info['max_pos'] = maxs
@@ -336,8 +336,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
 
     
-    tileset_info['max_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_max)
-    tileset_info['min_importance'] = entries.map(lambda x: x[importance_field]).reduce(reduce_min)
+    tileset_info['max_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_max)
+    tileset_info['min_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_min)
 
     tileset_info['max_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_max)
     tileset_info['min_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_min)
@@ -350,6 +350,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     tileset_info['data_granularity'] = resolution
     tileset_info['bins_per_dimension'] = bins_per_dimension
+
 
     if output_dir is not None:
         save_tile = save_tile_template(output_dir, gzip_output)
