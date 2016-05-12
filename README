@@ -4,7 +4,7 @@
 
 ### Real data set
 
-OUTPUT_DIR=/data/tiles/chr1_5kb/; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time -f "user: %E %M" /home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 256 --max-zoom 14 --use-spark /data/chr1_5kb.RAWobserved
+OUTPUT_DIR=/data/tiles/chr1_5kb/; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time -f "user: %E %M" /home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 256 --max-zoom 14 --output-format dense --use-spark /data/chr1_5kb.RAWobserved
 
 find $OUTPUT_DIR -name "*.json" | xargs chmod a+r 
 
@@ -18,7 +18,7 @@ OUTPUT_DIR=/tmp/tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DI
 
 ### Smaller real data set
 
-OUTPUT_DIR=/data/refgene-tiles/small; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time -f "user: %E %M" python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p genomeTxStart  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count --max-zoom 18 -i count --importance --reverse-importance /data/genbank-output/refgene-count/part-00000
+OUTPUT_DIR=/data/refgene-tiles-small; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time -f "user: %E %M" python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p genomeTxStart  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count --max-zoom 18 -i count --importance --reverse-importance /data/hg19/genbank-output/refgene-count-chr1
 
 ### Real data set
 
