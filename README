@@ -4,7 +4,7 @@
 
 ### Real data set
 
-OUTPUT_DIR=/data/tiles/chr1_5kb/; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time -f "user: %E %M" /home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 256 --max-zoom 14 --use-spark /data/chr1_5kb.RAWobserved
+OUTPUT_DIR=/data/tiles/chr1_5kb/; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time -f "user: %E %M" /home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 256 --max-zoom 14 --output-format dense --use-spark /data/chr1_5kb.RAWobserved
 
 find $OUTPUT_DIR -name "*.json" | xargs chmod a+r 
 
