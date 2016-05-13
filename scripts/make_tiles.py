@@ -192,7 +192,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
         bins_per_dimension=None, output_dir=None,
-        gzip_output=False, output_format='sparse'):
+        gzip_output=False, output_format='sparse',
+        num_histogram_bins=1000):
     '''
     Create tiles by calculating tile indeces.
 
@@ -223,6 +224,18 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         return new_entry
 
     entries = entries.map(consolidate_positions)
+
+    tileset_info = {}
+
+    tileset_info['max_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_max)
+    tileset_info['min_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_min)
+
+    value_histogram = []
+    bin_size = (tileset_info['max_value'] - tileset_info['min_value']) / num_histogram_bins
+    histogram_counts = entries.map(lambda x: (int((x[value_field] - tileset_info['min_value']) / bin_size), 1)).countByKey().items()
+    histogram = {"min_value": tileset_info['min_value'],
+                 "max_value": tileset_info['max_value'],
+                 "counts": histogram_counts}
 
     # O(n) get the maximum and minimum bounds of the data set
     (mins, maxs) = data_bounds(entries, len(dim_names))
@@ -332,15 +345,12 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     tiles_with_meta = tiles_aggregated.map(add_tile_metadata)
 
-    tileset_info = {}
 
 
     
     tileset_info['max_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_max)
     tileset_info['min_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_min)
 
-    tileset_info['max_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_max)
-    tileset_info['min_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_min)
 
     tileset_info['min_pos'] = mins
     tileset_info['max_pos'] = maxs
@@ -356,7 +366,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         save_tile = save_tile_template(output_dir, gzip_output)
         tiles_with_meta.foreach(save_tile)
 
-    return {"tileset_info": tileset_info, "tiles": tiles_with_meta}
+    return {"tileset_info": tileset_info, "tiles": tiles_with_meta, "histogram": histogram}
 
 def main():
     usage = """
@@ -460,6 +470,10 @@ def main():
 
     with open(op.join(args.output_dir, 'tile_info.json'), 'w') as f:
         json.dump(tileset['tileset_info'], f, indent=2)
+    
+    if 'histogram' in tileset:
+        with open(op.join(args.output_dir, 'value_histogram.json'), 'w') as f:
+            json.dump(tileset['histogram'], f, indent=2)
 
 if __name__ == '__main__':
     main()
