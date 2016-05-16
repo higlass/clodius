@@ -45,7 +45,7 @@ def save_tile_template(output_dir, gzip_output):
                 f.write(json.dumps(tile_value))
         else:
             with open(outpath, 'w') as f:
-                f.write(json.dumps(tile_value))
+                f.write(json.dumps(tile_value, indent=2))
 
     return save_tile
 
@@ -344,9 +344,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         return (tile_id, tile_data)
 
     tiles_with_meta = tiles_aggregated.map(add_tile_metadata)
-
-
-
     
     tileset_info['max_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_max)
     tileset_info['min_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_min)
