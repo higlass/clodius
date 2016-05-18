@@ -96,10 +96,21 @@ def data_bounds(entries, num_dims):
     :param num_dims: The number of dimensions in the data set
     :return: (mins, maxs)
     '''
-    mins = [min(entries.map(lambda x: x['pos'][i]).collect()) for i in range(num_dims)]
-    maxs = [max(entries.map(lambda x: x['pos'][i]).collect()) for i in range(num_dims)]
+
+    mins = [entries.map(lambda x: x['pos'][i]).reduce(reduce_min) for i in range(num_dims)]
+    maxs = [entries.map(lambda x: x['pos'][i]).reduce(reduce_max) for i in range(num_dims)]
 
     return (mins, maxs)
+
+def add_pos(dim_names, add_uuid=False):
+    def add_pos_func(entry):
+        new_dict = entry
+        new_dict['pos'] = map(lambda dn: float(entry[dn]), dim_names)
+
+        if add_uuid:
+            new_dict['uuid'] = shortuuid.uuid()
+
+    return add_pos_func
 
 def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None,
         max_entries_per_tile=10, output_dir=None, gzip_output=False, add_uuid=False,
@@ -117,14 +128,8 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
     :param importance_field: The field which contains the importance of the entries.
     :return: A set of tiles
     '''
-    def add_pos(entry):
-        new_dict = entry
-        new_dict['pos'] = map(lambda dn: float(entry[dn]), dim_names)
 
-        if add_uuid:
-            new_dict['uuid'] = shortuuid.uuid()
-
-    entries.map(add_pos)
+    entries.map(add_pos(dim_names, add_uuid))
 
     (mins, maxs) = data_bounds(entries, len(dim_names))
     max_width = max(map(lambda x: x[1] - x[0], zip(mins, maxs)))
@@ -471,8 +476,6 @@ def main():
         # entries for each value within that range (e.g. bed files)
         range_cols = args.range.split(',')
         entries = entries.flatMap(lambda x: expand_range(x, *range_cols))
-
-        print "entries.collect():", entries.collect()
 
     if args.importance:
         tileset = make_tiles_by_importance(entries, dim_names=args.position.split(','), 

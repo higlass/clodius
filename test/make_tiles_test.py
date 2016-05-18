@@ -98,6 +98,19 @@ def test_make_tiles_with_importance():
     for (tile_pos, tile_values) in tiles['tiles'].collect():
         assert(len(tile_values) <= 1)
 
+def test_data_bounds():
+    entries = mt.load_entries_from_file('test/data/smallBedGraph.tsv', 
+            column_names=['chr1', 'pos1', 'pos2', 'val'],
+            delimiter=' ')
+
+    dim_names = ['pos1']
+    entries.map(mt.add_pos(dim_names))
+
+    (mins, maxs) = mt.data_bounds(entries, 1)
+
+    assert(mins[0] == 1.0)
+    assert(maxs[0] == 8.0)
+
 def test_position_ranges():
     entries = mt.load_entries_from_file('test/data/smallBedGraph.tsv', 
             column_names=['chr1', 'pos1', 'pos2', 'val'],
