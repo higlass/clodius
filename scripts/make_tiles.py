@@ -16,6 +16,15 @@ import sys
 
 sc = None
 
+def expand_range(x, from_col, to_col):
+    new_xs = []
+    for i in range(int(x[from_col]), int(x[to_col])):
+        new_x = x.copy()
+        new_x[from_col] = i
+        new_x[to_col] = i+1
+        new_xs += [new_x]
+    return new_xs
+
 def summarize_data(max_entries):
     '''
     Summarize the data into a maximum of max_entries.
@@ -49,7 +58,7 @@ def save_tile_template(output_dir, gzip_output):
 
     return save_tile
 
-def load_entries_from_file(filename, column_names=None, use_spark=False):
+def load_entries_from_file(filename, column_names=None, use_spark=False, delimiter='\t'):
     '''
     Load a dataset from file.
 
@@ -70,12 +79,12 @@ def load_entries_from_file(filename, column_names=None, use_spark=False):
     if use_spark:
         from pyspark import SparkContext
         sc = SparkContext(appName="Clodius")
-        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split('\t'))))
+        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
         return entries
     else:
         sys.stderr.write("setting sc:")
         sc = fpark.FakeSparkContext
-        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split('\t'))))
+        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
         sys.stderr.write(" done\n")
         return entries
 
@@ -143,7 +152,6 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
         current_max_entries_per_tile = max(current_tile_entries.countByKey().values())
         tile_entries = tile_entries.union(current_tile_entries)
 
-        print "zoom_level", zoom_level, "current_max_entries_per_tile:", current_max_entries_per_tile
         if current_max_entries_per_tile <= max_entries_per_tile:
             max_zoom = zoom_level
             break
@@ -215,9 +223,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         '''
         Place all of the dimensions in one array for this entry.
         '''
-        value_field = 'count'
-        importance_field = 'count'
-
         new_entry = {'pos': map(lambda dn: float(entry[dn]), dim_names),
                       value_field: float(entry[value_field]),
                       importance_field: float(entry[importance_field]) }
@@ -232,6 +237,10 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     value_histogram = []
     bin_size = (tileset_info['max_value'] - tileset_info['min_value']) / num_histogram_bins
+
+    if bin_size == 0:
+        bin_size = 1   # min_value == max_value
+
     histogram_counts = entries.map(lambda x: (int((x[value_field] - tileset_info['min_value']) / bin_size), 1)).countByKey().items()
     histogram = {"min_value": tileset_info['min_value'],
                  "max_value": tileset_info['max_value'],
@@ -423,6 +432,9 @@ def main():
     parser.add_argument('--max-value', 
             help='The field which will be used to determine the maximum value for any data point', 
             default='max_y')
+    parser.add_argument('--range',
+            help="Use two columns to create a range (i.e. pos1,pos2",
+            default=None)
     parser.add_argument('--gzip', help='Compress the output JSON files using gzip', 
             action='store_true')
     parser.add_argument('--output-format', 
@@ -436,6 +448,9 @@ def main():
             help='Reverse the ordering of the importance',
             action='store_true',
             default=False)
+    parser.add_argument('--delimiter',
+            help="The delimiter separating the different columns in the input files",
+            default='\t')
 
     args = parser.parse_args()
 
@@ -449,7 +464,15 @@ def main():
         args.column_names = args.column_names.split(',')
 
     entries = load_entries_from_file(args.input_file, args.column_names,
-            args.use_spark)
+            args.use_spark, delimiter=args.delimiter)
+
+    if args.range is not None:
+        # if a pair of columns specifies a range of values, then create multiple
+        # entries for each value within that range (e.g. bed files)
+        range_cols = args.range.split(',')
+        entries = entries.flatMap(lambda x: expand_range(x, *range_cols))
+
+        print "entries.collect():", entries.collect()
 
     if args.importance:
         tileset = make_tiles_by_importance(entries, dim_names=args.position.split(','), 
