@@ -50,6 +50,12 @@ OUTPUT_DIR=~/${OUTPUT_PART}
 rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p genomeTxStart  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count --max-zoom 18 -i count --importance --reverse-importance $INPUT_FILE
 aws s3 sync --region us-west-2 $OUTPUT_DIR s3://pkerp/$OUTPUT_PART
 
+## BED files
+
+OUTPUT_DIR=output
+rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR;
+python scripts/make_tiles.py -o $OUTPUT_DIR -v value -c chrom,pos1,pos2,value --range pos1,pos2 -i value test/data/smallBedGraph.tsv --delimiter ' ' --position pos1 --resolution 1 --max-zoom 14
+
 ## BAM files
 
 samtools view -h  data/bam/GM12878_SRR1658581_10pc_3_R1_hg19.bwt2glob.bam | head -n 65536 | samtools view -Sb > data/bam/65536.bam
