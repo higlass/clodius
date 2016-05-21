@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from time import gmtime, strftime
 import argparse
 import csv
 import collections as col
@@ -38,7 +39,7 @@ def summarize_data(max_entries):
 
     return condense
 
-def save_tile_template(output_dir, gzip_output):
+def save_tile_template(output_dir, gzip_output, output_format='sparse'):
     def save_tile(tile):
         key = tile[0]
         tile_value = tile[1]
@@ -54,9 +55,16 @@ def save_tile_template(output_dir, gzip_output):
                 f.write(json.dumps(tile_value))
         else:
             with open(outpath, 'w') as f:
-                f.write(json.dumps(tile_value, indent=2))
+                if output_format == 'dense':
+                    f.write(str(tile_value))
+                else:
+                    f.write(json.dumps(tile_value, indent=2))
+
+    def blah(x):
+        return str(x)
 
     return save_tile
+    #return blah
 
 def load_entries_from_file(filename, column_names=None, use_spark=False, delimiter='\t'):
     '''
@@ -79,12 +87,18 @@ def load_entries_from_file(filename, column_names=None, use_spark=False, delimit
     if use_spark:
         from pyspark import SparkContext
         sc = SparkContext(appName="Clodius")
-        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
+        if delimiter is not None:
+            entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
+        else:
+            entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split())))
         return entries
     else:
         sys.stderr.write("setting sc:")
         sc = fpark.FakeSparkContext
-        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
+        if delimiter is not None:
+            entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
+        else:
+            entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split())))
         sys.stderr.write(" done\n")
         return entries
 
@@ -234,6 +248,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         return new_entry
 
     entries = entries.map(consolidate_positions)
+    print "consolidate positions time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
     tileset_info = {}
 
@@ -313,7 +328,9 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     # spark equivalent: flatmap
     # so now we have a list like this: [((0,0,0), {'pos1':1, 'pos2':2, 'count':3}), ...]
     tile_entries = entries.flatMap(place_in_tiles)
+    print "place_in_tiles time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
     tiles_aggregated = tile_entries.reduceByKey(reduce_bins)
+    print "reduce_bins time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
     # add the tile meta-data
     def add_tile_metadata((tile_id, tile_entries_iterator)):
@@ -357,7 +374,11 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
         return (tile_id, tile_data)
 
+    print "count:", tiles_aggregated.count()
+    print "count time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
+
     tiles_with_meta = tiles_aggregated.map(add_tile_metadata)
+    print "metadata time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
     
     tileset_info['max_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_max)
     tileset_info['min_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_min)
@@ -374,8 +395,9 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
 
     if output_dir is not None:
-        save_tile = save_tile_template(output_dir, gzip_output)
+        save_tile = save_tile_template(output_dir, gzip_output, output_format)
         tiles_with_meta.foreach(save_tile)
+    print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
     return {"tileset_info": tileset_info, "tiles": tiles_with_meta, "histogram": histogram}
 
@@ -453,9 +475,10 @@ def main():
             help='Reverse the ordering of the importance',
             action='store_true',
             default=False)
+    
     parser.add_argument('--delimiter',
             help="The delimiter separating the different columns in the input files",
-            default='\t')
+            default=None)
 
     args = parser.parse_args()
 
@@ -468,8 +491,10 @@ def main():
     if args.column_names is not None:
         args.column_names = args.column_names.split(',')
 
+    print "start time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
     entries = load_entries_from_file(args.input_file, args.column_names,
             args.use_spark, delimiter=args.delimiter)
+    print "load entries time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
     if args.range is not None:
         # if a pair of columns specifies a range of values, then create multiple

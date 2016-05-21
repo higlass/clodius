@@ -11,18 +11,26 @@ FILENAME=rao_et_al/HUVEC/5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.
 FILENAME=rao_et_al/IMR90/5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.RAWobserved
 FILENAME=rao_et_al/GM12878_primary/5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.RAWobserved
 
-FILEPATH=~/data/${FILENAME}
+FILENAME=coolers/hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.gz
 
-cat $FILEPATH > ${FILEPATH}.mirrored
-cat $FILEPATH | awk '{ print $2 "\t" $1 "\t" $3; }' >> ${FILEPATH}.mirrored
-head -n 1000 ${FILEPATH}.mirrored > ${FILEPATH}.short
+FILEPATH=/data/${FILENAME}
 
-SPARK_HOME_DIR=/Users/peter/Downloads/spark-1.6.1
-OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 256 --max-zoom 14 --output-format dense --use-spark  ${FILEPATH}.short
+zcat $FILEPATH > ${FILEPATH}.mirrored
+zcat $FILEPATH | awk '{ print $2 "\t" $1 "\t" $3; }' >> ${FILEPATH}.mirrored
+head -n 32000 ${FILEPATH}.mirrored > ${FILEPATH}.short
+tail -n 32000 ${FILEPATH}.mirrored >> ${FILEPATH}.short
 
-OUTPUT_DIR=${FILEPATH}.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 256 --max-zoom 14 --output-format dense --use-spark  ${FILEPATH}.mirrored
+#SPARK_HOME_DIR=/Users/peter/Downloads/spark-1.6.1
+SPARK_HOME_DIR=/home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6
 
-find $OUTPUT_DIR -name "*.json" | xargs chmod a+r 
+OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.short
+
+# Run locally
+# OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense ${FILEPATH}.short
+
+OUTPUT_DIR=${FILEPATH}.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.mirrored
+
+#find $OUTPUT_DIR -name "*.json" | xargs chmod a+r 
 
 aws s3 sync --region us-west-2 ~/data/${FILENAME}.tiles s3://pkerp/data/${FILENAME}.tiles
 
@@ -42,6 +50,7 @@ INPUT_FILE=~/data/hg19/genbank-output/refgene-count-minus
 OUTPUT_PART=data/hg19/refgene-tiles-minus/
 OUTPUT_DIR=~/${OUTPUT_PART}
 rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p genomeTxStart  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count --max-zoom 18 -i count --importance --reverse-importance $INPUT_FILE
+
 aws s3 sync --region us-west-2 $OUTPUT_DIR s3://pkerp/$OUTPUT_PART
 
 INPUT_FILE=~/data/hg19/genbank-output/refgene-count-plus
