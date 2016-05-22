@@ -394,6 +394,11 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     tileset_info['bins_per_dimension'] = bins_per_dimension
 
 
+    if not op.exists(output_dir):
+        os.makedirs(output_dir)
+
+    tiles_with_meta.saveAsTextFile(op.join(output_dir, 'tiles_text'))
+
     if output_dir is not None:
         save_tile = save_tile_template(output_dir, gzip_output, output_format)
         tiles_with_meta.foreach(save_tile)
