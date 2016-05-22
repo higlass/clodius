@@ -87,6 +87,11 @@ def load_entries_from_file(filename, column_names=None, use_spark=False, delimit
     if use_spark:
         from pyspark import SparkContext
         sc = SparkContext(appName="Clodius")
+
+        logger = sc._jvm.org.apache.log4j
+        logger.LogManager.getLogger("org").setLevel( logger.Level.ERROR )
+        logger.LogManager.getLogger("akka").setLevel( logger.Level.ERROR )
+
         if delimiter is not None:
             entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
         else:
@@ -288,6 +293,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         if max_max_zoom < max_zoom:
             max_zoom = int(max_max_zoom)
 
+    print "max_zoom:", max_zoom
+
     # get all the different zoom levels
     zoom_levels = range(max_zoom+1)
     zoom_widths = map(lambda x: max_width / 2 ** x, zoom_levels)
@@ -397,7 +404,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     if not op.exists(output_dir):
         os.makedirs(output_dir)
 
-    tiles_with_meta.saveAsTextFile(op.join(output_dir, 'tiles_text'))
+    #tiles_with_meta.map(lambda x: x[0]).saveAsTextFile(op.join(output_dir, 'tiles_text'))
 
     if output_dir is not None:
         save_tile = save_tile_template(output_dir, gzip_output, output_format)

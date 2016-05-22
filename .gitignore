@@ -9,3 +9,4 @@ output.tar
 profile.dat
 profile.png
 output/
+aws_keys.py
