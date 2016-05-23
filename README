@@ -63,6 +63,7 @@ python scripts/make_tiles.py -o $OUTPUT_DIR -v value -c chrom,pos1,pos2,value --
 OUTPUT_DIR=~/data/ENCODE/2016-05-16-GM12878-RNASeq/tiles
 
 /usr/bin/time spark-submit --driver-memory 8G scripts/make_tiles.py -o $OUTPUT_DIR -v value -c chrom,pos1,pos2,value --range pos1,pos2 -i value --position pos1 --resolution 1 --max-zoom 14 --output-format dense --bins-per-dimension 128 ~/data/ENCODE/2016-05-16-GM12878-RNASeq/ENCFF000FAA_chr1.bedGraph --use-spark
+aws s3 sync --region us-west-2 $OUTPUT_DIR s3://pkerp/data/ENCODE/2016-05-16-GM12878-RNASeq/tiles
 
 ## BAM files
 
