@@ -48,7 +48,12 @@ def save_tile_template(output_dir, gzip_output, output_format='sparse'):
         outdir = op.dirname(outpath)
 
         if not op.exists(outdir):
-            os.makedirs(outdir)
+            try:
+                os.makedirs(outdir)
+            except OSError as oe:
+                # somebody probably made the directory in between when we
+                # checked if it exists and when we're making it
+                print >>sys.stderr, "Error making directories:", oe
 
         if gzip_output:
             with gzip.open(outpath + ".gz", 'w') as f:
