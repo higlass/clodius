@@ -48,17 +48,17 @@ def save_tile_template(output_dir, gzip_output, output_format='sparse'):
         outdir = op.dirname(outpath)
 
         if not op.exists(outdir):
-            os.makedirs(outdir)
+            try:
+                os.makedirs(outdir)
+            except OSError:
+                pass
 
         if gzip_output:
             with gzip.open(outpath + ".gz", 'w') as f:
-                f.write(json.dumps(tile_value))
+                f.write(tile_value)
         else:
             with open(outpath, 'w') as f:
-                if output_format == 'dense':
-                    f.write(str(tile_value))
-                else:
-                    f.write(json.dumps(tile_value, indent=2))
+                f.write(tile_value)
 
     def blah(x):
         return str(x)
@@ -339,11 +339,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     tiles_aggregated = tile_entries.reduceByKey(reduce_bins)
     print "reduce_bins time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
-    # add the tile meta-data
-    def add_tile_metadata((tile_id, tile_entries_iterator)):
-        '''
-        Add the tile's start and end data positions.
-        '''
+
+    def add_sparse_tile_metadata((tile_id, tile_entries_iterator)):
         z = tile_id[0]
         tile_width = max_width / 2 ** z
         bin_width = tile_width / bins_per_dimension
@@ -356,19 +353,9 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
                 it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
 
         shown = []
-        if output_format == 'dense':
-            initial_values = [0 for i in range(bins_per_dimension ** len(dim_names))]
-
-            for (bin_pos, bin_val) in tile_entries_iterator.items():
-                index = sum([bp * bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
-                initial_values[index] = bin_val
-
-            shown = initial_values
-            pass
-        else:
-            for (bin_pos, bin_val) in tile_entries_iterator.items():
-                pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
-                shown += [{'pos': pos, value_field : bin_val}]
+        for (bin_pos, bin_val) in tile_entries_iterator.items():
+            pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
+            shown += [{'pos': pos, value_field : bin_val}]
 
         # caclulate where the tile values end along each dimension
         '''
@@ -381,10 +368,43 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
         return (tile_id, tile_data)
 
+    # add the tile meta-data
+    def add_dense_tile_metadata((tile_id, tile_entries_iterator)):
+        '''
+        Add the tile's start and end data positions.
+        '''
+        shown = []
+
+        initial_values = [0] * (bins_per_dimension ** len(dim_names))
+
+        for bin_pos in tile_entries_iterator:
+            index = sum([bp * bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
+            initial_values[index] = tile_entries_iterator[bin_pos]
+
+        shown = initial_values
+
+        # caclulate where the tile values end along each dimension
+        tile_data = shown
+
+        return (tile_id, tile_data)
+
     print "count:", tiles_aggregated.count()
     print "count time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
-    tiles_with_meta = tiles_aggregated.map(add_tile_metadata)
+    max_data_in_sparse = 1000
+
+    def add_tile_metadata(tile):
+        if len(tile[1]) > max_data_in_sparse:
+            return add_dense_tile_metadata(tile)
+        else:
+            return add_sparse_tile_metadata(tile)
+
+
+    if output_format == 'dense':
+        tiles_with_meta = tiles_aggregated.map(add_tile_metadata)
+    else:
+        tiles_with_meta = tiles_aggregated.map(add_tile_metadata)
+
     print "metadata time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
     
     tileset_info['max_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_max)
@@ -400,15 +420,31 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     tileset_info['data_granularity'] = resolution
     tileset_info['bins_per_dimension'] = bins_per_dimension
 
+    def tile_pos_to_string((key, tile_value)):
+        if len(tile_value) > max_data_in_sparse:
+            output_str = json.dumps({'dense': tile_value})
+        else:
+            output_str = json.dumps({'sparse': tile_value})
 
+        return (key, output_str)
+
+    if output_format == 'dense':
+        tiles_with_meta_string = tiles_with_meta.map(lambda (key, tile_value): (key, str(tile_value)))
+    else:
+        tiles_with_meta_string = tiles_with_meta.map(tile_pos_to_string)
+
+    print tiles_with_meta_string.take(1)
+
+    '''
     if not op.exists(output_dir):
         os.makedirs(output_dir)
+    '''
 
     #tiles_with_meta.map(lambda x: x[0]).saveAsTextFile(op.join(output_dir, 'tiles_text'))
 
     if output_dir is not None:
         save_tile = save_tile_template(output_dir, gzip_output, output_format)
-        tiles_with_meta.foreach(save_tile)
+        tiles_with_meta_string.foreach(save_tile)
     print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
     return {"tileset_info": tileset_info, "tiles": tiles_with_meta, "histogram": histogram}
