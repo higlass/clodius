@@ -12,10 +12,7 @@ import math
 import os
 import os.path as op
 import random
-import shortuuid
 import sys
-
-sc = None
 
 def expand_range(x, from_col, to_col):
     new_xs = []
@@ -87,8 +84,16 @@ def load_entries_from_file(filename, column_names=None, use_spark=False, delimit
 
     global sc
     if use_spark:
-        from pyspark import SparkContext
-        sc = SparkContext(appName="Clodius")
+        sys.path.append('/Users/peter/.ivy2/jars/TargetHolding_pyspark-elastic-0.3.0.jar/pyspark_elastic')
+        from pyspark_elastic import EsSparkContext
+
+        sc = EsSparkContext(appName="Clodius")
+        '''
+        conf = SparkConf() \
+                .setAppName("PySpark Elastic Test") \
+                .setMaster("spark://spark-master:7077") \
+                .set("spark.es.host", "elastic-1")
+        '''
 
         logger = sc._jvm.org.apache.log4j
         logger.LogManager.getLogger("org").setLevel( logger.Level.ERROR )
@@ -309,6 +314,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         :param entry: A data entry.
         '''
         values = []
+
         for zoom_level, zoom_width in zoom_level_widths:
             tile_pos = tuple( [zoom_level] + 
                     map(lambda (i, mind): int((entry['pos'][i] - mind) / zoom_width),
@@ -322,7 +328,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
             bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
                           enumerate(tile_mins))
 
-            bin_dict = col.defaultdict(int)
+            bin_dict = col.defaultdict(float)
             bin_dict[tuple(bin_pos)] = entry[value_field]
             values += [((tile_pos), bin_dict  )]
 
@@ -356,8 +362,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
         shown = []
         for (bin_pos, bin_val) in tile_entries_iterator.items():
-            pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
-            shown += [{'pos': pos, value_field : bin_val}]
+            #pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
+            shown += [{'pos': bin_pos, value_field : bin_val}]
 
         # caclulate where the tile values end along each dimension
         '''
@@ -377,7 +383,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         '''
         shown = []
 
-        initial_values = [0] * (bins_per_dimension ** len(dim_names))
+        initial_values = [0.0] * (bins_per_dimension ** len(dim_names))
 
         for bin_pos in tile_entries_iterator:
             index = sum([bp * bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
@@ -390,8 +396,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
         return (tile_id, tile_data)
 
-    print "count:", tiles_aggregated.count()
-    print "count time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    #print "count:", tiles_aggregated.count()
+    #print "count time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
     max_data_in_sparse = 1000
 
@@ -412,7 +418,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     tileset_info['max_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_max)
     tileset_info['min_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_min)
 
-
     tileset_info['min_pos'] = mins
     tileset_info['max_pos'] = maxs
 
@@ -424,18 +429,20 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     def tile_pos_to_string((key, tile_value)):
         if len(tile_value) > max_data_in_sparse:
-            output_str = json.dumps({'dense': tile_value})
+            output_str = {'dense': tile_value}
         else:
-            output_str = json.dumps({'sparse': tile_value})
+            output_str = {'sparse': tile_value}
 
         return (key, output_str)
 
+    '''
     if output_format == 'dense':
         tiles_with_meta_string = tiles_with_meta.map(lambda (key, tile_value): (key, str(tile_value)))
     else:
-        tiles_with_meta_string = tiles_with_meta.map(tile_pos_to_string)
+    '''
+    tiles_with_meta_string = tiles_with_meta.map(tile_pos_to_string)
 
-    print tiles_with_meta_string.take(1)
+    #print tiles_with_meta_string.take(1)
 
     '''
     if not op.exists(output_dir):
@@ -443,10 +450,21 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     '''
 
     #tiles_with_meta.map(lambda x: x[0]).saveAsTextFile(op.join(output_dir, 'tiles_text'))
+        #sc = SparkContext(appName="Clodius")
+    tiles_as_jsons = tiles_with_meta_string.map(lambda x: json.dumps({"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]}))
+    #print tiles_as_jsons.take(1)
 
+    tiles_as_jsons.saveJsonToEs("test_big/tiles", mapping_id='tile_id')
+
+    tileset_info_rdd = (sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
+                          .map(lambda x: json.dumps(x)))
+    tileset_info_rdd.saveJsonToEs("test_big/tiles", mapping_id="tile_id")
+
+    '''
     if output_dir is not None:
         save_tile = save_tile_template(output_dir, gzip_output, output_format)
         tiles_with_meta_string.foreach(save_tile)
+    '''
     print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
     return {"tileset_info": tileset_info, "tiles": tiles_with_meta, "histogram": histogram}
