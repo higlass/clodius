@@ -93,12 +93,9 @@ def main():
     parser.add_argument('--elasticsearch-nodes', 
             help='Specify elasticsearch nodes to push the completions to',
             default='localhost:9200')
-    parser.add_argument('--elasticsearch-index',
-            help="The index to place the results in",
-            default='test')
-    parser.add_argument('--elasticsearch-doctype',
-            help="The type of document to index",
-            default="autocomplete")
+    parser.add_argument('--elasticsearch-path',
+            help="Tile index/doctype to save the tiles to",
+            default='test/tiles')
 
     args = parser.parse_args()
 

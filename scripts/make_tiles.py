@@ -13,6 +13,7 @@ import os
 import os.path as op
 import random
 import sys
+import elasticsearch as elastic
 
 def expand_range(x, from_col, to_col):
     new_xs = []
@@ -57,7 +58,7 @@ def save_tile_template(output_dir, gzip_output, output_format='sparse'):
                 f.write(tile_value)
         else:
             with open(outpath, 'w') as f:
-                f.write(tile_value)
+                f.write(json.dumps(tile_value))
 
     def blah(x):
         return str(x)
@@ -85,20 +86,8 @@ def load_entries_from_file(filename, column_names=None, use_spark=False, delimit
 
     global sc
     if use_spark:
-
-        if elasticsearch_path is not None:
-            sys.path.append('/Users/peter/.ivy2/jars/TargetHolding_pyspark-elastic-0.3.0.jar/pyspark_elastic')
-            from pyspark_elastic import EsSparkContext
-            sc = EsSparkContext(appName="Clodius")
-            '''
-            conf = SparkConf() \
-                    .setAppName("PySpark Elastic Test") \
-                    .set("spark.es.host", "localhost")
-            '''
-
-            logger = sc._jvm.org.apache.log4j
-            logger.LogManager.getLogger("org").setLevel( logger.Level.ERROR )
-            logger.LogManager.getLogger("akka").setLevel( logger.Level.ERROR )
+        from pyspark import SparkContext
+        sc = SparkContext()
 
         if delimiter is not None:
             entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
@@ -232,6 +221,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
         bins_per_dimension=None, output_dir=None,
+        elasticsearch_nodes=None,
         elasticsearch_path=None,
         gzip_output=False, output_format='sparse',
         num_histogram_bins=1000):
@@ -446,27 +436,31 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     #print tiles_with_meta_string.take(1)
 
-    '''
-    if not op.exists(output_dir):
-        os.makedirs(output_dir)
-    '''
+    if elasticsearch_nodes is not None:
+        es_url = op.join(elasticsearch_nodes, elasticsearch_path)
+        import urllib2 as urllib
+        import requests
 
-    #tiles_with_meta.map(lambda x: x[0]).saveAsTextFile(op.join(output_dir, 'tiles_text'))
-        #sc = SparkContext(appName="Clodius")
-    print "elasticsearch_path:", elasticsearch_path
-    if elasticsearch_path is not None:
-        tiles_as_jsons = tiles_with_meta_string.map(lambda x: json.dumps({"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]}))
-        #print tiles_as_jsons.take(1)
+        def save_tile_to_elasticsearch(partition):
+            bulk_txt = ""
+            put_url =  op.join(es_url, "_bulk")
 
-        tiles_as_jsons.saveJsonToEs(elasticsearch_path, mapping_id='tile_id')
+            for val in partition:
+                bulk_txt += json.dumps({"index": {"_id": val['tile_id']}}) + "\n"
+                bulk_txt += json.dumps(val) + "\n"
 
-        tileset_info_rdd = (sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
-                              .map(lambda x: json.dumps(x)))
-        tileset_info_rdd.saveJsonToEs(elasticsearch_path, mapping_id="tile_id")
+                if len(bulk_txt) > 50000000:
+                    requests.post("http://" + put_url, data=bulk_txt)
+                    bulk_txt = ""
 
-        histogram_rdd = (sc.parallelize([{"tile_value": histogram, "tile_id": "histogram"}])
-                         .map(lambda x: json.dumps(x)))
-        histogram_rdd.saveJsonToEs(elasticsearch_path, mapping_id="tile_id")
+        tiles_as_jsons = tiles_with_meta_string.map(lambda x: {"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]})
+        tiles_as_jsons.foreachPartition(save_tile_to_elasticsearch)
+
+        tileset_info_rdd = sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
+        #tileset_info_rdd.foreach(save_tile_to_elasticsearch)
+
+        histogram_rdd = sc.parallelize([{"tile_value": histogram, "tile_id": "histogram"}])
+        #histogram_rdd.foreach(save_tile_to_elasticsearch)
     else:
         save_tile = save_tile_template(output_dir, gzip_output, output_format)
         tiles_with_meta_string.foreach(save_tile)
@@ -566,6 +560,17 @@ def main():
             help="The delimiter separating the different columns in the input files",
             default=None)
 
+    parser.add_argument('--elasticsearch-nodes', 
+            help='Specify elasticsearch nodes to push the completions to',
+            default=None)
+    parser.add_argument('--elasticsearch-index',
+            help="The index to place the results in",
+            default='test')
+    parser.add_argument('--elasticsearch-doctype',
+            help="The type of document to index",
+            default="autocomplete")
+
+
     args = parser.parse_args()
 
     if not args.importance:
@@ -602,6 +607,7 @@ def main():
                 bins_per_dimension=args.bins_per_dimension,
                 resolution=args.resolution, output_dir=args.output_dir,
                 gzip_output=args.gzip, output_format=args.output_format,
+                elasticsearch_nodes=args.elasticsearch_nodes,
                 elasticsearch_path=args.elasticsearch_path)
 
 if __name__ == '__main__':
