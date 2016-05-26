@@ -65,7 +65,8 @@ def save_tile_template(output_dir, gzip_output, output_format='sparse'):
     return save_tile
     #return blah
 
-def load_entries_from_file(filename, column_names=None, use_spark=False, delimiter='\t'):
+def load_entries_from_file(filename, column_names=None, use_spark=False, delimiter='\t', 
+        elasticsearch_path=None):
     '''
     Load a dataset from file.
 
@@ -84,20 +85,20 @@ def load_entries_from_file(filename, column_names=None, use_spark=False, delimit
 
     global sc
     if use_spark:
-        sys.path.append('/Users/peter/.ivy2/jars/TargetHolding_pyspark-elastic-0.3.0.jar/pyspark_elastic')
-        from pyspark_elastic import EsSparkContext
 
-        sc = EsSparkContext(appName="Clodius")
-        '''
-        conf = SparkConf() \
-                .setAppName("PySpark Elastic Test") \
-                .setMaster("spark://spark-master:7077") \
-                .set("spark.es.host", "elastic-1")
-        '''
+        if elasticsearch_path is not None:
+            sys.path.append('/Users/peter/.ivy2/jars/TargetHolding_pyspark-elastic-0.3.0.jar/pyspark_elastic')
+            from pyspark_elastic import EsSparkContext
+            sc = EsSparkContext(appName="Clodius")
+            '''
+            conf = SparkConf() \
+                    .setAppName("PySpark Elastic Test") \
+                    .set("spark.es.host", "localhost")
+            '''
 
-        logger = sc._jvm.org.apache.log4j
-        logger.LogManager.getLogger("org").setLevel( logger.Level.ERROR )
-        logger.LogManager.getLogger("akka").setLevel( logger.Level.ERROR )
+            logger = sc._jvm.org.apache.log4j
+            logger.LogManager.getLogger("org").setLevel( logger.Level.ERROR )
+            logger.LogManager.getLogger("akka").setLevel( logger.Level.ERROR )
 
         if delimiter is not None:
             entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
@@ -231,6 +232,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
         bins_per_dimension=None, output_dir=None,
+        elasticsearch_path=None,
         gzip_output=False, output_format='sparse',
         num_histogram_bins=1000):
     '''
@@ -451,20 +453,30 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     #tiles_with_meta.map(lambda x: x[0]).saveAsTextFile(op.join(output_dir, 'tiles_text'))
         #sc = SparkContext(appName="Clodius")
-    tiles_as_jsons = tiles_with_meta_string.map(lambda x: json.dumps({"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]}))
-    #print tiles_as_jsons.take(1)
+    print "elasticsearch_path:", elasticsearch_path
+    if elasticsearch_path is not None:
+        tiles_as_jsons = tiles_with_meta_string.map(lambda x: json.dumps({"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]}))
+        #print tiles_as_jsons.take(1)
 
-    tiles_as_jsons.saveJsonToEs("test_big/tiles", mapping_id='tile_id')
+        tiles_as_jsons.saveJsonToEs(elasticsearch_path, mapping_id='tile_id')
 
-    tileset_info_rdd = (sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
-                          .map(lambda x: json.dumps(x)))
-    tileset_info_rdd.saveJsonToEs("test_big/tiles", mapping_id="tile_id")
+        tileset_info_rdd = (sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
+                              .map(lambda x: json.dumps(x)))
+        tileset_info_rdd.saveJsonToEs(elasticsearch_path, mapping_id="tile_id")
 
-    '''
-    if output_dir is not None:
+        histogram_rdd = (sc.parallelize([{"tile_value": histogram, "tile_id": "histogram"}])
+                         .map(lambda x: json.dumps(x)))
+        histogram_rdd.saveJsonToEs(elasticsearch_path, mapping_id="tile_id")
+    else:
         save_tile = save_tile_template(output_dir, gzip_output, output_format)
         tiles_with_meta_string.foreach(save_tile)
-    '''
+
+        with open(op.join(output_dir, 'tile_info.json'), 'w') as f:
+            json.dump(tileset_info, f, indent=2)
+
+        with open(op.join(output_dir, 'value_histogram.json'), 'w') as f:
+            json.dump(tileset['histogram'], f, indent=2)
+
     print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
     return {"tileset_info": tileset_info, "tiles": tiles_with_meta, "histogram": histogram}
@@ -519,8 +531,6 @@ def main():
             help='The minimum x position', type=float)
     parser.add_argument('--max-pos', dest='max_pos', default=None,
             help='The maximum x position', type=float)
-    parser.add_argument('-o', '--output-dir', help='The directory to place the tiles',
-                        required=True)
     parser.add_argument('--min-value', 
             help='The field which will be used to determinethe minimum value for any data point', 
             default='min_y')
@@ -543,6 +553,14 @@ def main():
             help='Reverse the ordering of the importance',
             action='store_true',
             default=False)
+
+    output_group = parser.add_mutually_exclusive_group(required=True)
+
+    output_group.add_argument('--elasticsearch-path',
+            help='Send the output to an elasticsearch instance',
+            default=None)
+    output_group.add_argument('-o', '--output-dir', help='The directory to place the tiles',
+            default=None)
     
     parser.add_argument('--delimiter',
             help="The delimiter separating the different columns in the input files",
@@ -561,7 +579,8 @@ def main():
 
     print "start time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
     entries = load_entries_from_file(args.input_file, args.column_names,
-            args.use_spark, delimiter=args.delimiter)
+            args.use_spark, delimiter=args.delimiter,
+            elasticsearch_path=args.elasticsearch_path)
     print "load entries time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
     if args.range is not None:
@@ -582,14 +601,8 @@ def main():
                 args.max_zoom, args.value_field, args.importance_field,
                 bins_per_dimension=args.bins_per_dimension,
                 resolution=args.resolution, output_dir=args.output_dir,
-                gzip_output=args.gzip, output_format=args.output_format)
-
-    with open(op.join(args.output_dir, 'tile_info.json'), 'w') as f:
-        json.dump(tileset['tileset_info'], f, indent=2)
-    
-    if 'histogram' in tileset:
-        with open(op.join(args.output_dir, 'value_histogram.json'), 'w') as f:
-            json.dump(tileset['histogram'], f, indent=2)
+                gzip_output=args.gzip, output_format=args.output_format,
+                elasticsearch_path=args.elasticsearch_path)
 
 if __name__ == '__main__':
     main()

@@ -11,20 +11,20 @@ FILENAME=rao_et_al/HUVEC/5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.
 FILENAME=rao_et_al/IMR90/5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.RAWobserved
 FILENAME=rao_et_al/GM12878_primary/5kb_resolution_intrachromosomal/chr1/MAPQGE30/chr1_5kb.RAWobserved
 
-FILENAME=coolers/hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.gz
-
+DATASET_NAME=hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.gz
+FILENAME=coolers/${DATASET_NAME}
 FILEPATH=~/data/${FILENAME}
 
 zcat $FILEPATH > ${FILEPATH}.mirrored
 zcat $FILEPATH | awk '{ print $2 "\t" $1 "\t" $3; }' >> ${FILEPATH}.mirrored
 
-head -n 256000000 ${FILEPATH}.mirrored.shuffled > ${FILEPATH}.short
+head -n 64000 ${FILEPATH}.mirrored.shuffled > ${FILEPATH}.short
 
 #SPARK_HOME_DIR=/Users/peter/Downloads/spark-1.6.1
 #SPARK_HOME_DIR=/home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6
 SPARK_HOME_DIR=/usr/local/Cellar/apache-spark/1.6.1/
 
-OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit --packages TargetHolding/pyspark-elastic:0.3.0 scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.short
+OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit --packages TargetHolding/pyspark-elastic:0.3.0 scripts/make_tiles.py -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.short --elasticsearch-path ${DATASET_NAME}
 
 # Run locally
 # OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense ${FILEPATH}.short
