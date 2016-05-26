@@ -26,10 +26,13 @@ SPARK_HOME_DIR=/usr/local/Cellar/apache-spark/1.6.1/
 
 OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit --packages TargetHolding/pyspark-elastic:0.3.0 scripts/make_tiles.py -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.short --elasticsearch-path ${DATASET_NAME}
 
+/usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit --packages TargetHolding/pyspark-elastic:0.3.0 scripts/make_tiles.py -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.mirrored.shuffled --elasticsearch-path ${DATASET_NAME}
+
+
 # Run locally
 # OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense ${FILEPATH}.short
 
-OUTPUT_DIR=${FILEPATH}.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.mirrored
+#OUTPUT_DIR=${FILEPATH}.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.mirrored
 
 #find $OUTPUT_DIR -name "*.json" | xargs chmod a+r 
 
