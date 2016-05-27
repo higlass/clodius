@@ -54,10 +54,12 @@ def make_autocomplete_list(entries, options):
     reduced_substr_entries = substr_entries.reduceByKey(reduce_substrs)
 
     ess = elastic.Elasticsearch(options.elasticsearch_nodes.split(','))
+    es_index = options.elasticsearch_path.split('/')[0]
+    es_doctype = options.elasticsearch_path.split('/')[1]
 
     def save_substr_entry((substr_key, substr_value)):
-        ess.index(options.elasticsearch_index,
-                  options.elasticsearch_doctype,
+        ess.index(es_index,
+                  es_doctype,
                   body = {"suggestions": substr_value},
                   id = substr_key)
 
