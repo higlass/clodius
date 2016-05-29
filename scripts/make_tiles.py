@@ -217,6 +217,20 @@ def reduce_max(a,b):
 def reduce_min(a,b):
     return min(a,b)
 
+def reduce_range((mins_a, maxs_a), (mins_b, maxs_b)):
+    '''
+    Get the range of two ranges, a and b.
+
+    Example: a = [(1,3),(2,4)]
+             b = [(0,5),(7,10)]
+             ------------------
+          result [(0,3),(7,10)]
+    '''
+    mins_c = map(min, zip(mins_a, mins_b))
+    maxs_c = map(max, zip(maxs_a, maxs_b))
+
+    return mins_c, maxs_c
+
 def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
@@ -255,8 +269,19 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     tiled_entries = entries.map(lambda x: (0, x))
 
     tileset_info = {}
-    tileset_info['max_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_max)
-    tileset_info['min_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_min)
+
+    entry_ranges = entries.map(lambda x: ([x[value_field], x[importance_field]] + x['pos'],
+                                         ([x[value_field], x[importance_field]] + x['pos'])))
+    reduced_entry_ranges = entry_ranges.reduce(reduce_range)
+
+    tileset_info['max_value'] = reduced_entry_ranges[1][0]
+    tileset_info['min_value'] = reduced_entry_ranges[0][0]
+
+    tileset_info['max_importance'] = reduced_entry_ranges[1][1]
+    tileset_info['min_importance'] = reduced_entry_ranges[0][1]
+
+    mins = reduced_entry_ranges[0][2:]
+    maxs = reduced_entry_ranges[1][2:]
 
     value_histogram = []
     bin_size = (tileset_info['max_value'] - tileset_info['min_value']) / num_histogram_bins
@@ -427,8 +452,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     print "metadata time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
     
-    tileset_info['max_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_max)
-    tileset_info['min_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_min)
 
     tileset_info['min_pos'] = mins
     tileset_info['max_pos'] = maxs
