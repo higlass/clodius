@@ -252,10 +252,9 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         return new_entry
 
     entries = entries.map(consolidate_positions)
-    print "consolidate positions time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    tiled_entries = entries.map(lambda x: (0, x))
 
     tileset_info = {}
-
     tileset_info['max_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_max)
     tileset_info['min_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_min)
 
@@ -298,6 +297,27 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     zoom_levels = range(max_zoom+1)
     zoom_widths = map(lambda x: max_width / 2 ** x, zoom_levels)
     zoom_level_widths = zip(zoom_levels, zoom_widths)
+
+    zoom_width = max_width / 2 ** max_zoom
+    bin_width = zoom_width / bins_per_dimension
+
+    def place_in_tile(entry):
+        tile_mins = map(lambda (z,(m,x)): m + x * (max_width / 2 ** z), 
+                it.izip(it.cycle([tile_pos[0]]), zip(mins, tile_pos[1:])))
+        bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
+                      enumerate(tile_mins))
+        bin_dict = col.defaultdict(float)
+        bin_dict[tuple(bin_pos)] = entry[value_field]
+        return ((tile_pos), bin_dict)
+    
+    tile_entries = entries.map(place_in_tile)
+
+    ## for zoom levels from max_zoom to min_zoom
+        ## place in tiles at a zoom level
+        ## reduce by key
+        ## save
+        ## repeat
+
 
     def place_in_tiles(entry):
         '''
