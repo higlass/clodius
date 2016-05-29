@@ -453,14 +453,19 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
                     requests.post("http://" + put_url, data=bulk_txt)
                     bulk_txt = ""
 
-        tiles_as_jsons = tiles_with_meta_string.map(lambda x: {"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]})
-        tiles_as_jsons.foreachPartition(save_tile_to_elasticsearch)
+            requests.post("http://" + put_url, data=bulk_txt)
+        #tiles_as_jsons = tiles_with_meta_string.map(lambda x: {"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]})
+        #tiles_as_jsons.foreachPartition(save_tile_to_elasticsearch)
+
 
         tileset_info_rdd = sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
-        #tileset_info_rdd.foreach(save_tile_to_elasticsearch)
+        tileset_info_rdd.foreachPartition(save_tile_to_elasticsearch)
 
         histogram_rdd = sc.parallelize([{"tile_value": histogram, "tile_id": "histogram"}])
-        #histogram_rdd.foreach(save_tile_to_elasticsearch)
+        histogram_rdd.foreachPartition(save_tile_to_elasticsearch)
+
+        print json.dumps(tileset_info)
+        print json.dumps(histogram)
     else:
         save_tile = save_tile_template(output_dir, gzip_output, output_format)
         tiles_with_meta_string.foreach(save_tile)
