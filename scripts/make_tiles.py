@@ -217,6 +217,20 @@ def reduce_max(a,b):
 def reduce_min(a,b):
     return min(a,b)
 
+def reduce_range((mins_a, maxs_a), (mins_b, maxs_b)):
+    '''
+    Get the range of two ranges, a and b.
+
+    Example: a = [(1,3),(2,4)]
+             b = [(0,5),(7,10)]
+             ------------------
+          result [(0,3),(7,10)]
+    '''
+    mins_c = map(min, zip(mins_a, mins_b))
+    maxs_c = map(max, zip(maxs_a, maxs_b))
+
+    return mins_c, maxs_c
+
 def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
@@ -252,12 +266,22 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         return new_entry
 
     entries = entries.map(consolidate_positions)
-    print "consolidate positions time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    tiled_entries = entries.map(lambda x: (0, x))
 
     tileset_info = {}
 
-    tileset_info['max_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_max)
-    tileset_info['min_value'] = entries.map(lambda x: x[value_field]).reduce(reduce_min)
+    entry_ranges = entries.map(lambda x: ([x[value_field], x[importance_field]] + x['pos'],
+                                         ([x[value_field], x[importance_field]] + x['pos'])))
+    reduced_entry_ranges = entry_ranges.reduce(reduce_range)
+
+    tileset_info['max_value'] = reduced_entry_ranges[1][0]
+    tileset_info['min_value'] = reduced_entry_ranges[0][0]
+
+    tileset_info['max_importance'] = reduced_entry_ranges[1][1]
+    tileset_info['min_importance'] = reduced_entry_ranges[0][1]
+
+    mins = reduced_entry_ranges[0][2:]
+    maxs = reduced_entry_ranges[1][2:]
 
     value_histogram = []
     bin_size = (tileset_info['max_value'] - tileset_info['min_value']) / num_histogram_bins
@@ -298,6 +322,27 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     zoom_levels = range(max_zoom+1)
     zoom_widths = map(lambda x: max_width / 2 ** x, zoom_levels)
     zoom_level_widths = zip(zoom_levels, zoom_widths)
+
+    zoom_width = max_width / 2 ** max_zoom
+    bin_width = zoom_width / bins_per_dimension
+
+    def place_in_tile(entry):
+        tile_mins = map(lambda (z,(m,x)): m + x * (max_width / 2 ** z), 
+                it.izip(it.cycle([tile_pos[0]]), zip(mins, tile_pos[1:])))
+        bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
+                      enumerate(tile_mins))
+        bin_dict = col.defaultdict(float)
+        bin_dict[tuple(bin_pos)] = entry[value_field]
+        return ((tile_pos), bin_dict)
+    
+    tile_entries = entries.map(place_in_tile)
+
+    ## for zoom levels from max_zoom to min_zoom
+        ## place in tiles at a zoom level
+        ## reduce by key
+        ## save
+        ## repeat
+
 
     def place_in_tiles(entry):
         '''
@@ -407,8 +452,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     print "metadata time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
     
-    tileset_info['max_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_max)
-    tileset_info['min_importance'] = entries.map(lambda x: float(x[importance_field])).reduce(reduce_min)
 
     tileset_info['min_pos'] = mins
     tileset_info['max_pos'] = maxs
