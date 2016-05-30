@@ -18,7 +18,7 @@ FILEPATH=~/data/${FILENAME}
 zcat $FILEPATH > ${FILEPATH}.mirrored
 zcat $FILEPATH | awk '{ print $2 "\t" $1 "\t" $3; }' >> ${FILEPATH}.mirrored
 
-head -n 32000000 ${FILEPATH}.mirrored.shuffled > ${FILEPATH}.short
+head -n 2000 ${FILEPATH}.mirrored.shuffled.1000000 > ${FILEPATH}.short
 
 #SPARK_HOME_DIR=/Users/peter/Downloads/spark-1.6.1
 #SPARK_HOME_DIR=/home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6
@@ -89,36 +89,21 @@ export SPARK_CONF_DIR=~/.spark-conf
 
 #### Create ElasticSearch mapping
 
-PUT /test 
+DELETE test_short/
+PUT test_short/
 {
-      "mappings": {
-         "tiles": {
-            "properties": {
-               "tile_id": {
-                  "type": "string"
-               },
-               "tile_value": {
-                  "properties": {
-                     "dense": {
-                        "type": "double",
-                        "index": "no"
-                     },
-                     "sparse": {
-                        "properties": {
-                           "count": {
-                              "type": "double",
-                              "index": "no"
-                           },
-                           "pos": {
-                              "type": "double",
-                              "index": "no"
-                           }
-                        }
-                     }
+  "mappings": {
+    "tiles": {
+        "dynamic_templates": [
+            { "notanalyzed": {
+                  "match":              "*", 
+                  "mapping": {
+                      "index":       "no"
                   }
                }
             }
-         }
-      }
+          ]
+       }
    }
+}
 
