@@ -209,6 +209,9 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
         save_tile = save_tile_template(output_dir, gzip_output)
         reduced_tiles.foreach(save_tile)
 
+        with open(op.join(output_dir, 'tile_info.json'), 'w') as f:
+            json.dump(tileset_info, f, indent=2)
+
     return {"tileset_info": tileset_info, "tiles": reduced_tiles}
 
 def reduce_max(a,b):
@@ -388,6 +391,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     # O(n) get the maximum and minimum bounds of the data set
     #(mins, maxs) = data_bounds(entries, len(dim_names))
     max_width = max(map(lambda x: x[1] - x[0] + epsilon, zip(mins, maxs)))
+
+    print "max_width:", max_width
 
     if resolution is not None:
         # r * 2 ** n-1 < max_width < r * 2 ** n
