@@ -369,6 +369,9 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     mins = reduced_entry_ranges[0][2:]
     maxs = reduced_entry_ranges[1][2:]
 
+    print "mins:", mins
+    print "maxs:", maxs
+
     value_histogram = []
     bin_size = (tileset_info['max_value'] - tileset_info['min_value']) / num_histogram_bins
 
@@ -441,7 +444,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
                         print >>sys.stderr, "Error saving to elasticsearch:", ce
                     bulk_txt = ""
 
-            print "len(bulk_txt)", len(bulk_txt)
+            #print "len(bulk_txt)", len(bulk_txt)
             requests.post("http://" + put_url, data=bulk_txt)
 
         tileset_info_rdd = sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
