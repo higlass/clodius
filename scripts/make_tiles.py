@@ -259,7 +259,9 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     :param aggregate_tile: Condense the entries in a given tile 
         (should operate on a single tile)
     '''
-    max_data_in_sparse = 1000 
+    max_data_in_sparse = bins_per_dimension ** len(dim_names) / 30.
+    print "max_data_in_sparse", max_data_in_sparse
+
     epsilon = 0.0000    # for calculating the max width so that all entries
                         # end up in the same top_level bucket
 
@@ -490,13 +492,16 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
 
         bin_entries = bin_entries.map(place_in_bin).reduceByKey(reduce_sum)
+        '''
         bin_count = bin_entries.count()
-
         total_bins += bin_count
+        '''
 
         tile_entries = bin_entries.map(place_in_tile).reduceByKey(reduce_sum)
+        '''
         tile_count = tile_entries.count()
         total_tiles += tile_count
+        '''
 
 
         #print "bin_entry:", zoom_level, bin_entries.count(), bin_entries.take(1)
@@ -538,13 +543,15 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
             tiles_with_meta_string.foreach(save_tile)
 
         end_time = time.time()
-        print "zoom_level:", zoom_level, "bin_entries:", bin_count, "tile_entries:", tile_count, "time:", int(end_time - start_time), "time_per_Mbin:", int(1000000 * (end_time - start_time) / bin_count)
+        #print "zoom_level:", zoom_level, "bin_entries:", bin_count, "tile_entries:", tile_count, "time:", int(end_time - start_time), "time_per_Mbin:", int(1000000 * (end_time - start_time) / bin_count)
+        print "zoom_level:", zoom_level, "time:", int(end_time - start_time)
 
 
     total_entries = entries.count()
     total_end_time = time.time()
-    print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
-    print "entries:", total_entries, "bins:", total_bins, "tiles:", total_tiles, "time:", int(total_end_time - total_start_time), 'time_per_Mbin:', int(1000000 * (total_end_time - total_start_time) / total_bins)
+    #print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    #print "entries:", total_entries, "bins:", total_bins, "tiles:", total_tiles, "time:", int(total_end_time - total_start_time), 'time_per_Mbin:', int(1000000 * (total_end_time - total_start_time) / total_bins)
+    print "total_time:", int(total_end_time - total_start_time)
 
     return {"tileset_info": tileset_info, "tiles": tiles_with_meta, "histogram": histogram}
 
