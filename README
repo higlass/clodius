@@ -18,7 +18,7 @@ FILEPATH=~/data/${FILENAME}
 zcat $FILEPATH > ${FILEPATH}.mirrored
 zcat $FILEPATH | awk '{ print $2 "\t" $1 "\t" $3; }' >> ${FILEPATH}.mirrored
 
-head -n 2000 ${FILEPATH}.mirrored.shuffled.1000000 > ${FILEPATH}.short
+head -n 2000 ${FILEPATH}.mirrored.shuffled > ${FILEPATH}.short
 
 #SPARK_HOME_DIR=/Users/peter/Downloads/spark-1.6.1
 #SPARK_HOME_DIR=/home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6
@@ -89,8 +89,8 @@ export SPARK_CONF_DIR=~/.spark-conf
 
 #### Create ElasticSearch mapping
 
-DELETE test_short/
-PUT test_short/
+curl -XDELETE "http://127.0.0.1:9200/test_short"
+curl -XPUT "http://127.0.0.1:9200/test_short" -d '
 {
   "mappings": {
     "tiles": {
@@ -105,5 +105,5 @@ PUT test_short/
           ]
        }
    }
-}
+}'
 
