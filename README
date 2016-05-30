@@ -54,13 +54,13 @@ OUTPUT_PART=data/hg19/refgene-tiles-minus/
 OUTPUT_DIR=~/${OUTPUT_PART}
 rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p genomeTxStart  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count --max-zoom 18 -i count --importance --reverse-importance $INPUT_FILE
 
-aws s3 sync --region us-west-2 $OUTPUT_DIR s3://pkerp/$OUTPUT_PART
+aws s3 sync $OUTPUT_DIR s3://pkerp/$OUTPUT_PART
 
 INPUT_FILE=~/data/hg19/genbank-output/refgene-count-plus
 OUTPUT_PART=data/hg19/refgene-tiles-plus/
 OUTPUT_DIR=~/${OUTPUT_PART}
-rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p genomeTxStart  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count --max-zoom 18 -i count --importance --reverse-importance $INPUT_FILE
-aws s3 sync --region us-west-2 $OUTPUT_DIR s3://pkerp/$OUTPUT_PART
+rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p genomeTxStart  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance $INPUT_FILE
+aws s3 sync $OUTPUT_DIR s3://pkerp/$OUTPUT_PART
 
 ## BED files
 
