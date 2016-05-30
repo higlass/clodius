@@ -51,6 +51,9 @@ class ParallelData:
     def foreach(self, func):
         map(func, self.data)
 
+    def foreachPartition(self, func):
+        map(func, [self.data])
+
     def reduceByKey(self, func):
         '''
 

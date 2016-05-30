@@ -18,13 +18,13 @@ FILEPATH=~/data/${FILENAME}
 zcat $FILEPATH > ${FILEPATH}.mirrored
 zcat $FILEPATH | awk '{ print $2 "\t" $1 "\t" $3; }' >> ${FILEPATH}.mirrored
 
-head -n 20000 ${FILEPATH}.mirrored.shuffled > ${FILEPATH}.short
+head -n 32000000 ${FILEPATH}.mirrored.shuffled > ${FILEPATH}.short
 
 #SPARK_HOME_DIR=/Users/peter/Downloads/spark-1.6.1
 #SPARK_HOME_DIR=/home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6
 SPARK_HOME_DIR=/usr/local/Cellar/apache-spark/1.6.1/
 
-/usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.short --elasticsearch-nodes localhost:9200  --elasticsearch-path test/tilesx
+/usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.short --elasticsearch-nodes localhost:9200  --elasticsearch-path test_short/tiles
 
 # Run locally
 # OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense ${FILEPATH}.short

@@ -13,7 +13,7 @@ import os
 import os.path as op
 import random
 import sys
-import elasticsearch as elastic
+import time
 
 def expand_range(x, from_col, to_col):
     new_xs = []
@@ -231,6 +231,14 @@ def reduce_range((mins_a, maxs_a), (mins_b, maxs_b)):
 
     return mins_c, maxs_c
 
+def reduce_bins(bins_a, bins_b):
+    for bin_pos in bins_b:
+        bins_a[bin_pos] += bins_b[bin_pos]
+    return bins_a
+
+def reduce_sum(a,b):
+    return a + b
+
 def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
         aggregate_tile=lambda tile,dim_names: tile, 
@@ -251,6 +259,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     :param aggregate_tile: Condense the entries in a given tile 
         (should operate on a single tile)
     '''
+    max_data_in_sparse = 1000 
     epsilon = 0.0000    # for calculating the max width so that all entries
                         # end up in the same top_level bucket
 
@@ -264,6 +273,83 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
                       value_field: float(entry[value_field]),
                       importance_field: float(entry[importance_field]) }
         return new_entry
+
+    def add_sparse_tile_metadata((tile_id, tile_entries_iterator)):
+        z = tile_id[0]
+        tile_width = max_width / 2 ** z
+        bin_width = tile_width / bins_per_dimension
+
+        # calculate where the tile values start along each dimension
+        '''
+        tile_start_pos = map(lambda (z,(m,x)): m + x * tile_width, 
+                it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
+
+        tile_end_pos = map(lambda (z,(m,x)): m + (x+1) * tile_width, 
+                it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
+        '''
+
+        shown = []
+        for (bin_pos, bin_val) in tile_entries_iterator:
+            #pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
+            shown += [{'pos': bin_pos, value_field : bin_val}]
+
+        # caclulate where the tile values end along each dimension
+        '''
+        tile_data = {'shown': shown,
+                     'zoom': tile_id[0],
+                     'tile_start_pos': tile_start_pos,
+                     'tile_end_pos': tile_end_pos}
+        '''
+        tile_data = shown
+
+        return (tile_id, tile_data)
+
+    # add the tile meta-data
+    def add_dense_tile_metadata((tile_id, tile_entries_iterator)):
+        '''
+        Add the tile's start and end data positions.
+        '''
+        shown = []
+
+        initial_values = [0.0] * (bins_per_dimension ** len(dim_names))
+
+        for (bin_pos, val) in tile_entries_iterator:
+            index = sum([bp * bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
+            initial_values[index] = val
+
+        shown = initial_values
+
+        # caclulate where the tile values end along each dimension
+        tile_data = shown
+
+        return (tile_id, tile_data)
+
+    def add_tile_metadata(tile):
+        if len(tile[1]) > max_data_in_sparse:
+            return add_dense_tile_metadata(tile)
+        else:
+            return add_sparse_tile_metadata(tile)
+
+    def dense_range(tile_value):
+        return (min(tile_value), max(tile_value))
+
+    def sparse_range(tile_value):
+        values = map(lambda x: x['count'], tile_value)
+
+        return (0, max(values))
+
+    def tile_pos_to_string((key, tile_value)):
+        if len(tile_value) > max_data_in_sparse:
+            (min_value, max_value) = dense_range(tile_value)
+            output_str = {'dense': tile_value}
+        else:
+            (min_value, max_value) = sparse_range(tile_value)
+            output_str = {'sparse': tile_value}
+
+        output_str['min_value'] = min_value
+        output_str['max_value'] = max_value
+
+        return (key, output_str)
 
     entries = entries.map(consolidate_positions)
     tiled_entries = entries.map(lambda x: (0, x))
@@ -295,7 +381,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
                  "counts": histogram_counts}
 
     # O(n) get the maximum and minimum bounds of the data set
-    (mins, maxs) = data_bounds(entries, len(dim_names))
+    #(mins, maxs) = data_bounds(entries, len(dim_names))
     max_width = max(map(lambda x: x[1] - x[0] + epsilon, zip(mins, maxs)))
 
     if resolution is not None:
@@ -326,133 +412,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     zoom_width = max_width / 2 ** max_zoom
     bin_width = zoom_width / bins_per_dimension
 
-    def place_in_tile(entry):
-        tile_mins = map(lambda (z,(m,x)): m + x * (max_width / 2 ** z), 
-                it.izip(it.cycle([tile_pos[0]]), zip(mins, tile_pos[1:])))
-        bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
-                      enumerate(tile_mins))
-        bin_dict = col.defaultdict(float)
-        bin_dict[tuple(bin_pos)] = entry[value_field]
-        return ((tile_pos), bin_dict)
-    
-    tile_entries = entries.map(place_in_tile)
-
-    ## for zoom levels from max_zoom to min_zoom
-        ## place in tiles at a zoom level
-        ## reduce by key
-        ## save
-        ## repeat
-
-
-    def place_in_tiles(entry):
-        '''
-        Place this entry into a set of tiles.
-        
-        :param entry: A data entry.
-        '''
-        values = []
-
-        for zoom_level, zoom_width in zoom_level_widths:
-            tile_pos = tuple( [zoom_level] + 
-                    map(lambda (i, mind): int((entry['pos'][i] - mind) / zoom_width),
-                           enumerate(mins)))
-            
-            ## We can actually place the tile in a bin right here and now
-            bin_width = zoom_width / bins_per_dimension
-            tile_mins = map(lambda (z,(m,x)): m + x * (max_width / 2 ** z), 
-                    it.izip(it.cycle([tile_pos[0]]), zip(mins, tile_pos[1:])))
-
-            bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
-                          enumerate(tile_mins))
-
-            bin_dict = col.defaultdict(float)
-            bin_dict[tuple(bin_pos)] = entry[value_field]
-            values += [((tile_pos), bin_dict  )]
-
-        return values
-
-    def reduce_bins(bins_a, bins_b):
-        for bin_pos in bins_b:
-            bins_a[bin_pos] += bins_b[bin_pos]
-        return bins_a
-
-    # place each entry into a tile
-    # spark equivalent: flatmap
-    # so now we have a list like this: [((0,0,0), {'pos1':1, 'pos2':2, 'count':3}), ...]
-    tile_entries = entries.flatMap(place_in_tiles)
-    print "place_in_tiles time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
-    tiles_aggregated = tile_entries.reduceByKey(reduce_bins)
-    print "reduce_bins time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
-
-
-    def add_sparse_tile_metadata((tile_id, tile_entries_iterator)):
-        z = tile_id[0]
-        tile_width = max_width / 2 ** z
-        bin_width = tile_width / bins_per_dimension
-
-        # calculate where the tile values start along each dimension
-        tile_start_pos = map(lambda (z,(m,x)): m + x * tile_width, 
-                it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
-
-        tile_end_pos = map(lambda (z,(m,x)): m + (x+1) * tile_width, 
-                it.izip(it.cycle([tile_id[0]]), zip(mins, tile_id[1:])))
-
-        shown = []
-        for (bin_pos, bin_val) in tile_entries_iterator.items():
-            #pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
-            shown += [{'pos': bin_pos, value_field : bin_val}]
-
-        # caclulate where the tile values end along each dimension
-        '''
-        tile_data = {'shown': shown,
-                     'zoom': tile_id[0],
-                     'tile_start_pos': tile_start_pos,
-                     'tile_end_pos': tile_end_pos}
-        '''
-        tile_data = shown
-
-        return (tile_id, tile_data)
-
-    # add the tile meta-data
-    def add_dense_tile_metadata((tile_id, tile_entries_iterator)):
-        '''
-        Add the tile's start and end data positions.
-        '''
-        shown = []
-
-        initial_values = [0.0] * (bins_per_dimension ** len(dim_names))
-
-        for bin_pos in tile_entries_iterator:
-            index = sum([bp * bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
-            initial_values[index] = tile_entries_iterator[bin_pos]
-
-        shown = initial_values
-
-        # caclulate where the tile values end along each dimension
-        tile_data = shown
-
-        return (tile_id, tile_data)
-
-    #print "count:", tiles_aggregated.count()
-    #print "count time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
-
-    max_data_in_sparse = 1000
-
-    def add_tile_metadata(tile):
-        if len(tile[1]) > max_data_in_sparse:
-            return add_dense_tile_metadata(tile)
-        else:
-            return add_sparse_tile_metadata(tile)
-
-
-    if output_format == 'dense':
-        tiles_with_meta = tiles_aggregated.map(add_tile_metadata)
-    else:
-        tiles_with_meta = tiles_aggregated.map(add_tile_metadata)
-
-    print "metadata time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
-    
-
     tileset_info['min_pos'] = mins
     tileset_info['max_pos'] = maxs
 
@@ -461,23 +420,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     tileset_info['data_granularity'] = resolution
     tileset_info['bins_per_dimension'] = bins_per_dimension
-
-    def tile_pos_to_string((key, tile_value)):
-        if len(tile_value) > max_data_in_sparse:
-            output_str = {'dense': tile_value}
-        else:
-            output_str = {'sparse': tile_value}
-
-        return (key, output_str)
-
-    '''
-    if output_format == 'dense':
-        tiles_with_meta_string = tiles_with_meta.map(lambda (key, tile_value): (key, str(tile_value)))
-    else:
-    '''
-    tiles_with_meta_string = tiles_with_meta.map(tile_pos_to_string)
-
-    #print tiles_with_meta_string.take(1)
 
     if elasticsearch_nodes is not None:
         es_url = op.join(elasticsearch_nodes, elasticsearch_path)
@@ -493,33 +435,113 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
                 bulk_txt += json.dumps(val) + "\n"
 
                 if len(bulk_txt) > 50000000:
-                    requests.post("http://" + put_url, data=bulk_txt)
+                    try:
+                        requests.post("http://" + put_url, data=bulk_txt)
+                    except ConnectionError as ce:
+                        print >>sys.stderr, "Error saving to elasticsearch:", ce
                     bulk_txt = ""
 
+            print "len(bulk_txt)", len(bulk_txt)
             requests.post("http://" + put_url, data=bulk_txt)
-        #tiles_as_jsons = tiles_with_meta_string.map(lambda x: {"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]})
-        #tiles_as_jsons.foreachPartition(save_tile_to_elasticsearch)
-
 
         tileset_info_rdd = sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
         tileset_info_rdd.foreachPartition(save_tile_to_elasticsearch)
 
         histogram_rdd = sc.parallelize([{"tile_value": histogram, "tile_id": "histogram"}])
         histogram_rdd.foreachPartition(save_tile_to_elasticsearch)
-
-        print json.dumps(tileset_info)
-        print json.dumps(histogram)
     else:
-        save_tile = save_tile_template(output_dir, gzip_output, output_format)
-        tiles_with_meta_string.foreach(save_tile)
-
         with open(op.join(output_dir, 'tile_info.json'), 'w') as f:
             json.dump(tileset_info, f, indent=2)
 
         with open(op.join(output_dir, 'value_histogram.json'), 'w') as f:
-            json.dump(tileset['histogram'], f, indent=2)
+            json.dump(histogram, f, indent=2)
 
+    def place_positions_at_origin(entry):
+        new_pos = map(lambda (x, mx): x - mx, zip(entry['pos'], mins))
+        return (new_pos, entry[value_field])
+
+    # add a bogus tile_id for downstream processing
+    bin_entries = entries.map(place_positions_at_origin)
+    total_bins = 0
+    total_tiles = 0
+    total_start_time = time.time()
+
+    for zoom_level in range(0, max_zoom+1)[::-1]:
+        tile_width = max_width / 2 ** zoom_level
+        bin_width = tile_width / bins_per_dimension
+        start_time = time.time()
+
+        def place_in_bin((prev_pos, value)):
+            new_bin_pos = tuple(map(lambda x: int(int(x / bin_width) * bin_width), prev_pos))
+
+            return (new_bin_pos, value)
+
+        def place_in_tile((bin_pos, value)):
+            # we have a bin position and we need to place it in a tile
+            tile_pos = tuple([zoom_level] + map(lambda x: int(x / tile_width), bin_pos))
+            tile_mins = map(lambda x: x * tile_width, tile_pos[1:])
+            bin_in_tile = map(lambda (i, mind): int((bin_pos[i] - mind) / bin_width),
+                          enumerate(tile_mins))
+
+            return ((tile_pos), [(bin_in_tile, value)])
+
+
+        bin_entries = bin_entries.map(place_in_bin).reduceByKey(reduce_sum)
+        bin_count = bin_entries.count()
+
+        total_bins += bin_count
+
+        tile_entries = bin_entries.map(place_in_tile).reduceByKey(reduce_sum)
+        tile_count = tile_entries.count()
+        total_tiles += tile_count
+
+
+        #print "bin_entry:", zoom_level, bin_entries.count(), bin_entries.take(1)
+        #print "tile_entry", zoom_level, tile_entries.count() 
+        #print "zoom_level:", zoom_level, "count:", bin_entries.count()
+
+        #print "tile_entry:", tile_entries.count(), tile_entries.take(1)
+        '''
+
+        def place_in_tile(entry):
+            tile_pos = tuple( [zoom_level] + 
+                    map(lambda (i, mind): int((entry['pos'][i] - mind) / tile_width),
+                           enumerate(mins)))
+
+            tile_mins = map(lambda (z,(m,x)): m + x * (max_width / 2 ** z), 
+                    it.izip(it.cycle([tile_pos[0]]), zip(mins, tile_pos[1:])))
+
+            bin_pos = map(lambda (i, mind): int((entry['pos'][i] - mind) / bin_width),
+                          enumerate(tile_mins))
+            bin_dict = col.defaultdict(float)
+            bin_dict[tuple(bin_pos)] = entry[value_field]
+            return ((tile_pos), bin_dict)
+        
+        tile_entries = entries.map(place_in_tile).reduceByKey(reduce_bins)
+        '''
+        tiles_with_meta = tile_entries.map(add_tile_metadata)
+        tiles_with_meta_string = tiles_with_meta.map(tile_pos_to_string)
+
+    #print tiles_with_meta_string.take(1)
+
+        if elasticsearch_nodes is not None:
+
+            tiles_as_jsons = tiles_with_meta_string.map(lambda x: {"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]})
+            tiles_as_jsons.foreachPartition(save_tile_to_elasticsearch)
+
+
+        else:
+            save_tile = save_tile_template(output_dir, gzip_output, output_format)
+            tiles_with_meta_string.foreach(save_tile)
+
+        end_time = time.time()
+        print "zoom_level:", zoom_level, "bin_entries:", bin_count, "tile_entries:", tile_count, "time:", int(end_time - start_time), "time_per_Mbin:", int(1000000 * (end_time - start_time) / bin_count)
+
+
+    total_entries = entries.count()
+    total_end_time = time.time()
     print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    print "entries:", total_entries, "bins:", total_bins, "tiles:", total_tiles, "time:", int(total_end_time - total_start_time), 'time_per_Mbin:', int(1000000 * (total_end_time - total_start_time) / total_bins)
 
     return {"tileset_info": tileset_info, "tiles": tiles_with_meta, "histogram": histogram}
 
