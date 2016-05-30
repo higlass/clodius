@@ -270,8 +270,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         Place all of the dimensions in one array for this entry.
         '''
         new_entry = {'pos': map(lambda dn: float(entry[dn]), dim_names),
-                      value_field: float(entry[value_field]),
-                      importance_field: float(entry[importance_field]) }
+                      'value': float(entry[value_field]),
+                      'importance': float(entry[importance_field]) }
         return new_entry
 
     def add_sparse_tile_metadata((tile_id, tile_entries_iterator)):
@@ -291,7 +291,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         shown = []
         for (bin_pos, bin_val) in tile_entries_iterator:
             #pos = map(lambda(md, x): md + x * bin_width, zip(tile_start_pos, bin_pos))
-            shown += [{'pos': bin_pos, value_field : bin_val}]
+            shown += [{'pos': bin_pos, 'value' : bin_val}]
 
         # caclulate where the tile values end along each dimension
         '''
@@ -334,7 +334,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         return (min(tile_value), max(tile_value))
 
     def sparse_range(tile_value):
-        values = map(lambda x: x['count'], tile_value)
+        values = map(lambda x: x['value'], tile_value)
 
         return (0, max(values))
 
@@ -356,8 +356,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     tileset_info = {}
 
-    entry_ranges = entries.map(lambda x: ([x[value_field], x[importance_field]] + x['pos'],
-                                         ([x[value_field], x[importance_field]] + x['pos'])))
+    entry_ranges = entries.map(lambda x: ([x['value'], x['importance']] + x['pos'],
+                                         ([x['value'], x['importance']] + x['pos'])))
     reduced_entry_ranges = entry_ranges.reduce(reduce_range)
 
     tileset_info['max_value'] = reduced_entry_ranges[1][0]
@@ -378,7 +378,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     if bin_size == 0:
         bin_size = 1   # min_value == max_value
 
-    histogram_counts = entries.map(lambda x: (int((x[value_field] - tileset_info['min_value']) / bin_size), 1)).countByKey().items()
+    histogram_counts = entries.map(lambda x: (int((x['value'] - tileset_info['min_value']) / bin_size), 1)).countByKey().items()
     histogram = {"min_value": tileset_info['min_value'],
                  "max_value": tileset_info['max_value'],
                  "counts": histogram_counts}
@@ -461,7 +461,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     def place_positions_at_origin(entry):
         new_pos = map(lambda (x, mx): x - mx, zip(entry['pos'], mins))
-        return (new_pos, entry[value_field])
+        return (new_pos, entry['value'])
 
     # add a bogus tile_id for downstream processing
     bin_entries = entries.map(place_positions_at_origin)
