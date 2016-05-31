@@ -20,7 +20,9 @@ filename which contains the column names in its contents.
 
 ### Output format
 
-Clodius outputs a directory tree filled with tile files. The root of the
+#### Files
+
+Clodius can output a directory tree filled with tile files. The root of the
 directory is specified using the (`--output-dir` or `-o` parameter). This
 contains the `tile_info.json` file which contains all of the metadata about the
 tiling:
@@ -72,7 +74,7 @@ to the tile number along the first dimension (0, 1, or 2), and the third (`y`)
 to the tile number along the third dimension (0, 1, or 2). If the input data
 was 1D, then the directory structure would have one less level.
 
-#### Compression
+##### Compression
 
 The output tiles can be gzipped by using the `--gzip` option. This will
 compress each tile file and append `.gz` to its filename. Using this options is
@@ -88,11 +90,12 @@ that has a value along with its value.
 
 ##### Sparse Format
 
-Specified using the `--output-format sparse` option.
+Used when there are not enough entries to make it worthwhile to return dense
+matrix format. 
 
 ```
 {
-  "shown": [
+  "sparse": [
     {
       "count": 1.0,
       "pos": [
@@ -104,7 +107,7 @@ Specified using the `--output-format sparse` option.
 }
 ```
 
-The `shown` field contains the actual data points that need to be displayed in
+The `sparse` field contains the actual data points that need to be displayed in
 for this tile. At lower zoom levels, densely packed data needs to be abstracted
 so that only a handful of data points are shown. This can be done by binning
 and aggregating by summing or simply picking the most "important" points in the
@@ -112,12 +115,12 @@ area that this tile occupies.
 
 ##### Dense Format
 
-Specified using the `--output-format dense` option.
-
-The output of a single tile is just an array of values.
+The output of a single tile is just an array of values under the key `dense`.
 
 ```
-[3.0, 0, 2.0, 1.0]
+{
+    "dense": [3.0, 0, 2.0, 1.0]
+}
 ```
 
 The encoding from bin positions, to positions in the flat array is performed thusly:
@@ -129,6 +132,15 @@ for (bin_pos, bin_val) in tile_entries_iterator.items():
 ```
 
 The translation from `index` to `bin_pos` is left as en exercise to the reader.
+
+#### Elasticsearch
+
+Tiles can also be saved directly to an elasticsearch database using the `--elasticsearch-nodes`
+and `--elasticsearch-path` options. Example
+
+```
+--elasticsearch-nodes localhost:9200 --elasticsearch-path test/tiles
+```
 
 ## Usage Example
 
