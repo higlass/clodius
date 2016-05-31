@@ -70,17 +70,19 @@ FILEPATH=~/data/${FILENAME}
 
 #bigWigToBedGraph ${FILEPATH} ${FILEPATH}.bedGraph     # 60 seconds
 #cat ${FILEPATH}.bedGraph | awk '{print $1,$2,$1,$3,$4}' | chr_pos_to_genome_pos.py -e 4 > ${FILEPATH}.bedGraph.genome
-head -n 10000 ${FILEPATH}.bedGraph.genome > ${FILEPATH}.short
+head -n 100000 ${FILEPATH}.bedGraph.genome > ${FILEPATH}.short
 
 SPARK_HOME_DIR=~/spark-home
 
-#OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v value -c chrom,pos1,pos2,value --position pos1 --range pos1,pos2 -i value --resolution 1 --bins-per-dimension 64 --max-zoom 20 --use-spark  ${FILEPATH}.short --elasticsearch-nodes localhost:9200  --elasticsearch-path test_short/bed
+OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v value -c pos1,pos2,value --position pos1 --range pos1,pos2 -i value --resolution 1 --bins-per-dimension 64 --max-zoom 20 --use-spark  ${FILEPATH}.short -o $OUTPUT_DIR
 
-OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v value -c chrom,pos1,pos2,value --position pos1 --range pos1,pos2 -i value --resolution 1 --bins-per-dimension 64 --max-zoom 20 --use-spark  ${FILEPATH}.short -o $OUTPUT_DIR
+OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v value -c pos1,pos2,value --position pos1 --range pos1,pos2 -i value --resolution 1 --bins-per-dimension 64 --max-zoom 20 --use-spark  ${FILEPATH}.bedGraph.genome -o $OUTPUT_DIR
+
+#OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v value -c chrom,pos1,pos2,value --position pos1 --range pos1,pos2 -i value --resolution 1 --bins-per-dimension 64 --max-zoom 20 --use-spark  ${FILEPATH}.short --elasticsearch-nodes localhost:9200  --elasticsearch-path test_short/bed
 
 aws s3 sync $OUTPUT_DIR s3://pkerp/data/served/$DATASET_NAME
 
-### Small file
+## Small file
 
 OUTPUT_DIR=output
 rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR;
