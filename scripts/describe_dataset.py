@@ -12,6 +12,6 @@ def describe_dataset(args):
     :return: A JSON file with the arguments as well as some other identifying information.
     '''
     return {'uuid': shortuuid.uuid(), 
-            'import_time': time.strftime("%Y-%m-%d %H:%m:%S %z", time.localtime(import_time)), 
-            'current_time': time.strftime("%Y-%m-%d %H:%m:%S %z"), 
+            'import_time': time.strftime("%Y-%m-%d %H:%M:%S %z", time.localtime(import_time)), 
+            'current_time': time.strftime("%Y-%m-%d %H:%M:%S %z"), 
             'elapsed_time': time.time() - import_time }
