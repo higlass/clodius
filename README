@@ -18,7 +18,7 @@ FILEPATH=~/data/${FILENAME}
 zcat $FILEPATH > ${FILEPATH}.mirrored
 zcat $FILEPATH | awk '{ print $2 "\t" $1 "\t" $3; }' >> ${FILEPATH}.mirrored
 
-head -n 1000000 ${FILEPATH}.mirrored.shuffled > ${FILEPATH}.short
+head -n 40000000 ${FILEPATH}.mirrored.shuffled > ${FILEPATH}.short
 
 #SPARK_HOME_DIR=/Users/peter/Downloads/spark-1.6.1
 #SPARK_HOME_DIR=/home/ubuntu/apps/spark-1.6.1-bin-hadoop2.6
@@ -29,7 +29,7 @@ SPARK_HOME_DIR=~/spark-home
 # Run locally
 # OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense ${FILEPATH}.short
 
-/usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark --elasticsearch-nodes localhost:9200  --elasticsearch-path ${DATASET_NAME} ${FILEPATH}.mirrored.shuffled
+/usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark --elasticsearch-nodes localhost:9200  --elasticsearch-path ${DATASET_NAME} ${FILEPATH}.short
 
 #OUTPUT_DIR=${FILEPATH}.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 1000 -b 256 --max-zoom 20 --output-format dense --use-spark  ${FILEPATH}.mirrored
 
@@ -109,18 +109,18 @@ curl -XGET "http://127.0.0.1:9200/test_short/_optimize"
 curl -XGET "http://127.0.0.1:9200/test_short/_mapping"
 curl -XGET "http://127.0.0.1:9200/test_short/_stats"
 
-curl -XGET "http://127.0.0.1:9200/test_short/_search" -d '
+curl -XGET "http://127.0.0.1:9200/hg19/_search" -d '
 {
     "query" : {
         "match_all" : {}
     }
 }'
 
-curl -XDELETE "http://127.0.0.1:9200/test_short"
-curl -XPUT "http://127.0.0.1:9200/test_shorter" -d '
+curl -XDELETE "http://127.0.0.1:9200/hg19"
+curl -XPUT "http://127.0.0.1:9200/hg19" -d '
 {
   "mappings": {
-    "tiles": {
+    "_default_": {
         "dynamic_templates": [
             { "notanalyzed": {
                   "match":              "*", 
