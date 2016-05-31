@@ -12,6 +12,7 @@ import math
 import os
 import os.path as op
 import random
+import requests
 import sys
 import time
 
@@ -23,6 +24,24 @@ def expand_range(x, from_col, to_col):
         new_x[to_col] = i+1
         new_xs += [new_x]
     return new_xs
+
+def save_to_elasticsearch(url, data):
+    saved = False
+    to_sleep = 1
+    while not saved:
+        try:
+            requests.post(url, data=data)
+            saved = True
+        except Exception as ex:
+
+            to_sleep *= 2
+            time.sleep(to_sleep)
+
+            print >>sys.stderr, "Error saving to elastic search, sleeping:", to_sleep, ex
+
+            if to_sleep > 600:
+                print >>sys.stderr, "Slept too long, returning"
+                return
 
 def summarize_data(max_entries):
     '''
@@ -445,14 +464,10 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
                 bulk_txt += json.dumps(val) + "\n"
 
                 if len(bulk_txt) > 50000000:
-                    try:
-                        requests.post("http://" + put_url, data=bulk_txt)
-                    except ConnectionError as ce:
-                        print >>sys.stderr, "Error saving to elasticsearch:", ce
-                    bulk_txt = ""
+                    save_to_elasticsearch("http://" + put_url, bulk_txt)
 
             #print "len(bulk_txt)", len(bulk_txt)
-            requests.post("http://" + put_url, data=bulk_txt)
+            save_to_elasticsearch("http://" + put_url, bulk_txt)
 
         tileset_info_rdd = sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
         tileset_info_rdd.foreachPartition(save_tile_to_elasticsearch)
