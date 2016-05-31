@@ -30,14 +30,15 @@ def save_to_elasticsearch(url, data):
     to_sleep = 1
     while not saved:
         try:
-            requests.post(url, data=data)
+            #print "Saving... url:", url, "len(bulk_txt):", len(data)
+            requests.post(url, data=data, timeout=8)
+            #print "Saved"
             saved = True
         except Exception as ex:
 
             to_sleep *= 2
+            #print >>sys.stderr, "Error saving to elastic search, sleeping:", to_sleep, ex
             time.sleep(to_sleep)
-
-            print >>sys.stderr, "Error saving to elastic search, sleeping:", to_sleep, ex
 
             if to_sleep > 600:
                 print >>sys.stderr, "Slept too long, returning"
@@ -463,11 +464,13 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
                 bulk_txt += json.dumps({"index": {"_id": val['tile_id']}}) + "\n"
                 bulk_txt += json.dumps(val) + "\n"
 
-                if len(bulk_txt) > 50000000:
+                if len(bulk_txt) > 5000000:
                     save_to_elasticsearch("http://" + put_url, bulk_txt)
+                    bulk_txt = ""
 
             #print "len(bulk_txt)", len(bulk_txt)
-            save_to_elasticsearch("http://" + put_url, bulk_txt)
+            if len(bulk_txt) > 0:
+                save_to_elasticsearch("http://" + put_url, bulk_txt)
 
         tileset_info_rdd = sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
         tileset_info_rdd.foreachPartition(save_tile_to_elasticsearch)
