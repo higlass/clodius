@@ -17,6 +17,9 @@ class ParallelData:
         self.data = self.data + other_data.data
         return self
 
+    def getNumPartitions(self):
+        return 1
+
     def countByKey(self):
         '''
         Count the number of elements with a particular key.
@@ -27,6 +30,9 @@ class ParallelData:
             counts[d[0]] += 1
 
         return counts
+
+    def coalesce(self, num):
+        return self
 
     def groupByKey(self):
         '''

@@ -16,8 +16,12 @@ import requests
 import sys
 import time
 
-def expand_range(x, from_col, to_col):
+def expand_range(x, from_col, to_col, range_except_0):
     new_xs = []
+    if range_except_0 is not None:
+        if x[range_except_0] == '0':
+            return []
+
     for i in range(int(x[from_col]), int(x[to_col])):
         new_x = x.copy()
         new_x[from_col] = i
@@ -78,7 +82,7 @@ def save_tile_template(output_dir, gzip_output, output_format='sparse'):
                 f.write(tile_value)
         else:
             with open(outpath, 'w') as f:
-                f.write(json.dumps(tile_value))
+                f.write(json.dumps(tile_value, indent=2))
 
     def blah(x):
         return str(x)
@@ -141,7 +145,7 @@ def data_bounds(entries, num_dims):
 def add_pos(dim_names, add_uuid=False):
     def add_pos_func(entry):
         new_dict = entry
-        new_dict['pos'] = map(lambda dn: float(entry[dn]), dim_names)
+        new_dict['pos'] = [float(entry[dn]) for dn in dim_names]
 
         if add_uuid:
             new_dict['uuid'] = shortuuid.uuid()
@@ -249,8 +253,8 @@ def reduce_range((mins_a, maxs_a), (mins_b, maxs_b)):
              ------------------
           result [(0,3),(7,10)]
     '''
-    mins_c = map(min, zip(mins_a, mins_b))
-    maxs_c = map(max, zip(maxs_a, maxs_b))
+    mins_c = [min(a,b) for (a,b) in zip(mins_a, mins_b)]
+    maxs_c = [max(a,b) for (a,b) in zip(maxs_a, maxs_b)]
 
     return mins_c, maxs_c
 
@@ -294,7 +298,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         '''
         Place all of the dimensions in one array for this entry.
         '''
-        new_entry = {'pos': map(lambda dn: float(entry[dn]), dim_names),
+        new_entry = { 'pos': [float(entry[dn]) for dn in dim_names],
                       'value': float(entry[value_field]),
                       'importance': float(entry[importance_field]) }
         return new_entry
@@ -359,7 +363,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         return (min(tile_value), max(tile_value))
 
     def sparse_range(tile_value):
-        values = map(lambda x: x['value'], tile_value)
+        values = [x['value'] for x in tile_value]
 
         return (0, max(values))
 
@@ -436,7 +440,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     # get all the different zoom levels
     zoom_levels = range(max_zoom+1)
-    zoom_widths = map(lambda x: max_width / 2 ** x, zoom_levels)
+    zoom_widths = [max_width / 2 ** x for x in zoom_levels]
     zoom_level_widths = zip(zoom_levels, zoom_widths)
 
     zoom_width = max_width / 2 ** max_zoom
@@ -485,7 +489,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
             json.dump(histogram, f, indent=2)
 
     def place_positions_at_origin(entry):
-        new_pos = map(lambda (x, mx): x - mx, zip(entry['pos'], mins))
+        #new_pos = map(lambda (x, mx): x - mx, zip(entry['pos'], mins))
+        new_pos = [x - mx for (x,mx) in zip(entry['pos'], mins)]
         return (new_pos, entry['value'])
 
     # add a bogus tile_id for downstream processing
@@ -500,18 +505,17 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         start_time = time.time()
 
         def place_in_bin((prev_pos, value)):
-            new_bin_pos = tuple(map(lambda x: int(int(x / bin_width) * bin_width), prev_pos))
+            new_bin_pos = tuple([int(int(x / bin_width) * bin_width) for x in prev_pos])
 
             return (new_bin_pos, value)
 
         def place_in_tile((bin_pos, value)):
             # we have a bin position and we need to place it in a tile
-            tile_pos = tuple([zoom_level] + map(lambda x: int(x / tile_width), bin_pos))
-            tile_mins = map(lambda x: x * tile_width, tile_pos[1:])
-            bin_in_tile = map(lambda (i, mind): int((bin_pos[i] - mind) / bin_width),
-                          enumerate(tile_mins))
+            tile_pos = [int(x / tile_width) for x in bin_pos]
+            tile_mins = [x * tile_width for x in tile_pos]
+            bin_in_tile = [int((bin_pos[i] - mind) / bin_width) for (i,mind) in enumerate(tile_mins)]
 
-            return ((tile_pos), [(bin_in_tile, value)])
+            return (tuple([zoom_level] + tile_pos), [(bin_in_tile, value)])
 
 
         bin_entries = bin_entries.map(place_in_bin).reduceByKey(reduce_sum)
@@ -520,7 +524,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         total_bins += bin_count
         '''
 
-        tile_entries = bin_entries.map(place_in_tile).reduceByKey(reduce_sum)
+        tile_entries = bin_entries.map(place_in_tile)
+        tile_entries = tile_entries.reduceByKey(reduce_sum)
         '''
         tile_count = tile_entries.count()
         total_tiles += tile_count
@@ -618,7 +623,7 @@ def main():
             default=None,
             help='Sort by a field and use as the position') 
 
-    parser.add_argument('-e', '--max-entries-per-tile', dest='max_entries_per_tile', default=100,
+    parser.add_argument('-e', '--max-entries-per-tile', dest='max_entries_per_tile', default=15,
         help='The maximum number of entries that can be displayed on a single tile',
         type=int)
     parser.add_argument('-c', '--column-names', dest='column_names', default=None)
@@ -636,6 +641,9 @@ def main():
             default='max_y')
     parser.add_argument('--range',
             help="Use two columns to create a range (i.e. pos1,pos2",
+            default=None)
+    parser.add_argument('--range-except-0',
+            help="Don't expand rows which have values less than 0",
             default=None)
     parser.add_argument('--gzip', help='Compress the output JSON files using gzip', 
             action='store_true')
@@ -695,13 +703,14 @@ def main():
         # if a pair of columns specifies a range of values, then create multiple
         # entries for each value within that range (e.g. bed files)
         range_cols = args.range.split(',')
-        entries = entries.flatMap(lambda x: expand_range(x, *range_cols))
+        entries = entries.flatMap(lambda x: expand_range(x, *range_cols, range_except_0 = args.range_except_0))
 
     if args.importance:
         tileset = make_tiles_by_importance(entries, dim_names=args.position.split(','), 
                 max_zoom=args.max_zoom, 
                 importance_field=args.importance_field,
                 output_dir=args.output_dir,
+                max_entries_per_tile = args.max_entries_per_tile,
                 gzip_output=args.gzip, add_uuid=args.add_uuid,
                 reverse_importance=args.reverse_importance)
     else:
