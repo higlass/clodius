@@ -1,4 +1,7 @@
-## Task-specific readme
+##########################################################################################
+### HiC data
+#########################################################################################
+
 
 ### Smaller test set
 
@@ -37,17 +40,10 @@ SPARK_HOME_DIR=~/spark-home
 
 aws s3 sync --region us-west-2 ~/data/${FILENAME}.tiles s3://pkerp/data/${FILENAME}.tiles
 
-## Creating tiles for the annotations
 
-### Smaller test set
-
-OUTPUT_DIR=/tmp/tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time -f "user: %E %M" python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p genomeTxStart  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,count -i count --importance test/data/smallRefGeneCounts.tsv
-
-### Smaller real data set
-
-OUTPUT_DIR=/data/refgene-tiles-small; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time -f "user: %E %M" python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p genomeTxStart  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count --max-zoom 18 -i count --importance --reverse-importance /data/hg19/genbank-output/refgene-count-chr1
-
-### Real data set
+##########################################################################################
+### Gene annotations
+#########################################################################################
 
 INPUT_FILE=~/data/hg19/genbank-output/refgene-count-minus
 OUTPUT_PART=data/hg19/refgene-tiles-minus/
@@ -63,7 +59,10 @@ rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python
 aws s3 sync $OUTPUT_DIR s3://pkerp/$OUTPUT_PART
 aws s3 sync $OUTPUT_DIR s3://pkerp/$OUTPUT_PART
 
-## BED files
+##########################################################################################
+## Wiggle Tracks from
+## BEDGraph files
+##########################################################################################
 
 DATASET_NAME=hg19/E116-DNase.fc.signal.bigwig
 FILENAME=ENCODE/${DATASET_NAME}

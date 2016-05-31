@@ -16,7 +16,7 @@ import requests
 import sys
 import time
 
-def expand_range(x, from_col, to_col, range_except_0):
+def expand_range(x, from_col, to_col, range_except_0 = None):
     new_xs = []
     if range_except_0 is not None:
         if x[range_except_0] == '0':
