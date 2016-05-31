@@ -4,6 +4,7 @@ from time import gmtime, strftime
 import argparse
 import csv
 import collections as col
+import describe_dataset as dd
 import fpark
 import gzip
 import itertools as it
@@ -13,6 +14,7 @@ import os
 import os.path as op
 import random
 import requests
+import save_tiles as st
 import sys
 import time
 
@@ -29,25 +31,6 @@ def expand_range(x, from_col, to_col, range_except_0 = None):
         new_xs += [new_x]
     return new_xs
 
-def save_to_elasticsearch(url, data):
-    saved = False
-    to_sleep = 1
-    while not saved:
-        try:
-            #print "Saving... url:", url, "len(bulk_txt):", len(data)
-            requests.post(url, data=data, timeout=8)
-            #print "Saved"
-            saved = True
-        except Exception as ex:
-
-            to_sleep *= 2
-            #print >>sys.stderr, "Error saving to elastic search, sleeping:", to_sleep, ex
-            time.sleep(to_sleep)
-
-            if to_sleep > 600:
-                print >>sys.stderr, "Slept too long, returning"
-                return
-
 def summarize_data(max_entries):
     '''
     Summarize the data into a maximum of max_entries.
@@ -61,34 +44,6 @@ def summarize_data(max_entries):
 
     return condense
 
-def save_tile_template(output_dir, gzip_output, output_format='sparse'):
-    def save_tile(tile):
-        key = tile[0]
-        tile_value = tile[1]
-
-        outpath = op.join(output_dir, '/'.join(map(str, key)) + '.json')
-        outdir = op.dirname(outpath)
-
-        if not op.exists(outdir):
-            try:
-                os.makedirs(outdir)
-            except OSError as oe:
-                # somebody probably made the directory in between when we
-                # checked if it exists and when we're making it
-                print >>sys.stderr, "Error making directories:", oe
-
-        if gzip_output:
-            with gzip.open(outpath + ".gz", 'w') as f:
-                f.write(tile_value)
-        else:
-            with open(outpath, 'w') as f:
-                f.write(json.dumps(tile_value, indent=2))
-
-    def blah(x):
-        return str(x)
-
-    return save_tile
-    #return blah
 
 def load_entries_from_file(filename, column_names=None, use_spark=False, delimiter='\t', 
         elasticsearch_path=None):
@@ -382,6 +337,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     entries = entries.map(consolidate_positions)
     tiled_entries = entries.map(lambda x: (0, x))
+    all_tiles = sc.parallelize([])
 
     tileset_info = {}
 
@@ -460,33 +416,13 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         import urllib2 as urllib
         import requests
 
-        def save_tile_to_elasticsearch(partition):
-            bulk_txt = ""
-            put_url =  op.join(es_url, "_bulk")
-
-            for val in partition:
-                bulk_txt += json.dumps({"index": {"_id": val['tile_id']}}) + "\n"
-                bulk_txt += json.dumps(val) + "\n"
-
-                if len(bulk_txt) > 5000000:
-                    save_to_elasticsearch("http://" + put_url, bulk_txt)
-                    bulk_txt = ""
-
-            #print "len(bulk_txt)", len(bulk_txt)
-            if len(bulk_txt) > 0:
-                save_to_elasticsearch("http://" + put_url, bulk_txt)
 
         tileset_info_rdd = sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
-        tileset_info_rdd.foreachPartition(save_tile_to_elasticsearch)
+        tileset_info_rdd.foreachPartition(st.save_tile_to_elasticsearch)
 
         histogram_rdd = sc.parallelize([{"tile_value": histogram, "tile_id": "histogram"}])
-        histogram_rdd.foreachPartition(save_tile_to_elasticsearch)
+        histogram_rdd.foreachPartition(st.save_tile_to_elasticsearch)
     else:
-        with open(op.join(output_dir, 'tile_info.json'), 'w') as f:
-            json.dump(tileset_info, f, indent=2)
-
-        with open(op.join(output_dir, 'value_histogram.json'), 'w') as f:
-            json.dump(histogram, f, indent=2)
 
     def place_positions_at_origin(entry):
         #new_pos = map(lambda (x, mx): x - mx, zip(entry['pos'], mins))
@@ -560,15 +496,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     #print tiles_with_meta_string.take(1)
 
-        if elasticsearch_nodes is not None:
-
-            tiles_as_jsons = tiles_with_meta_string.map(lambda x: {"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]})
-            tiles_as_jsons.foreachPartition(save_tile_to_elasticsearch)
-
-
-        else:
-            save_tile = save_tile_template(output_dir, gzip_output, output_format)
-            tiles_with_meta_string.foreach(save_tile)
 
         end_time = time.time()
         #print "zoom_level:", zoom_level, "bin_entries:", bin_count, "tile_entries:", tile_count, "time:", int(end_time - start_time), "time_per_Mbin:", int(1000000 * (end_time - start_time) / bin_count)
@@ -581,7 +508,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     #print "entries:", total_entries, "bins:", total_bins, "tiles:", total_tiles, "time:", int(total_end_time - total_start_time), 'time_per_Mbin:', int(1000000 * (total_end_time - total_start_time) / total_bins)
     print "total_time:", int(total_end_time - total_start_time)
 
-    return {"tileset_info": tileset_info, "tiles": tiles_with_meta, "histogram": histogram}
+    return {"tileset_info": tileset_info, "tiles": all_tiles, "histogram": histogram}
 
 def main():
     usage = """
@@ -681,7 +608,6 @@ def main():
             help="The type of document to index",
             default="autocomplete")
 
-
     args = parser.parse_args()
 
     if not args.importance:
@@ -706,6 +632,8 @@ def main():
         entries = entries.flatMap(lambda x: expand_range(x, *range_cols, range_except_0 = args.range_except_0))
 
     if args.importance:
+        # Data will be aggregated by importance. Only more "important" pieces of information will
+        # be passed onto the lower resolution tiles if they are too crowded
         tileset = make_tiles_by_importance(entries, dim_names=args.position.split(','), 
                 max_zoom=args.max_zoom, 
                 importance_field=args.importance_field,
@@ -714,6 +642,8 @@ def main():
                 gzip_output=args.gzip, add_uuid=args.add_uuid,
                 reverse_importance=args.reverse_importance)
     else:
+        # Data will be aggregated by binning. This means that it two adjacent bins should be able
+        # to be reduced into one using some function (i.e. 'sum', 'min', 'max')
         tileset = make_tiles_by_binning(entries, args.position.split(','), 
                 args.max_zoom, args.value_field, args.importance_field,
                 bins_per_dimension=args.bins_per_dimension,
@@ -721,6 +651,27 @@ def main():
                 gzip_output=args.gzip, output_format=args.output_format,
                 elasticsearch_nodes=args.elasticsearch_nodes,
                 elasticsearch_path=args.elasticsearch_path)
+
+    all_tiles = tileset['tiles']
+
+    if elasticsearch_nodes is not None:
+        # save the tiles to an elasticsearch database
+        all_tiles.foreachPartition(st.save_to_elasticsearch)
+    else:
+        # dump tiles to a directory structure
+        all_tiles.foreach(ft.partial(save_tile,
+                                     output_dir=args.output_dir, 
+                                     gzip_output=args.gzip_output))
+
+        with open(op.join(output_dir, 'dataset_info.json'), 'w') as f:
+            json.dump(dataset_info, f, indent=2)
+
+        with open(op.join(output_dir, 'tile_info.json'), 'w') as f:
+            json.dump(tileset['tileset_info'], f, indent=2)
+
+        with open(op.join(output_dir, 'value_histogram.json'), 'w') as f:
+            json.dump(tileset['histogram'], f, indent=2)
+
 
 if __name__ == '__main__':
     main()
