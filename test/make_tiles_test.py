@@ -66,21 +66,21 @@ def test_make_tiles_with_resolution():
             bins_per_dimension=2,
             resolution=1)
 
+    print "tiles:", tiles
     tiles = tiles['tiles'].collect()
+
+    print "tiles:", tiles
 
     # make sure the top-level tile is there
     assert((0,0,0) in [t[0] for t in tiles])
-    assert('count' in tiles[0][1][0])
+    assert('dense' in tiles[0][1])
 
     # create dense format tiles
     tiles = mt.make_tiles_by_binning(entries, dim_names, max_zoom,
             value_field='count',
             bins_per_dimension=2,
-            output_format = 'dense',
             resolution=1)
     tiles = tiles['tiles'].collect()
-
-    assert(type(tiles[0][1][0] == float))
 
 def test_make_tiles_with_importance():
     entries = mt.load_entries_from_file('test/data/smallRefGeneCounts.tsv',

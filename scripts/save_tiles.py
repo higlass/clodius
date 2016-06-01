@@ -1,5 +1,8 @@
-def save_tile_to_elasticsearch(partition):
+import requests
+
+def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_path):
     bulk_txt = ""
+    es_url = op.join(elasticsearch_nodes, elasticsearch_path)
     put_url =  op.join(es_url, "_bulk")
 
     for val in partition:

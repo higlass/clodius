@@ -19,6 +19,16 @@ import sys
 import time
 
 def expand_range(x, from_col, to_col, range_except_0 = None):
+    '''
+    Copy a row multiple times if two columns indicate that it
+    represents a range of values. The most common example would 
+    be a bed file.
+
+    chr1 1000 2000 4.6
+
+    Means that the nucleotides between 1000 and 2000 on chromosome 1
+    have a value of 4.6
+    '''
     new_xs = []
     if range_except_0 is not None:
         if x[range_except_0] == '0':
@@ -223,11 +233,7 @@ def reduce_sum(a,b):
 
 def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
-        aggregate_tile=lambda tile,dim_names: tile, 
-        bins_per_dimension=None, output_dir=None,
-        elasticsearch_nodes=None,
-        elasticsearch_path=None,
-        gzip_output=False, output_format='sparse',
+        bins_per_dimension=None,
         num_histogram_bins=1000):
     '''
     Create tiles by calculating tile indeces.
@@ -354,9 +360,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     mins = reduced_entry_ranges[0][2:]
     maxs = reduced_entry_ranges[1][2:]
 
-    print "mins:", mins
-    print "maxs:", maxs
-
     value_histogram = []
     bin_size = (tileset_info['max_value'] - tileset_info['min_value']) / num_histogram_bins
 
@@ -410,19 +413,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     tileset_info['data_granularity'] = resolution
     tileset_info['bins_per_dimension'] = bins_per_dimension
-
-    if elasticsearch_nodes is not None:
-        es_url = op.join(elasticsearch_nodes, elasticsearch_path)
-        import urllib2 as urllib
-        import requests
-
-
-        tileset_info_rdd = sc.parallelize([{"tile_value": tileset_info, "tile_id": "tileset_info"}])
-        tileset_info_rdd.foreachPartition(st.save_tile_to_elasticsearch)
-
-        histogram_rdd = sc.parallelize([{"tile_value": histogram, "tile_id": "histogram"}])
-        histogram_rdd.foreachPartition(st.save_tile_to_elasticsearch)
-    else:
 
     def place_positions_at_origin(entry):
         #new_pos = map(lambda (x, mx): x - mx, zip(entry['pos'], mins))
@@ -493,6 +483,7 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         '''
         tiles_with_meta = tile_entries.map(add_tile_metadata)
         tiles_with_meta_string = tiles_with_meta.map(tile_pos_to_string)
+        all_tiles = all_tiles.union(tiles_with_meta_string)
 
     #print tiles_with_meta_string.take(1)
 
@@ -656,7 +647,20 @@ def main():
 
     if elasticsearch_nodes is not None:
         # save the tiles to an elasticsearch database
-        all_tiles.foreachPartition(st.save_to_elasticsearch)
+        save_tile_to_elasticsearch = ft.partial(st.save_tile_to_elasticsearch,
+            elasticsearch_nodes = args.elasticsearch_nodes,
+            elasticsearch_path = args.elasticsearch_path)
+
+        all_tiles.foreachPartition(save_tile_to_elasticsearch)
+
+        tileset_info_rdd = sc.parallelize([{"tile_value": tileset['tileset_info'], 
+                                            "tile_id": "tileset_info"}])
+        tileset_info_rdd.foreachPartition(save_tile_to_elasticsearch)
+
+        histogram_rdd = sc.parallelize([{"tile_value": tileset_info['histogram'], 
+                                         "tile_id": "histogram"}])
+
+        histogram_rdd.foreachPartition(save_tile_to_elasticsearch)
     else:
         # dump tiles to a directory structure
         all_tiles.foreach(ft.partial(save_tile,
