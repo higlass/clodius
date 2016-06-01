@@ -39,12 +39,12 @@ def test_make_matrix_tiles():
 
     options = Options('count', None, 'pos1,pos2')
 
-    #mt.make_tiles_from_file('test/data/simpleMatrix.tsv', options)
+    #mt.make_tiles_from_file('test/sample_data/simpleMatrix.tsv', options)
 
     pass
 
 def test_make_tiles_by_binning():
-    entries = mt.load_entries_from_file('test/data/simpleMatrix.tsv', 
+    entries = mt.load_entries_from_file('test/sample_data/simpleMatrix.tsv', 
                 column_names = ['pos1', 'pos2', 'count'])
     dim_names = ['pos1', 'pos2']
     
@@ -55,7 +55,7 @@ def test_make_tiles_by_binning():
             bins_per_dimension=2)
 
 def test_make_tiles_with_resolution():
-    entries = mt.load_entries_from_file('test/data/smallFullMatrix.tsv', 
+    entries = mt.load_entries_from_file('test/sample_data/smallFullMatrix.tsv', 
                 column_names = ['pos1', 'pos2', 'count'])
 
     dim_names = ['pos1', 'pos2']
@@ -83,7 +83,7 @@ def test_make_tiles_with_resolution():
     tiles = tiles['tiles'].collect()
 
 def test_make_tiles_with_importance():
-    entries = mt.load_entries_from_file('test/data/smallRefGeneCounts.tsv',
+    entries = mt.load_entries_from_file('test/sample_data/smallRefGeneCounts.tsv',
             column_names=['refseqid', 'chr', 'strand', 'txStart', 'txEnd', 'genomeTxStart', 'genomeTxEnd', 'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds', 'count'])
 
     #tiles = mt.make_tiles_by_importance(entries, dim_names, max_zoom, value_field
@@ -99,7 +99,7 @@ def test_make_tiles_with_importance():
         assert(len(tile_values) <= 1)
 
 def test_data_bounds():
-    entries = mt.load_entries_from_file('test/data/smallBedGraph.tsv', 
+    entries = mt.load_entries_from_file('test/sample_data/smallBedGraph.tsv', 
             column_names=['chr1', 'pos1', 'pos2', 'val'],
             delimiter=' ')
 
@@ -112,7 +112,7 @@ def test_data_bounds():
     assert(maxs[0] == 8.0)
 
 def test_position_ranges():
-    entries = mt.load_entries_from_file('test/data/smallBedGraph.tsv', 
+    entries = mt.load_entries_from_file('test/sample_data/smallBedGraph.tsv', 
             column_names=['chr1', 'pos1', 'pos2', 'val'],
             delimiter=' ')
     entries = entries.map(lambda x: dict(x, pos1=int(x['pos1']), pos2=int(x['pos2'])))
@@ -131,15 +131,15 @@ def test_position_ranges():
         assert(entry['pos1'] != 5)
         assert(entry['pos1'] != 10)
 
-def test_dnase_data():
-    entries = mt.load_entries_from_file('test/data/E116-DNase.fc.signal.bigwig.bedGraph.genome.225',
+def test_dnase_sample_data():
+    entries = mt.load_entries_from_file('test/sample_data/E116-DNase.fc.signal.bigwig.bedGraph.genome.225',
             column_names=['pos1', 'pos2', 'val'], delimiter=None)
     entries = entries.flatMap(lambda x: mt.expand_range(x, 'pos1', 'pos2', range_except_0 = 'val'))
 
-    tile_data = mt.make_tiles_by_binning(entries, 
+    tile_sample_data = mt.make_tiles_by_binning(entries, 
             ['pos1'], max_zoom = 1000,
             value_field = 'val', importance_field = 'val',
             resolution = 1, bins_per_dimension = 64)
 
-    tile = tile_data['tiles'].collect()[0]
+    tile = tile_sample_data['tiles'].collect()[0]
 
