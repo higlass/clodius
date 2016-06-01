@@ -134,7 +134,7 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
 
     # add zoom levels until we either reach the maximum zoom level or
     # have no tiles that have more entries than max_entries_per_tile
-    while zoom_level < max_zoom:
+    while zoom_level <= max_zoom:
         zoom_width = max_width / 2**zoom_level
 
         def place_in_tile(entry):
@@ -179,13 +179,6 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
 
     tileset_info['max_zoom'] = max_zoom
     tileset_info['max_width'] = max_width
-
-    if output_dir is not None:
-        save_tile = save_tile_template(output_dir, gzip_output)
-        reduced_tiles.foreach(save_tile)
-
-        with open(op.join(output_dir, 'tile_info.json'), 'w') as f:
-            json.dump(tileset_info, f, indent=2)
 
     return {"tileset_info": tileset_info, "tiles": reduced_tiles}
 
@@ -479,8 +472,8 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
         print "zoom_level:", zoom_level, "time:", int(end_time - start_time)
 
 
-    total_entries = entries.count()
     total_end_time = time.time()
+    #total_entries = entries.count()
     #print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
     #print "entries:", total_entries, "bins:", total_bins, "tiles:", total_tiles, "time:", int(total_end_time - total_start_time), 'time_per_Mbin:', int(1000000 * (total_end_time - total_start_time) / total_bins)
     print "total_time:", int(total_end_time - total_start_time)

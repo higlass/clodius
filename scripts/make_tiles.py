@@ -186,8 +186,9 @@ def main():
         with open(op.join(args.output_dir, 'tile_info.json'), 'w') as f:
             json.dump(tileset['tileset_info'], f, indent=2)
 
-        with open(op.join(args.output_dir, 'value_histogram.json'), 'w') as f:
-            json.dump(tileset['histogram'], f, indent=2)
+        if 'histogram' in tileset:
+            with open(op.join(args.output_dir, 'value_histogram.json'), 'w') as f:
+                json.dump(tileset['histogram'], f, indent=2)
 
 
 if __name__ == '__main__':
