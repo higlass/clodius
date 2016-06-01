@@ -130,3 +130,16 @@ def test_position_ranges():
     for entry in entries.collect():
         assert(entry['pos1'] != 5)
         assert(entry['pos1'] != 10)
+
+def test_dnase_data():
+    entries = mt.load_entries_from_file('test/data/E116-DNase.fc.signal.bigwig.bedGraph.genome.225',
+            column_names=['pos1', 'pos2', 'val'], delimiter=None)
+    entries = entries.flatMap(lambda x: mt.expand_range(x, 'pos1', 'pos2', range_except_0 = 'val'))
+
+    tile_data = mt.make_tiles_by_binning(entries, 
+            ['pos1'], max_zoom = 1000,
+            value_field = 'val', importance_field = 'val',
+            resolution = 1, bins_per_dimension = 64)
+
+    tile = tile_data['tiles'].collect()[0]
+

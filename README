@@ -136,3 +136,9 @@ curl -XPUT "http://127.0.0.1:9200/hg19" -d '
    }
 }'
 
+
+#########################################################################################
+#### Preparing test data
+###########################################################################################
+
+head -n 20212 ~/data/ENCODE/hg19/E116-DNase.fc.signal.bigwig.bedGraph.genome > test/data/E116-DNase.fc.signal.bigwig.bedGraph.genome.20212

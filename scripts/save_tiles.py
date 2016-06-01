@@ -1,3 +1,6 @@
+import json
+import os
+import os.path as op
 import requests
 
 def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_path):

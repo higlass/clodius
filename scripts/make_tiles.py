@@ -6,6 +6,7 @@ import csv
 import collections as col
 import describe_dataset as dd
 import fpark
+import functools as ft
 import gzip
 import itertools as it
 import json
@@ -233,7 +234,7 @@ def reduce_sum(a,b):
 
 def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
-        bins_per_dimension=None,
+        bins_per_dimension=1,
         num_histogram_bins=1000):
     '''
     Create tiles by calculating tile indeces.
@@ -515,7 +516,7 @@ def main():
     parser.add_argument('input_file')
     parser.add_argument('-b', '--bins-per-dimension', 
                         help='The number of bins to divide the data into',
-                        default=None,
+                        default=1,
                         type=int)
     parser.add_argument('--use-spark', default=False, action='store_true',
                         help='Use spark to distribute the workload')
@@ -545,8 +546,8 @@ def main():
         help='The maximum number of entries that can be displayed on a single tile',
         type=int)
     parser.add_argument('-c', '--column-names', dest='column_names', default=None)
-    parser.add_argument('-m', '--max-zoom', dest='max_zoom', default=None,
-            help='The maximum zoom level', type=int)
+    parser.add_argument('-m', '--max-zoom', dest='max_zoom', 
+            help='The maximum zoom level', type=int, required=True)
     parser.add_argument('--min-pos', dest='min_pos', default=None,
             help='The minimum x position', type=float)
     parser.add_argument('--max-pos', dest='max_pos', default=None,
@@ -638,14 +639,11 @@ def main():
         tileset = make_tiles_by_binning(entries, args.position.split(','), 
                 args.max_zoom, args.value_field, args.importance_field,
                 bins_per_dimension=args.bins_per_dimension,
-                resolution=args.resolution, output_dir=args.output_dir,
-                gzip_output=args.gzip, output_format=args.output_format,
-                elasticsearch_nodes=args.elasticsearch_nodes,
-                elasticsearch_path=args.elasticsearch_path)
+                resolution=args.resolution)
 
     all_tiles = tileset['tiles']
 
-    if elasticsearch_nodes is not None:
+    if args.elasticsearch_nodes is not None:
         # save the tiles to an elasticsearch database
         save_tile_to_elasticsearch = ft.partial(st.save_tile_to_elasticsearch,
             elasticsearch_nodes = args.elasticsearch_nodes,
@@ -663,17 +661,19 @@ def main():
         histogram_rdd.foreachPartition(save_tile_to_elasticsearch)
     else:
         # dump tiles to a directory structure
-        all_tiles.foreach(ft.partial(save_tile,
+        all_tiles.foreach(ft.partial(st.save_tile,
                                      output_dir=args.output_dir, 
-                                     gzip_output=args.gzip_output))
+                                     gzip_output=args.gzip))
 
-        with open(op.join(output_dir, 'dataset_info.json'), 'w') as f:
+        dataset_info = dd.describe_dataset(sys.argv, args)
+
+        with open(op.join(args.output_dir, 'dataset_info.json'), 'w') as f:
             json.dump(dataset_info, f, indent=2)
 
-        with open(op.join(output_dir, 'tile_info.json'), 'w') as f:
+        with open(op.join(args.output_dir, 'tile_info.json'), 'w') as f:
             json.dump(tileset['tileset_info'], f, indent=2)
 
-        with open(op.join(output_dir, 'value_histogram.json'), 'w') as f:
+        with open(op.join(args.output_dir, 'value_histogram.json'), 'w') as f:
             json.dump(tileset['histogram'], f, indent=2)
 
 
