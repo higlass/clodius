@@ -3,6 +3,7 @@ checkpoint
 *~
 *.swp
 *.swo
+*.tiles
 *.pyc
 /data
 output.tar
