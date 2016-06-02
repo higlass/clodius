@@ -46,33 +46,11 @@ tiling:
 }
 ```
 
-The directory structure of of the output directory allows for quick access to
-tiles using the path `z/x/y.json`.
-
-```
-├── 0
-│   ├── 0
-│   │   ├── 0.json
-│   │   └── 1.json
-│   └── 1
-│       └── 1.json
-├── 1
-│   ├── 0
-│   │   ├── 0.json
-│   │   ├── 1.json
-│   │   └── 2.json
-│   ├── 1
-│   │   ├── 1.json
-│   │   └── 2.json
-│   └── 2
-│       └── 2.json
-└── tile_info.json
-```
-
-The first level (`z`) corresponds to the zoom level (0 or 1), the second (`x`
+Tiles are identified using an ID in the format `z.x.y` (e.g. `13.165.1765`). 
+The first number (`z`) corresponds to the zoom level (0 or 1), the second (`x`
 to the tile number along the first dimension (0, 1, or 2), and the third (`y`)
 to the tile number along the third dimension (0, 1, or 2). If the input data
-was 1D, then the directory structure would have one less level.
+was 1D, then the id would have one less number.
 
 ##### Tile boundaries
 
@@ -133,6 +111,8 @@ the width of the lowest resolution tile (`zoom_level=0`) is equal to the width o
 of the data. Because tile inclusion intervals are half-open, however, the second point will
 actually be in a second tile `[0,1]`.
 
+#### Saving Tiles
+
 ##### Compression
 
 The output tiles can be gzipped by using the `--gzip` option. This will
@@ -156,7 +136,7 @@ matrix format.
 {
   "sparse": [
     {
-      "count": 1.0,
+      "value": 1.0,
       "pos": [
         2.5,
         2.5
@@ -199,6 +179,14 @@ and `--elasticsearch-path` options. Example
 
 ```
 --elasticsearch-nodes localhost:9200 --elasticsearch-path test/tiles
+```
+
+When using Elasticsearch to serve tiles, make sure that cross-origin requests are allowed.
+This is done by adding the following two lines to your `config/elasticsearch.yml` file:
+
+```
+http.cors.enabled: true
+http.cors.allow-origin: '*'
 ```
 
 ## Usage Example

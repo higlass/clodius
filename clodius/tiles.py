@@ -79,8 +79,6 @@ def data_bounds(entries, num_dims):
 
     return (mins, maxs)
 
-
-
 def add_pos(dim_names, add_uuid=False):
     def add_pos_func(entry):
         new_dict = entry
@@ -171,15 +169,6 @@ def make_tiles_by_importance(sc,entries, dim_names, max_zoom, importance_field=N
             output_positions = [(tuple([zoom_level] + p), [entry]) for p in map(list, zip(*tile_positions))]
 
             return output_positions
-            
-        '''
-        def place_in_tile(entry):
-            tile_pos = tuple( [zoom_level] + 
-                    map(lambda (i, mind): int((entry['pos'][i] - mind) / tile_width),
-                           enumerate(mins)))
-
-            return ((tile_pos), [entry])
-        '''
 
         current_tile_entries = entries.flatMap(place_in_tile)
         current_max_entries_per_tile = max(current_tile_entries.countByKey().values())
@@ -205,7 +194,6 @@ def make_tiles_by_importance(sc,entries, dim_names, max_zoom, importance_field=N
                     key=lambda x: float(x[importance_field]))
         return combined_entries[:max_entries_per_tile]
 
-    print "te:", tile_entries.take(4)
     reduced_tiles = tile_entries.reduceByKey(reduce_values_by_importance)
 
     tileset_info = {}

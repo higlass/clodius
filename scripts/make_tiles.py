@@ -175,16 +175,24 @@ def main():
             elasticsearch_nodes = args.elasticsearch_nodes,
             elasticsearch_path = args.elasticsearch_path)
 
-        all_tiles.foreachPartition(save_tile_to_elasticsearch)
+        (all_tiles.map(lambda x: {"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]})
+                 .foreachPartition(save_tile_to_elasticsearch))
 
-        tileset_info_rdd = sc.parallelize([{"tile_value": tileset['tileset_info'], 
-                                            "tile_id": "tileset_info"}])
-        tileset_info_rdd.foreachPartition(save_tile_to_elasticsearch)
+        dataset_info = cdd.describe_dataset(sys.argv, args)
+        print "saving tileset_info to:", args.elasticsearch_path
+        (sc.parallelize([{"tile_value": tileset['tileset_info'], 
+                          "tile_id": "tileset_info"}])
+           .foreachPartition(save_tile_to_elasticsearch))
 
-        histogram_rdd = sc.parallelize([{"tile_value": tileset_info['histogram'], 
-                                         "tile_id": "histogram"}])
+        (sc.parallelize([{"tile_value": dataset_info,
+                          "tile_id": "dataset_info"}])
+           .foreachPartition(save_tile_to_elasticsearch))
 
-        histogram_rdd.foreachPartition(save_tile_to_elasticsearch)
+        if 'histogram' in tileset:
+            histogram_rdd = sc.parallelize([{"tile_value": tileset['histogram'], 
+                                             "tile_id": "histogram"}])
+
+            histogram_rdd.foreachPartition(save_tile_to_elasticsearch)
     else:
         # dump tiles to a directory structure
         all_tiles.foreach(ft.partial(cst.save_tile,
@@ -193,15 +201,21 @@ def main():
 
         dataset_info = cdd.describe_dataset(sys.argv, args)
 
-        with open(op.join(args.output_dir, 'dataset_info.json'), 'w') as f:
-            json.dump(dataset_info, f, indent=2)
+        with open(op.join(args.output_dir, 'dataset_info'), 'w') as f:
+            json.dump({"_source": {"tile_id": "dataset_info",
+                                   "tile_value": dataset_info}}, 
+                      f, indent=2)
 
-        with open(op.join(args.output_dir, 'tile_info.json'), 'w') as f:
-            json.dump(tileset['tileset_info'], f, indent=2)
+        with open(op.join(args.output_dir, 'tileset_info'), 'w') as f:
+            json.dump({"_source": {"tile_id": "tileset_info",
+                                   "tile_value": tileset['tileset_info']}}, 
+                      f, indent=2)
 
         if 'histogram' in tileset:
-            with open(op.join(args.output_dir, 'value_histogram.json'), 'w') as f:
-                json.dump(tileset['histogram'], f, indent=2)
+            with open(op.join(args.output_dir, 'value_histogram'), 'w') as f:
+                json.dump({"_source": { "tile_id": "histogram",
+                                        "tile_value": tileset['histogram']}}, 
+                          f, indent=2)
 
 
 if __name__ == '__main__':

@@ -10,7 +10,6 @@ def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_pat
     put_url =  op.join(es_url, "_bulk")
 
     for val in partition:
-        print "val:", val
         bulk_txt += json.dumps({"index": {"_id": val['tile_id']}}) + "\n"
         bulk_txt += json.dumps(val) + "\n"
 
@@ -66,7 +65,7 @@ def save_tile(tile, output_dir, gzip_output):
     key = tile[0]
     tile_value = tile[1]
 
-    outpath = op.join(output_dir, '/'.join(map(str, key)) + '.json')
+    outpath = op.join(output_dir, '.'.join(map(str, key)))
     outdir = op.dirname(outpath)
 
     if not op.exists(outdir):
@@ -77,10 +76,12 @@ def save_tile(tile, output_dir, gzip_output):
             # checked if it exists and when we're making it
             print >>sys.stderr, "Error making directories:", oe
 
+    output_json = {"_source": {"tile_id": ".".join(map(str, key)),
+                               "tile_value": tile_value}}
     if gzip_output:
         with gzip.open(outpath + ".gz", 'w') as f:
-            f.write(tile_value)
+            f.write(json.dumps(output_json, indent=2))
     else:
         with open(outpath, 'w') as f:
-            f.write(json.dumps(tile_value, indent=2))
+            f.write(json.dumps(output_json, indent=2))
 
