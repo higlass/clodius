@@ -10,6 +10,7 @@ def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_pat
     put_url =  op.join(es_url, "_bulk")
 
     for val in partition:
+        print "val:", val
         bulk_txt += json.dumps({"index": {"_id": val['tile_id']}}) + "\n"
         bulk_txt += json.dumps(val) + "\n"
 
