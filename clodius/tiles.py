@@ -1,14 +1,14 @@
-import clodius.fpark as cfp
 import json
 import math
 import sys
 import time
 
-def load_entries_from_file(filename, column_names=None, use_spark=False, delimiter='\t', 
+def load_entries_from_file(sc, filename, column_names=None, delimiter=None, 
         elasticsearch_path=None):
     '''
     Load a dataset from file.
 
+    :parma sc: SparkContext (or FakeSparkContext)
     :param filename: The filename for the file (either JSON or tsv) containing
         the data
     :param column_names: If the passed file is a tsv, then we may want to pass
@@ -22,25 +22,11 @@ def load_entries_from_file(filename, column_names=None, use_spark=False, delimit
     def add_column_names(x):
         return dict(zip(column_names, x))
 
-    global sc
-    if use_spark:
-        from pyspark import SparkContext
-        sc = SparkContext()
-
-        if delimiter is not None:
-            entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
-        else:
-            entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split())))
-        return entries
+    if delimiter is not None:
+        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
     else:
-        sys.stderr.write("setting sc:")
-        sc = cfp.FakeSparkContext
-        if delimiter is not None:
-            entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
-        else:
-            entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split())))
-        sys.stderr.write(" done\n")
-        return entries
+        entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split())))
+    return entries
 
 
 def expand_range(x, from_col, to_col, range_except_0 = None):
@@ -93,6 +79,8 @@ def data_bounds(entries, num_dims):
 
     return (mins, maxs)
 
+
+
 def add_pos(dim_names, add_uuid=False):
     def add_pos_func(entry):
         new_dict = entry
@@ -103,14 +91,23 @@ def add_pos(dim_names, add_uuid=False):
 
     return add_pos_func
 
-def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None,
+def merge_two_dicts(x, y):
+    '''Given two dicts, merge them into a new dict as a shallow copy.'''
+    z = x.copy()
+    z.update(y)
+    return z
+
+def make_tiles_by_importance(sc,entries, dim_names, max_zoom, importance_field=None,
         max_entries_per_tile=10, output_dir=None, gzip_output=False, add_uuid=False,
-        reverse_importance=False):
+        reverse_importance=False, end_dim_names=None, adapt_zoom=True):
     '''
     Create a set of tiles by restricting the maximum number of entries that
     can be shown on each tile. If there are too many entries that are assigned
     to a particular tile, the lower importance ones will be removed.
 
+    If no importance is given, the entries will be selected randomly.
+
+    :param sc: SparkContext
     :param entries: A list of dictionary containing the data which we wish to tile
     :param dim_names: The names of the dimensions along which we wish to break
                       up the tiles
@@ -120,9 +117,20 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
     :return: A set of tiles
     '''
 
-    entries.map(add_pos(dim_names, add_uuid))
+    if end_dim_names is None:
+        end_dim_names = dim_names
 
-    (mins, maxs) = data_bounds(entries, len(dim_names))
+    entries = entries.map(lambda x: merge_two_dicts(x, {'pos': [float(x[dn]) for dn in dim_names]}))
+    entries = entries.map(lambda x: merge_two_dicts(x, {'end_pos': [float(x[dn]) for dn in end_dim_names]}))
+
+    entry_ranges = entries.map(lambda x: ([x[importance_field]] + x['pos'] + x['end_pos'],
+                                          [x[importance_field]] + x['pos'] + x['end_pos']))
+
+    reduced_entry_ranges = entry_ranges.reduce(reduce_range)
+
+    mins = reduced_entry_ranges[0][1:1+len(dim_names)]
+    maxs = reduced_entry_ranges[1][1+len(dim_names):]
+
     max_width = max(map(lambda x: x[1] - x[0], zip(mins, maxs)))
 
     zoom_level = 0
@@ -132,23 +140,52 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
         # hopefully it'll end up being smaller than that
         max_zoom = sys.maxint
 
+    if importance_field is None:
+        importance_field = dim_names[0]
+
     # add zoom levels until we either reach the maximum zoom level or
     # have no tiles that have more entries than max_entries_per_tile
     while zoom_level <= max_zoom:
-        zoom_width = max_width / 2**zoom_level
+        tile_width = max_width / 2**zoom_level
+
+        if tile_width == 0:
+            tile_width = 1
 
         def place_in_tile(entry):
+            tile_positions = []
+
+            for (i,mind) in enumerate(mins):
+                curr_pos = entry['pos'][i]
+                dimension_tile_positions = [int((curr_pos - mind) / tile_width)]
+                curr_pos += tile_width
+
+                # if there are features that span multiple tiles, we want to inlude
+                # them in each tile that they span
+                while curr_pos < entry['end_pos'][i]:
+                    dimension_tile_positions += [int((curr_pos - mind) / tile_width)]
+                    curr_pos += tile_width;
+
+                tile_positions += [dimension_tile_positions]
+
+            # transpose the tile positions
+            output_positions = [(tuple([zoom_level] + p), [entry]) for p in map(list, zip(*tile_positions))]
+
+            return output_positions
+            
+        '''
+        def place_in_tile(entry):
             tile_pos = tuple( [zoom_level] + 
-                    map(lambda (i, mind): int((entry['pos'][i] - mind) / zoom_width),
+                    map(lambda (i, mind): int((entry['pos'][i] - mind) / tile_width),
                            enumerate(mins)))
 
             return ((tile_pos), [entry])
+        '''
 
-        current_tile_entries = entries.map(place_in_tile)
+        current_tile_entries = entries.flatMap(place_in_tile)
         current_max_entries_per_tile = max(current_tile_entries.countByKey().values())
         tile_entries = tile_entries.union(current_tile_entries)
 
-        if current_max_entries_per_tile <= max_entries_per_tile:
+        if adapt_zoom and current_max_entries_per_tile <= max_entries_per_tile:
             max_zoom = zoom_level
             break
 
@@ -168,6 +205,7 @@ def make_tiles_by_importance(entries, dim_names, max_zoom, importance_field=None
                     key=lambda x: float(x[importance_field]))
         return combined_entries[:max_entries_per_tile]
 
+    print "te:", tile_entries.take(4)
     reduced_tiles = tile_entries.reduceByKey(reduce_values_by_importance)
 
     tileset_info = {}
@@ -354,8 +392,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
     #(mins, maxs) = data_bounds(entries, len(dim_names))
     max_width = max(map(lambda x: x[1] - x[0] + epsilon, zip(mins, maxs)))
 
-    print "max_width:", max_width
-
     if resolution is not None:
         # r * 2 ** n-1 < max_width < r * 2 ** n
         # we need a max width that is a multiple of the resolution, the bin size
@@ -378,8 +414,6 @@ def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count',
 
     # get all the different zoom levels
     zoom_levels = range(max_zoom+1)
-    zoom_widths = [max_width / 2 ** x for x in zoom_levels]
-    zoom_level_widths = zip(zoom_levels, zoom_widths)
 
     zoom_width = max_width / 2 ** max_zoom
     bin_width = zoom_width / bins_per_dimension

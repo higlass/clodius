@@ -74,6 +74,65 @@ to the tile number along the first dimension (0, 1, or 2), and the third (`y`)
 to the tile number along the third dimension (0, 1, or 2). If the input data
 was 1D, then the directory structure would have one less level.
 
+##### Tile boundaries
+
+Tile boundaries are half-open. This an be illustrated using the following
+code block:
+
+```
+    import json
+    import clodius.fpark as cfp
+    import clodius.tiles as cti
+
+    sc = cfp.FakeSparkContext
+    entries = [{'x1': 1, 'value': 5}, {'x1': 10, 'value': 6}]
+    entries = cfp.FakeSparkContext.parallelize(entries)
+
+    tileset = cti.make_tiles_by_importance(sc, entries, ['x1'], max_zoom=0, 
+                                           importance_field='value', adapt_zoom=False)
+
+    tiles = tileset['tiles'].collect()
+    print json.dumps(tiles, indent=2)
+```
+
+The output will be:
+
+```
+[
+  [
+    (0,1),
+    {
+      "end_pos": [
+        10.0
+      ],
+      "x1": 10,
+      "pos": [
+        10.0
+      ],
+      "value": 6
+    }
+  ],
+  [
+    (0,0),
+    {
+      "end_pos": [
+        1.0
+      ],
+      "x1": 1,
+      "pos": [
+        1.0
+      ],
+      "value": 5
+    }
+  ]
+]
+```
+
+Notice that even though `max_zoom` is equal to 0, two tiles are generated. This is because
+the width of the lowest resolution tile (`zoom_level=0`) is equal to the width of the domain
+of the data. Because tile inclusion intervals are half-open, however, the second point will
+actually be in a second tile `[0,1]`.
+
 ##### Compression
 
 The output tiles can be gzipped by using the `--gzip` option. This will

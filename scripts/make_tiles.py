@@ -3,6 +3,7 @@
 from time import gmtime, strftime
 import argparse
 
+import clodius.fpark as cfp
 import clodius.tiles as cti
 import clodius.describe_dataset as cdd
 import clodius.save_tiles as cst
@@ -55,6 +56,8 @@ def main():
             default=None,
             help='Sort by a field and use as the position') 
 
+    parser.add_argument('--end-position', default=None,
+                        help = "Use a field to indicate the end of a particular element so that it appears in all tiles that intersect it")
     parser.add_argument('-e', '--max-entries-per-tile', dest='max_entries_per_tile', default=15,
         help='The maximum number of entries that can be displayed on a single tile',
         type=int)
@@ -121,12 +124,21 @@ def main():
 
     dim_names = args.position.split(',')
 
+    sc = None
+
+    if args.use_spark:
+        from pyspark import SparkContext
+        sc = SparkContext()
+    else:
+        sys.stderr.write("setting sc:")
+        sc = cfp.FakeSparkContext
+
     if args.column_names is not None:
         args.column_names = args.column_names.split(',')
 
     print "start time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
-    entries = cti.load_entries_from_file(args.input_file, args.column_names,
-            args.use_spark, delimiter=args.delimiter,
+    entries = cti.load_entries_from_file(sc, args.input_file, args.column_names,
+            delimiter=args.delimiter,
             elasticsearch_path=args.elasticsearch_path)
     print "load entries time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
@@ -139,7 +151,8 @@ def main():
     if args.importance:
         # Data will be aggregated by importance. Only more "important" pieces of information will
         # be passed onto the lower resolution tiles if they are too crowded
-        tileset = cti.make_tiles_by_importance(entries, dim_names=args.position.split(','), 
+        tileset = cti.make_tiles_by_importance(sc, entries, dim_names=args.position.split(','), 
+                end_dim_names = args.end_position.split(','),
                 max_zoom=args.max_zoom, 
                 importance_field=args.importance_field,
                 output_dir=args.output_dir,
@@ -149,7 +162,7 @@ def main():
     else:
         # Data will be aggregated by binning. This means that it two adjacent bins should be able
         # to be reduced into one using some function (i.e. 'sum', 'min', 'max')
-        tileset = cti.make_tiles_by_binning(entries, args.position.split(','), 
+        tileset = cti.make_tiles_by_binning(sc, entries, args.position.split(','), 
                 args.max_zoom, args.value_field, args.importance_field,
                 bins_per_dimension=args.bins_per_dimension,
                 resolution=args.resolution)

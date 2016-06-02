@@ -140,3 +140,43 @@ def test_dnase_sample_data():
 
     tile = tile_sample_data['tiles'].collect()[0]
 
+def test_end_position():
+    sc = cfp.FakeSparkContext
+
+    # make one really wide entry
+    entries = [{'x1': 1, 'x2': 10, 'value': 5}]
+    entries = cfp.FakeSparkContext.parallelize(entries)
+
+    tileset = cmt.make_tiles_by_importance(sc, entries, ['x1'], end_dim_names=['x2'], max_zoom=2, 
+                                           importance_field='value', adapt_zoom=False)
+
+    tiles = tileset['tiles'].collect()
+    tile_ids = map(lambda x: x[0], tiles)
+
+    print "tiles:", tiles, tile_ids
+
+    # this data point should be in every tile
+    assert((0,0) in tile_ids)
+    assert((1,1) in tile_ids)
+    assert((1,0) in tile_ids)
+    assert((2,0) in tile_ids)
+    assert((2,3) in tile_ids)
+
+    # make two not-so-wide entries
+    entries = [{'x1': 1, 'value': 5}, {'x1': 10, 'value': 6}]
+    entries = cfp.FakeSparkContext.parallelize(entries)
+
+    tileset = cmt.make_tiles_by_importance(sc, entries, ['x1'], max_zoom=2, 
+                                           importance_field='value', adapt_zoom=False)
+
+    tiles = tileset['tiles'].collect()
+    print "tiles:", tiles
+    tile_ids = map(lambda x: x[0], tiles)
+
+    print "tiles:", tiles, tile_ids
+
+    # this data point should be in every tile
+    assert((0,0) in tile_ids)
+    assert((1,0) in tile_ids)
+    assert((1,2) in tile_ids)
+
