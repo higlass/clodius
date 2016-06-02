@@ -236,7 +236,7 @@ def reduce_bins(bins_a, bins_b):
 def reduce_sum(a,b):
     return a + b
 
-def make_tiles_by_binning(entries, dim_names, max_zoom, value_field='count', 
+def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count', 
         importance_field='count', resolution=None,
         bins_per_dimension=1,
         num_histogram_bins=1000):

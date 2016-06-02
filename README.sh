@@ -86,12 +86,14 @@ aws s3 sync $OUTPUT_DIR s3://pkerp/data/served/$DATASET_NAME
 
 #OUTPUT_DIR=${FILEPATH}.short.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v value -c chrom,pos1,pos2,value --position pos1 --range pos1,pos2 -i value --resolution 1 --bins-per-dimension 64 --max-zoom 20 --use-spark  ${FILEPATH}.short --elasticsearch-nodes localhost:9200  --elasticsearch-path test_short/bed
 
+            SPARK_HOME_DIR=~/spark-home
             DATASET_NAME=sample_data/E116-DNase.fc.signal.bigwig.bedGraph.genome.100000
             FILEPATH=test/${DATASET_NAME}
-            OUTPUT_DIR=${FILEPATH}.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v value -c pos1,pos2,value --position pos1 --range pos1,pos2 --range-except-0 value -i value --resolution 1 --bins-per-dimension 64 --max-zoom 20 --use-spark  ${FILEPATH} -o $OUTPUT_DIR
+            OUTPUT_DIR=${FILEPATH}.tiles; rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time ${SPARK_HOME_DIR}/bin/spark-submit scripts/make_tiles.py -v value -c pos1,pos2,value --position pos1 --range pos1,pos2 --range-except-0 value -i value --resolution 1 --bins-per-dimension 64 --max-zoom 5 --use-spark  ${FILEPATH} -o $OUTPUT_DIR
 
-            rsync -avzP $OUTPUT_DIR/ ~/projects/goomba/.tmp/jsons/${DATASET_NAME}.tiles
-            aws s3 sync $OUTPUT_DIR s3://pkerp/data/served/${DATASET_NAME}.tiles
+            rsync -avzP $OUTPUT_DIR/ ~/projects/goomba/.tmp/jsons/${DATASET_NAME}
+
+            #aws s3 sync $OUTPUT_DIR s3://pkerp/data/served/${DATASET_NAME}.tiles
 
 ## Small file
 
