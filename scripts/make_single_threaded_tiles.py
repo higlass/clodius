@@ -1,11 +1,30 @@
 #!/usr/bin/python
 
 import argparse
+import clodius.save_tiles as cst
+import itertools as it
 import collections as col
+import math
 import os.path as op
+import signal
 import sortedcontainers as sco
 import sys
 import time
+
+import multiprocessing as mpr
+
+def tile_saver_worker(q,tile_saver):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    while True:
+        try:
+            (zoom_level, tile_pos, tile_bins) = q.get()
+            tile_saver.save_binned_tile(zoom_level,
+                                        tile_pos,
+                                        tile_bins)
+        except (KeyboardInterrupt, SystemExit):
+            print "Exiting..."
+            break
 
 def main():
     usage = """
@@ -21,15 +40,22 @@ def main():
                         help="The minimum range for the tiling")
     parser.add_argument('--max-pos', required=True,
                         help="The maximum range for the tiling")
-    parser.add_argument('-r', '--resolution', help="The resolution of the data", default=None)
+    parser.add_argument('-r', '--resolution', help="The resolution of the data", 
+                        default=None, type=int )
     parser.add_argument('-k', '--position-cols', help="The position columns (defaults to all but the last, 1-based)", default=None)
     parser.add_argument('-v', '--value-pos', help='The value column (defaults to the last one, 1-based)', default=None)
     parser.add_argument('-z', '--max-zoom', help='The maximum zoom value', default=None, type=int)
+    parser.add_argument('-b', '--bins-per-dimension', default=1,
+                        help="The number of bins to consider in each dimension",
+                        type=int)
+    parser.add_argument('-e', '--elasticsearch-url', default=None,
+                        help="The url of the elasticsearch database where to save the tiles")
 
     args = parser.parse_args()
 
     if args.resolution is None and args.max_zoom is None:
         print >>sys.stderr, "One of --resolution and --max-zoom must be set"
+        sys.exit(1)
 
     mins = [float(p) for p in args.min_pos.split(',')]
     maxs = [float(p) for p in args.max_pos.split(',')]
@@ -44,46 +70,120 @@ def main():
     if args.max_zoom is None:
         # determine the maximum zoom level based on the domain of the data
         # and the resolution
-        pass
+        bins_to_display_at_max_resolution = max_width / args.resolution / args.bins_per_dimension
+        max_max_zoom = math.ceil(math.log(bins_to_display_at_max_resolution) / math.log(2.))
+
+        max_width = args.resolution * args.bins_per_dimension * 2 ** max_max_zoom
+
+        if max_max_zoom < 0:
+            max_max_zoom = 0
+
+        max_zoom = int(max_max_zoom)
     else:
         max_zoom = args.max_zoom
 
     value_pos = args.value_pos
+    
+    first_line = sys.stdin.readline()
+    first_line_parts = first_line.strip().split()
+    # if specific position columns aren't specified, use all but the last column
+    if position_cols is None:
+        position_cols = range(1,len(first_line_parts))
+
+    # if there's not column designated as the value column, use the last column
+    if value_pos is None:
+        value_pos = len(first_line_parts)-1
+    
+    max_data_in_sparse = args.bins_per_dimension ** len(position_cols) / 30.
+
+    if args.elasticsearch_url is not None:
+        tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
+                                                args.bins_per_dimension,
+                                                num_dimensions = len(position_cols),
+                                                es_path = args.elasticsearch_url)
+    else:
+        tile_saver = cst.EmptyTileSaver(max_data_in_sparse,
+                                        args.bins_per_dimension,
+                                        num_dimensions = len(position_cols))
+
     tile_widths = [max_width / 2 ** zl for zl in range(0, max_zoom+1)]
+
+    print "max_data_in_sparse:", max_data_in_sparse
+
     active_bins = col.defaultdict(sco.SortedList)
+    active_tiles = col.defaultdict(sco.SortedList)
+
     prev_time = time.time()
 
-    for line_num,line in enumerate(sys.stdin):
+    #bin_counts = col.defaultdict(col.defaultdict(int))
+    tile_contents = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
+    q = mpr.Queue()
+
+    num_threads = 2
+    tilesaver_processes = []
+    for i in range(num_threads):
+        tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
+                                                args.bins_per_dimension,
+                                                len(position_cols),
+                                                args.elasticsearch_url)
+        p = mpr.Process(target=tile_saver_worker, args=(q, tile_saver))
+
+        p.start()
+        tilesaver_processes += [(tile_saver, p)]
+
+    for line_num,line in enumerate(it.chain([first_line], sys.stdin)):
         line_parts = [p for p in line.strip().split()]
-
-        if position_cols is not None:
-            entry_pos = [float(line_parts[p-1]) for p in p in position_cols]
-        else:
-            entry_pos = [float(p) for p in line_parts[:-1]]
-
-        if value_pos is not None:
-            value = float(line_parts[value_pos-1])
-        else:
-            value = float(line_parts[1])
+        entry_pos = [float(line_parts[p-1]) for p in position_cols]
+        value = float(line_parts[value_pos-1])
 
         for zoom_level, tile_width in zip(range(0, max_zoom+1), tile_widths):
-            current_bin = tuple([int(ep / tile_width) for ep in entry_pos])
+            if line_num % 10000 == 0:
+                print "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "zoom_level, tile_width", zoom_level, len(active_tiles[zoom_level]), "qsize:", q.qsize()
 
-            if current_bin not in active_bins[zoom_level]:
-                active_bins[zoom_level].add(tuple(current_bin))
+                prev_time = time.time()
+
+            # the bin within the tile as well as the tile position
+            current_bin = tuple([int(ep / (tile_width * args.bins_per_dimension)) % args.bins_per_dimension for ep in entry_pos])
+            current_tile = tuple([int(ep / tile_width) for ep in entry_pos])
+
+            if current_tile not in active_tiles[zoom_level]:
+                active_tiles[zoom_level].add(current_tile)
+
+            tile_contents[zoom_level][current_tile][current_bin] += value
 
             # which bins will never be touched again?
             # all bins at the current zoom level where (entry_pos[0] / tile_width) < current_bin[0]
             
-            if line_num % 10000 == 0:
-                print "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "zoom_level, tile_width", zoom_level, len(active_bins[zoom_level])
 
-                prev_time = time.time()
-            while len(active_bins[zoom_level]) > 0:
-                if active_bins[zoom_level][0][0] < current_bin[0]:
-                    del active_bins[zoom_level][0]
+            while len(active_tiles[zoom_level]) > 0:
+                if active_tiles[zoom_level][0][0] < current_tile[0]:
+                    tile_position = active_tiles[zoom_level][0]
+                    tile_value = tile_contents[zoom_level][tile_position]
+                    tile_bins = tile_contents[zoom_level][tile_position]
+
+
+                    '''
+                    tile_saver.save_binned_tile(zoom_level, 
+                                                active_tiles[zoom_level][0],
+                                                tile_bins)
+                    '''
+                    while q.qsize() > 40000:
+                        time.sleep(1)
+
+                    q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
+
+                    del tile_contents[zoom_level][tile_position]
+                    del active_tiles[zoom_level][0]
                 else:
                     break
+
+    while q.qsize() > 0:
+        time.sleep(1)
+
+    for (tilesaver, p) in tilesaver_processes:
+        tilesaver.flush()
+        p.terminate()
+        
 
 if __name__ == '__main__':
     main()

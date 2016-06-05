@@ -124,8 +124,10 @@ curl -XGET "http://127.0.0.1:9200/test_short/_optimize"
 curl -XGET "http://127.0.0.1:9200/test_short/_mapping"
 curl -XGET "http://127.0.0.1:9200/test_short/_stats"
 
-curl -XGET "http://127.0.0.1:9200/hg19/_stats"
-curl -XGET "http://127.0.0.1:9200/hg19/_search" -d '
+curl -XDELETE "http://search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.gz.mirrored.shuffled/"
+curl -XGET "http://search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.gz.mirrored.shuffled/14.21.12077"
+
+curl -XGET "search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.gz.mirrored.shuffled/_search" -d '
 {
     "query" : {
         "match_all" : {}
@@ -133,7 +135,8 @@ curl -XGET "http://127.0.0.1:9200/hg19/_search" -d '
 }'
 
 curl -XDELETE "http://127.0.0.1:9200/hg19"
-curl -XPUT "http://127.0.0.1:9200/hg19" -d '
+curl -XPUT "search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19" -d '
+curl -XPUT "localhost:9200/hg19" -d '
 {
   "mappings": {
     "_default_": {
