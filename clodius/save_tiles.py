@@ -28,27 +28,38 @@ class TileSaver(object):
 
         self.save_tile(tile)
 
-    def save_dense_tile(self, zoom_level, tile_position, tile_bins):
+    def save_dense_tile(self, zoom_level, tile_position, tile_bins, 
+            min_value, max_value):
         initial_values = [0.0] * (self.bins_per_dimension * self.num_dimensions)
 
         for (bin_pos, val) in tile_bins.items():
-            index = sum([bp * bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
+            index = sum([bp * self.bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
             initial_values[index] = val
 
-        self.make_and_save_tile(zoom_level, tile_position, {"dense": shown})
+        self.make_and_save_tile(zoom_level, tile_position, {"dense": initial_values,
+            'min_value': min_value, 'max_value': max_value })
 
-    def save_sparse_tile(self, zoom_level, tile_position, tile_bins):
+    def save_sparse_tile(self, zoom_level, tile_position, tile_bins, 
+            min_value, max_value):
         shown = []
         for (bin_pos, bin_val) in tile_bins.items():
             shown += [{'pos': bin_pos, 'value': bin_val}]
 
-        self.make_and_save_tile(zoom_level, tile_position, {"sparse": shown})
+        self.make_and_save_tile(zoom_level, tile_position, {"sparse": shown,
+            'min_value': min_value, 'max_value': max_value })
 
     def save_binned_tile(self, zoom_level, tile_position, tile_bins):
+        max_value = max(tile_bins.values())
+        min_value = min(tile_bins.values())
+
+        #print "saving tile_position:", tile_position
+
         if len(tile_bins) < self.max_data_in_sparse:
-            self.save_sparse_tile(zoom_level, tile_position, tile_bins)
+            self.save_sparse_tile(zoom_level, tile_position, tile_bins, 
+                                  min_value=min_value, max_value=max_value)
         else:
-            self.save_dense_tile(zoom_level, tile_position, tile_bins)
+            self.save_dense_tile(zoom_level, tile_position, tile_bins,
+                                 min_value=min_value, max_value=max_value)
 
     def flush():
         return
@@ -69,6 +80,8 @@ class ElasticSearchTileSaver(TileSaver):
         self.es_path = es_path
         self.bulk_txt = csio.StringIO()
         self.bulk_txt_len = 0
+
+        print "created tilesaver:", self.bulk_txt
 
     def save_tile(self, val):
         # this implementation shouldn't do anything
@@ -97,21 +110,20 @@ class ElasticSearchTileSaver(TileSaver):
         #self.bulk_txt_len += len(new_string)
         '''
 
-
         curr_pos = self.bulk_txt.tell()
+        #print "curr_pos:", curr_pos,self.bulk_txt.getvalue()
         #self.bulk_txt.write(new_string)
-        #print "curr_pos:", curr_pos
         if curr_pos > 1000000:
             self.flush()
-        return
-
 
     def flush(self):
-        save_to_elasticsearch("http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue())
+        if self.bulk_txt.tell() > 0:
+            # only save the tile if it had enough data
+            save_to_elasticsearch("http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue())
 
-        self.bulk_txt_len = 0
-        self.bulk_txt.close()
-        self.bulk_txt = csio.StringIO()
+            self.bulk_txt_len = 0
+            self.bulk_txt.close()
+            self.bulk_txt = csio.StringIO()
 
 def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_path):
     bulk_txt = ""
@@ -148,9 +160,9 @@ def save_to_elasticsearch(url, data):
     while not saved:
         try:
             #print "Saving... url:", url, "len(bulk_txt):", len(data)
-            print "url:", url
+            #print "data:", data
             r = requests.post(url, data=data, timeout=8)
-            print "Saved", r #, r.text
+            print "Saved", r, "len(data):", len(data), url #, r.text
             saved = True
             #print "data:", data
         except Exception as ex:

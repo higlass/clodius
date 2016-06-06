@@ -135,8 +135,9 @@ curl -XGET "search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/h
 }'
 
 curl -XDELETE "http://127.0.0.1:9200/hg19"
-curl -XPUT "search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19" -d '
 curl -XPUT "localhost:9200/hg19" -d '
+curl -XDELETE "search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19"
+curl -XPUT "search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19" -d '
 {
   "mappings": {
     "_default_": {

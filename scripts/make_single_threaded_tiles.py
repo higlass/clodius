@@ -10,21 +10,27 @@ import signal
 import sortedcontainers as sco
 import sys
 import time
+import Queue
 
 import multiprocessing as mpr
 
-def tile_saver_worker(q,tile_saver):
+def tile_saver_worker(q, tile_saver, finished):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    while True:
+    while q.qsize() > 0 or (not finished.value):
         try:
-            (zoom_level, tile_pos, tile_bins) = q.get()
+            (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
             tile_saver.save_binned_tile(zoom_level,
                                         tile_pos,
                                         tile_bins)
         except (KeyboardInterrupt, SystemExit):
             print "Exiting..."
             break
+        except Queue.Empty:
+            tile_saver.flush()
+
+    print "finishing", q.qsize(), tile_saver
+    tile_saver.flush()
 
 def main():
     usage = """
@@ -43,13 +49,16 @@ def main():
     parser.add_argument('-r', '--resolution', help="The resolution of the data", 
                         default=None, type=int )
     parser.add_argument('-k', '--position-cols', help="The position columns (defaults to all but the last, 1-based)", default=None)
-    parser.add_argument('-v', '--value-pos', help='The value column (defaults to the last one, 1-based)', default=None)
+    parser.add_argument('-v', '--value-pos', help='The value column (defaults to the last one, 1-based)', default=None, type=int)
     parser.add_argument('-z', '--max-zoom', help='The maximum zoom value', default=None, type=int)
+    parser.add_argument('--expand-range', help='Expand ranges of values')
+    parser.add_argument('--ignore-0', help='Ignore ranges with a zero value', default=False, action='store_true')
     parser.add_argument('-b', '--bins-per-dimension', default=1,
                         help="The number of bins to consider in each dimension",
                         type=int)
     parser.add_argument('-e', '--elasticsearch-url', default=None,
                         help="The url of the elasticsearch database where to save the tiles")
+
 
     args = parser.parse_args()
 
@@ -62,8 +71,13 @@ def main():
 
     max_width = max([b - a for (a,b) in zip(mins, maxs)])
 
+    if args.expand_range is not None:
+        expand_range = map(int, args.expand_range.split(','))
+    else:
+        expand_range = None
+
     if args.position_cols is not None:
-        position_cols = args.position_cols.split(',')
+        position_cols = map(int, args.position_cols.split(','))
     else:
         position_cols = None
 
@@ -96,6 +110,7 @@ def main():
     
     max_data_in_sparse = args.bins_per_dimension ** len(position_cols) / 30.
 
+    '''
     if args.elasticsearch_url is not None:
         tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
                                                 args.bins_per_dimension,
@@ -105,10 +120,12 @@ def main():
         tile_saver = cst.EmptyTileSaver(max_data_in_sparse,
                                         args.bins_per_dimension,
                                         num_dimensions = len(position_cols))
+    '''
 
     tile_widths = [max_width / 2 ** zl for zl in range(0, max_zoom+1)]
 
     print "max_data_in_sparse:", max_data_in_sparse
+    print "max_zoom:", max_zoom
 
     active_bins = col.defaultdict(sco.SortedList)
     active_tiles = col.defaultdict(sco.SortedList)
@@ -121,69 +138,109 @@ def main():
 
     num_threads = 2
     tilesaver_processes = []
+    finished = mpr.Value('b', False)
+    tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
+                                            args.bins_per_dimension,
+                                            len(position_cols),
+                                            args.elasticsearch_url)
     for i in range(num_threads):
-        tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
-                                                args.bins_per_dimension,
-                                                len(position_cols),
-                                                args.elasticsearch_url)
-        p = mpr.Process(target=tile_saver_worker, args=(q, tile_saver))
+        p = mpr.Process(target=tile_saver_worker, args=(q, tile_saver, finished))
+        print "p:", p
 
         p.start()
         tilesaver_processes += [(tile_saver, p)]
 
+    tileset_info = {'max_value': 0,
+                    'min_value': 0,
+                    'min_pos': mins,
+                    'max_pos': maxs,
+                    'max_zoom': max_zoom,
+                    'bins_per_dimension': args.bins_per_dimension}
+
+
+    start_time = time.time()
+
     for line_num,line in enumerate(it.chain([first_line], sys.stdin)):
-        line_parts = [p for p in line.strip().split()]
-        entry_pos = [float(line_parts[p-1]) for p in position_cols]
-        value = float(line_parts[value_pos-1])
+        # see if we have to expand any coordinate ranges
+        # bedFiles are examples
+        # chr1 100 102 0.5
+        # means that we need to expand that to
+        # chr1 100 101 0.5
+        # chr1 101 102 0.5
+        all_line_parts = []
 
-        for zoom_level, tile_width in zip(range(0, max_zoom+1), tile_widths):
-            if line_num % 10000 == 0:
-                print "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "zoom_level, tile_width", zoom_level, len(active_tiles[zoom_level]), "qsize:", q.qsize()
+        if expand_range is None:
+            all_line_parts = [[p for p in line.strip().split()]]
+        else:
+            line_parts = [p for p in line.strip().split()]
+            if args.ignore_0:
+                if line_parts[value_pos-1] == "0":
+                    continue
 
-                prev_time = time.time()
+            for i in range(int(line_parts[expand_range[0]-1]), 
+                           int(line_parts[expand_range[1]-1])):
+                new_line_part = line_parts[::]
+                new_line_part[expand_range[0]-1] = i
+                all_line_parts += [new_line_part]
 
-            # the bin within the tile as well as the tile position
-            current_bin = tuple([int(ep / (tile_width * args.bins_per_dimension)) % args.bins_per_dimension for ep in entry_pos])
-            current_tile = tuple([int(ep / tile_width) for ep in entry_pos])
+        for line_parts in all_line_parts:
+            entry_pos = [float(line_parts[p-1]) for p in position_cols]
+            value = float(line_parts[value_pos-1])
 
-            if current_tile not in active_tiles[zoom_level]:
-                active_tiles[zoom_level].add(current_tile)
+            tileset_info['max_value'] = max(tileset_info['max_value'], value)
+            tileset_info['min_value'] = min(tileset_info['min_value'], value)
 
-            tile_contents[zoom_level][current_tile][current_bin] += value
+            for zoom_level, tile_width in zip(range(0, max_zoom+1), tile_widths):
+                if line_num % 10000 == 0 and zoom_level == 0:
+                    print "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "qsize:", q.qsize(), "total_time", int(time.time() - start_time)
 
-            # which bins will never be touched again?
-            # all bins at the current zoom level where (entry_pos[0] / tile_width) < current_bin[0]
-            
+                    prev_time = time.time()
 
-            while len(active_tiles[zoom_level]) > 0:
-                if active_tiles[zoom_level][0][0] < current_tile[0]:
-                    tile_position = active_tiles[zoom_level][0]
-                    tile_value = tile_contents[zoom_level][tile_position]
-                    tile_bins = tile_contents[zoom_level][tile_position]
+                # the bin within the tile as well as the tile position
+                current_bin = tuple([int(ep / (tile_width / args.bins_per_dimension)) % args.bins_per_dimension for ep in entry_pos])
+                current_tile = tuple([int(ep / tile_width) for ep in entry_pos])
+
+                if current_tile not in active_tiles[zoom_level]:
+                    active_tiles[zoom_level].add(current_tile)
+
+                tile_contents[zoom_level][current_tile][current_bin] += value
+
+                # which bins will never be touched again?
+                # all bins at the current zoom level where (entry_pos[0] / tile_width) < current_bin[0]
+                while len(active_tiles[zoom_level]) > 0:
+                    if active_tiles[zoom_level][0][0] < current_tile[0]:
+                        tile_position = active_tiles[zoom_level][0]
+                        tile_value = tile_contents[zoom_level][tile_position]
+                        tile_bins = tile_contents[zoom_level][tile_position]
+
+                        while q.qsize() > 40000:
+                            time.sleep(1)
+
+                        q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
+
+                        del tile_contents[zoom_level][tile_position]
+                        del active_tiles[zoom_level][0]
+                    else:
+                        break
 
 
-                    '''
-                    tile_saver.save_binned_tile(zoom_level, 
-                                                active_tiles[zoom_level][0],
-                                                tile_bins)
-                    '''
-                    while q.qsize() > 40000:
-                        time.sleep(1)
+    for zoom_level in active_tiles:
+        for tile_position in active_tiles[zoom_level]:
+            tile_value = tile_contents[zoom_level][tile_position]
+            tile_bins = tile_contents[zoom_level][tile_position]
 
-                    q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
+            q.put((zoom_level, tile_position, tile_bins))
 
-                    del tile_contents[zoom_level][tile_position]
-                    del active_tiles[zoom_level][0]
-                else:
-                    break
+    tile_saver.save_tile({'tile_id': 'tileset_info', 
+                          'tile_value': tileset_info})
+
+    finished.value = True
 
     while q.qsize() > 0:
+        print "qsize:", q.qsize()
         time.sleep(1)
-
-    for (tilesaver, p) in tilesaver_processes:
-        tilesaver.flush()
-        p.terminate()
-        
+         
+    tile_saver.flush()
 
 if __name__ == '__main__':
     main()
