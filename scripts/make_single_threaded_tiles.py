@@ -106,7 +106,7 @@ def main():
 
     # if there's not column designated as the value column, use the last column
     if value_pos is None:
-        value_pos = len(first_line_parts)-1
+        value_pos = len(first_line_parts)
     
     max_data_in_sparse = args.bins_per_dimension ** len(position_cols) / 30.
 
@@ -155,7 +155,8 @@ def main():
                     'min_pos': mins,
                     'max_pos': maxs,
                     'max_zoom': max_zoom,
-                    'bins_per_dimension': args.bins_per_dimension}
+                    'bins_per_dimension': args.bins_per_dimension,
+                    'max_width': max_width}
 
 
     start_time = time.time()

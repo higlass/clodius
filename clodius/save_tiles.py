@@ -30,7 +30,7 @@ class TileSaver(object):
 
     def save_dense_tile(self, zoom_level, tile_position, tile_bins, 
             min_value, max_value):
-        initial_values = [0.0] * (self.bins_per_dimension * self.num_dimensions)
+        initial_values = [0.0] * (self.bins_per_dimension ** self.num_dimensions)
 
         for (bin_pos, val) in tile_bins.items():
             index = sum([bp * self.bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
@@ -91,6 +91,8 @@ class ElasticSearchTileSaver(TileSaver):
 
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(val['tile_id']))
         self.bulk_txt.write(json.dumps(val) + "\n")
+
+        print "saving_tile:", 
         '''
         self.bulk_txt.write('{{"tile_id": {}, "tile_value": '.format(val['tile_id']))
 
