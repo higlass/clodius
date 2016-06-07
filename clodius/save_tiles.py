@@ -92,7 +92,6 @@ class ElasticSearchTileSaver(TileSaver):
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(val['tile_id']))
         self.bulk_txt.write(json.dumps(val) + "\n")
 
-        print "saving_tile:", 
         '''
         self.bulk_txt.write('{{"tile_id": {}, "tile_value": '.format(val['tile_id']))
 

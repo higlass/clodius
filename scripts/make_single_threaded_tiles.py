@@ -58,6 +58,7 @@ def main():
                         type=int)
     parser.add_argument('-e', '--elasticsearch-url', default=None,
                         help="The url of the elasticsearch database where to save the tiles")
+    parser.add_argument('-n', '--num-threads', default=1, type=int)
 
 
     args = parser.parse_args()
@@ -106,7 +107,7 @@ def main():
 
     # if there's not column designated as the value column, use the last column
     if value_pos is None:
-        value_pos = len(first_line_parts)
+        value_pos = len(first_line_parts)-1
     
     max_data_in_sparse = args.bins_per_dimension ** len(position_cols) / 30.
 
@@ -136,14 +137,13 @@ def main():
     tile_contents = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
     q = mpr.Queue()
 
-    num_threads = 2
     tilesaver_processes = []
     finished = mpr.Value('b', False)
     tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
                                             args.bins_per_dimension,
                                             len(position_cols),
                                             args.elasticsearch_url)
-    for i in range(num_threads):
+    for i in range(args.num_threads):
         p = mpr.Process(target=tile_saver_worker, args=(q, tile_saver, finished))
         print "p:", p
 
