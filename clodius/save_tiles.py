@@ -4,6 +4,7 @@ import json
 import os
 import os.path as op
 import requests
+import sys
 import time
 
 
@@ -21,8 +22,9 @@ class TileSaver(object):
     def make_and_save_tile(self, zoom_level, tile_position, tile_data):
         # this implementation shouldn't do anything
         # derived classes should implement this functionality themselves
+        #print "saving:", tile_position
 
-        #print "saving tile:", zoom_level, tile_position
+        print "saving tile:", zoom_level, tile_position
         tile_id = "{}.{}".format(zoom_level, ".".join(map(str, tile_position)))
         tile = {'tile_id':  tile_id, "tile_value": tile_data}
 
@@ -36,14 +38,15 @@ class TileSaver(object):
             index = sum([bp * self.bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
             initial_values[index] = val
 
-        self.make_and_save_tile(zoom_level, tile_position, {"dense": initial_values,
+        self.make_and_save_tile(zoom_level, tile_position, {"dense": 
+            [round(v, 5) for v in initial_values],
             'min_value': min_value, 'max_value': max_value })
 
     def save_sparse_tile(self, zoom_level, tile_position, tile_bins, 
             min_value, max_value):
         shown = []
         for (bin_pos, bin_val) in tile_bins.items():
-            shown += [{'pos': bin_pos, 'value': bin_val}]
+            shown += [[bin_pos, bin_val]]
 
         self.make_and_save_tile(zoom_level, tile_position, {"sparse": shown,
             'min_value': min_value, 'max_value': max_value })
@@ -163,13 +166,14 @@ def save_to_elasticsearch(url, data):
             #print "Saving... url:", url, "len(bulk_txt):", len(data)
             #print "data:", data
             r = requests.post(url, data=data, timeout=8)
+            #print "data:", data
             print "Saved", r, "len(data):", len(data), url #, r.text
             saved = True
             #print "data:", data
         except Exception as ex:
 
             to_sleep *= 2
-            #print >>sys.stderr, "Error saving to elastic search, sleeping:", to_sleep, ex
+            print >>sys.stderr, "Error saving to elastic search, sleeping:", to_sleep, ex
             time.sleep(to_sleep)
 
             if to_sleep > 600:

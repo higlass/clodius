@@ -107,9 +107,9 @@ def main():
 
     # if there's not column designated as the value column, use the last column
     if value_pos is None:
-        value_pos = len(first_line_parts)-1
-    
-    max_data_in_sparse = args.bins_per_dimension ** len(position_cols) / 30.
+        value_pos = len(first_line_parts)
+
+    max_data_in_sparse = args.bins_per_dimension ** len(position_cols) / 5.
 
     '''
     if args.elasticsearch_url is not None:
@@ -160,6 +160,9 @@ def main():
 
 
     start_time = time.time()
+    tile_saver.save_tile({'tile_id': 'tileset_info', 
+                          'tile_value': tileset_info})
+    tile_saver.flush()
 
     for line_num,line in enumerate(it.chain([first_line], sys.stdin)):
         # see if we have to expand any coordinate ranges
@@ -200,6 +203,8 @@ def main():
                 # the bin within the tile as well as the tile position
                 current_bin = tuple([int(ep / (tile_width / args.bins_per_dimension)) % args.bins_per_dimension for ep in entry_pos])
                 current_tile = tuple([int(ep / tile_width) for ep in entry_pos])
+
+                print "current_tile:", current_tile, entry_pos, tile_width
 
                 if current_tile not in active_tiles[zoom_level]:
                     active_tiles[zoom_level].add(current_tile)
