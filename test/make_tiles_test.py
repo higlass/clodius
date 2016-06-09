@@ -180,3 +180,46 @@ def test_end_position():
     assert((1,0) in tile_ids)
     assert((1,2) in tile_ids)
 
+def test_single_threaded_binning():
+    entries = [
+                [2,10,1],
+                [3,1,1],
+                [3,2,1],
+                [3,8,1],
+                [4,3,1],
+                [4,8,1],
+                [6,4,1],
+                [7,3,1],
+                [8,1,1],
+                [10,1,1]
+                ]
+
+    mins = [1,1]
+    maxs = [10,10]
+
+    import collections as col
+
+    max_width = max([b - a for (a,b) in zip(mins, maxs)])
+    active_bins = col.defaultdict(list)
+
+    max_zoom = 2
+    tile_widths = [max_width / 2 ** zl for zl in range(0, max_zoom+1)]
+
+    for entry in entries:
+        entry_pos = [e - m for (e,m) in zip(entry[:-1], mins)]
+
+        # go through each zoom level
+        for zoom_level, tile_width in enumerate(tile_widths):
+            current_bin = [int(ep / tile_width) for ep in entry_pos]
+
+            active_bins[zoom_level] += [current_bin]
+
+            # which bins will never be touched again?
+            # all bins at the current zoom level where (entry_pos[0] / tile_width) < current_bin[0]
+            print "zoom_level, tile_width", zoom_level, entry_pos, current_bin, active_bins[zoom_level]
+            while len(active_bins[zoom_level]) > 0:
+                if active_bins[zoom_level][0][0] < current_bin[0]:
+                    active_bins[zoom_level].pop(0)
+                else:
+                    break
+
