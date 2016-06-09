@@ -102,7 +102,8 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             tileset_info['min_value'] = min(tileset_info['min_value'], value)
 
             if line_num != prev_line_num and line_num % 10000 == 0:
-                print "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "qsize:", q.qsize(), "active_tiles length:", len(active_tiles), "total_time", int(time.time() - start_time)
+                time_str = time.strftime("%Y-%m-%d %H:%M:%S")
+                print "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "qsize:", q.qsize(), "total_time", int(time.time() - start_time)
 
                 prev_time = time.time()
             prev_line_num = line_num
@@ -340,7 +341,7 @@ def main():
 
     try:
         tileset_info = create_tiles(q, [first_line], sys.stdin, position_cols, value_pos, 
-                max_zoom, args.bins_per_dimension, tile_saver, args.expand_range,
+                max_zoom, args.bins_per_dimension, tile_saver, expand_range,
                 args.ignore_0, tileset_info, max_width)
     except KeyboardInterrupt:
         print "kb interrupt:"
