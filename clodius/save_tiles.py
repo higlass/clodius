@@ -118,7 +118,7 @@ class ElasticSearchTileSaver(TileSaver):
         curr_pos = self.bulk_txt.tell()
         #print "curr_pos:", curr_pos,self.bulk_txt.getvalue()
         #self.bulk_txt.write(new_string)
-        if curr_pos > 200000:
+        if curr_pos > 2000000:
             self.flush()
 
     def flush(self):

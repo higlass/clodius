@@ -2,7 +2,7 @@
     FILENAME=coolers/${DATASET_NAME}
     FILEPATH=~/data/${FILENAME}
     curl -XDELETE "search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/${DATASET_NAME}"
-    /usr/bin/time zcat ${FILEPATH} | head -n 100 | pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 5000000,5000000 -b 256 -r 1000 --elasticsearch-url search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/${DATASET_NAME}
+    /usr/bin/time zcat ${FILEPATH} | head -n 1000 | pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 5000000,5000000 -b 256 -r 1000 --elasticsearch-url search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/${DATASET_NAME}
 
 DATASET_NAME=hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.mirrored.sorted.gz
 FILENAME=coolers/${DATASET_NAME}
