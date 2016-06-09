@@ -14,6 +14,8 @@ import Queue
 
 import multiprocessing as mpr
 
+
+
 def tile_saver_worker(q, tile_saver, finished):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -88,7 +90,6 @@ def main():
         bins_to_display_at_max_resolution = max_width / args.resolution / args.bins_per_dimension
         max_max_zoom = math.ceil(math.log(bins_to_display_at_max_resolution) / math.log(2.))
 
-        max_width = args.resolution * args.bins_per_dimension * 2 ** max_max_zoom
 
         if max_max_zoom < 0:
             max_max_zoom = 0
@@ -96,6 +97,9 @@ def main():
         max_zoom = int(max_max_zoom)
     else:
         max_zoom = args.max_zoom
+
+    max_width = args.resolution * args.bins_per_dimension * 2 ** max_zoom
+    smallest_width = args.resolution * args.bins_per_dimension
 
     value_pos = args.value_pos
     
@@ -163,6 +167,23 @@ def main():
     tile_saver.save_tile({'tile_id': 'tileset_info', 
                           'tile_value': tileset_info})
     tile_saver.flush()
+    prev_line_num = None
+
+    def add_to_next_tile(zoom_level, tile_position, tile_bins):
+        next_tile_position = tuple([tp / 2 for tp in tile_position])
+
+        if next_tile_position not in active_tiles[zoom_level - 1]:
+            active_tiles[zoom_level - 1].add(next_tile_position)
+
+        for bin_position in tile_bins:
+            old_abs_pos = [tp * args.bins_per_dimension + bp for (tp, bp) in zip(tile_position, bin_position)]
+            #new_bin_pos = tuple([int(op / 2) % args.bins_per_dimension for op in old_abs_pos])
+            new_bin_pos = tuple([ int((args.bins_per_dimension * tp + bp) / 2) % args.bins_per_dimension for  (tp, bp) in zip(tile_position, bin_position)])
+
+            tile_contents[zoom_level][next_tile_position][new_bin_pos] += tile_bins[bin_position]
+
+            print "old_bin_pos:", bin_position
+            print "next_tile_position:", next_tile_position, "new_bin_pos:", new_bin_pos
 
     for line_num,line in enumerate(it.chain([first_line], sys.stdin)):
         # see if we have to expand any coordinate ranges
@@ -190,26 +211,72 @@ def main():
         for line_parts in all_line_parts:
             entry_pos = [float(line_parts[p-1]) for p in position_cols]
             value = float(line_parts[value_pos-1])
+            print "entry_pos:", entry_pos
 
             tileset_info['max_value'] = max(tileset_info['max_value'], value)
             tileset_info['min_value'] = min(tileset_info['min_value'], value)
 
+            if line_num != prev_line_num and line_num % 10000 == 0:
+                print "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "qsize:", q.qsize(), "total_time", int(time.time() - start_time)
+
+                prev_time = time.time()
+            prev_line_num = line_num
+
+            # the bin within the tile as well as the tile position
+            # place this data point in the highest resolution tile that we can
+            current_bin = tuple([int(ep / (smallest_width / args.bins_per_dimension)) % args.bins_per_dimension for ep in entry_pos])
+            current_tile = tuple([int(ep / smallest_width) for ep in entry_pos])
+
+            # we haven't seen this tile before so we save it, in case more data points need to be placed in it
+            if current_tile not in active_tiles[max_zoom]:
+                active_tiles[max_zoom].add(current_tile)
+
+            # place the data in the tile
+            tile_contents[max_zoom][current_tile][current_bin] += value
+
+            
+            # go through all the tiles and check which ones we're done with
+            # start with the max zoom
+            for zoom_level in range(0, max_zoom+1)[::-1]:
+                current_tile = tuple([int(ep / smallest_width * 2 ** (max_zoom - zoom_level) ) for ep in entry_pos])
+
+                # keep track of whether any tiles were finished at the previous level
+                # we can't complete a lower zoom tile unless we complete a higher zoom one
+                finished_tile = False
+                while len(active_tiles[zoom_level]) > 0:
+                    if active_tiles[zoom_level][0][0] < current_tile[0]:
+                        tile_position = active_tiles[zoom_level][0]
+                        tile_value = tile_contents[zoom_level][tile_position]
+                        tile_bins = tile_contents[zoom_level][tile_position]
+
+                        print "tile_bins:", tile_bins
+
+                        # make sure old requests get saved before we create new ones
+                        while q.qsize() > 40000:
+                            time.sleep(1)
+
+                        q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
+                        finished_tile = True
+
+                        print "zoom_level:", zoom_level, max_zoom
+                        if zoom_level > 0:
+                            add_to_next_tile(zoom_level, tile_position, tile_bins)
+
+                        # create a lower zoom level tile
+
+                        del tile_contents[zoom_level][tile_position]
+                        del active_tiles[zoom_level][0]
+                    else:
+                        break
+
+                if not finished_tile:
+                    break
+
+
+
+            '''
             for zoom_level, tile_width in zip(range(0, max_zoom+1), tile_widths):
-                if line_num % 10000 == 0 and zoom_level == 0:
-                    print "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "qsize:", q.qsize(), "total_time", int(time.time() - start_time)
 
-                    prev_time = time.time()
-
-                # the bin within the tile as well as the tile position
-                current_bin = tuple([int(ep / (tile_width / args.bins_per_dimension)) % args.bins_per_dimension for ep in entry_pos])
-                current_tile = tuple([int(ep / tile_width) for ep in entry_pos])
-
-                print "current_tile:", current_tile, entry_pos, tile_width
-
-                if current_tile not in active_tiles[zoom_level]:
-                    active_tiles[zoom_level].add(current_tile)
-
-                tile_contents[zoom_level][current_tile][current_bin] += value
 
                 # which bins will never be touched again?
                 # all bins at the current zoom level where (entry_pos[0] / tile_width) < current_bin[0]
@@ -228,14 +295,17 @@ def main():
                         del active_tiles[zoom_level][0]
                     else:
                         break
+            '''
 
-
-    for zoom_level in active_tiles:
+    for zoom_level in range(0, max_zoom+1)[::-1]:
         for tile_position in active_tiles[zoom_level]:
             tile_value = tile_contents[zoom_level][tile_position]
             tile_bins = tile_contents[zoom_level][tile_position]
 
             q.put((zoom_level, tile_position, tile_bins))
+            
+            if zoom_level > 0:
+                add_to_next_tile(zoom_level, tile_position, tile_bins)
 
     tile_saver.save_tile({'tile_id': 'tileset_info', 
                           'tile_value': tileset_info})
