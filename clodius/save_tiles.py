@@ -3,6 +3,7 @@ import gzip
 import json
 import os
 import os.path as op
+import random
 import requests
 import sys
 import time
@@ -24,7 +25,7 @@ class TileSaver(object):
         # derived classes should implement this functionality themselves
         #print "saving:", tile_position
 
-        print "saving tile:", zoom_level, tile_position
+        #print "saving tile:", zoom_level, tile_position
         tile_id = "{}.{}".format(zoom_level, ".".join(map(str, tile_position)))
         tile = {'tile_id':  tile_id, "tile_value": tile_data}
 
@@ -117,7 +118,7 @@ class ElasticSearchTileSaver(TileSaver):
         curr_pos = self.bulk_txt.tell()
         #print "curr_pos:", curr_pos,self.bulk_txt.getvalue()
         #self.bulk_txt.write(new_string)
-        if curr_pos > 1000000:
+        if curr_pos > 200000:
             self.flush()
 
     def flush(self):
