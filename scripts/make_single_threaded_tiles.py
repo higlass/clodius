@@ -203,7 +203,6 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
     tile_saver.save_tile({'tile_id': 'tileset_info', 
                           'tile_value': tileset_info})
 
-    finished.value = True
 
     while q.qsize() > 0:
         print "qsize:", q.qsize()
@@ -350,6 +349,11 @@ def main():
             p.join()
             print "finished"
         raise
+
+    # wait for the worker processes to finish
+    for (ts, p) in tilesaver_processes:
+        p.terminate()
+        p.join()
 
     tile_saver.save_tile({'tile_id': 'tileset_info', 
                           'tile_value': tileset_info})
