@@ -3,6 +3,7 @@ import json
 import os
 import os.path as op
 import requests
+import time
 
 def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_path):
     bulk_txt = ""
