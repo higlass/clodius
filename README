@@ -48,7 +48,7 @@ aws s3 sync --region us-west-2 ~/data/${FILENAME}.tiles s3://pkerp/data/${FILENA
 INPUT_FILE=~/data/hg19/genbank-output/refgene-count-minus
 DATASET_NAME=hg19/refgene-tiles-minus
 OUTPUT_DIR=~/data/${DATASET_NAME}
-/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes localhost:9200 --elasticsearch-path $DATASET_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
+/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com --elasticsearch-path $DATASET_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
 
     #rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 5 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
     #rsync -avzP $OUTPUT_DIR/ ~/projects/goomba/.tmp/jsons/${DATASET_NAME}
@@ -57,7 +57,7 @@ INPUT_FILE=~/data/hg19/genbank-output/refgene-count-plus
 DATASET_NAME=hg19/refgene-tiles-plus
 OUTPUT_DIR=~/data/${DATASET_NAME}
 
-/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes localhost:9200 --elasticsearch-path $DATASET_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
+/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com --elasticsearch-path $DATASET_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
 
     #rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 5 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
     #rsync -avzP $OUTPUT_DIR/ ~/projects/goomba/.tmp/jsons/${DATASET_NAME}
@@ -124,8 +124,10 @@ curl -XGET "http://127.0.0.1:9200/test_short/_optimize"
 curl -XGET "http://127.0.0.1:9200/test_short/_mapping"
 curl -XGET "http://127.0.0.1:9200/test_short/_stats"
 
-curl -XGET "http://127.0.0.1:9200/hg19/_stats"
-curl -XGET "http://127.0.0.1:9200/hg19/_search" -d '
+curl -XDELETE "http://search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.gz.mirrored.shuffled/"
+curl -XGET "http://search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.gz.mirrored.shuffled/14.21.12077"
+
+curl -XGET "search-es4dn-z7rzz4kevtoyh5pfjkmjg5jsga.us-east-1.es.amazonaws.com/hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.genome.gz.mirrored.shuffled/_search" -d '
 {
     "query" : {
         "match_all" : {}
@@ -133,7 +135,10 @@ curl -XGET "http://127.0.0.1:9200/hg19/_search" -d '
 }'
 
 curl -XDELETE "http://127.0.0.1:9200/hg19"
-curl -XPUT "http://127.0.0.1:9200/hg19" -d '
+curl -XPUT "localhost:9200/hg19" -d '
+
+curl -XDELETE "http://search-higlass-ssxwuix6kow3sekyeresi7ay5e.us-east-1.es.amazonaws.com/hg19"
+curl -XPUT "http://search-higlass-ssxwuix6kow3sekyeresi7ay5e.us-east-1.es.amazonaws.com/hg19" -d '
 {
   "mappings": {
     "_default_": {
