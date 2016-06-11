@@ -23,10 +23,11 @@ class TileSaver(object):
     def make_and_save_tile(self, zoom_level, tile_position, tile_data):
         # this implementation shouldn't do anything
         # derived classes should implement this functionality themselves
-        #print "saving:", tile_position
 
         #print "saving tile:", zoom_level, tile_position
         tile_id = "{}.{}".format(zoom_level, ".".join(map(str, tile_position)))
+
+        #print "saving:", tile_id
         tile = {'tile_id':  tile_id, "tile_value": tile_data}
 
         self.save_tile(tile)

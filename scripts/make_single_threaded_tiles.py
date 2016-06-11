@@ -350,9 +350,9 @@ def main():
             print "finished"
         raise
 
+    finished.value = True
     # wait for the worker processes to finish
     for (ts, p) in tilesaver_processes:
-        p.terminate()
         p.join()
 
     tile_saver.save_tile({'tile_id': 'tileset_info', 
