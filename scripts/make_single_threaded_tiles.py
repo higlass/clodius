@@ -44,7 +44,8 @@ def tile_saver_worker(q, tile_saver, finished):
 
 
 def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoom, 
-        bins_per_dimension, tile_saver, expand_range, ignore_0, tileset_info, max_width):
+        bins_per_dimension, tile_saver, expand_range, ignore_0, tileset_info, max_width,
+        triangular=False):
     active_tiles = col.defaultdict(sco.SortedList)
     max_data_in_sparse = bins_per_dimension ** len(position_cols) / 5.
     tile_contents = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
@@ -94,7 +95,11 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                 all_line_parts += [new_line_part]
 
         for line_parts in all_line_parts:
-            entry_pos = [float(line_parts[p-1]) for p in position_cols]
+            if triangular:
+                entry_pos = sorted([float(line_parts[p-1]) for p in position_cols])
+            else:
+                entry_pos = [float(line_parts[p-1]) for p in position_cols]
+            
             value = float(line_parts[value_pos-1])
             #print "entry_pos:", entry_pos
 
@@ -142,7 +147,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                         #print "tile_bins:", zoom_level, tile_position, tile_bins
 
                         # make sure old requests get saved before we create new ones
-                        while q.qsize() > 400000:
+                        while q.qsize() > 200000:
                             print "sleepin..."
                             time.sleep(0.25)
 
@@ -238,6 +243,7 @@ def main():
     parser.add_argument('-e', '--elasticsearch-url', default=None,
                         help="The url of the elasticsearch database where to save the tiles")
     parser.add_argument('-n', '--num-threads', default=1, type=int)
+    parser.add_argument('--triangular', default=False, action='store_true')
 
 
     args = parser.parse_args()
@@ -341,7 +347,7 @@ def main():
     try:
         tileset_info = create_tiles(q, [first_line], sys.stdin, position_cols, value_pos, 
                 max_zoom, args.bins_per_dimension, tile_saver, expand_range,
-                args.ignore_0, tileset_info, max_width)
+                args.ignore_0, tileset_info, max_width, args.triangular)
     except KeyboardInterrupt:
         print "kb interrupt:"
         for (ts, p) in tilesaver_processes:
@@ -355,6 +361,7 @@ def main():
     for (ts, p) in tilesaver_processes:
         p.join()
 
+    print "tileset_info:", tileset_info
     tile_saver.save_tile({'tile_id': 'tileset_info', 
                           'tile_value': tileset_info})
     tile_saver.flush()

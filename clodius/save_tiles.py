@@ -27,7 +27,6 @@ class TileSaver(object):
         #print "saving tile:", zoom_level, tile_position
         tile_id = "{}.{}".format(zoom_level, ".".join(map(str, tile_position)))
 
-        #print "saving:", tile_id
         tile = {'tile_id':  tile_id, "tile_value": tile_data}
 
         self.save_tile(tile)
