@@ -1,4 +1,5 @@
-AWS_ES_DOMAIN=search-higlass-ssxwuix6kow3sekyeresi7ay5e.us-east-1.es.amazonaws.com
+#AWS_ES_DOMAIN=search-higlass-ssxwuix6kow3sekyeresi7ay5e.us-east-1.es.amazonaws.com
+AWS_ES_DOMAIN=http://52.23.165.123:9200
 
 
 
@@ -29,7 +30,7 @@ zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --mi
     FILENAME=coolers/${DATASET_NAME}
     FILEPATH=~/data/${FILENAME}
     curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
-    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 5000000,5000000 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME} --triangular
+    zcat ${FILEPATH} | head -n 2 | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 5000000,5000000 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME} --triangular
 
     DATASET_NAME=hg19/Dixon2015-H1hESC_ES-HindIII-allreps-filtered.1kb.cool.reduced.genome.mmmili.gz
     FILENAME=coolers/${DATASET_NAME}
@@ -97,3 +98,23 @@ curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
     #zcat ${FILEPATH} | head -n 1000 | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_INSTANCE}/${DATASET_NAME}
 
 zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url search-higlass-ssxwuix6kow3sekyeresi7ay5e.us-east-1.es.amazonaws.com/${DATASET_NAME}        # 5:52:04
+
+curl -XGET "http://${AWS_ES_DOMAIN}/hg19/_mapping"
+
+curl -XDELETE "http://${AWS_ES_DOMAIN}/hg19"
+curl -XPUT "http://${AWS_ES_DOMAIN}/hg19" -d '
+{
+  "mappings": {
+    "_default_": {
+        "dynamic_templates": [
+            { "notanalyzed": {
+                  "match":              "*", 
+                  "mapping": {
+                      "index":       "no"
+                  }
+               }
+            }
+          ]
+       }
+   }
+}'

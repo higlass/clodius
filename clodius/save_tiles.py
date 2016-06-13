@@ -27,6 +27,7 @@ class TileSaver(object):
         #print "saving tile:", zoom_level, tile_position
         tile_id = "{}.{}".format(zoom_level, ".".join(map(str, tile_position)))
 
+        #print "saving:", tile_id
         tile = {'tile_id':  tile_id, "tile_value": tile_data}
 
         self.save_tile(tile)
@@ -47,7 +48,7 @@ class TileSaver(object):
             min_value, max_value):
         shown = []
         for (bin_pos, bin_val) in tile_bins.items():
-            shown += [[bin_pos, bin_val]]
+            shown += [[map(float, bin_pos), bin_val]]
 
         self.make_and_save_tile(zoom_level, tile_position, {"sparse": shown,
             'min_value': min_value, 'max_value': max_value })
