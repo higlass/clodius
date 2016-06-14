@@ -83,6 +83,12 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
         all_line_parts = [[p for p in line.strip().split()]]
 
         for line_parts in all_line_parts:
+            if ignore_0:
+                if line_parts[value_pos-1] == "0":
+                    continue
+            value = float(line_parts[value_pos-1])
+            #print "entry_pos:", entry_pos, value
+
             if line_num != prev_line_num and line_num % 10000 == 0:
                 time_str = time.strftime("%Y-%m-%d %H:%M:%S")
                 print "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "qsize:", q.qsize(), "total_time", int(time.time() - start_time)
@@ -94,33 +100,30 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                 entry_pos = sorted([float(line_parts[p-1]) for p in position_cols])
             else:
                 entry_pos = [float(line_parts[p-1]) for p in position_cols]
-            
-            value = float(line_parts[value_pos-1])
-            #print "entry_pos:", entry_pos, value
 
             tileset_info['max_value'] = max(tileset_info['max_value'], value)
             tileset_info['min_value'] = min(tileset_info['min_value'], value)
 
             entry_poss = [entry_pos]
             if expand_range is not None:
-                for i in range(int(entry_pos[0]), int(line_parts[expand_range[1]-1])):
+                end_pos = int(line_parts[expand_range[1]-1])
+                for i in range(int(entry_pos[0])+1, end_pos):
                     new_entry = entry_pos[::]
                     new_entry[0] = i
                     entry_poss += [new_entry]
-            print "line_parts:", line_parts
-            print "len(entry_poss):", len(entry_poss)
 
             # the bin within the tile as well as the tile position
             # place this data point in the highest resolution tile that we can
-            current_bin = tuple([int(ep / (smallest_width / bins_per_dimension)) % bins_per_dimension for ep in entry_pos])
-            current_tile = tuple([int(ep / smallest_width) for ep in entry_pos])
+            for entry_pos in entry_poss:
+                current_bin = tuple([int(ep / (smallest_width / bins_per_dimension)) % bins_per_dimension for ep in entry_pos])
+                current_tile = tuple([int(ep / smallest_width) for ep in entry_pos])
 
-            # we haven't seen this tile before so we save it, in case more data points need to be placed in it
-            if current_tile not in active_tiles[max_zoom]:
-                active_tiles[max_zoom].add(current_tile)
+                # we haven't seen this tile before so we save it, in case more data points need to be placed in it
+                if current_tile not in active_tiles[max_zoom]:
+                    active_tiles[max_zoom].add(current_tile)
 
-            # place the data in the tile
-            tile_contents[max_zoom][current_tile][current_bin] += value
+                # place the data in the tile
+                tile_contents[max_zoom][current_tile][current_bin] += value
             
             # go through all the tiles and check which ones we're done with
             # start with the max zoom
@@ -278,6 +281,7 @@ def main():
     else:
         max_zoom = args.max_zoom
 
+    print "max_zoom:", max_zoom
     max_width = args.resolution * args.bins_per_dimension * 2 ** max_zoom
     smallest_width = args.resolution * args.bins_per_dimension
 
