@@ -80,21 +80,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
         # chr1 101 102 0.5
         all_line_parts = []
 
-        if expand_range is None:
-            all_line_parts = [[p for p in line.strip().split()]]
-        else:
-            line_parts = [p for p in line.strip().split()]
-            if ignore_0:
-                if line_parts[value_pos-1] == "0":
-                    continue
-            print "line_parts:", line_parts
-
-            print "expading:", int(line_parts[expand_range[0]-1]) - int(line_parts[expand_range[1]-1])
-            for i in range(int(line_parts[expand_range[0]-1]), 
-                           int(line_parts[expand_range[1]-1])):
-                new_line_part = line_parts[::]
-                new_line_part[expand_range[0]-1] = i
-                all_line_parts += [new_line_part]
+        all_line_parts = [[p for p in line.strip().split()]]
 
         for line_parts in all_line_parts:
             if line_num != prev_line_num and line_num % 10000 == 0:
@@ -114,6 +100,15 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
             tileset_info['max_value'] = max(tileset_info['max_value'], value)
             tileset_info['min_value'] = min(tileset_info['min_value'], value)
+
+            entry_poss = [entry_pos]
+            if expand_range is not None:
+                for i in range(int(entry_pos[0]), int(line_parts[expand_range[1]-1])):
+                    new_entry = entry_pos[::]
+                    new_entry[0] = i
+                    entry_poss += [new_entry]
+            print "line_parts:", line_parts
+            print "len(entry_poss):", len(entry_poss)
 
             # the bin within the tile as well as the tile position
             # place this data point in the highest resolution tile that we can
