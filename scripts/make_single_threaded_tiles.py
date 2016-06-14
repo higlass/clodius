@@ -87,7 +87,9 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             if ignore_0:
                 if line_parts[value_pos-1] == "0":
                     continue
+            print "line_parts:", line_parts
 
+            print "expading:", int(line_parts[expand_range[0]-1]) - int(line_parts[expand_range[1]-1])
             for i in range(int(line_parts[expand_range[0]-1]), 
                            int(line_parts[expand_range[1]-1])):
                 new_line_part = line_parts[::]
@@ -95,23 +97,23 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                 all_line_parts += [new_line_part]
 
         for line_parts in all_line_parts:
-            if triangular:
-                entry_pos = sorted([float(line_parts[p-1]) for p in position_cols])
-            else:
-                entry_pos = [float(line_parts[p-1]) for p in position_cols]
-            
-            value = float(line_parts[value_pos-1])
-            #print "entry_pos:", entry_pos
-
-            tileset_info['max_value'] = max(tileset_info['max_value'], value)
-            tileset_info['min_value'] = min(tileset_info['min_value'], value)
-
             if line_num != prev_line_num and line_num % 10000 == 0:
                 time_str = time.strftime("%Y-%m-%d %H:%M:%S")
                 print "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "qsize:", q.qsize(), "total_time", int(time.time() - start_time)
 
                 prev_time = time.time()
             prev_line_num = line_num
+
+            if triangular:
+                entry_pos = sorted([float(line_parts[p-1]) for p in position_cols])
+            else:
+                entry_pos = [float(line_parts[p-1]) for p in position_cols]
+            
+            value = float(line_parts[value_pos-1])
+            #print "entry_pos:", entry_pos, value
+
+            tileset_info['max_value'] = max(tileset_info['max_value'], value)
+            tileset_info['min_value'] = min(tileset_info['min_value'], value)
 
             # the bin within the tile as well as the tile position
             # place this data point in the highest resolution tile that we can
@@ -147,7 +149,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                         #print "tile_bins:", zoom_level, tile_position, tile_bins
 
                         # make sure old requests get saved before we create new ones
-                        while q.qsize() > 200000:
+                        while q.qsize() > 100000:
                             print "sleepin..."
                             time.sleep(0.25)
 

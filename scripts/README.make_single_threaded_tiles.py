@@ -1,7 +1,5 @@
 #AWS_ES_DOMAIN=search-higlass-ssxwuix6kow3sekyeresi7ay5e.us-east-1.es.amazonaws.com
-AWS_ES_DOMAIN=http://52.23.165.123:9200
-
-
+AWS_ES_DOMAIN=52.23.165.123:9200
 
 #################################
 
@@ -17,7 +15,7 @@ AWS_ES_DOMAIN=http://52.23.165.123:9200
     FILEPATH=~/data/${FILENAME}
     curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
-    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 3137161264,3137161264 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 3137161264,3137161264 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME} --triangular
 
 DATASET_NAME=hg19/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.gz
 FILENAME=coolers/${DATASET_NAME}
@@ -50,7 +48,7 @@ DATASET_NAME=hg19/E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.gz
 FILEPATH=~/data/encode/${DATASET_NAME}
 curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
-    zcat ${FILEPATH} | head -n 300000 | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}.5M
+    zcat ${FILEPATH} | head -n 300000 | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/test/E116.300K
 
 #zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 
@@ -97,13 +95,16 @@ curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
     #zcat ${FILEPATH} | head -n 1000 | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_INSTANCE}/${DATASET_NAME}
 
-zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url search-higlass-ssxwuix6kow3sekyeresi7ay5e.us-east-1.es.amazonaws.com/${DATASET_NAME}        # 5:52:04
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256  -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url search-higlass-ssxwuix6kow3sekyeresi7ay5e.us-east-1.es.amazonaws.com/${DATASET_NAME}        # 5:52:04
 
 curl -XGET "http://${AWS_ES_DOMAIN}/hg19/_mapping"
 
 curl -XDELETE "http://${AWS_ES_DOMAIN}/hg19"
 curl -XPUT "http://${AWS_ES_DOMAIN}/hg19" -d '
 {
+  "settings": {
+    "index.codec": "best_compression"
+  },
   "mappings": {
     "_default_": {
         "dynamic_templates": [
