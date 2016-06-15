@@ -57,19 +57,25 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
     def add_to_next_tile(zoom_level, tile_position, tile_bins):
         next_tile_position = tuple([tp / 2 for tp in tile_position])
+        new_tile_contents = tile_contents[zoom_level-1][next_tile_position]
 
         if next_tile_position not in active_tiles[zoom_level - 1]:
             active_tiles[zoom_level - 1].add(next_tile_position)
 
         for bin_position in tile_bins:
-            old_abs_pos = [tp * bins_per_dimension + bp for (tp, bp) in zip(tile_position, bin_position)]
+            #old_abs_pos = [tp * bins_per_dimension + bp for (tp, bp) in zip(tile_position, bin_position)]
             #new_bin_pos = tuple([int(op / 2) % bins_per_dimension for op in old_abs_pos])
+            #print "tile_position:", tile_position, bin_position
+            '''
+            for i in range(len(tile_position)):
+                tp = tile_position[i]
+                bp = bin_position[i]
+                new_bin_pos_list[i] = int((bins_per_dimension * tp + bp) / 2) % bins_per_dimension
+            new_bin_pos = tuple(new_bin_pos_list)
+            '''
             new_bin_pos = tuple([ int((bins_per_dimension * tp + bp) / 2) % bins_per_dimension for  (tp, bp) in zip(tile_position, bin_position)])
-
-            tile_contents[zoom_level-1][next_tile_position][new_bin_pos] += tile_bins[bin_position]
-
-            #print "old_bin_pos:", bin_position
-            #print "next_tile_position:", next_tile_position, "new_bin_pos:", new_bin_pos
+            #new_bin_pos = (0,)
+            new_tile_contents[new_bin_pos] += tile_bins[bin_position]
 
     for line_num,line in enumerate(it.chain(first_lines, input_source)):
         # see if we have to expand any coordinate ranges
@@ -242,7 +248,7 @@ def main():
                         type=int)
     parser.add_argument('-e', '--elasticsearch-url', default=None,
                         help="The url of the elasticsearch database where to save the tiles")
-    parser.add_argument('-n', '--num-threads', default=1, type=int)
+    parser.add_argument('-n', '--num-threads', default=4, type=int)
     parser.add_argument('--triangular', default=False, action='store_true')
 
 
