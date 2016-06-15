@@ -1,9 +1,11 @@
 TEST_NAME=tiles_test
 
 ##### Create a directory that will store the tiles and download some datasets to it
-mkdir -p ~/data/encode/${TILES_TEST}
-cd ~/data/encode/${TILES_TEST}
-wget https://s3.amazonaws.com/pkerp/data/encode/hg19/E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.gz
+mkdir -p ~/data/encode/${TEST_NAME}
+cd ~/data/encode/${TEST_NAME}
+wget https://s3.amazonaws.com/pkerp/data/encode/hg19/E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.short.gz
+wget https://s3.amazonaws.com/pkerp/data/encode/hg19/wgEncodeCrgMapabilityAlign36mer.bw.genome.sorted.short.gz
+wget https://s3.amazonaws.com/pkerp/data/coolers/hg19/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.5M.gz
 
 # Go back to the clodius directory
 cd -
@@ -13,6 +15,7 @@ cd -
 AWS_ES_DOMAIN=52.23.165.123:9872
 
 # Make sure we're not indexing the directory fields for searching
+curl -XDELETE "${AWS_ES_DOMAIN}/${TEST_NAME}"
 curl -XPUT "http://${AWS_ES_DOMAIN}/${TEST_NAME}" -d '
 {
   "settings": {
@@ -36,27 +39,21 @@ curl -XPUT "http://${AWS_ES_DOMAIN}/${TEST_NAME}" -d '
 #########################
 # A 1D dataset
 #########################
-DATASET_NAME=${TEST_NAME}/E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.gz
+DATASET_NAME=${TEST_NAME}/E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.short.gz
 FILEPATH=~/data/encode/${DATASET_NAME}
 curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
-    #zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/test/E116.300K
-
-    zcat ${FILEPATH} | head -n 300000 | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}.5M
-
-#zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME} ## 3:28:00
+    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 
 
 ########################
 # Another 1D dataset
 ########################
-DATASET_NAME=${TEST_NAME}/wgEncodeCrgMapabilityAlign36mer.bw.genome.sorted.gz
+DATASET_NAME=${TEST_NAME}/wgEncodeCrgMapabilityAlign36mer.bw.genome.sorted.short.gz
 FILEPATH=~/data/encode/${DATASET_NAME}
 curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
-    zcat ${FILEPATH} | head -n 1000 | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_INSTANCE}/${DATASET_NAME}
-
-#zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256  -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url search-higlass-ssxwuix6kow3sekyeresi7ay5e.us-east-1.es.amazonaws.com/${DATASET_NAME}        # 5:52:04
+    zcat ${FILEPATH} | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 
 
 ####################################
