@@ -1,5 +1,10 @@
 TEST_NAME=tiles_test
 
+export PYTHONPATH=$PYTHONPATH:.
+
+pip install sortedcontainers
+pip install requests
+
 ##### Create a directory that will store the tiles and download some datasets to it
 mkdir -p ~/data/encode/${TEST_NAME}
 cd ~/data/encode/${TEST_NAME}
@@ -12,7 +17,7 @@ cd -
 
 
 # Where the tiles will be saved
-AWS_ES_DOMAIN=52.23.165.123:9872
+AWS_ES_DOMAIN=localhost:9200
 
 # Make sure we're not indexing the directory fields for searching
 curl -XDELETE "${AWS_ES_DOMAIN}/${TEST_NAME}"
@@ -43,7 +48,7 @@ DATASET_NAME=${TEST_NAME}/E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.sho
 FILEPATH=~/data/encode/${DATASET_NAME}
 curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
-    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+    zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 
 
 ########################
@@ -53,7 +58,7 @@ DATASET_NAME=${TEST_NAME}/wgEncodeCrgMapabilityAlign36mer.bw.genome.sorted.short
 FILEPATH=~/data/encode/${DATASET_NAME}
 curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
-    zcat ${FILEPATH} | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+    zcat ${FILEPATH} | python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 
 
 ####################################
@@ -64,7 +69,7 @@ curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
     FILEPATH=~/data/${FILENAME}
     curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
-    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 5000000,5000000 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+    zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 5000000,5000000 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 
 
 ### End example
