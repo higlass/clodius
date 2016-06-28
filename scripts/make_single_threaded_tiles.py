@@ -26,7 +26,7 @@ sys.excepthook = handle_exception
 def tile_saver_worker(q, tile_saver, finished):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    while q.qsize() > 0 or (not finished.value):
+    while not q.empty() or (not finished.value):
         #print "working...", q.qsize()
         try:
             (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
@@ -39,7 +39,7 @@ def tile_saver_worker(q, tile_saver, finished):
         except Queue.Empty:
             tile_saver.flush()
 
-    print "finishing", q.qsize(), tile_saver
+    #print "finishing", q.qsize(), tile_saver
     tile_saver.flush()
 
 
@@ -97,7 +97,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
             if line_num != prev_line_num and line_num % 10000 == 0:
                 time_str = time.strftime("%Y-%m-%d %H:%M:%S")
-                print "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "qsize:", q.qsize(), "total_time", int(time.time() - start_time)
+                print "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time)
 
                 prev_time = time.time()
             prev_line_num = line_num
@@ -153,9 +153,11 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                         #print "tile_bins:", zoom_level, tile_position, tile_bins
 
                         # make sure old requests get saved before we create new ones
+                        '''
                         while q.qsize() > 100000:
                             print "sleepin..."
                             time.sleep(0.25)
+                        '''
 
                         q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
                         '''
@@ -215,8 +217,8 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                           'tile_value': tileset_info})
 
 
-    while q.qsize() > 0:
-        print "qsize:", q.qsize()
+    while not q.empty():
+        #print "qsize:", q.qsize()
         time.sleep(1)
 
     tile_saver.flush()
