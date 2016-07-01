@@ -39,6 +39,9 @@ curl -XPUT "http://${AWS_ES_DOMAIN}/${TEST_NAME}" -d '
 #########################
 # A 1D dataset
 #########################
+AWS_ES_DOMAIN=52.23.165.123:9872
+
+
 DATASET_NAME=${TEST_NAME}/E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.short.gz
 FILEPATH=~/data/encode/${DATASET_NAME}
 curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
@@ -117,15 +120,15 @@ FILEPATH=~/data/encode/${DATASET_NAME}
 
     #zcat ${FILEPATH} | head -n 100000 | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}.5M
 
-zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 
 #####################
 DATASET_NAME=hg19/wgEncodeSydhTfbsGm12878Pol2s2IggmusSig.bigWig.bedGraph.genome.sorted.gz
 FILEPATH=~/data/encode/${DATASET_NAME}
 
-    zcat ${FILEPATH} | head -n 100000 | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+    #zcat ${FILEPATH} | head -n 100000 | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 
-#zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 #####################
 DATASET_NAME=hg19/wgEncodeSydhTfbsGm12878InputStdSig.bigWig.bedGraph.genome.sorted.gz
 FILEPATH=~/data/encode/${DATASET_NAME}
@@ -136,6 +139,26 @@ curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
     #cat /tmp/x | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
 
 zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 64 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #####################
 DATASET_NAME=hg19/wgEncodeSydhTfbsGm12878Rad21IggrabSig.bigWig.bedGraph.genome.sorted.gz
