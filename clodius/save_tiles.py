@@ -8,6 +8,7 @@ import requests
 import sys
 import time
 
+from time import gmtime, strftime
 
 class TileSaver(object):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions):
@@ -78,13 +79,14 @@ class EmptyTileSaver(TileSaver):
 
 class ElasticSearchTileSaver(TileSaver):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions,
-            es_path):
+            es_path, log_file):
         super(ElasticSearchTileSaver, self).__init__(max_data_in_sparse, 
                                              bins_per_dimension,
                                              num_dimensions)
         self.es_path = es_path
         self.bulk_txt = csio.StringIO()
         self.bulk_txt_len = 0
+        self.log_file = log_file
 
         print "created tilesaver:", self.bulk_txt
 
@@ -125,7 +127,13 @@ class ElasticSearchTileSaver(TileSaver):
     def flush(self):
         if self.bulk_txt.tell() > 0:
             # only save the tile if it had enough data
-            save_to_elasticsearch("http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue())
+            try:
+                save_to_elasticsearch("http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue())
+            except Exception as ex:
+                if self.log_file is not None:
+                    with open(log_file, 'a') as f:
+                        f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+                        f.write(ex)
 
             self.bulk_txt_len = 0
             self.bulk_txt.close()
@@ -180,7 +188,7 @@ def save_to_elasticsearch(url, data):
 
             if to_sleep > 600:
                 print >>sys.stderr, "Slept too long, returning"
-                return
+                raise
 
 def save_tile(tile, output_dir, gzip_output):
     '''

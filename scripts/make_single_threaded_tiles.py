@@ -55,6 +55,11 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
     prev_time = time.time()
     start_time = time.time()
 
+    calculated_tile_bin_positions = col.defaultdict(dict)
+    for x in it.product(range(2), repeat=len(position_cols)):
+        for y in it.product(range(bins_per_dimension), repeat = len(position_cols)):
+            calculated_tile_bin_positions[x][y] = tuple([ int((bins_per_dimension * tp + bp) / 2) % bins_per_dimension for  (tp, bp) in zip(x, y)])
+
     def add_to_next_tile(zoom_level, tile_position, tile_bins):
         next_tile_position = tuple([tp / 2 for tp in tile_position])
         new_tile_contents = tile_contents[zoom_level-1][next_tile_position]
@@ -62,7 +67,10 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
         if next_tile_position not in active_tiles[zoom_level - 1]:
             active_tiles[zoom_level - 1].add(next_tile_position)
 
-        for bin_position in tile_bins:
+        tile_mod_pos = tuple([tp % 2 for tp in tile_position])
+        calc_bin_poss = calculated_tile_bin_positions[tile_mod_pos]
+
+        for bin_position,bin_value in tile_bins.iteritems():
             #old_abs_pos = [tp * bins_per_dimension + bp for (tp, bp) in zip(tile_position, bin_position)]
             #new_bin_pos = tuple([int(op / 2) % bins_per_dimension for op in old_abs_pos])
             #print "tile_position:", tile_position, bin_position
@@ -72,10 +80,17 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                 bp = bin_position[i]
                 new_bin_pos_list[i] = int((bins_per_dimension * tp + bp) / 2) % bins_per_dimension
             new_bin_pos = tuple(new_bin_pos_list)
-            '''
-            new_bin_pos = tuple([ int((bins_per_dimension * tp + bp) / 2) % bins_per_dimension for  (tp, bp) in zip(tile_position, bin_position)])
+
+            new_bin_pos = calc_bin_poss[bin_position]
+            print "tp, bp:", tile_position, bin_position, new_bin_pos, calc_bin_pos
+            if calc_bin_pos != new_bin_pos:
+                print "Wrong calc_bin_pos!"
+                sys.exit(1)
             #new_bin_pos = (0,)
-            new_tile_contents[new_bin_pos] += tile_bins[bin_position]
+            if zoom_level < 3:
+                print >>sys.stderr, "adding to next tile:", zoom_level-1, next_tile_position, "new_bin_pos:", new_bin_pos
+            '''
+            new_tile_contents[calc_bin_poss[bin_position]] += bin_value
 
     for line_num,line in enumerate(it.chain(first_lines, input_source)):
         # see if we have to expand any coordinate ranges
@@ -252,6 +267,7 @@ def main():
                         help="The url of the elasticsearch database where to save the tiles")
     parser.add_argument('-n', '--num-threads', default=4, type=int)
     parser.add_argument('--triangular', default=False, action='store_true')
+    parser.add_argument('--log-file', default=None)
 
 
     args = parser.parse_args()
@@ -331,7 +347,8 @@ def main():
     tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
                                             args.bins_per_dimension,
                                             len(position_cols),
-                                            args.elasticsearch_url)
+                                            args.elasticsearch_url,
+                                            args.log_file)
     for i in range(args.num_threads):
         p = mpr.Process(target=tile_saver_worker, args=(q, tile_saver, finished))
         print "p:", p
