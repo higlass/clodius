@@ -76,6 +76,49 @@ class EmptyTileSaver(TileSaver):
                                              bins_per_dimension,
                                              num_dimensions)
 
+class ColumnFileTileSaver(TileSaver):
+    def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions,
+            file_path, log_file):
+        super(ColumnFileTileSaver, self).__init__(max_data_in_sparse, 
+                                             bins_per_dimension,
+                                             num_dimensions)
+        self.file_path = file_path
+        self.bulk_txt = csio.StringIO()
+        self.bulk_txt_len = 0
+        self.log_file = log_file
+
+        print "created tilesaver:", self.bulk_txt
+
+    def save_tile(self, val):
+
+        if val["tile_id"] is "tileset_info":
+            self.bulk_txt.write(val["tile_id"] + "\t" + "1" + "\t" + "1" + "\t")
+        else:
+            ti = val['tile_id'].split(".")
+            self.bulk_txt.write(str(int(ti[0])+1) + "\t" + str(int(ti[1])+1) + "\t" + str(int(ti[1])+1) + "\t")
+
+        self.bulk_txt.write(json.dumps(val) + "\n")
+        curr_pos = self.bulk_txt.tell()
+        #print "curr_pos:", curr_pos,self.bulk_txt.getvalue()
+        #self.bulk_txt.write(new_string)
+        if curr_pos > 2000000:
+            self.flush()
+
+    def flush(self):
+        if self.bulk_txt.tell() > 0:
+            try:
+                with open(self.file_path, "a") as column_file:
+                    column_file.write(self.bulk_txt.getvalue())
+            except Exception as ex:
+                if self.log_file is not None:
+                    with open(log_file, 'a') as f:
+                        f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+                        f.write(ex)
+
+        self.bulk_txt_len = 0
+        self.bulk_txt.close()
+        self.bulk_txt = csio.StringIO()
+
 
 class ElasticSearchTileSaver(TileSaver):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions,

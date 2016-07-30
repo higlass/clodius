@@ -265,6 +265,8 @@ def main():
                         type=int)
     parser.add_argument('-e', '--elasticsearch-url', default=None,
                         help="The url of the elasticsearch database where to save the tiles")
+    parser.add_argument('-f', '--columnfile-path', default=None,
+                        help="The path to the column file where to save the tiles")
     parser.add_argument('-n', '--num-threads', default=4, type=int)
     parser.add_argument('--triangular', default=False, action='store_true')
     parser.add_argument('--log-file', default=None)
@@ -344,11 +346,19 @@ def main():
 
     tilesaver_processes = []
     finished = mpr.Value('b', False)
-    tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
-                                            args.bins_per_dimension,
-                                            len(position_cols),
-                                            args.elasticsearch_url,
-                                            args.log_file)
+    if args.elasticsearch_url is not None:    
+        tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
+                                                args.bins_per_dimension,
+                                                len(position_cols),
+                                                args.elasticsearch_url,
+                                                args.log_file)
+    else:
+        tile_saver = cst.ColumnFileTileSaver(max_data_in_sparse,
+                                                args.bins_per_dimension,
+                                                len(position_cols),
+                                                args.columnfile_path,
+                                                args.log_file)
+
     for i in range(args.num_threads):
         p = mpr.Process(target=tile_saver_worker, args=(q, tile_saver, finished))
         print "p:", p
