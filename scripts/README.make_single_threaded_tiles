@@ -18,7 +18,7 @@ cd -
 
 #AWS_ES_DOMAIN=52.23.237.226:9872
 AWS_ES_DOMAIN=127.0.0.1:9200
-TEST_NAME=benchmark1
+TEST_NAME=tiles_test
 
 # Make sure we're not indexing the directory fields for searching
 curl -XDELETE "${AWS_ES_DOMAIN}/${TEST_NAME}"
@@ -41,6 +41,18 @@ curl -XPUT "http://${AWS_ES_DOMAIN}/${TEST_NAME}" -d '
        }
    }
 }'
+
+
+####################################
+# A 2D dataset
+####################################
+    #DATASET_NAME=${TEST_NAME}/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.5M.gz
+    DATASET_NAME=${TEST_NAME}/chrX_5KB_bins.tsv.gz
+    FILENAME=encode/${DATASET_NAME}
+    FILEPATH=~/data/${FILENAME}
+
+    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 5000000,5000000 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+    curl -XGET "${AWS_ES_DOMAIN}/${TEST_NAME}/_optimize"
 
 #########################
 # A 1D dataset
@@ -65,18 +77,6 @@ FILEPATH=~/data/encode/${DATASET_NAME}
 
 curl -XGET "${AWS_ES_DOMAIN}/${TEST_NAME}/_optimize"
 
-
-####################################
-# A 2D dataset
-####################################
-    AWS_ES_DOMAIN=52.23.165.123:9872
-    DATASET_NAME=${TEST_NAME}/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.5M.gz
-    FILENAME=encode/${DATASET_NAME}
-    FILEPATH=~/data/${FILENAME}
-    curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
-
-    zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 5000000,5000000 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
-curl -XGET "${AWS_ES_DOMAIN}/${TEST_NAME}/_optimize"
 
 
 ### End example

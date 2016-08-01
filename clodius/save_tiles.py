@@ -16,6 +16,8 @@ from time import gmtime, strftime
 class TileSaver(object):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions):
         self.max_data_in_sparse = max_data_in_sparse
+
+        #self.max_data_in_sparse = 0
         self.bins_per_dimension = bins_per_dimension
         self.num_dimensions = num_dimensions
 
@@ -133,7 +135,6 @@ class ColumnFileTileSaver(TileSaver):
 
         # [[1.0, [[78.0, 123.0], [64.0, 153.0]]]]
 
-
         if val["tile_id"] is "tileset_info":
             self.bulk_txt.write(val["tile_id"] + "\t" + "1" + "\t" + "1" + "\t")
         else:
@@ -181,25 +182,29 @@ class ElasticSearchTileSaver(TileSaver):
         # derived classes should implement this functionality themselves
 
         #self.bulk_txt.write(json.dumps({"index": {"_id": val['tile_id']}}) + "\n")
-        '''
         if ('sparse' in val['tile_value']):
             sparse_values = val['tile_value']['sparse']
             value_pos = col.defaultdict(list)
             for sparse_value in sparse_values:
                 value_pos[sparse_value[1]] += [sparse_value[0]]
-            val['tile_value']['sparse'] = value_pos.items()
+            #val['tile_value']['sparse'] = value_pos.items()
 
             value_xs_ys = []
             for value, poss in value_pos.items():
                 poss = sorted(poss)
                 xs = [p[0] for p in poss]
                 ys = [p[1] for p in poss]
-                value_xs_ys += [value, xs, ys]
+                value_xs_ys += [float(value)]
+                value_xs_ys += [float(len(xs))]
+                value_xs_ys += xs
+                value_xs_ys += ys
             val['tile_value']['sparse'] = value_xs_ys
+
+        print "writing:", val['tile_id']
+        #val['tile_value']['dense'] = []
 
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(val['tile_id']))
         self.bulk_txt.write(json.dumps(val) + "\n")
-        '''
 
         '''
         self.bulk_txt.write('{{"tile_id": {}, "tile_value": '.format(val['tile_id']))

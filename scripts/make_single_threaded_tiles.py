@@ -30,6 +30,8 @@ def tile_saver_worker(q, tile_saver, finished):
         #print "working...", q.qsize()
         try:
             (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
+            print "here saving:", zoom_level, tile_pos
+            print "queue:", q
             tile_saver.save_binned_tile(zoom_level,
                                         tile_pos,
                                         tile_bins)
@@ -323,7 +325,7 @@ def main():
     if value_pos is None:
         value_pos = len(first_line_parts)
 
-    max_data_in_sparse = args.bins_per_dimension ** len(position_cols) / 5.
+    max_data_in_sparse = args.bins_per_dimension ** len(position_cols) / 10
 
     '''
     if args.elasticsearch_url is not None:
