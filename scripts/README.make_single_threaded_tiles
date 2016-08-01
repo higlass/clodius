@@ -60,8 +60,8 @@ curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 DATASET_NAME=${TEST_NAME}/wgEncodeCrgMapabilityAlign36mer.bw.genome.sorted.short.gz
 FILEPATH=~/data/encode/${DATASET_NAME}
 
-    #zcat ${FILEPATH} | python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 2048 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
-    rm /tmp/tiletest.txt.gz; zcat ${FILEPATH} | python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 2048 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 -f /tmp/tiletest.txt; gzip /tmp/tiletest.txt
+    zcat ${FILEPATH} | python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 2048 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+    #rm /tmp/tiletest.txt.gz; zcat ${FILEPATH} | python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 2048 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 -f /tmp/tiletest.txt; gzip /tmp/tiletest.txt
 
 curl -XGET "${AWS_ES_DOMAIN}/${TEST_NAME}/_optimize"
 
