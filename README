@@ -46,7 +46,7 @@ aws s3 sync --region us-west-2 ~/data/${FILENAME}.tiles s3://pkerp/data/${FILENA
 ##########################################################################################
 ### Gene annotations
 #########################################################################################
-ASSEMBLY=mm9
+ASSEMBLY=hg9
 
 INPUT_FILE=~/data/${ASSEMBLY}/genbank-output/refgene-count-minus
 DATASET_NAME=${ASSEMBLY}/refgene-tiles-minus

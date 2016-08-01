@@ -146,13 +146,60 @@ zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --mi
 
 ###########################
 DATASET_NAME=UNTR.1kb.cool.reduced.genome.gz
-INDEX_NAME=mm9/${DATASET_NAME}
+for DATASET_NAME in UNTR.1kb.cool.reduced.genome.gz TAM.1kb.cool.reduced.genome.gz NIPBL.1kb.cool.reduced.genome.gz NCAPH2.1kb.cool.reduced.genome.gz;
+do
+    INDEX_NAME=mm9/${DATASET_NAME}
+    #INDEX_NAME=${DATASET_NAME,,}/tiles
+    echo $INDEX_NAME
+    FILENAME=coolers/mm9/${DATASET_NAME}
+    FILEPATH=~/data/${FILENAME}
+    #curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
+    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 2725765481,2725765481 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+done;
+
+AWS_ES_DOMAIN=52.23.165.123:9872
+ASSEMBLY=mm9
+for DATASET_NAME in Dixon2012-J1-NcoI-R1-filtered.5kb.cool.reduced.genome.gz;
+do
+    INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
+    #INDEX_NAME=${DATASET_NAME,,}/tiles
+    echo $INDEX_NAME
+    FILENAME=coolers/${ASSEMBLY}/${DATASET_NAME}
+    FILEPATH=~/data/${FILENAME}
+    #curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
+    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 2725765481,2725765481 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+done;
+
+###########################
+AWS_ES_DOMAIN=52.23.165.123:9872
+DATASET_NAME=HiCtool_sparse_matrix_observed.reduced.genome.gz
+INDEX_NAME=hg19/${DATASET_NAME}
 #INDEX_NAME=${DATASET_NAME,,}/tiles
 echo $INDEX_NAME
-FILENAME=coolers/mm9/${DATASET_NAME}
+FILENAME=coolers/hg19/${DATASET_NAME}
 FILEPATH=~/data/${FILENAME}
 #curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
-zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 3137161264,3137161264 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 3137161264,3137161264 -b 256 -r 50000 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+###########################
+AWS_ES_DOMAIN=52.23.165.123:9872
+DATASET_NAME=HiCtool_sparse_matrix_normalized_fend.reduced.genome.gz
+INDEX_NAME=hg19/${DATASET_NAME}
+#INDEX_NAME=${DATASET_NAME,,}/tiles
+echo $INDEX_NAME
+FILENAME=coolers/hg19/${DATASET_NAME}
+FILEPATH=~/data/${FILENAME}
+#curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 3137161264,3137161264 -b 256 -r 50000 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+###########################
+AWS_ES_DOMAIN=52.23.165.123:9872
+DATASET_NAME=HiCtool_sparse_matrix_normalized_enrich.reduced.genome.gz
+INDEX_NAME=hg19/${DATASET_NAME}
+#INDEX_NAME=${DATASET_NAME,,}/tiles
+echo $INDEX_NAME
+FILENAME=coolers/hg19/${DATASET_NAME}
+FILEPATH=~/data/${FILENAME}
+#curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 3137161264,3137161264 -b 256 -r 50000 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
 
 ###########################
 DATASET_NAME=UNTR.1kb.cool.reduced.genome.gz
