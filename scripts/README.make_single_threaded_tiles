@@ -18,7 +18,7 @@ cd -
 
 #AWS_ES_DOMAIN=52.23.237.226:9872
 AWS_ES_DOMAIN=127.0.0.1:9200
-#TEST_NAME=hg19
+TEST_NAME=benchmark1
 
 # Make sure we're not indexing the directory fields for searching
 curl -XDELETE "${AWS_ES_DOMAIN}/${TEST_NAME}"
@@ -69,6 +69,7 @@ curl -XGET "${AWS_ES_DOMAIN}/${TEST_NAME}/_optimize"
 ####################################
 # A 2D dataset
 ####################################
+    AWS_ES_DOMAIN=52.23.165.123:9872
     DATASET_NAME=${TEST_NAME}/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.5M.gz
     FILENAME=encode/${DATASET_NAME}
     FILEPATH=~/data/${FILENAME}
@@ -130,6 +131,7 @@ curl -XPUT "http://${AWS_ES_DOMAIN}/mm9" -d '
 #################################
 ######################################
 ######################################
+    AWS_ES_DOMAIN=52.23.165.123:9872
     DATASET_NAME=hg19/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.5M.gz
     FILENAME=coolers/${DATASET_NAME}
     FILEPATH=~/data/${FILENAME}

@@ -140,7 +140,7 @@ class ColumnFileTileSaver(TileSaver):
             ti = val['tile_id'].split(".")
             self.bulk_txt.write(str(int(ti[0])+1) + "\t" + str(int(ti[1])+1) + "\t" + str(int(ti[1])+1) + "\t")
 
-        self.bulk_txt.write(json.dumps(val['tile_value']) + "\n")
+        self.bulk_txt.write(json.dumps(val) + "\n")
         curr_pos = self.bulk_txt.tell()
         #print "curr_pos:", curr_pos,self.bulk_txt.getvalue()
         #self.bulk_txt.write(new_string)
@@ -181,10 +181,25 @@ class ElasticSearchTileSaver(TileSaver):
         # derived classes should implement this functionality themselves
 
         #self.bulk_txt.write(json.dumps({"index": {"_id": val['tile_id']}}) + "\n")
+        '''
+        if ('sparse' in val['tile_value']):
+            sparse_values = val['tile_value']['sparse']
+            value_pos = col.defaultdict(list)
+            for sparse_value in sparse_values:
+                value_pos[sparse_value[1]] += [sparse_value[0]]
+            val['tile_value']['sparse'] = value_pos.items()
 
+            value_xs_ys = []
+            for value, poss in value_pos.items():
+                poss = sorted(poss)
+                xs = [p[0] for p in poss]
+                ys = [p[1] for p in poss]
+                value_xs_ys += [value, xs, ys]
+            val['tile_value']['sparse'] = value_xs_ys
 
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(val['tile_id']))
-        self.bulk_txt.write(json.dumps(val['tile_value']) + "\n")
+        self.bulk_txt.write(json.dumps(val) + "\n")
+        '''
 
         '''
         self.bulk_txt.write('{{"tile_id": {}, "tile_value": '.format(val['tile_id']))
