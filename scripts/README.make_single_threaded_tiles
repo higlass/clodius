@@ -16,8 +16,8 @@ wget https://s3.amazonaws.com/pkerp/data/coolers/hg19/Rao2014-GM12878-MboI-allre
 cd -
 
 
-AWS_ES_DOMAIN=52.23.237.226:9872
-#AWS_ES_DOMAIN=127.0.0.1:9872
+#AWS_ES_DOMAIN=52.23.237.226:9872
+AWS_ES_DOMAIN=127.0.0.1:9200
 #TEST_NAME=hg19
 
 # Make sure we're not indexing the directory fields for searching
@@ -59,20 +59,23 @@ curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 ########################
 DATASET_NAME=${TEST_NAME}/wgEncodeCrgMapabilityAlign36mer.bw.genome.sorted.short.gz
 FILEPATH=~/data/encode/${DATASET_NAME}
-curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
-    zcat ${FILEPATH} | python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+    #zcat ${FILEPATH} | python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 2048 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+    rm /tmp/tiletest.txt.gz; zcat ${FILEPATH} | python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 2048 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 -f /tmp/tiletest.txt; gzip /tmp/tiletest.txt
+
+curl -XGET "${AWS_ES_DOMAIN}/${TEST_NAME}/_optimize"
 
 
 ####################################
 # A 2D dataset
 ####################################
     DATASET_NAME=${TEST_NAME}/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.5M.gz
-    FILENAME=coolers/${DATASET_NAME}
+    FILENAME=encode/${DATASET_NAME}
     FILEPATH=~/data/${FILENAME}
     curl -XDELETE "${AWS_ES_DOMAIN}/${DATASET_NAME}"
 
     zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 5000000,5000000 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}
+curl -XGET "${AWS_ES_DOMAIN}/${TEST_NAME}/_optimize"
 
 
 ### End example

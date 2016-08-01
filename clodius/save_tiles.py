@@ -1,5 +1,7 @@
+import collections as col
 import cStringIO as csio
 import gzip
+import itertools as it
 import json
 import os
 import os.path as op
@@ -7,6 +9,7 @@ import random
 import requests
 import sys
 import time
+import itertools
 
 from time import gmtime, strftime
 
@@ -91,13 +94,53 @@ class ColumnFileTileSaver(TileSaver):
 
     def save_tile(self, val):
 
+        if ('dense' in val['tile_value']):
+            value_pos = col.defaultdict(list)
+            dense_values = val['tile_value']['dense']
+            dense_values = [(x,len(list(y))) for (x,y) in it.groupby(dense_values)]
+            dense_values = [item for sublist in dense_values for item in sublist]
+            val['tile_value']['dense'] = dense_values
+            '''
+            for i,value in enumerate(dense_values):
+                value_pos[value] += [i]
+            for key in value_pos:
+                sorted_value_pos = sorted(value_pos[key])
+                diffs = []
+                diffs += [sorted_value_pos[0]]
+                for i in range(len(sorted_value_pos)-1):
+                    diffs += [sorted_value_pos[i+1] - sorted_value_pos[i]]
+
+                value_pos[key] = diffs
+            val['tile_value']['dense'] = value_pos.items()
+            '''
+
+        '''
+        if ('sparse' in val['tile_value']):
+            sparse_values = val['tile_value']['sparse']
+            value_pos = col.defaultdict(list)
+            for sparse_value in sparse_values:
+                value_pos[sparse_value[1]] += [sparse_value[0]]
+            val['tile_value']['sparse'] = value_pos.items()
+
+            value_xs_ys = []
+            for value, poss in value_pos.items():
+                poss = sorted(poss)
+                xs = [p[0] for p in poss]
+                ys = [p[1] for p in poss]
+                value_xs_ys += [value, xs, ys]
+            val['tile_value']['sparse'] = value_xs_ys
+        '''
+
+        # [[1.0, [[78.0, 123.0], [64.0, 153.0]]]]
+
+
         if val["tile_id"] is "tileset_info":
             self.bulk_txt.write(val["tile_id"] + "\t" + "1" + "\t" + "1" + "\t")
         else:
             ti = val['tile_id'].split(".")
             self.bulk_txt.write(str(int(ti[0])+1) + "\t" + str(int(ti[1])+1) + "\t" + str(int(ti[1])+1) + "\t")
 
-        self.bulk_txt.write(json.dumps(val) + "\n")
+        self.bulk_txt.write(json.dumps(val['tile_value']) + "\n")
         curr_pos = self.bulk_txt.tell()
         #print "curr_pos:", curr_pos,self.bulk_txt.getvalue()
         #self.bulk_txt.write(new_string)
@@ -139,8 +182,9 @@ class ElasticSearchTileSaver(TileSaver):
 
         #self.bulk_txt.write(json.dumps({"index": {"_id": val['tile_id']}}) + "\n")
 
+
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(val['tile_id']))
-        self.bulk_txt.write(json.dumps(val) + "\n")
+        self.bulk_txt.write(json.dumps(val['tile_value']) + "\n")
 
         '''
         self.bulk_txt.write('{{"tile_id": {}, "tile_value": '.format(val['tile_id']))
