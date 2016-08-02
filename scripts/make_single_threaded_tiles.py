@@ -30,8 +30,6 @@ def tile_saver_worker(q, tile_saver, finished):
         #print "working...", q.qsize()
         try:
             (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
-            print "here saving:", zoom_level, tile_pos
-            print "queue:", q
             tile_saver.save_binned_tile(zoom_level,
                                         tile_pos,
                                         tile_bins)
@@ -176,6 +174,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                             time.sleep(0.25)
                         '''
 
+                        #print "putting:", zoom_level, active_tiles[zoom_level][0]
                         q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
                         '''
                         if zoom_level < max_zoom:

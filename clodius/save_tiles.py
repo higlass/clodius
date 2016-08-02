@@ -7,6 +7,7 @@ import os
 import os.path as op
 import random
 import requests
+import slugid
 import sys
 import time
 import itertools
@@ -200,7 +201,7 @@ class ElasticSearchTileSaver(TileSaver):
                 value_xs_ys += ys
             val['tile_value']['sparse'] = value_xs_ys
 
-        print "writing:", val['tile_id']
+        #print "writing:", val['tile_id']
         #val['tile_value']['dense'] = []
 
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(val['tile_id']))
@@ -228,7 +229,7 @@ class ElasticSearchTileSaver(TileSaver):
         curr_pos = self.bulk_txt.tell()
         #print "curr_pos:", curr_pos,self.bulk_txt.getvalue()
         #self.bulk_txt.write(new_string)
-        if curr_pos > 2000000:
+        if curr_pos > 5000000:
             self.flush()
 
     def flush(self):
@@ -255,7 +256,7 @@ def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_pat
         bulk_txt += json.dumps({"index": {"_id": val['tile_id']}}) + "\n"
         bulk_txt += json.dumps(val) + "\n"
 
-        if len(bulk_txt) > 2000000:
+        if len(bulk_txt) > 5000000:
             save_to_elasticsearch("http://" + put_url, bulk_txt)
             bulk_txt = ""
 
@@ -278,19 +279,20 @@ def save_to_elasticsearch(url, data):
     '''
     saved = False
     to_sleep = 1
+    uid = slugid.nice()
     while not saved:
         try:
             #print "Saving... url:", url, "len(bulk_txt):", len(data)
             #print "data:", data
             r = requests.post(url, data=data, timeout=8)
             #print "data:", data
-            print "Saved", r, "len(data):", len(data), url #, r.text
+            print "Saved", uid,  r, "len(data):", len(data), url #, r.text
             saved = True
             #print "data:", data
         except Exception as ex:
 
             to_sleep *= 2
-            print >>sys.stderr, "Error saving to elastic search, sleeping:", to_sleep, ex
+            print >>sys.stderr, "Error saving to elastic search (", uid, "), sleeping:", to_sleep, ex
             time.sleep(to_sleep)
 
             if to_sleep > 600:

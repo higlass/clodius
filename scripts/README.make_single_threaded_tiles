@@ -17,7 +17,8 @@ cd -
 
 
 #AWS_ES_DOMAIN=52.23.237.226:9872
-AWS_ES_DOMAIN=127.0.0.1:9200
+AWS_ES_DOMAIN=52.23.165.123:9872
+#AWS_ES_DOMAIN=127.0.0.1:9200
 TEST_NAME=tiles_test
 
 # Make sure we're not indexing the directory fields for searching
@@ -46,8 +47,8 @@ curl -XPUT "http://${AWS_ES_DOMAIN}/${TEST_NAME}" -d '
 ####################################
 # A 2D dataset
 ####################################
-    #DATASET_NAME=${TEST_NAME}/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.5M.gz
-    DATASET_NAME=${TEST_NAME}/chrX_5KB_bins.tsv.gz
+    DATASET_NAME=${TEST_NAME}/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.5M.gz
+    #DATASET_NAME=${TEST_NAME}/chrX_5KB_bins.tsv.gz
     FILENAME=encode/${DATASET_NAME}
     FILEPATH=~/data/${FILENAME}
 
