@@ -192,12 +192,13 @@ class ElasticSearchTileSaver(TileSaver):
             value_xs_ys = []
             for value, poss in value_pos.items():
                 poss = sorted(poss)
-                xs = [p[0] for p in poss]
-                ys = [p[1] for p in poss]
+                dim_values = []
                 value_xs_ys += [float(value)]
                 value_xs_ys += [float(len(xs))]
-                value_xs_ys += xs
-                value_xs_ys += ys
+
+                for i in range(len(poss[0])):
+                    value_xs_ys += [p[i] for p in poss]
+
             val['tile_value']['sparse'] = value_xs_ys
 
         '''
