@@ -194,7 +194,7 @@ class ElasticSearchTileSaver(TileSaver):
                 poss = sorted(poss)
                 dim_values = []
                 value_xs_ys += [float(value)]
-                value_xs_ys += [float(len(xs))]
+                value_xs_ys += [float(len(poss))]
 
                 for i in range(len(poss[0])):
                     value_xs_ys += [p[i] for p in poss]

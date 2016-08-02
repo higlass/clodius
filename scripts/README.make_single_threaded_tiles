@@ -109,6 +109,26 @@ curl -XPUT "http://${AWS_ES_DOMAIN}/${TEST_NAME}" -d '
    }
 }'
 
+curl -XPUT "http://${AWS_ES_DOMAIN}/hg19.1" -d '
+{
+  "settings": {
+    "index.codec": "best_compression"
+  },
+  "mappings": {
+    "_default_": {
+        "dynamic_templates": [
+            { "notanalyzed": {
+                  "match":              "*",
+                  "mapping": {
+                      "index":       "no"
+                  }
+               }
+            }
+          ]
+       }
+   }
+}'
+
 curl -XPUT "http://${AWS_ES_DOMAIN}/mm9" -d '
 {
   "settings": {
@@ -132,8 +152,8 @@ curl -XPUT "http://${AWS_ES_DOMAIN}/mm9" -d '
 #################################
 ######################################
 ######################################
-    #AWS_ES_DOMAIN=52.23.165.123:9872
-    AWS_ES_DOMAIN=127.0.0.1:9200
+    AWS_ES_DOMAIN=52.23.165.123:9872
+    #AWS_ES_DOMAIN=127.0.0.1:9200
     DATASET_NAME=hg19/Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.5M.gz
     FILENAME=coolers/${DATASET_NAME}
     FILEPATH=~/data/${FILENAME}
@@ -142,7 +162,7 @@ curl -XPUT "http://${AWS_ES_DOMAIN}/mm9" -d '
 
 
 DATASET_NAME=Rao2014-GM12878-MboI-allreps-filtered.1kb.cool.reduced.genome.gz #2,220,472,930 lines
-INDEX_NAME=hg19/${DATASET_NAME}
+INDEX_NAME=hg19.1/${DATASET_NAME}
 #INDEX_NAME=${DATASET_NAME,,}/tiles
 echo $INDEX_NAME
 FILENAME=coolers/hg19/${DATASET_NAME}
