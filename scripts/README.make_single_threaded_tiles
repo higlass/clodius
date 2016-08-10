@@ -232,7 +232,7 @@ zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --mi
 curl -XGET "${AWS_ES_DOMAIN}/hg19/_optimize"
 
 ASSEMBLY=mm9
-for DATASET_NAME in WT_8097_ChIPK4me3__VS__WT_8097_Input.fc.signal.bw.genome.sorted.gz; # WT_8097_ChIPK27ac__VS__WT_8097_Input.fc.signal.bw.genome.sorted.gz Nipbl_8094_ChIPK4me3__VS__Nipbl_8094_Input.fc.signal.bw.genome.sorted.gz Nipbl_8094_ChIPK27ac__VS__Nipbl_8094_Input.fc.signal.bw.genome.sorted.gz UNTR_all_star_genome_plusAll.bw.genome.sorted.gz NIPBL_all_star_genome_plusAll.bw.genome.sorted.gz UNTR_all_star_genome_minusAll.bw.genome.sorted.gz NIPBL_all_star_genome_minusAll.bw.genome.sorted.gz;
+for DATASET_NAME in WT_8097_ChIPK4me3__VS__WT_8097_Input.fc.signal.bw.genome.sorted.gz WT_8097_ChIPK27ac__VS__WT_8097_Input.fc.signal.bw.genome.sorted.gz Nipbl_8094_ChIPK4me3__VS__Nipbl_8094_Input.fc.signal.bw.genome.sorted.gz Nipbl_8094_ChIPK27ac__VS__Nipbl_8094_Input.fc.signal.bw.genome.sorted.gz UNTR_all_star_genome_plusAll.bw.genome.sorted.gz NIPBL_all_star_genome_plusAll.bw.genome.sorted.gz UNTR_all_star_genome_minusAll.bw.genome.sorted.gz NIPBL_all_star_genome_minusAll.bw.genome.sorted.gz;
 do
     FILEPATH=~/data/encode/${ASSEMBLY}/${DATASET_NAME}
     INDEX_NAME=hg19.1/${ASSEMBLY}.${DATASET_NAME}
