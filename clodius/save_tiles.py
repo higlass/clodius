@@ -64,8 +64,6 @@ class TileSaver(object):
         max_value = max(tile_bins.values())
         min_value = min(tile_bins.values())
 
-        #print "saving tile_position:", tile_position
-
         if len(tile_bins) < self.max_data_in_sparse:
             self.save_sparse_tile(zoom_level, tile_position, tile_bins, 
                                   min_value=min_value, max_value=max_value)
@@ -185,6 +183,7 @@ class ElasticSearchTileSaver(TileSaver):
         #self.bulk_txt.write(json.dumps({"index": {"_id": val['tile_id']}}) + "\n")
         if ('sparse' in val['tile_value']):
             sparse_values = val['tile_value']['sparse']
+
             value_pos = col.defaultdict(list)
             for sparse_value in sparse_values:
                 value_pos[sparse_value[1]] += [sparse_value[0]]
@@ -193,13 +192,19 @@ class ElasticSearchTileSaver(TileSaver):
             value_xs_ys = []
             for value, poss in value_pos.items():
                 poss = sorted(poss)
-                xs = [p[0] for p in poss]
-                ys = [p[1] for p in poss]
+                dim_values = []
                 value_xs_ys += [float(value)]
-                value_xs_ys += [float(len(xs))]
-                value_xs_ys += xs
-                value_xs_ys += ys
+                value_xs_ys += [float(len(poss))]
+
+                for i in range(len(poss[0])):
+                    value_xs_ys += [p[i] for p in poss]
+
             val['tile_value']['sparse'] = value_xs_ys
+
+        '''
+        if ('dense' in val['tile_value']):
+            print val['tile_id'], len([x for x in val['tile_value']['dense'] if x > 0])
+        '''
 
         #print "writing:", val['tile_id']
         #val['tile_value']['dense'] = []
@@ -219,7 +224,6 @@ class ElasticSearchTileSaver(TileSaver):
             self.bulk_txt.write('] }}')
 
 
-        #print "val:", val
         #sys.exit(1)
         #new_string += str(val) + "\n"
 
@@ -227,7 +231,6 @@ class ElasticSearchTileSaver(TileSaver):
         '''
 
         curr_pos = self.bulk_txt.tell()
-        #print "curr_pos:", curr_pos,self.bulk_txt.getvalue()
         #self.bulk_txt.write(new_string)
         if curr_pos > 5000000:
             self.flush()
@@ -260,7 +263,6 @@ def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_pat
             save_to_elasticsearch("http://" + put_url, bulk_txt)
             bulk_txt = ""
 
-    #print "len(bulk_txt)", len(bulk_txt)
     if len(bulk_txt) > 0:
         save_to_elasticsearch("http://" + put_url, bulk_txt)
 
@@ -282,10 +284,7 @@ def save_to_elasticsearch(url, data):
     uid = slugid.nice()
     while not saved:
         try:
-            #print "Saving... url:", url, "len(bulk_txt):", len(data)
-            #print "data:", data
             r = requests.post(url, data=data, timeout=8)
-            #print "data:", data
             print "Saved", uid,  r, "len(data):", len(data), url #, r.text
             saved = True
             #print "data:", data

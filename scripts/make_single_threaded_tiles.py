@@ -112,7 +112,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
             if line_num != prev_line_num and line_num % 10000 == 0:
                 time_str = time.strftime("%Y-%m-%d %H:%M:%S")
-                print "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time)
+                print "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time), 'qsize:', q.qsize()
 
                 prev_time = time.time()
             prev_line_num = line_num
@@ -168,11 +168,9 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                         #print "tile_bins:", zoom_level, tile_position, tile_bins
 
                         # make sure old requests get saved before we create new ones
-                        '''
-                        while q.qsize() > 100000:
+                        while q.qsize() > 40000:
                             print "sleepin..."
                             time.sleep(0.25)
-                        '''
 
                         #print "putting:", zoom_level, active_tiles[zoom_level][0]
                         q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
