@@ -241,6 +241,17 @@ do
     zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 2654911517 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME}
 done;
 
+ASSEMBLY=hg19
+for DATASET_NAME in ED557_hg19.genome.sorted.gz EDH_1941_hg19.genome.sorted.gz;
+do
+    FILEPATH=~/data/encode/${ASSEMBLY}/${DATASET_NAME}
+    INDEX_NAME=hg19.1/${ASSEMBLY}.${DATASET_NAME}
+    echo "filepath: $FILEPATH"
+    #zcat ${FILEPATH} | head -n 100000 | pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${DATASET_NAME}.5M
+    zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 2654911517 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME}
+done;
+
+
 ######################
 AWS_ES_DOMAIN=52.23.165.123:9872
 DATASET_NAME=E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.short.gz
