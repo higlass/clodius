@@ -1,18 +1,24 @@
+import collections as col
 import cStringIO as csio
 import gzip
+import itertools as it
 import json
 import os
 import os.path as op
 import random
 import requests
+import slugid
 import sys
 import time
+import itertools
 
 from time import gmtime, strftime
 
 class TileSaver(object):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions):
         self.max_data_in_sparse = max_data_in_sparse
+
+        #self.max_data_in_sparse = 0
         self.bins_per_dimension = bins_per_dimension
         self.num_dimensions = num_dimensions
 
@@ -58,8 +64,6 @@ class TileSaver(object):
         max_value = max(tile_bins.values())
         min_value = min(tile_bins.values())
 
-        #print "saving tile_position:", tile_position
-
         if len(tile_bins) < self.max_data_in_sparse:
             self.save_sparse_tile(zoom_level, tile_position, tile_bins, 
                                   min_value=min_value, max_value=max_value)
@@ -90,6 +94,45 @@ class ColumnFileTileSaver(TileSaver):
         print "created tilesaver:", self.bulk_txt
 
     def save_tile(self, val):
+
+        '''
+        if ('dense' in val['tile_value']):
+            value_pos = col.defaultdict(list)
+            dense_values = val['tile_value']['dense']
+            dense_values = [(x,len(list(y))) for (x,y) in it.groupby(dense_values)]
+            dense_values = [item for sublist in dense_values for item in sublist]
+            val['tile_value']['dense'] = dense_values
+            for i,value in enumerate(dense_values):
+                value_pos[value] += [i]
+            for key in value_pos:
+                sorted_value_pos = sorted(value_pos[key])
+                diffs = []
+                diffs += [sorted_value_pos[0]]
+                for i in range(len(sorted_value_pos)-1):
+                    diffs += [sorted_value_pos[i+1] - sorted_value_pos[i]]
+
+                value_pos[key] = diffs
+            val['tile_value']['dense'] = value_pos.items()
+        '''
+
+        '''
+        if ('sparse' in val['tile_value']):
+            sparse_values = val['tile_value']['sparse']
+            value_pos = col.defaultdict(list)
+            for sparse_value in sparse_values:
+                value_pos[sparse_value[1]] += [sparse_value[0]]
+            val['tile_value']['sparse'] = value_pos.items()
+
+            value_xs_ys = []
+            for value, poss in value_pos.items():
+                poss = sorted(poss)
+                xs = [p[0] for p in poss]
+                ys = [p[1] for p in poss]
+                value_xs_ys += [value, xs, ys]
+            val['tile_value']['sparse'] = value_xs_ys
+        '''
+
+        # [[1.0, [[78.0, 123.0], [64.0, 153.0]]]]
 
         if val["tile_id"] is "tileset_info":
             self.bulk_txt.write(val["tile_id"] + "\t" + "1" + "\t" + "1" + "\t")
@@ -138,6 +181,33 @@ class ElasticSearchTileSaver(TileSaver):
         # derived classes should implement this functionality themselves
 
         #self.bulk_txt.write(json.dumps({"index": {"_id": val['tile_id']}}) + "\n")
+        if ('sparse' in val['tile_value']):
+            sparse_values = val['tile_value']['sparse']
+
+            value_pos = col.defaultdict(list)
+            for sparse_value in sparse_values:
+                value_pos[sparse_value[1]] += [sparse_value[0]]
+            #val['tile_value']['sparse'] = value_pos.items()
+
+            value_xs_ys = []
+            for value, poss in value_pos.items():
+                poss = sorted(poss)
+                dim_values = []
+                value_xs_ys += [float(value)]
+                value_xs_ys += [float(len(poss))]
+
+                for i in range(len(poss[0])):
+                    value_xs_ys += [p[i] for p in poss]
+
+            val['tile_value']['sparse'] = value_xs_ys
+
+        '''
+        if ('dense' in val['tile_value']):
+            print val['tile_id'], len([x for x in val['tile_value']['dense'] if x > 0])
+        '''
+
+        #print "writing:", val['tile_id']
+        #val['tile_value']['dense'] = []
 
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(val['tile_id']))
         self.bulk_txt.write(json.dumps(val) + "\n")
@@ -154,7 +224,6 @@ class ElasticSearchTileSaver(TileSaver):
             self.bulk_txt.write('] }}')
 
 
-        #print "val:", val
         #sys.exit(1)
         #new_string += str(val) + "\n"
 
@@ -162,9 +231,8 @@ class ElasticSearchTileSaver(TileSaver):
         '''
 
         curr_pos = self.bulk_txt.tell()
-        #print "curr_pos:", curr_pos,self.bulk_txt.getvalue()
         #self.bulk_txt.write(new_string)
-        if curr_pos > 2000000:
+        if curr_pos > 5000000:
             self.flush()
 
     def flush(self):
@@ -191,11 +259,10 @@ def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_pat
         bulk_txt += json.dumps({"index": {"_id": val['tile_id']}}) + "\n"
         bulk_txt += json.dumps(val) + "\n"
 
-        if len(bulk_txt) > 2000000:
+        if len(bulk_txt) > 5000000:
             save_to_elasticsearch("http://" + put_url, bulk_txt)
             bulk_txt = ""
 
-    #print "len(bulk_txt)", len(bulk_txt)
     if len(bulk_txt) > 0:
         save_to_elasticsearch("http://" + put_url, bulk_txt)
 
@@ -214,19 +281,17 @@ def save_to_elasticsearch(url, data):
     '''
     saved = False
     to_sleep = 1
+    uid = slugid.nice()
     while not saved:
         try:
-            #print "Saving... url:", url, "len(bulk_txt):", len(data)
-            #print "data:", data
             r = requests.post(url, data=data, timeout=8)
-            #print "data:", data
-            print "Saved", r, "len(data):", len(data), url #, r.text
+            print "Saved", uid,  r, "len(data):", len(data), url #, r.text
             saved = True
             #print "data:", data
         except Exception as ex:
 
             to_sleep *= 2
-            print >>sys.stderr, "Error saving to elastic search, sleeping:", to_sleep, ex
+            print >>sys.stderr, "Error saving to elastic search (", uid, "), sleeping:", to_sleep, ex
             time.sleep(to_sleep)
 
             if to_sleep > 600:

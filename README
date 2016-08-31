@@ -46,21 +46,23 @@ aws s3 sync --region us-west-2 ~/data/${FILENAME}.tiles s3://pkerp/data/${FILENA
 ##########################################################################################
 ### Gene annotations
 #########################################################################################
-ASSEMBLY=hg9
+ASSEMBLY=mm9
 
+AWS_ES_DOMAIN=52.23.165.123:9872
+DATASET_NAME=refgene-tiles-minus
 INPUT_FILE=~/data/${ASSEMBLY}/genbank-output/refgene-count-minus
-DATASET_NAME=${ASSEMBLY}/refgene-tiles-minus
-OUTPUT_DIR=~/data/${DATASET_NAME}
-/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $DATASET_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
+INDEX_NAME=hg19.1/${ASSEMBLY}.${DATASET_NAME}
+/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $INDEX_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
+
+
+DATASET_NAME=refgene-tiles-plus
+INPUT_FILE=~/data/${ASSEMBLY}/genbank-output/refgene-count-plus
+INDEX_NAME=hg19.1/${ASSEMBLY}.${DATASET_NAME}
+/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $INDEX_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
 
     #rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 5 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
     #rsync -avzP $OUTPUT_DIR/ ~/projects/goomba/.tmp/jsons/${DATASET_NAME}
 
-INPUT_FILE=~/data/${ASSEMBLY}/genbank-output/refgene-count-plus
-DATASET_NAME=${ASSEMBLY}/refgene-tiles-plus
-OUTPUT_DIR=~/data/${DATASET_NAME}
-
-/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $DATASET_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
 
     #rsync -a --delete blank/ $OUTPUT_DIR; mkdir -p $OUTPUT_DIR; /usr/bin/time python scripts/make_tiles.py -o $OUTPUT_DIR -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 5 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE 
     #rsync -avzP $OUTPUT_DIR/ ~/projects/goomba/.tmp/jsons/${DATASET_NAME}
