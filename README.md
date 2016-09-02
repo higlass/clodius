@@ -18,6 +18,59 @@ files. TSV values need to be passed in with column headers (using the
 `--column-names` or `-c` options). Eventually you should be able to pass in a
 filename which contains the column names in its contents.
 
+#### BedGraph files
+
+Input can be in BedGraph format, but it needs to be preprocessed to work with
+clodius. See the example below:
+
+```
+python scripts/process_file.py /data/encode/hg19/E002-H3K27me3.fc.signal.bigwig.bedGraph --type bedgraph --assembly hg19
+```
+
+This will create another file in the same directory as the original:
+
+```
+[ubuntu@ip hg19]$ lt ~/data/encode/hg19/E002-H3K27me3.fc.signal.bigwig.bedGraph.genome.sorted.gz
+-rw-rw-r-- 1 ubuntu ubuntu 247M Sep  2 15:15 /home/ubuntu/data/encode/hg19/E002-H3K27me3.fc.signal.bigwig.bedGraph.genome.sorted.gz
+```
+
+This creates an absolute genome position bed graph (agped graph) file:
+
+```
+0       10128   0
+10128   10159   0.41308
+10159   10195   0.82616
+```
+
+#### BigWig files
+
+BigWig files can also be processed much like BedGraph files:
+
+python scripts/process_file.py /data/encode/hg19/E002-H3K27me3.fc.signal.bigwig.bedGraph --type bigwig --assembly hg19
+
+An example bigWig file can be downloaded from the [ENCODE project](http://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/foldChange/E044-H3K27me3.fc.signal.bigwig).
+
+#### Create Tiles from an Absolute Genome Position Bed Graph file
+
+Absolute genome position BedGraph files can be turned into 1D files using
+clodius using the command below.  The environment variables are just there to
+make it easy to run the same command using different datasets.
+
+```
+AWS_ES_DOMAIN=127.0.0.1:9200
+ASSEMBLY=hg19
+DATASET_NAME=E002-H3K27me3.fc.signal.bigwig.bedGraph.genome.sorted.gz
+INDEX_NAME=hg19.1/${DATASET_NAME}
+FILEPATH=/data/encode/${ASSEMBLY}/${DATASET_NAME}
+
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --assembly hg19 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME}
+```
+
+The option `--expand-range` indicates that the values in columns 1 and 2
+indicate a range and that the value in column 3 (`--v 3`) represents all
+positions in between. `--ignore-0` means that rows containing a value of 0
+should be ignored.
+
 ### Output format
 
 #### Files
