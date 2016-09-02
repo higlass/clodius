@@ -270,7 +270,6 @@ def main():
     parser.add_argument('--triangular', default=False, action='store_true')
     parser.add_argument('--log-file', default=None)
 
-
     args = parser.parse_args()
 
     if args.resolution is None and args.max_zoom is None:
