@@ -46,7 +46,9 @@ This creates an absolute genome position bed graph (agped graph) file:
 
 BigWig files can also be processed much like BedGraph files:
 
+```
 python scripts/process_file.py /data/encode/hg19/E002-H3K27me3.fc.signal.bigwig.bedGraph --type bigwig --assembly hg19
+```
 
 An example bigWig file can be downloaded from the [ENCODE project](http://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/foldChange/E044-H3K27me3.fc.signal.bigwig).
 
