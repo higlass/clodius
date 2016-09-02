@@ -5,6 +5,7 @@ import clodius.save_tiles as cst
 import itertools as it
 import collections as col
 import math
+import negspy.coordinates as nc
 import os
 import os.path as op
 import signal
@@ -248,9 +249,9 @@ def main():
 
     #parser.add_argument('-o', '--options', dest='some_option', default='yo', help="Place holder for a real option", type='str')
     #parser.add_argument('-u', '--useless', dest='uselesss', default=False, action='store_true', help='Another useless option')
-    parser.add_argument('--min-pos', required=True,
+    parser.add_argument('--min-pos',
                         help="The minimum range for the tiling")
-    parser.add_argument('--max-pos', required=True,
+    parser.add_argument('--max-pos',
                         help="The maximum range for the tiling")
     parser.add_argument('-r', '--resolution', help="The resolution of the data", 
                         default=None, type=int )
@@ -269,6 +270,7 @@ def main():
     parser.add_argument('-n', '--num-threads', default=4, type=int)
     parser.add_argument('--triangular', default=False, action='store_true')
     parser.add_argument('--log-file', default=None)
+    parser.add_argument('--assembly', default=None)
 
     args = parser.parse_args()
 
@@ -276,8 +278,23 @@ def main():
         print >>sys.stderr, "One of --resolution and --max-zoom must be set"
         sys.exit(1)
 
-    mins = [float(p) for p in args.min_pos.split(',')]
-    maxs = [float(p) for p in args.max_pos.split(',')]
+    first_line = sys.stdin.readline()
+    first_line_parts = first_line.strip().split()
+    if args.position_cols is not None:
+        position_cols = map(int, args.position_cols.split(','))
+    else:
+        position_cols = None
+
+    # if specific position columns aren't specified, use all but the last column
+    if position_cols is None:
+        position_cols = range(1,len(first_line_parts))
+
+    if args.assembly is not None:
+        mins = [1 for p in position_cols]
+        maxs = [nc.chromInfo[args.assembly].total_length for p in position_cols]
+    else: 
+        mins = [float(p) for p in args.min_pos.split(',')]
+        maxs = [float(p) for p in args.max_pos.split(',')]
 
     max_width = max([b - a for (a,b) in zip(mins, maxs)])
 
@@ -286,10 +303,6 @@ def main():
     else:
         expand_range = None
 
-    if args.position_cols is not None:
-        position_cols = map(int, args.position_cols.split(','))
-    else:
-        position_cols = None
 
     if args.max_zoom is None:
         # determine the maximum zoom level based on the domain of the data
@@ -311,11 +324,6 @@ def main():
 
     value_pos = args.value_pos
     
-    first_line = sys.stdin.readline()
-    first_line_parts = first_line.strip().split()
-    # if specific position columns aren't specified, use all but the last column
-    if position_cols is None:
-        position_cols = range(1,len(first_line_parts))
 
     # if there's not column designated as the value column, use the last column
     if value_pos is None:
