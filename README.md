@@ -1,3 +1,11 @@
+## Installation
+
+### Requirements
+
+* Kent-tools (`brew install kent-tools`)
+* Negspy (`pip install negspy`)
+* Pipe viewer (`brew install pv`)
+
 ## Documentation
 
 Clodius is a tool for breaking up large data sets into smaller tiles that can
