@@ -6,6 +6,10 @@
 * Negspy (`pip install negspy`)
 * Pipe viewer (`brew install pv`)
 
+Install `clodius` by running:
+
+`python setup.py install`
+
 ## Documentation
 
 Clodius is a tool for breaking up large data sets into smaller tiles that can
