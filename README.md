@@ -3,8 +3,10 @@
 ### Requirements
 
 * Kent-tools (`brew install kent-tools`)
-* Negspy (`pip install negspy`)
 * Pipe viewer (`brew install pv`)
+
+* Python egspy (`pip install negspy`)
+* Python requests (`pip install requests`)
 
 Install `clodius` by running:
 
@@ -77,7 +79,7 @@ DATASET_NAME=E002-H3K27me3.fc.signal.bigwig.bedGraph.genome.sorted.gz
 INDEX_NAME=hg19.1/${DATASET_NAME}
 FILEPATH=/data/encode/${ASSEMBLY}/${DATASET_NAME}
 
-zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --assembly hg19 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME}
+zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly hg19 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME}
 ```
 
 The option `--expand-range` indicates that the values in columns 1 and 2

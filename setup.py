@@ -1,13 +1,11 @@
 from distutils.core import setup
 
-setup(name='forgi',
+setup(name='clodius',
       version='0.1',
-      description='Python NGS tools',
+      description='Tile generation of big data',
       author='Peter Kerpedjiev',
       author_email='pkerpedjiev@gmail.com',
       url='',
-      packages=['negspy'],
-      package_data={'negspy': ['data/*/chromInfo.txt']},
-      scripts=['scripts/chr_pos_to_genome_pos.py'],
-
+      packages=['clodius'],
+      scripts=['scripts/make_single_threaded_tiles.py']
      )
