@@ -316,8 +316,8 @@ zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --mi
 
 curl -XGET "http://${AWS_ES_DOMAIN}/hg19/_mapping"
 
-curl -XDELETE "http://${AWS_ES_DOMAIN}/hg19"
-curl -XPUT "http://${AWS_ES_DOMAIN}/hg19" -d '
+curl -XDELETE "http://${AWS_ES_DOMAIN}/hg19.x"
+curl -XPUT "http://${AWS_ES_DOMAIN}/hg19.x" -d '
 {
   "settings": {
     "index.codec": "best_compression"

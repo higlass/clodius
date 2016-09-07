@@ -1,4 +1,10 @@
-AWS_ES_DOMAIN=52.23.165.123:9200
+AWS_ES_DOMAIN=52.23.165.123:9872
+ASSEMBLY=hg19
+DATASET_NAME=refGeneBed.bedGraph.txt.genome.sorted.gz
+INDEX_NAME=hg19.x/${DATASET_NAME}
+FILEPATH=/data/encode/${ASSEMBLY}/${DATASET_NAME}
+
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --assembly hg19 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME}
 
 ##########################################################################################
 ### HiC data

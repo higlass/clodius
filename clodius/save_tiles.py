@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import collections as col
 import cStringIO as csio
 import gzip
@@ -31,7 +33,8 @@ class TileSaver(object):
         # this implementation shouldn't do anything
         # derived classes should implement this functionality themselves
 
-        #print "saving tile:", zoom_level, tile_position
+        if zoom_level == 3 or zoom_level == 4:
+            print( "saving tile:", zoom_level, tile_position, tile_data)
         tile_id = "{}.{}".format(zoom_level, ".".join(map(str, tile_position)))
 
         #print "saving:", tile_id
@@ -90,8 +93,6 @@ class ColumnFileTileSaver(TileSaver):
         self.bulk_txt = csio.StringIO()
         self.bulk_txt_len = 0
         self.log_file = log_file
-
-        print "created tilesaver:", self.bulk_txt
 
     def save_tile(self, val):
 
@@ -174,8 +175,6 @@ class ElasticSearchTileSaver(TileSaver):
         self.bulk_txt_len = 0
         self.log_file = log_file
 
-        print "created tilesaver:", self.bulk_txt
-
     def save_tile(self, val):
         # this implementation shouldn't do anything
         # derived classes should implement this functionality themselves
@@ -206,7 +205,6 @@ class ElasticSearchTileSaver(TileSaver):
             print val['tile_id'], len([x for x in val['tile_value']['dense'] if x > 0])
         '''
 
-        #print "writing:", val['tile_id']
         #val['tile_value']['dense'] = []
 
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(val['tile_id']))
@@ -285,17 +283,17 @@ def save_to_elasticsearch(url, data):
     while not saved:
         try:
             r = requests.post(url, data=data, timeout=8)
-            print "Saved", uid,  r, "len(data):", len(data), url #, r.text
+            print("Saved", uid,  r, "len(data):", len(data), url)
             saved = True
             #print "data:", data
         except Exception as ex:
 
             to_sleep *= 2
-            print >>sys.stderr, "Error saving to elastic search (", uid, "), sleeping:", to_sleep, ex
+            print("Error saving to elastic search (", uid, "), sleeping:", to_sleep, ex, file=sys.stderr)
             time.sleep(to_sleep)
 
             if to_sleep > 600:
-                print >>sys.stderr, "Slept too long, returning"
+                print("Slept too long, returning", file=sys.stderr)
                 raise
 
 def save_tile(tile, output_dir, gzip_output):
@@ -320,7 +318,7 @@ def save_tile(tile, output_dir, gzip_output):
         except OSError as oe:
             # somebody probably made the directory in between when we
             # checked if it exists and when we're making it
-            print >>sys.stderr, "Error making directories:", oe
+            print("Error making directories:", oe, file=sys.stderr)
 
     output_json = {"_source": {"tile_id": ".".join(map(str, key)),
                                "tile_value": tile_value}}

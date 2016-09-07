@@ -170,7 +170,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
                         # make sure old requests get saved before we create new ones
                         while q.qsize() > 40000:
-                            print "sleepin..."
+                            print "sleepin...", q.qsize()
                             time.sleep(0.25)
 
                         #print "putting:", zoom_level, active_tiles[zoom_level][0]
@@ -297,6 +297,7 @@ def main():
         maxs = [float(p) for p in args.max_pos.split(',')]
 
     max_width = max([b - a for (a,b) in zip(mins, maxs)])
+    print "maxs:", maxs
 
     if args.expand_range is not None:
         expand_range = map(int, args.expand_range.split(','))
