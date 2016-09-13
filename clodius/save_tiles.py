@@ -1,7 +1,11 @@
 from __future__ import print_function
 
 import collections as col
-import cStringIO as csio
+try:
+    import cStringIO as csio
+except ImportError:
+    import io as csio
+
 import gzip
 import itertools as it
 import json
