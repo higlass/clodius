@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='clodius',
-      version='0.1',
+      version='0.1.0',
       description='Tile generation of big data',
       author='Peter Kerpedjiev',
       author_email='pkerpedjiev@gmail.com',

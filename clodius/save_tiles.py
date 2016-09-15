@@ -37,8 +37,7 @@ class TileSaver(object):
         # this implementation shouldn't do anything
         # derived classes should implement this functionality themselves
 
-        if zoom_level == 3 or zoom_level == 4:
-            print( "saving tile:", zoom_level, tile_position, tile_data)
+        #print( "saving tile:", zoom_level, tile_position, tile_data)
         tile_id = "{}.{}".format(zoom_level, ".".join(map(str, tile_position)))
 
         #print "saving:", tile_id

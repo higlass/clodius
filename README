@@ -1,4 +1,71 @@
 AWS_ES_DOMAIN=52.23.165.123:9872
+
+### Gene density
+
+python scripts/process_file.py --assembly hg19 --type bedgraph ~/data/clodius-input/hg19/geneDensity3.bedGraph.txt
+
+zcat ~/data/clodius-input/hg19/geneDensity3.bedGraph.txt.genome.sorted.gz | head -n 50 | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 10000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url 52.23.165.123:9872/hg19.1/geneDensity3.bedgraph.txt.genome.sorted.gz.1
+
+### Nometonome
+
+AWS_ES_DOMAIN=52.23.165.123:9872
+ASSEMBLY=GCF_000005845.2_ASM584v2_genomic
+
+cat ~/projects/nometonome/contacts/GCF_000005845.2_ASM584v2_genomic.22.contacts.genome /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1,1 --max-pos 4641652,4641652 -b 256 -r 1 -v 3 --elasticsearch-url 52.23.165.123:9872/hg19.1/GCF_000005845.2_ASM584v2_genomic.22.contacts.genome
+
+[
+  {
+    "chromInfoPath": "//s3.amazonaws.com/pkerp/data/hg19/chromInfo.txt",
+    "domain": [
+      0,
+      4641652
+    ],
+    "viewStyle": {
+      "float": "left",
+      "padding": "5px",
+      "width": "100%"
+    },
+    "tracks": [
+      {
+        "source": "//52.23.165.123:9872/hg19.1/GCF_000005845.2_ASM584v2_genomic.22.contacts.genome",
+        "type": "heatmap",
+        "height": 300
+      }
+    ],
+    "zoomLock": 0
+  }
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AWS_ES_DOMAIN=52.23.165.123:9872
 ASSEMBLY=hg19
 DATASET_NAME=refGeneBed.bedGraph.txt.genome.sorted.gz
 INDEX_NAME=hg19.x/${DATASET_NAME}
