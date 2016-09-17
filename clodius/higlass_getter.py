@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import cooler
 import h5py
+import time
 
 TILESIZE = 256
 
@@ -22,7 +23,6 @@ def absCoord2bin(c, pos):
     chrom = chromosomes[cid]
     relPos = pos - cumul_lengths[cid]
     return  c.offset( (chrom, relPos, chromsizes[chrom]) )
-    
 
 def getData(FILEPATH, zoomLevel, startPos1, endPos1, startPos2, endPos2):
 
@@ -42,28 +42,27 @@ def getData(FILEPATH, zoomLevel, startPos1, endPos1, startPos2, endPos2):
     return json.dumps({'dense': flat})
 
 
-def getData2(FILEPATH, zoomLevel, startPos1, endPos1, startPos2, endPos2):
+def getData2(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
 
-    groupname = str(zoomLevel)
+    c = cooler_matrix['cooler']
+    matrix = cooler_matrix['matrix']
 
-    with h5py.File(FILEPATH, 'r') as f:
-        c = cooler.Cooler(f[groupname])
-        
-        i0 = absCoord2bin(c, startPos1)
-        i1 = absCoord2bin(c, endPos1)
-        j0 = absCoord2bin(c, startPos2)
-        j1 = absCoord2bin(c, endPos2)
-        print("i0,i1", i0, i1, "j0,j1", j0, j1)
-        
-        if (i1-i0) == 0 or (j1-j0) == 0:
-            return pd.DataFrame(columns=['genome_start', 'genome_end', 'balanced'])
-        
-        pixels = c.matrix(balance=True, as_pixels=True, join=True)[i0:i1, j0:j1]
-        cid1 = pixels['chrom1'].apply(chromid_map.get)
-        cid2 = pixels['chrom2'].apply(chromid_map.get)
-        pixels['genome_start'] = cumul_lengths[cid1] + pixels['start1']
-        pixels['genome_end'] = cumul_lengths[cid2] + pixels['end2']
+    i0 = absCoord2bin(c, startPos1)
+    i1 = absCoord2bin(c, endPos1)
+    j0 = absCoord2bin(c, startPos2)
+    j1 = absCoord2bin(c, endPos2)
+    
+    if (i1-i0) == 0 or (j1-j0) == 0:
+        return pd.DataFrame(columns=['genome_start', 'genome_end', 'balanced'])
+    
+    t1 = time.time()
+    pixels = matrix[i0:i1, j0:j1]
+    cid1 = pixels['chrom1'].apply(chromid_map.get)
+    cid2 = pixels['chrom2'].apply(chromid_map.get)
+    pixels['genome_start'] = cumul_lengths[cid1] + pixels['start1']
+    pixels['genome_end'] = cumul_lengths[cid2] + pixels['end2']
 
+    print("z:", zoomLevel, startPos1, endPos1, startPos2, endPos2, "t:", time.time() - t1)
     return pixels[['genome_start', 'genome_end', 'balanced']]
 
 

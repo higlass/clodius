@@ -13,12 +13,36 @@ import os
 import os.path as op
 import random
 import requests
+import signal
 import slugid
 import sys
 import time
 import itertools
 
 from time import gmtime, strftime
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    print("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+    os._exit(1)
+
+def tile_saver_worker(q, tile_saver, finished):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    while not q.empty() or (not finished.value):
+        #print "working...", q.qsize()
+        try:
+            (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
+            tile_saver.save_binned_tile(zoom_level,
+                                        tile_pos,
+                                        tile_bins)
+        except (KeyboardInterrupt, SystemExit):
+            print("Exiting...")
+            break
+        except Queue.Empty:
+            tile_saver.flush()
+
+    #print "finishing", q.qsize(), tile_saver
+    tile_saver.flush()
 
 class TileSaver(object):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions):
@@ -65,6 +89,22 @@ class TileSaver(object):
 
         self.make_and_save_tile(zoom_level, tile_position, {"sparse": shown,
             'min_value': min_value, 'max_value': max_value })
+
+    def save_tile_array(self, zoom_level, tile_position, tile_data):
+        '''
+        Save a tile that has all of its data in one long array
+
+        :param zoom_level: An integer zoom_level (0 for zoomed all the way out)
+        :param tile_position: An n-dimensional array, where n is the number of dimensions
+                              in the dataset.
+        :param tile_data: The data in the tile.
+        '''
+        min_value = min(tile_data)
+        max_value = max(tile_data)
+
+        self.make_and_save_tile(zoom_level, tile_position, {'dense':
+            [round(v, 5) for v in tile_data],
+            'min_value': min_value, 'max_value': max_value})
 
     def save_binned_tile(self, zoom_level, tile_position, tile_bins):
         max_value = max(tile_bins.values())

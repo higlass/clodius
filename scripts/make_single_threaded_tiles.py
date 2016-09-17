@@ -8,7 +8,6 @@ import math
 import negspy.coordinates as nc
 import os
 import os.path as op
-import signal
 import sortedcontainers as sco
 import sys
 import time
@@ -18,11 +17,7 @@ import Queue
 import multiprocessing as mpr
 import traceback
 
-def handle_exception(exc_type, exc_value, exc_traceback):
-    print "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    os._exit(1)
-
-sys.excepthook = handle_exception
+sys.excepthook = cst.handle_exception
 
 def tile_saver_worker(q, tile_saver, finished):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -367,7 +362,7 @@ def main():
                                                 args.log_file)
 
     for i in range(args.num_threads):
-        p = mpr.Process(target=tile_saver_worker, args=(q, tile_saver, finished))
+        p = mpr.Process(target=cst.tile_saver_worker, args=(q, tile_saver, finished))
         print "p:", p
 
         p.daemon = True
