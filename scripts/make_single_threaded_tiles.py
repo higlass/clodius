@@ -291,7 +291,7 @@ def main():
 
     if args.assembly is not None:
         mins = [1 for p in position_cols]
-        maxs = [nc.chromInfo[args.assembly].total_length for p in position_cols]
+        maxs = [nc.get_chrominfo(args.assembly).total_length for p in position_cols]
     else: 
         mins = [float(p) for p in args.min_pos.split(',')]
         maxs = [float(p) for p in args.max_pos.split(',')]
