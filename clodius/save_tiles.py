@@ -11,6 +11,7 @@ import itertools as it
 import json
 import os
 import os.path as op
+import queue
 import random
 import requests
 import signal
@@ -28,20 +29,21 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 def tile_saver_worker(q, tile_saver, finished):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    while not q.empty() or (not finished.value):
+    while q.qsize() > 0 or (not finished.value):
         #print "working...", q.qsize()
         try:
             (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
+            #print("saving...", zoom_level, tile_pos, 'queue.qsize:', q.qsize(), q.empty(), "finished:", finished.value)
             tile_saver.save_binned_tile(zoom_level,
                                         tile_pos,
                                         tile_bins)
         except (KeyboardInterrupt, SystemExit):
             print("Exiting...")
             break
-        except Queue.Empty:
+        except queue.Empty:
             tile_saver.flush()
 
-    #print "finishing", q.qsize(), tile_saver
+    print("finishing", q.qsize(), tile_saver)
     tile_saver.flush()
 
 class TileSaver(object):
@@ -74,7 +76,7 @@ class TileSaver(object):
         initial_values = [0.0] * (self.bins_per_dimension ** self.num_dimensions)
 
         for (bin_pos, val) in tile_bins.items():
-            index = sum([bp * self.bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
+            index = int(sum([bp * self.bins_per_dimension ** i for i,bp in enumerate(bin_pos)]))
             initial_values[index] = val
 
         self.make_and_save_tile(zoom_level, tile_position, {"dense": 
@@ -85,7 +87,7 @@ class TileSaver(object):
             min_value, max_value):
         shown = []
         for (bin_pos, bin_val) in tile_bins.items():
-            shown += [[map(float, bin_pos), bin_val]]
+            shown += [[list(map(float, bin_pos)), bin_val]]
 
         self.make_and_save_tile(zoom_level, tile_position, {"sparse": shown,
             'min_value': min_value, 'max_value': max_value })

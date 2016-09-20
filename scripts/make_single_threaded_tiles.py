@@ -11,33 +11,11 @@ import os.path as op
 import sortedcontainers as sco
 import sys
 import time
-import thread
-import Queue
 
 import multiprocessing as mpr
 import traceback
 
 sys.excepthook = cst.handle_exception
-
-def tile_saver_worker(q, tile_saver, finished):
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-    while not q.empty() or (not finished.value):
-        #print "working...", q.qsize()
-        try:
-            (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
-            tile_saver.save_binned_tile(zoom_level,
-                                        tile_pos,
-                                        tile_bins)
-        except (KeyboardInterrupt, SystemExit):
-            print "Exiting..."
-            break
-        except Queue.Empty:
-            tile_saver.flush()
-
-    #print "finishing", q.qsize(), tile_saver
-    tile_saver.flush()
-
 
 def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoom, 
         bins_per_dimension, tile_saver, expand_range, ignore_0, tileset_info, max_width,
@@ -66,7 +44,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
         tile_mod_pos = tuple([tp % 2 for tp in tile_position])
         calc_bin_poss = calculated_tile_bin_positions[tile_mod_pos]
 
-        for bin_position,bin_value in tile_bins.iteritems():
+        for bin_position,bin_value in tile_bins.items():
             #old_abs_pos = [tp * bins_per_dimension + bp for (tp, bp) in zip(tile_position, bin_position)]
             #new_bin_pos = tuple([int(op / 2) % bins_per_dimension for op in old_abs_pos])
             #print "tile_position:", tile_position, bin_position
@@ -108,7 +86,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
             if line_num != prev_line_num and line_num % 10000 == 0:
                 time_str = time.strftime("%Y-%m-%d %H:%M:%S")
-                print "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time), 'qsize:', q.qsize()
+                print( "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time), 'qsize:', q.qsize())
 
                 prev_time = time.time()
             prev_line_num = line_num
@@ -165,8 +143,8 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
                         # make sure old requests get saved before we create new ones
                         while q.qsize() > 40000:
-                            print "sleepin...", q.qsize()
-                            time.sleep(0.25)
+                            print("sleepin...", q.qsize())
+                            time.sleep(1)
 
                         #print "putting:", zoom_level, active_tiles[zoom_level][0]
                         q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
@@ -286,13 +264,13 @@ def main():
 
     if args.assembly is not None:
         mins = [1 for p in position_cols]
-        maxs = [nc.chromInfo[args.assembly].total_length for p in position_cols]
+        maxs = [nc.get_chrominfo(args.assembly).total_length for p in position_cols]
     else: 
         mins = [float(p) for p in args.min_pos.split(',')]
         maxs = [float(p) for p in args.max_pos.split(',')]
 
     max_width = max([b - a for (a,b) in zip(mins, maxs)])
-    print "maxs:", maxs
+    print("maxs:", maxs)
 
     if args.expand_range is not None:
         expand_range = map(int, args.expand_range.split(','))
@@ -314,7 +292,7 @@ def main():
     else:
         max_zoom = args.max_zoom
 
-    print "max_zoom:", max_zoom
+    print("max_zoom:", max_zoom)
     max_width = args.resolution * args.bins_per_dimension * 2 ** max_zoom
     smallest_width = args.resolution * args.bins_per_dimension
 
@@ -339,8 +317,8 @@ def main():
                                         num_dimensions = len(position_cols))
     '''
 
-    print "max_data_in_sparse:", max_data_in_sparse
-    print "max_zoom:", max_zoom
+    print("max_data_in_sparse:", max_data_in_sparse)
+    print("max_zoom:", max_zoom)
 
 
     #bin_counts = col.defaultdict(col.defaultdict(int))
@@ -363,7 +341,6 @@ def main():
 
     for i in range(args.num_threads):
         p = mpr.Process(target=cst.tile_saver_worker, args=(q, tile_saver, finished))
-        print "p:", p
 
         p.daemon = True
         p.start()
@@ -387,11 +364,10 @@ def main():
                 max_zoom, args.bins_per_dimension, tile_saver, expand_range,
                 args.ignore_0, tileset_info, max_width, args.triangular)
     except KeyboardInterrupt:
-        print "kb interrupt:"
         for (ts, p) in tilesaver_processes:
+            ts.flush()
             p.terminate()
             p.join()
-            print "finished"
         raise
 
     finished.value = True
@@ -399,7 +375,7 @@ def main():
     for (ts, p) in tilesaver_processes:
         p.join()
 
-    print "tileset_info:", tileset_info
+    print("tileset_info:", tileset_info)
     tile_saver.save_tile({'tile_id': 'tileset_info', 
                           'tile_value': tileset_info})
     tile_saver.flush()

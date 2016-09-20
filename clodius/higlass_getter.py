@@ -62,7 +62,36 @@ def getData2(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
     pixels['genome_start'] = cumul_lengths[cid1] + pixels['start1']
     pixels['genome_end'] = cumul_lengths[cid2] + pixels['end2']
 
-    print("z:", zoomLevel, startPos1, endPos1, startPos2, endPos2, "t:", time.time() - t1)
+    print("z:", zoomLevel, "t:", time.time() - t1)
+    return pixels[['genome_start', 'genome_end', 'balanced']]
+
+def getData3(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
+    t1 = time.time()
+    c = cooler_matrix['cooler']
+
+    i0 = absCoord2bin(c, startPos1)
+    i1 = absCoord2bin(c, endPos1)
+    j0 = absCoord2bin(c, startPos2)
+    j1 = absCoord2bin(c, endPos2)
+
+
+    if (i1-i0) == 0 or (j1-j0) == 0:
+        return pd.DataFrame(columns=['genome_start', 'genome_end', 'balanced'])
+
+    pixels = c.matrix(as_pixels=True, max_chunk=np.inf)[i0:i1, j0:j1]
+
+    if not len(pixels):
+        return pd.DataFrame(columns=['genome_start', 'genome_end', 'balanced'])
+
+    lo = min(i0, j0)
+    hi = max(i1, j1)
+    bins = c.bins()[['chrom', 'start', 'end', 'weight']][lo:hi]
+    bins['chrom'] = bins['chrom'].cat.codes
+    pixels = cooler.annotate(pixels, bins)
+    pixels['genome_start'] = cumul_lengths[pixels['chrom1']] + pixels['start1']
+    pixels['genome_end']   = cumul_lengths[pixels['chrom2']] + pixels['end2']
+    pixels['balanced']     = pixels['count'] * pixels['weight1'] * pixels['weight2']
+
     return pixels[['genome_start', 'genome_end', 'balanced']]
 
 

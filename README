@@ -1,5 +1,7 @@
 AWS_ES_DOMAIN=52.23.165.123:9872
 
+python scripts/cooler_to_tiles.py /data/tmp/UNTR.1kb.multires.cool --assembly mm9 --max-zoom 3 --elasticsearch-url 52.23.165.123:9872/hg19.1/mm9.UNTR.1kb.multires.cool
+
 ### Gene density
 
 python scripts/process_file.py --assembly hg19 --type bedgraph ~/data/clodius-input/hg19/geneDensity3.bedGraph.txt

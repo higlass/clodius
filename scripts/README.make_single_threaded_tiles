@@ -1,3 +1,33 @@
+AWS_ES_DOMAIN=52.23.165.123:9872
+ASSEMBLY=hg19
+RESOLUTION=50000
+DATASET_NAME=Dixon2015-H1_hESC-HindIII-allreps-filtered.50kb.cool.genome.sorted.gz
+INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
+#INDEX_NAME=${DATASET_NAME,,}/tiles
+echo $INDEX_NAME
+FILENAME=coolers/${ASSEMBLY}/${DATASET_NAME}
+FILEPATH=~/data/${FILENAME}
+#curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TEST_NAME=tiles_test
 
 export PYTHONPATH=$PYTHONPATH:.
@@ -172,14 +202,16 @@ zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --mi
 curl -XGET "${AWS_ES_DOMAIN}/hg19.1/_optimize"
 
 ###########################
-DATASET_NAME=UNTR.1kb.cool.reduced.genome.gz
-INDEX_NAME=mm9/${DATASET_NAME}
+ASSEMBLY=hg19
+RESOLUTION=50000
+DATASET_NAME=Dixon2015-H1_hESC-HindIII-allreps-filtered.50kb.cool
+INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
 #INDEX_NAME=${DATASET_NAME,,}/tiles
 echo $INDEX_NAME
-FILENAME=coolers/mm9/${DATASET_NAME}
+FILENAME=coolers/${ASSEMBLY}/${DATASET_NAME}
 FILEPATH=~/data/${FILENAME}
 #curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
-zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 3137161264,3137161264 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
 
 ###########################
 DATASET_NAME=UNTR.1kb.cool.reduced.genome.gz
