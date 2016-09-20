@@ -21,9 +21,9 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
         bins_per_dimension, tile_saver, expand_range, ignore_0, tileset_info, max_width,
         triangular=False):
     active_tiles = col.defaultdict(sco.SortedList)
-    max_data_in_sparse = bins_per_dimension ** len(position_cols) / 5.
+    max_data_in_sparse = bins_per_dimension ** len(position_cols) // 5.
     tile_contents = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
-    smallest_width = max_width / (2 ** max_zoom)
+    smallest_width = max_width // (2 ** max_zoom)
 
     prev_line_num = None
     prev_time = time.time()
@@ -32,10 +32,11 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
     calculated_tile_bin_positions = col.defaultdict(dict)
     for x in it.product(range(2), repeat=len(position_cols)):
         for y in it.product(range(bins_per_dimension), repeat = len(position_cols)):
-            calculated_tile_bin_positions[x][y] = tuple([ int((bins_per_dimension * tp + bp) / 2) % bins_per_dimension for  (tp, bp) in zip(x, y)])
+            #print("x:", x, "y:", y)
+            calculated_tile_bin_positions[x][y] = tuple([ int((bins_per_dimension * tp + bp) // 2) % bins_per_dimension for  (tp, bp) in zip(x, y)])
 
     def add_to_next_tile(zoom_level, tile_position, tile_bins):
-        next_tile_position = tuple([tp / 2 for tp in tile_position])
+        next_tile_position = tuple([tp // 2 for tp in tile_position])
         new_tile_contents = tile_contents[zoom_level-1][next_tile_position]
 
         if next_tile_position not in active_tiles[zoom_level - 1]:
@@ -64,7 +65,12 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             if zoom_level < 3:
                 print >>sys.stderr, "adding to next tile:", zoom_level-1, next_tile_position, "new_bin_pos:", new_bin_pos
             '''
-            new_tile_contents[calc_bin_poss[bin_position]] += bin_value
+            try:
+                new_tile_contents[calc_bin_poss[bin_position]] += bin_value
+            except KeyError:
+                print("calc_bin_poss.keys():", calc_bin_poss.keys())
+                print("tile_mod_pos:", tile_mod_pos, tile_position)
+                raise
 
     for line_num,line in enumerate(it.chain(first_lines, input_source)):
         # see if we have to expand any coordinate ranges
@@ -110,8 +116,8 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             # the bin within the tile as well as the tile position
             # place this data point in the highest resolution tile that we can
             for entry_pos in entry_poss:
-                current_bin = tuple([int(ep / (smallest_width / bins_per_dimension)) % bins_per_dimension for ep in entry_pos])
-                current_tile = tuple([int(ep / smallest_width) for ep in entry_pos])
+                current_bin = tuple([int(ep // (smallest_width // bins_per_dimension)) % bins_per_dimension for ep in entry_pos])
+                current_tile = tuple([int(ep // smallest_width) for ep in entry_pos])
 
                 # we haven't seen this tile before so we save it, in case more data points need to be placed in it
                 if current_tile not in active_tiles[max_zoom]:
@@ -124,7 +130,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             # start with the max zoom
             for zoom_level in range(0, max_zoom+1)[::-1]:
                 #print "zoom_level:", zoom_level, "active_tiles length:", len(active_tiles[zoom_level]), "total_time", int(time.time() - start_time)
-                current_tile = tuple([int(ep / (smallest_width * 2 ** (max_zoom - zoom_level)) ) for ep in entry_pos])
+                current_tile = tuple([int(ep // (smallest_width * 2 ** (max_zoom - zoom_level)) ) for ep in entry_pos])
 
                 # keep track of whether any tiles were finished at the previous level
                 # we can't complete a lower zoom tile unless we complete a higher zoom one
@@ -281,7 +287,7 @@ def main():
     if args.max_zoom is None:
         # determine the maximum zoom level based on the domain of the data
         # and the resolution
-        bins_to_display_at_max_resolution = max_width / args.resolution / args.bins_per_dimension
+        bins_to_display_at_max_resolution = max_width // args.resolution // args.bins_per_dimension
         max_max_zoom = math.ceil(math.log(bins_to_display_at_max_resolution) / math.log(2.))
 
 
@@ -303,7 +309,7 @@ def main():
     if value_pos is None:
         value_pos = len(first_line_parts)
 
-    max_data_in_sparse = args.bins_per_dimension ** len(position_cols) / 10
+    max_data_in_sparse = args.bins_per_dimension ** len(position_cols) // 10
 
     '''
     if args.elasticsearch_url is not None:
