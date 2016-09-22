@@ -32,7 +32,6 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
     calculated_tile_bin_positions = col.defaultdict(dict)
     for x in it.product(range(2), repeat=len(position_cols)):
         for y in it.product(range(bins_per_dimension), repeat = len(position_cols)):
-            #print("x:", x, "y:", y)
             calculated_tile_bin_positions[x][y] = tuple([ int((bins_per_dimension * tp + bp) // 2) % bins_per_dimension for  (tp, bp) in zip(x, y)])
 
     def add_to_next_tile(zoom_level, tile_position, tile_bins):
@@ -269,6 +268,10 @@ def main():
 
     first_line = sys.stdin.readline()
     first_line_parts = first_line.strip().split()
+    if len(first_line_parts) == 0:
+        print("ERROR: no input")
+        return
+
     if args.position_cols is not None:
         position_cols = map(int, args.position_cols.split(','))
     else:
