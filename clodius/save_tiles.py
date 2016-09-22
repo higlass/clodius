@@ -328,13 +328,13 @@ def save_to_elasticsearch(url, data):
     while not saved:
         try:
             r = requests.post(url, data=data, timeout=8)
-            print("Saved", uid,  r, "len(data):", len(data), url)
+            print("\nSaved", uid,  r, "len(data):", len(data), url)
             saved = True
             #print "data:", data
         except Exception as ex:
 
             to_sleep *= 2
-            print("Error saving to elastic search (", uid, "), sleeping:", to_sleep, ex, file=sys.stderr)
+            print("\nError saving to elastic search (", uid, "), sleeping:", to_sleep, ex, file=sys.stderr)
             time.sleep(to_sleep)
 
             if to_sleep > 600:

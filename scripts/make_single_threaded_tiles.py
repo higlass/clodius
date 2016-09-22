@@ -19,7 +19,7 @@ sys.excepthook = cst.handle_exception
 
 def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoom, 
         bins_per_dimension, tile_saver, expand_range, ignore_0, tileset_info, max_width,
-        triangular=False):
+        triangular=False, max_queue_size = 40000):
     active_tiles = col.defaultdict(sco.SortedList)
     max_data_in_sparse = bins_per_dimension ** len(position_cols) // 5.
     tile_contents = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
@@ -148,9 +148,18 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                         #print "tile_bins:", zoom_level, tile_position, tile_bins
 
                         # make sure old requests get saved before we create new ones
-                        while q.qsize() > 40000:
-                            print("sleepin...", q.qsize())
-                            time.sleep(1)
+                        already_sleeping = False
+                        while q.qsize() > max_queue_size:
+                            if already_sleeping:
+                                sys.stdout.write('.')
+                                sys.stdout.flush()
+                            else:
+                                sys.stdout.write('sleeping.')
+                                sys.stdout.flush()
+                                already_sleeping = True
+                            time.sleep(0.5)
+                        if already_sleeping:
+                            sys.stdout.write('.\n')
 
                         #print "putting:", zoom_level, active_tiles[zoom_level][0]
                         q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
@@ -250,6 +259,7 @@ def main():
     parser.add_argument('--triangular', default=False, action='store_true')
     parser.add_argument('--log-file', default=None)
     parser.add_argument('--assembly', default=None)
+    parser.add_argument('--max-queue-size', default=40000, type=int)
 
     args = parser.parse_args()
 
@@ -368,7 +378,7 @@ def main():
     try:
         tileset_info = create_tiles(q, [first_line], sys.stdin, position_cols, value_pos, 
                 max_zoom, args.bins_per_dimension, tile_saver, expand_range,
-                args.ignore_0, tileset_info, max_width, args.triangular)
+                args.ignore_0, tileset_info, max_width, args.triangular, args.max_queue_size)
     except KeyboardInterrupt:
         for (ts, p) in tilesaver_processes:
             ts.flush()

@@ -7,26 +7,26 @@ python scripts/cooler_to_tiles.py /data/tmp/UNTR.1kb.multires.cool --assembly mm
 AWS_ES_DOMAIN=52.23.165.123:9872
 ASSEMBLY=hg19
 RESOLUTION=50000
-DATASET_NAME=Dixon2015-H1_hESC-HindIII-allreps-filtered.50kb.cool.genome.sorted.gz
+DATASET_NAME=Dixon2015-H1_hESC-HindIII-allreps-filtered.50kb.cool.unbalanced.genome.sorted.gz
 INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
 #INDEX_NAME=${DATASET_NAME,,}/tiles
 echo $INDEX_NAME
 FILENAME=coolers/${ASSEMBLY}/${DATASET_NAME}
 FILEPATH=~/data/${FILENAME}
 #curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
-zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log --max-queue-size 2000 # 16:48:26
 
 AWS_ES_DOMAIN=52.23.165.123:9872
 ASSEMBLY=hg19
 RESOLUTION=5000
-DATASET_NAME=Dixon2015-H1_hESC-HindIII-allreps-filtered.5kb.cool.genome.sorted.gz
+DATASET_NAME=Dixon2015-H1_hESC-HindIII-allreps-filtered.5kb.cool.unbalanced.genome.sorted.gz
 INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
 #INDEX_NAME=${DATASET_NAME,,}/tiles
 echo $INDEX_NAME
 FILENAME=coolers/${ASSEMBLY}/${DATASET_NAME}
 FILEPATH=~/data/${FILENAME}
 #curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
-zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log --max-queue-size 2000 # 16:48:26
 
 ### Gene density
 
