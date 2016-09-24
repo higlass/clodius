@@ -43,7 +43,12 @@ def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, m
         end2 = (y_pos + 1) * info['max_width'] / divisor
 
         t1 = time.time()
-        data = chg.getData3(coolers_matrix[zoom_level], zoom_level, start1, end1-1, start2, end2-1)
+        print("st:", start1, end1-1, start2, end2-1)
+        try:
+            data = chg.getData3(coolers_matrix[zoom_level], zoom_level, start1, end1-1, start2, end2-1)
+        except ValueError as ve:
+            print("ERROR ve:", ve, file=sys.stderr)
+
         data_time = time.time() - t1
 
         if len(data) == 0:
@@ -51,7 +56,6 @@ def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, m
 
         df = data[data['genome_start'] >= start1]
         binsize = 2 ** (info['max_zoom'] - zoom_level) * resolution
-
 
         i = (df['genome_start'].values - start1) // binsize
         j = (df['genome_end'].values - start2) // binsize
