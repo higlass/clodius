@@ -1,4 +1,5 @@
 import collections as col
+import functools as ft
 import glob
 import itertools as it
 import os.path as op
@@ -8,7 +9,7 @@ class ParallelData:
         self.data = data
 
     def map(self, func):
-        return ParallelData(map(func, self.data))
+        return ParallelData([func(d) for d in self.data])
 
     def count(self):
         return len(self.data)
@@ -58,7 +59,7 @@ class ParallelData:
         map(func, self.data)
 
     def foreachPartition(self, func):
-        map(func, [self.data])
+        func(self.data)
 
     def reduceByKey(self, func):
         '''
@@ -68,7 +69,6 @@ class ParallelData:
         reduce function func, which must be of type (V,V) => V. Like in
         groupByKey, the number of reduce tasks is configurable through an
         optional second argument.
-        
         '''
         buckets = col.defaultdict(list)
         for d in self.data:
@@ -76,7 +76,7 @@ class ParallelData:
 
         reduced_buckets = dict()
         for key in buckets:
-            reduced_buckets[key] = reduce(func, buckets[key])
+            reduced_buckets[key] = ft.reduce(func, buckets[key])
 
         return ParallelData(reduced_buckets.items())
 
@@ -95,7 +95,7 @@ class ParallelData:
         return ParallelData(reduced_buckets.items())
 
     def reduce(self, func):
-        return reduce(func, self.data)
+        return ft.reduce(func, self.data)
 
     def collect(self):
         return self.data
@@ -123,7 +123,7 @@ class FakeSparkContext:
         @return: A ParallelData object wrapping the lines in the file.
         '''
         with open(filename, 'r') as f:
-            return ParallelData(map(lambda x: x.strip(), f.readlines()))
+            return ParallelData(list(map(lambda x: x.strip(), f.readlines())))
 
     @staticmethod
     def textFile(filename):

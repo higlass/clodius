@@ -19,7 +19,7 @@ sys.excepthook = cst.handle_exception
 
 def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoom, 
         bins_per_dimension, tile_saver, expand_range, ignore_0, tileset_info, max_width,
-        triangular=False, max_queue_size = 40000):
+        triangular=False, max_queue_size = 40000, print_status=False):
     active_tiles = col.defaultdict(sco.SortedList)
     max_data_in_sparse = bins_per_dimension ** len(position_cols) // 5.
     tile_contents = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
@@ -91,7 +91,8 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
             if line_num != prev_line_num and line_num % 10000 == 0:
                 time_str = time.strftime("%Y-%m-%d %H:%M:%S")
-                print( "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time), 'qsize:', q.qsize())
+                if print_status:
+                    print( "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time), 'qsize:', q.qsize())
 
                 prev_time = time.time()
             prev_line_num = line_num
@@ -107,6 +108,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             entry_poss = [entry_pos]
             if expand_range is not None:
                 end_pos = int(line_parts[expand_range[1]-1])
+                print("ep", int(entry_pos[0]), end_pos -  int(entry_pos[0]) + 1)
                 for i in range(int(entry_pos[0])+1, end_pos):
                     new_entry = entry_pos[::]
                     new_entry[0] = i
@@ -149,16 +151,18 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                         # make sure old requests get saved before we create new ones
                         already_sleeping = False
                         while q.qsize() > max_queue_size:
-                            if already_sleeping:
-                                sys.stdout.write('.')
-                                sys.stdout.flush()
-                            else:
-                                sys.stdout.write('sleeping.')
-                                sys.stdout.flush()
-                                already_sleeping = True
+                            if print_status:
+                                if already_sleeping:
+                                    sys.stdout.write('.')
+                                    sys.stdout.flush()
+                                else:
+                                    sys.stdout.write('sleeping.')
+                                    sys.stdout.flush()
+                                    already_sleeping = True
                             time.sleep(0.5)
                         if already_sleeping:
-                            sys.stdout.write('.\n')
+                            if print_status:
+                                sys.stdout.write('.\n')
 
                         #print "putting:", zoom_level, active_tiles[zoom_level][0]
                         q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
@@ -240,6 +244,7 @@ def main():
                         help="The minimum range for the tiling")
     parser.add_argument('--max-pos',
                         help="The maximum range for the tiling")
+    parser.add_argument('--assembly', default=None)
     parser.add_argument('-r', '--resolution', help="The resolution of the data", 
                         default=None, type=int )
     parser.add_argument('-k', '--position-cols', help="The position columns (defaults to all but the last, 1-based)", default=None)
@@ -257,8 +262,8 @@ def main():
     parser.add_argument('-n', '--num-threads', default=4, type=int)
     parser.add_argument('--triangular', default=False, action='store_true')
     parser.add_argument('--log-file', default=None)
-    parser.add_argument('--assembly', default=None)
     parser.add_argument('--max-queue-size', default=40000, type=int)
+    parser.add_argument('--print-status', action="store_true")
 
     args = parser.parse_args()
 
@@ -273,13 +278,13 @@ def main():
         return
 
     if args.position_cols is not None:
-        position_cols = map(int, args.position_cols.split(','))
+        position_cols = list(map(int, args.position_cols.split(',')))
     else:
         position_cols = None
 
     # if specific position columns aren't specified, use all but the last column
     if position_cols is None:
-        position_cols = range(1,len(first_line_parts))
+        position_cols = list(range(1,len(first_line_parts)))
 
     if args.assembly is not None:
         mins = [1 for p in position_cols]
@@ -289,10 +294,9 @@ def main():
         maxs = [float(p) for p in args.max_pos.split(',')]
 
     max_width = max([b - a for (a,b) in zip(mins, maxs)])
-    print("maxs:", maxs)
 
     if args.expand_range is not None:
-        expand_range = map(int, args.expand_range.split(','))
+        expand_range = list(map(int, args.expand_range.split(',')))
     else:
         expand_range = None
 
@@ -311,7 +315,7 @@ def main():
     else:
         max_zoom = args.max_zoom
 
-    print("max_zoom:", max_zoom)
+    #print("max_zoom:", max_zoom)
     max_width = args.resolution * args.bins_per_dimension * 2 ** max_zoom
     smallest_width = args.resolution * args.bins_per_dimension
 
@@ -336,9 +340,7 @@ def main():
                                         num_dimensions = len(position_cols))
     '''
 
-    print("max_data_in_sparse:", max_data_in_sparse)
-    print("max_zoom:", max_zoom)
-
+    print("maxs:", maxs, "max_zoom:", max_zoom, "max_data_in_sparse:", max_data_in_sparse, "url:", args.elasticsearch_url)
 
     #bin_counts = col.defaultdict(col.defaultdict(int))
     q = mpr.Queue()
@@ -350,13 +352,15 @@ def main():
                                                 args.bins_per_dimension,
                                                 len(position_cols),
                                                 args.elasticsearch_url,
-                                                args.log_file)
+                                                args.log_file,
+                                                args.print_status)
     else:
         tile_saver = cst.ColumnFileTileSaver(max_data_in_sparse,
                                                 args.bins_per_dimension,
                                                 len(position_cols),
                                                 args.columnfile_path,
-                                                args.log_file)
+                                                args.log_file,
+                                                args.print_status)
 
     for i in range(args.num_threads):
         p = mpr.Process(target=cst.tile_saver_worker, args=(q, tile_saver, finished))

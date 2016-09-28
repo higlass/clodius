@@ -47,12 +47,13 @@ def tile_saver_worker(q, tile_saver, finished):
     tile_saver.flush()
 
 class TileSaver(object):
-    def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions):
+    def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions, print_status=False):
         self.max_data_in_sparse = max_data_in_sparse
 
         #self.max_data_in_sparse = 0
         self.bins_per_dimension = bins_per_dimension
         self.num_dimensions = num_dimensions
+        self.print_status = print_status
 
         pass
 
@@ -130,10 +131,11 @@ class EmptyTileSaver(TileSaver):
 
 class ColumnFileTileSaver(TileSaver):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions,
-            file_path, log_file):
+            file_path, log_file, print_status):
         super(ColumnFileTileSaver, self).__init__(max_data_in_sparse, 
                                              bins_per_dimension,
-                                             num_dimensions)
+                                             num_dimensions,
+                                             print_status)
         self.file_path = file_path
         self.bulk_txt = csio.StringIO()
         self.bulk_txt_len = 0
@@ -211,10 +213,11 @@ class ColumnFileTileSaver(TileSaver):
 
 class ElasticSearchTileSaver(TileSaver):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions,
-            es_path, log_file):
+            es_path, log_file, print_status):
         super(ElasticSearchTileSaver, self).__init__(max_data_in_sparse, 
                                              bins_per_dimension,
-                                             num_dimensions)
+                                             num_dimensions,
+                                             print_status)
         self.es_path = es_path
         self.bulk_txt = csio.StringIO()
         self.bulk_txt_len = 0
@@ -282,7 +285,7 @@ class ElasticSearchTileSaver(TileSaver):
         if self.bulk_txt.tell() > 0:
             # only save the tile if it had enough data
             try:
-                save_to_elasticsearch("http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue())
+                save_to_elasticsearch("http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue(), self.print_status)
             except Exception as ex:
                 if self.log_file is not None:
                     with open(log_file, 'a') as f:
@@ -309,7 +312,7 @@ def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_pat
     if len(bulk_txt) > 0:
         save_to_elasticsearch("http://" + put_url, bulk_txt)
 
-def save_to_elasticsearch(url, data):
+def save_to_elasticsearch(url, data, print_status=False):
     '''
     Save some data to elastic search.
 
@@ -328,7 +331,8 @@ def save_to_elasticsearch(url, data):
     while not saved:
         try:
             r = requests.post(url, data=data, timeout=8)
-            print("\nSaved", uid,  r, "len(data):", len(data), url)
+            if print_status:
+                print("\nSaved", uid,  r, "len(data):", len(data), url)
             saved = True
             #print "data:", data
         except Exception as ex:
@@ -338,6 +342,10 @@ def save_to_elasticsearch(url, data):
             time.sleep(to_sleep)
 
             if to_sleep > 600:
+                with open('unsaved.err', 'a') as f:
+                    f.write("UNSAVED url:", url, "\n")
+                    f.write(data)
+                    f.flush()
                 print("Slept too long, returning", file=sys.stderr)
                 raise
 

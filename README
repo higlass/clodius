@@ -30,9 +30,31 @@ zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --
 
 ### Gene density
 
-python scripts/process_file.py --assembly hg19 --type bedgraph ~/data/clodius-input/hg19/geneDensity3.bedGraph.txt
 
-zcat ~/data/clodius-input/hg19/geneDensity3.bedGraph.txt.genome.sorted.gz | head -n 50 | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 10000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url 52.23.165.123:9872/hg19.1/geneDensity3.bedgraph.txt.genome.sorted.gz.1
+ASSEMBLY=hg19
+DATASET_NAME=gencodeDensity.bedGraph.txt
+INDEX_NAME=hg19.1/${DATASET_NAME}
+FILENAME=encode/${ASSEMBLY}/${DATASET_NAME}
+FILEPATH=~/data/${FILENAME}
+python scripts/process_file.py --assembly hg19 --type bedgraph $FILEPATH
+
+    #zcat ~/data/clodius-input/hg19/geneDensity3.bedGraph.txt.genome.sorted.gz | head -n 50 | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 10000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url 52.23.165.123:9872/hg19.1/geneDensity3.bedgraph.txt.genome.sorted.gz.1
+zcat ${FILEPATH}.genome.sorted.gz | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly hg19 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url 52.23.165.123:9872/${INDEX_NAME} --print-status
+
+### Gene Information
+
+AWS_ES_DOMAIN=54.197.186.181:9872
+INPUT_FILE=~/data/hg19/genbank-output/refgene-count-minus
+INDEX_NAME=hg19/refgene-tiles-minus
+OUTPUT_DIR=~/data/${DATASET_NAME}
+
+            curl -XDELETE "http://${AWS_ES_DOMAIN}/${INDEX_NAME}/_query" -d '{
+                "query" : {
+                    "match_all" : {}
+                }
+            }'
+/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $INDEX_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 --assembly hg19 ${INPUT_FILE}
+#/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $INDEX_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 --assembly hg19 /tmp/perm2
 
 ### Nometonome
 
