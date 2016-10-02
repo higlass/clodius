@@ -89,7 +89,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             value = float(line_parts[value_pos-1])
             #print "entry_pos:", entry_pos, value
 
-            if line_num != prev_line_num and line_num % 10000 == 0:
+            if line_num != prev_line_num and line_num % 10 == 0:
                 time_str = time.strftime("%Y-%m-%d %H:%M:%S")
                 if print_status:
                     print( "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time), 'qsize:', q.qsize())
@@ -109,7 +109,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             if expand_range is not None:
                 end_pos = int(line_parts[expand_range[1]-1])
                 #print("ep", int(entry_pos[0]), end_pos -  int(entry_pos[0]) + 1)
-                for i in range(int(entry_pos[0])+1, end_pos):
+                for i in range(int(entry_pos[0]), end_pos):
                     new_entry = entry_pos[::]
                     new_entry[0] = i
                     entry_poss += [new_entry]
@@ -385,7 +385,8 @@ def main():
     try:
         tileset_info = create_tiles(q, [first_line], sys.stdin, position_cols, value_pos, 
                 max_zoom, args.bins_per_dimension, tile_saver, expand_range,
-                args.ignore_0, tileset_info, max_width, args.triangular, args.max_queue_size)
+                args.ignore_0, tileset_info, max_width, args.triangular, args.max_queue_size,
+                print_status=args.print_status)
     except KeyboardInterrupt:
         for (ts, p) in tilesaver_processes:
             ts.flush()
