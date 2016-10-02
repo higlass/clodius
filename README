@@ -1,6 +1,21 @@
 AWS_ES_DOMAIN=52.23.165.123:9872
 
+### Max's Data
+
+IDENTIFIER=UMB5144
+BASE_PATH=~/data/clodius-input/hg19
+FILEPATH=${BASE_PATH}/${IDENTIFIER}.all_bins.tsv
+rm ${FILEPATH}
+for i in $(seq -f "%02g" 21) X Y;
+do 
+    pv -cN chr${i} ${BASE_PATH}/${IDENTIFIER}/b1000/UMB5144-final-${i}.b1000.bin | grep -v start  | awk -v chrom=${i} '{ gsub("^0*", "", chrom); print "chr" chrom "\t" $1 "\t" "chr" chrom "\t" $2 "\t" $3 "\t" $4 "\t" $5 }' | chr_pos_to_genome_pos.py -c 1,2:3,4 -a hg19  >> ${FILEPATH}
+done;
+pv -cN sorting... ${FILEPATH} | sort -k1,1n -k2,2n - | gzip > ${FILEPATH}.sorted.gz
+
+### Cooler to tiles
+
 python scripts/cooler_to_tiles.py /data/tmp/UNTR.1kb.multires.cool --assembly mm9 --max-zoom 3 --elasticsearch-url 52.23.165.123:9872/hg19.1/mm9.UNTR.1kb.multires.cool
+
 
 ###
 #

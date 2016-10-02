@@ -108,7 +108,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             entry_poss = [entry_pos]
             if expand_range is not None:
                 end_pos = int(line_parts[expand_range[1]-1])
-                print("ep", int(entry_pos[0]), end_pos -  int(entry_pos[0]) + 1)
+                #print("ep", int(entry_pos[0]), end_pos -  int(entry_pos[0]) + 1)
                 for i in range(int(entry_pos[0])+1, end_pos):
                     new_entry = entry_pos[::]
                     new_entry[0] = i

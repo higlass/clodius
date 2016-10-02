@@ -15,9 +15,10 @@ zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --as
 
 
 AWS_ES_DOMAIN=52.23.165.123:9872
-for i in 03 04 05 06 07 08 09 10; 
+for i in 15 16 17 18 19 20;
 do 
     DATASET_BASE=E0${i}-H3K27me3.fc.signal.bigwig
+    wget -O ~/data/encode/hg19/${DATASET_BASE}  http://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/foldChange/${DATASET_BASE}
     DATASET_NAME=E0${i}-H3K27me3.fc.signal.bigwig.genome.sorted.gz
     FILEPATH=~/data/encode/hg19/${DATASET_NAME}
     INDEX_NAME=hg19.1/${DATASET_NAME}
@@ -25,16 +26,6 @@ do
     python scripts/process_file.py --assembly hg19 --type bigwig ~/data/encode/hg19/${DATASET_BASE}
     zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME}
 done;
-
-
-
-
-
-
-
-
-
-
 
 
 
