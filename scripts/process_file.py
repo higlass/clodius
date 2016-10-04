@@ -15,8 +15,8 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('filepath')
-    parser.add_argument('--assembly', default='hg19')
-    parser.add_argument('--type', default='bedgraph')
+    parser.add_argument('-a', '--assembly', default='hg19')
+    parser.add_argument('-t', '--type', default='bedgraph')
     parser.add_argument('--stdout', default=False, action='store_true',
                         help="Dump output to stdout (not implemented yet)")
 
