@@ -9,6 +9,7 @@ except ImportError:
 import gzip
 import itertools as it
 import json
+import numpy as np
 import os
 import os.path as op
 import queue
@@ -47,13 +48,14 @@ def tile_saver_worker(q, tile_saver, finished):
     tile_saver.flush()
 
 class TileSaver(object):
-    def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions, print_status=False):
+    def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions, print_status=False, initial_value=0.0):
         self.max_data_in_sparse = max_data_in_sparse
 
         #self.max_data_in_sparse = 0
         self.bins_per_dimension = bins_per_dimension
         self.num_dimensions = num_dimensions
         self.print_status = print_status
+        self.initial_value = initial_value
 
         pass
 
@@ -73,21 +75,30 @@ class TileSaver(object):
 
     def save_dense_tile(self, zoom_level, tile_position, tile_bins, 
             min_value, max_value):
-        initial_values = [0.0] * (self.bins_per_dimension ** self.num_dimensions)
+        initial_values = [self.initial_value] * (self.bins_per_dimension ** self.num_dimensions)
 
         for (bin_pos, val) in tile_bins.items():
             index = int(sum([bp * self.bins_per_dimension ** i for i,bp in enumerate(bin_pos)]))
             initial_values[index] = val
 
-        self.make_and_save_tile(zoom_level, tile_position, {"dense": 
-            [round(v, 5) for v in initial_values],
-            'min_value': min_value, 'max_value': max_value })
+        if len(self.initial_value) == 1:
+            self.make_and_save_tile(zoom_level, tile_position, {"dense": 
+                [round(v[0], 5) for v in initial_values],
+                'min_value': min_value, 'max_value': max_value })
+        else:
+            self.make_and_save_tile(zoom_level, tile_position, {"dense": 
+                list(it.chain.from_iterable([[round(y, 5) for y in v] for v in initial_values])),
+                'min_value': min_value, 'max_value': max_value })
+
 
     def save_sparse_tile(self, zoom_level, tile_position, tile_bins, 
             min_value, max_value):
         shown = []
         for (bin_pos, bin_val) in tile_bins.items():
-            shown += [[list(map(float, bin_pos)), bin_val]]
+            if len(bin_val) == 1:
+                shown += [[list(map(float, bin_pos)), bin_val[0]]]
+            else:
+                shown += [[list(map(float, bin_pos)), list(bin_val)]]
 
         self.make_and_save_tile(zoom_level, tile_position, {"sparse": shown,
             'min_value': min_value, 'max_value': max_value })
@@ -109,8 +120,8 @@ class TileSaver(object):
             'min_value': min_value, 'max_value': max_value})
 
     def save_binned_tile(self, zoom_level, tile_position, tile_bins):
-        max_value = max(tile_bins.values())
-        min_value = min(tile_bins.values())
+        max_value = list(np.max(np.array(list(tile_bins.values())), axis=0))
+        min_value = list(np.min(np.array(list(tile_bins.values())), axis=0))
 
         if len(tile_bins) < self.max_data_in_sparse:
             self.save_sparse_tile(zoom_level, tile_position, tile_bins, 
@@ -130,11 +141,12 @@ class EmptyTileSaver(TileSaver):
 
 class ColumnFileTileSaver(TileSaver):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions,
-            file_path, log_file, print_status):
+            file_path, log_file, print_status, initial_value):
         super(ColumnFileTileSaver, self).__init__(max_data_in_sparse, 
                                              bins_per_dimension,
                                              num_dimensions,
-                                             print_status)
+                                             print_status,
+                                             initial_value)
         self.file_path = file_path
         self.bulk_txt = csio.StringIO()
         self.bulk_txt_len = 0
@@ -212,11 +224,12 @@ class ColumnFileTileSaver(TileSaver):
 
 class ElasticSearchTileSaver(TileSaver):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions,
-            es_path, log_file, print_status):
+            es_path, log_file, print_status, initial_value):
         super(ElasticSearchTileSaver, self).__init__(max_data_in_sparse, 
                                              bins_per_dimension,
                                              num_dimensions,
-                                             print_status)
+                                             print_status,
+                                             initial_value)
         self.es_path = es_path
         self.bulk_txt = csio.StringIO()
         self.bulk_txt_len = 0
@@ -232,14 +245,22 @@ class ElasticSearchTileSaver(TileSaver):
 
             value_pos = col.defaultdict(list)
             for sparse_value in sparse_values:
-                value_pos[sparse_value[1]] += [sparse_value[0]]
+                if len(self.initial_value) != 1:
+                    value_pos[tuple(sparse_value[1])] += [sparse_value[0]]
+                else:
+                    value_pos[sparse_value[1]] += [sparse_value[0]]
             #val['tile_value']['sparse'] = value_pos.items()
 
             value_xs_ys = []
             for value, poss in value_pos.items():
+                # sparse values are stored as the following:
+                # value, # of positions it's found in, list of the positions
                 poss = sorted(poss)
                 dim_values = []
-                value_xs_ys += [float(value)]
+                if len(self.initial_value) == 1:
+                    value_xs_ys += [float(value[0])]
+                else:
+                    value_xs_ys += list(value)
                 value_xs_ys += [float(len(poss))]
 
                 for i in range(len(poss[0])):

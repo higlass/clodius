@@ -19,14 +19,30 @@ zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --
 ### Max's Data
 
 IDENTIFIER=UMB5144
+AWS_ES_DOMAIN=52.23.165.123:9872
+ASSEMBLY=hg19
 BASE_PATH=~/data/clodius-input/hg19
 FILEPATH=${BASE_PATH}/${IDENTIFIER}.all_bins.tsv
+INDEX_NAME=${ASSEMBLY}/${ASSEMBLY}.${IDENTIFIER}.all_bins.sorted.genome.gz
+RESOLUTION=1000
+
+################### Prepare
+
 rm ${FILEPATH}
 for i in $(seq -f "%02g" 21) X Y;
 do 
     pv -cN chr${i} ${BASE_PATH}/${IDENTIFIER}/b1000/UMB5144-final-${i}.b1000.bin | grep -v start  | awk -v chrom=${i} '{ gsub("^0*", "", chrom); print "chr" chrom "\t" $1 "\t" "chr" chrom "\t" $2 "\t" $3 "\t" $4 "\t" $5 }' | chr_pos_to_genome_pos.py -c 1,2:3,4 -a hg19  >> ${FILEPATH}
 done;
-pv -cN sorting... ${FILEPATH} | sort -k1,1n -k2,2n - | gzip > ${FILEPATH}.sorted.gz
+pv -cN sorting... ${FILEPATH} | sort -k1,1n -k2,2n - | gzip > ${FILEPATH}.sorted.genome.gz
+
+################### Tile
+
+AWS_ES_DOMAIN=52.23.165.123:9872
+
+    zcat ${FILEPATH}.genome.sorted.gz | head -n 1000 | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --expand-range 1,2 -k 1 -v 3 --columnfile-path /tmp/maxs-tiles --log-file clodius.log --max-queue-size 2000 --print-status # 16:48:26
+
+pv -cN tiling ${FILEPATH}.genome.sorted.gz | zcat | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --expand-range 1,2 -k 1 -v 3,4 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --log-file clodius.log --max-queue-size 2000
+
 
 ### Cooler to tiles
 

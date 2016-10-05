@@ -2,10 +2,12 @@
 
 import argparse
 import clodius.save_tiles as cst
+import functools as ft
 import itertools as it
 import collections as col
 import math
 import negspy.coordinates as nc
+import numpy as np
 import os
 import os.path as op
 import sortedcontainers as sco
@@ -17,12 +19,15 @@ import traceback
 
 sys.excepthook = cst.handle_exception
 
+def default_tile(length):
+    return np.zeros(length)
+
 def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoom, 
         bins_per_dimension, tile_saver, expand_range, ignore_0, tileset_info, max_width,
         triangular=False, max_queue_size = 40000, print_status=False):
     active_tiles = col.defaultdict(sco.SortedList)
     max_data_in_sparse = bins_per_dimension ** len(position_cols) // 5.
-    tile_contents = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
+    tile_contents = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(ft.partial(default_tile, length=len(value_pos)))))
     smallest_width = max_width // (2 ** max_zoom)
 
     prev_line_num = None
@@ -66,6 +71,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             '''
             try:
                 new_tile_contents[calc_bin_poss[bin_position]] += bin_value
+                #print("ntc:", new_tile_contents[calc_bin_poss[bin_position]])
             except KeyError:
                 print("calc_bin_poss.keys():", calc_bin_poss.keys())
                 print("tile_mod_pos:", tile_mod_pos, tile_position)
@@ -84,12 +90,12 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
         for line_parts in all_line_parts:
             if ignore_0:
-                if line_parts[value_pos-1] == "0":
+                if line_parts[value_pos][0] == "0":
                     continue
-            value = float(line_parts[value_pos-1])
+            value = [float(line_parts[vp]) for vp in value_pos]
             #print "entry_pos:", entry_pos, value
 
-            if line_num != prev_line_num and line_num % 10 == 0:
+            if line_num != prev_line_num and line_num % 1000 == 0:
                 time_str = time.strftime("%Y-%m-%d %H:%M:%S")
                 if print_status:
                     print( "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time), 'qsize:', q.qsize())
@@ -102,8 +108,8 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             else:
                 entry_pos = [float(line_parts[p-1]) for p in position_cols]
 
-            tileset_info['max_value'] = max(tileset_info['max_value'], value)
-            tileset_info['min_value'] = min(tileset_info['min_value'], value)
+            tileset_info['max_value'] = [max(x,y) for x,y in zip(tileset_info['max_value'], value)]
+            tileset_info['min_value'] = [min(x,y) for x,y in zip(tileset_info['min_value'], value)]
 
             entry_poss = [entry_pos]
             if expand_range is not None:
@@ -164,7 +170,6 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                             if print_status:
                                 sys.stdout.write('.\n')
 
-                        #print "putting:", zoom_level, active_tiles[zoom_level][0]
                         q.put((zoom_level, active_tiles[zoom_level][0], tile_bins))
                         '''
                         if zoom_level < max_zoom:
@@ -248,7 +253,7 @@ def main():
     parser.add_argument('-r', '--resolution', help="The resolution of the data", 
                         default=None, type=int )
     parser.add_argument('-k', '--position-cols', help="The position columns (defaults to all but the last, 1-based)", default=None)
-    parser.add_argument('-v', '--value-pos', help='The value column (defaults to the last one, 1-based)', default=None, type=int)
+    parser.add_argument('-v', '--value-pos', help='The value column (defaults to the last one, 1-based)', default=None, type=str)
     parser.add_argument('-z', '--max-zoom', help='The maximum zoom value', default=None, type=int)
     parser.add_argument('--expand-range', help='Expand ranges of values')
     parser.add_argument('--ignore-0', help='Ignore ranges with a zero value', default=False, action='store_true')
@@ -324,7 +329,8 @@ def main():
 
     # if there's not column designated as the value column, use the last column
     if value_pos is None:
-        value_pos = len(first_line_parts)
+        value_pos = [len(first_line_parts)-1]
+    value_pos = [int(vp) - 1 for vp in value_pos.split(',')]
 
     max_data_in_sparse = args.bins_per_dimension ** len(position_cols) // 10
 
@@ -353,14 +359,16 @@ def main():
                                                 len(position_cols),
                                                 args.elasticsearch_url,
                                                 args.log_file,
-                                                args.print_status)
+                                                args.print_status,
+                                                initial_value = [0. for vp in value_pos])
     else:
         tile_saver = cst.ColumnFileTileSaver(max_data_in_sparse,
                                                 args.bins_per_dimension,
                                                 len(position_cols),
                                                 args.columnfile_path,
                                                 args.log_file,
-                                                args.print_status)
+                                                args.print_status,
+                                                initial_value = [0. for vp in value_pos])
 
     for i in range(args.num_threads):
         p = mpr.Process(target=cst.tile_saver_worker, args=(q, tile_saver, finished))
@@ -369,8 +377,8 @@ def main():
         p.start()
         tilesaver_processes += [(tile_saver, p)]
 
-    tileset_info = {'max_value': 0,
-                    'min_value': 0,
+    tileset_info = {'max_value': [0 for vp in value_pos],
+                    'min_value': [0 for vp in value_pos],
                     'min_pos': mins,
                     'max_pos': maxs,
                     'max_zoom': max_zoom,
