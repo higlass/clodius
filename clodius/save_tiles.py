@@ -223,8 +223,8 @@ class ColumnFileTileSaver(TileSaver):
 
 
 class ElasticSearchTileSaver(TileSaver):
-    def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions,
-            es_path, log_file, print_status, initial_value):
+    def __init__(self, max_data_in_sparse=None, bins_per_dimension=None, num_dimensions=None,
+            es_path=None, log_file=None, print_status=False, initial_value=None):
         super(ElasticSearchTileSaver, self).__init__(max_data_in_sparse, 
                                              bins_per_dimension,
                                              num_dimensions,
@@ -268,6 +268,9 @@ class ElasticSearchTileSaver(TileSaver):
 
             val['tile_value']['sparse'] = value_xs_ys
 
+        self.save_value(val['tile_id'], val)
+
+    def save_value(self, doc_id, doc):
         '''
         if ('dense' in val['tile_value']):
             print val['tile_id'], len([x for x in val['tile_value']['dense'] if x > 0])
@@ -275,8 +278,8 @@ class ElasticSearchTileSaver(TileSaver):
 
         #val['tile_value']['dense'] = []
 
-        self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(val['tile_id']))
-        self.bulk_txt.write(json.dumps(val) + "\n")
+        self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(doc_id))
+        self.bulk_txt.write(json.dumps(doc) + "\n")
 
         '''
         self.bulk_txt.write('{{"tile_id": {}, "tile_value": '.format(val['tile_id']))

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import clodius.save_tiles as cst
 import collections as col
 import fpark
 import json
@@ -7,9 +8,8 @@ import os
 import os.path as op
 import sys
 import argparse
-import elasticsearch as elastic
 
-def make_autocomplete_list(entries, options):
+def make_autocomplete_list(entries, options, tile_saver):
     '''
     Make a list of autocomplete suggestions for a list of json objects
 
@@ -57,11 +57,15 @@ def make_autocomplete_list(entries, options):
     es_index = options.elasticsearch_path.split('/')[0]
     es_doctype = options.elasticsearch_path.split('/')[1]
 
-    def save_substr_entry((substr_key, substr_value)):
+    def save_substr_entry(entry):
+        (substr_key, substr_value) = entry
+        tile_saver.save_value(substr_key, {"suggestions": substr_value})
+        '''
         ess.index(es_index,
                   es_doctype,
                   body = {"suggestions": substr_value},
                   id = substr_key)
+        '''
 
     reduced_substr_entries.foreach(save_substr_entry)
 
@@ -92,14 +96,13 @@ def main():
             help="The column names for the input tsv file",
             default=None)
 
-    parser.add_argument('--elasticsearch-nodes', 
+    parser.add_argument('--elasticsearch-url', 
             help='Specify elasticsearch nodes to push the completions to',
-            default='localhost:9200')
-    parser.add_argument('--elasticsearch-path',
-            help="Tile index/doctype to save the tiles to",
-            default='test/tiles')
+            default=None)
 
     args = parser.parse_args()
+
+    tile_saver = cst.ElasticSearchTileSaver(es_path=args.elasticsearch_url)
 
     dataFile = fpark.FakeSparkContext.textFile(args.input_file[0])
 
@@ -109,7 +112,7 @@ def main():
     dataFile = (dataFile.map(lambda x: x.split())
                         .map(lambda x: dict(zip(args.column_names,x))))
 
-    tiles = make_autocomplete_list(dataFile, args)
+    tiles = make_autocomplete_list(dataFile, args, tile_saver)
 
 if __name__ == '__main__':
     main()

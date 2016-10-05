@@ -1,5 +1,11 @@
 AWS_ES_DOMAIN=52.23.165.123:9872
 
+# Creating autocomplete tiles
+
+AWS_ES_DOMAIN=52.23.165.123:9872
+ASSEMBLY=hg19
+python scripts/make_autocomplete_list.py -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count ~/data/hg19/genbank-output/refgene-count/ -n geneName -i count --elasticsearch-url ${AWS_ES_DOMAIN}/${ASSEMBLY}.autocomplete --reverse-importance
+
 # Gene Density Data
 FILEPATH=~/data/encode/hg19/gencodeDensity
 awk '{ print $1, $2, $1, $3, $4}' ${FILEPATH}.bedGraph | chr_pos_to_genome_pos.py -c 1,2:3,4 -a hg19 | /usr/bin/time sort -k1,1n -k2,2n - | gzip > ${FILEPATH}.genome.sorted.gz
