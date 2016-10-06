@@ -56,7 +56,8 @@ class ParallelData:
         return ParallelData(list(it.chain.from_iterable(result)))
 
     def foreach(self, func):
-        map(func, self.data)
+        for d in self.data:
+            func(d)
 
     def foreachPartition(self, func):
         func(self.data)

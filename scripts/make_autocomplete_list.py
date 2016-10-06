@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
+import clodius.fpark as cfp
 import clodius.save_tiles as cst
 import collections as col
-import fpark
 import json
 import os
 import os.path as op
@@ -53,10 +53,6 @@ def make_autocomplete_list(entries, options, tile_saver):
 
     reduced_substr_entries = substr_entries.reduceByKey(reduce_substrs)
 
-    ess = elastic.Elasticsearch(options.elasticsearch_nodes.split(','))
-    es_index = options.elasticsearch_path.split('/')[0]
-    es_doctype = options.elasticsearch_path.split('/')[1]
-
     def save_substr_entry(entry):
         (substr_key, substr_value) = entry
         tile_saver.save_value(substr_key, {"suggestions": substr_value})
@@ -67,6 +63,7 @@ def make_autocomplete_list(entries, options, tile_saver):
                   id = substr_key)
         '''
 
+    tile_saver.flush()
     reduced_substr_entries.foreach(save_substr_entry)
 
 def main():
@@ -99,12 +96,14 @@ def main():
     parser.add_argument('--elasticsearch-url', 
             help='Specify elasticsearch nodes to push the completions to',
             default=None)
+    parser.add_argument('--print-status', action="store_true")
 
     args = parser.parse_args()
 
-    tile_saver = cst.ElasticSearchTileSaver(es_path=args.elasticsearch_url)
+    tile_saver = cst.ElasticSearchTileSaver(es_path=args.elasticsearch_url,
+            print_status = args.print_status)
 
-    dataFile = fpark.FakeSparkContext.textFile(args.input_file[0])
+    dataFile = cfp.FakeSparkContext.textFile(args.input_file[0])
 
     if args.column_names is not None:
         args.column_names = args.column_names.split(',')
