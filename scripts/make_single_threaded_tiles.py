@@ -95,7 +95,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             value = [float(line_parts[vp]) for vp in value_pos]
             #print "entry_pos:", entry_pos, value
 
-            if line_num != prev_line_num and line_num % 1000 == 0:
+            if line_num != prev_line_num and line_num % 100000 == 0:
                 time_str = time.strftime("%Y-%m-%d %H:%M:%S")
                 if print_status:
                     print( "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time), 'qsize:', q.qsize())
@@ -330,7 +330,8 @@ def main():
     # if there's not column designated as the value column, use the last column
     if value_pos is None:
         value_pos = [len(first_line_parts)-1]
-    value_pos = [int(vp) - 1 for vp in value_pos.split(',')]
+    else:
+        value_pos = [int(vp) - 1 for vp in value_pos.split(',')]
 
     max_data_in_sparse = args.bins_per_dimension ** len(position_cols) // 10
 

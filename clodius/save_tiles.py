@@ -258,7 +258,7 @@ class ElasticSearchTileSaver(TileSaver):
                 poss = sorted(poss)
                 dim_values = []
                 if len(self.initial_value) == 1:
-                    value_xs_ys += [float(value[0])]
+                    value_xs_ys += [float(value)]
                 else:
                     value_xs_ys += list(value)
                 value_xs_ys += [float(len(poss))]

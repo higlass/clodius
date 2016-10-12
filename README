@@ -1,5 +1,33 @@
 AWS_ES_DOMAIN=52.23.165.123:9872
 
+# Create tiles from coolers
+workon py3
+assembly=hg19
+FILENAME=/Dixon2015-H1_hESC-HindIII-allreps-filtered.5kb.cool
+#for FILENAME in Dixon2015-H1_NP-HindIII-allreps-filtered.50kb.cool Dixon2015-H1_NP-HindIII-allreps-filtered.5kb.cool;
+for FILENAME in Rao2014-NHEK-MboI-allreps-filtered.50kb.cool Rao2014-K562-MboI-allreps-filtered.50kb.cool Rao2014-IMR90-MboI-allreps-filtered.50kb.cool Rao2014-HUVEC-MboI-allreps-filtered.50kb.cool Rao2014-HMEC-MboI-allreps-filtered.50kb.cool Rao2014-GM12878-MboI-allreps-filtered.50kb.cool;
+do
+    DATASET_NAME=${assembly}/${FILENAME}
+    FILEPATH=/data/coolers/${DATASET_NAME}
+    python ~/projects/cooler/scripts/dump_matrix_txt.py ${FILEPATH} --balanced --join --out - | awk '{ if (NF == 6) print $1 "\t" $2 "\t" $4 "\t" $5 "\t" 0; else print $1 "\t" $2 "\t" $4 "\t" $5 "\t" $7; }' | grep -v start1 | chr_pos_to_genome_pos.py -c 1,2:3,4 -a $assembly | make_triangular.py | sort -k1,1n -k2,2n - | gzip > ${FILEPATH}.genome.sorted.gz
+done;
+
+
+AWS_ES_DOMAIN=52.45.229.11:9872
+ASSEMBLY=hg19
+RESOLUTION=50000
+for DATASET_NAME in Rao2014-NHEK-MboI-allreps-filtered.50kb.cool.genome.sorted.gz Rao2014-K562-MboI-allreps-filtered.50kb.cool.genome.sorted.gz Rao2014-IMR90-MboI-allreps-filtered.50kb.cool.genome.sorted.gz Rao2014-HUVEC-MboI-allreps-filtered.50kb.cool.genome.sorted.gz Rao2014-HMEC-MboI-allreps-filtered.50kb.cool.genome.sorted.gz Rao2014-GM12878-MboI-allreps-filtered.50kb.cool.genome.sorted.gz;
+do
+    INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
+    #INDEX_NAME=${DATASET_NAME,,}/tiles
+    echo $INDEX_NAME
+    FILENAME=coolers/${ASSEMBLY}/${DATASET_NAME}
+    FILEPATH=~/data/${FILENAME}
+    #curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
+    zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+done;
+
+
 # Creating autocomplete tiles
 
 AWS_ES_DOMAIN=52.23.165.123:9872
@@ -31,6 +59,7 @@ BASE_PATH=~/data/clodius-input/hg19
 FILEPATH=${BASE_PATH}/${IDENTIFIER}.all_bins.tsv
 INDEX_NAME=${ASSEMBLY}/${ASSEMBLY}.${IDENTIFIER}.all_bins.sorted.genome.gz
 RESOLUTION=1000
+
 
 ################### Prepare
 
