@@ -28,8 +28,8 @@ def load_entries_from_file(sc, filename, column_names=None, delimiter=None,
         entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
     else:
         entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split())))
+    
     return entries
-
 
 def expand_range(x, from_col, to_col, range_except_0 = None):
     '''

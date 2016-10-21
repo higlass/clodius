@@ -50,6 +50,7 @@ FILEPATH=~/data/${FILENAME}
 ##curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
 zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --log-file clodius.log --max-queue-size 2000 --print-status # 16:48:26
 
+################################################################################################################################
 ### Max's Data
 
 IDENTIFIER=UMB5144
@@ -80,10 +81,19 @@ pv -cN tiling ${FILEPATH}.genome.sorted.gz | zcat | /usr/bin/time python scripts
 
 ############# Tile CNV calls
 
-CNV_PATH=${BASE_PATH}/${IDENTIFIER}/b1000/lambda_03/UMB5144__B1000_l03.BICseq.out
+DATASET_NAME=UMB5144__B1000_l03.BICseq.out
+CNV_PATH=${BASE_PATH}/${IDENTIFIER}/b1000/lambda_03/${DATASET_NAME}
 pv -cN chr_pos_to_genome_pos $CNV_PATH  | grep -v 'start' | awk '{print $1, $2, $1, $3, $4, $5, $6, $7, $8}' | chr_pos_to_genome_pos.py -c 1,2:3,4 -a hg19 > ${CNV_PATH}.genome
 
+INPUT_FILE=${CNV_PATH}.genome
+AWS_ES_DOMAIN=52.45.229.11:9872
+ASSEMBLY=hg19
+INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
+/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $INDEX_NAME -v count --position start --end-position end  -c chrom,start,end,binNum,observed,expected,log2.copyRatio,pValue --max-zoom 18 -i pValue --importance --max-entries-per-tile 16 --assembly ${ASSEMBLY} ${INPUT_FILE}
 
+
+
+################################################################################################################################
 ### Cooler to tiles
 
 python scripts/cooler_to_tiles.py /data/tmp/UNTR.1kb.multires.cool --assembly mm9 --max-zoom 3 --elasticsearch-url 52.23.165.123:9872/hg19.1/mm9.UNTR.1kb.multires.cool

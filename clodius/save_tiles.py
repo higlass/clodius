@@ -319,7 +319,8 @@ class ElasticSearchTileSaver(TileSaver):
             self.bulk_txt.close()
             self.bulk_txt = csio.StringIO()
 
-def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_path):
+def save_tile_to_elasticsearch(partition, elasticsearch_nodes, 
+                               elasticsearch_path, print_status=False):
     bulk_txt = ""
     es_url = op.join(elasticsearch_nodes, elasticsearch_path)
     put_url =  op.join(es_url, "_bulk")
@@ -329,11 +330,12 @@ def save_tile_to_elasticsearch(partition, elasticsearch_nodes, elasticsearch_pat
         bulk_txt += json.dumps(val) + "\n"
 
         if len(bulk_txt) > 5000000:
-            save_to_elasticsearch("http://" + put_url, bulk_txt)
+            save_to_elasticsearch("http://" + put_url, bulk_txt, print_status)
             bulk_txt = ""
 
+    print("bulk_txt:", bulk_txt)
     if len(bulk_txt) > 0:
-        save_to_elasticsearch("http://" + put_url, bulk_txt)
+        save_to_elasticsearch("http://" + put_url, bulk_txt, print_status)
 
 def save_to_elasticsearch(url, data, print_status=False):
     '''
@@ -351,6 +353,7 @@ def save_to_elasticsearch(url, data, print_status=False):
     saved = False
     to_sleep = 1
     uid = slugid.nice()
+    print("print_status:", print_status)
     while not saved:
         try:
             r = requests.post(url, data=data, timeout=8)

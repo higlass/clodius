@@ -64,7 +64,6 @@ class ParallelData:
 
     def reduceByKey(self, func):
         '''
-
         When called on a dataset of (K, V) pairs, returns a dataset of (K, V)
         pairs where the values for each key are aggregated using the given
         reduce function func, which must be of type (V,V) => V. Like in

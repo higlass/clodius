@@ -119,6 +119,9 @@ def main():
     parser.add_argument('--elasticsearch-doctype',
             help="The type of document to index",
             default="autocomplete")
+    parser.add_argument('--print-status',
+            action="store_true",
+            help="Print status messages")
 
     args = parser.parse_args()
 
@@ -188,7 +191,8 @@ def main():
         # save the tiles to an elasticsearch database
         save_tile_to_elasticsearch = ft.partial(cst.save_tile_to_elasticsearch,
             elasticsearch_nodes = args.elasticsearch_nodes,
-            elasticsearch_path = args.elasticsearch_path)
+            elasticsearch_path = args.elasticsearch_path,
+            print_status = args.print_status)
 
         (all_tiles.map(lambda x: {"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]})
                  .foreachPartition(save_tile_to_elasticsearch))
