@@ -102,6 +102,8 @@ def main():
         while counter < chrom_size:
             remaining = min(chunk_size, chrom_size - counter)
             values = bwf.values(chrom, counter, counter + remaining)
+            #print("counter:", counter, "remaining:", remaining, "counter + remaining:", counter + remaining)
+            #print("values:", values)
 
             counter += remaining
             curr_zoom = 0
@@ -112,8 +114,9 @@ def main():
                 curr_time, curr_time / (percent_progress) - curr_time))
 
             while len(data_buffers[curr_zoom]) >= chunk_size:
-                # get the current chunk and store it
+                # get the current chunk and store it, converting nans to 0
                 curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
+                curr_chunk[np.isnan(curr_chunk)] = 0
                 dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
 
                 # aggregate and store aggregated values in the next zoom_level's data

@@ -28,29 +28,32 @@ def get_data(hdf_file, z, x):
     max_length = int(d.attrs['max-length'])
     max_zoom = int(d.attrs['max-zoom'])
 
-    #print("max_zoom:", max_zoom)
+    print("max_length:", max_length)
+
+    print("max_zoom:", max_zoom)
     rz = max_zoom - z
     #print("rz:", rz)
     tile_width = max_length / 2**z
 
-    #print("zoom_step:", zoom_step, rz / zoom_step)
+    print("zoom_step:", zoom_step, rz / zoom_step)
     # because we only store some a subsection of the zoom levels
     next_stored_zoom = zoom_step * math.floor(rz / zoom_step)
     zoom_offset = rz - next_stored_zoom
-    #print("next_stored_zoom", next_stored_zoom, 'zoom_offset:', zoom_offset)
+    print("next_stored_zoom", next_stored_zoom, 'zoom_offset:', zoom_offset)
 
     # the number of entries to aggregate for each new value
     num_to_agg = 2 ** zoom_offset
     total_in_length = tile_size * num_to_agg
     #print("num_to_agg:", num_to_agg, total_in_length)
 
-    #print("zoom_offset:", zoom_offset)
+    print("zoom_offset:", zoom_offset)
     # which positions we need to retrieve in order to dynamically aggregate
     start_pos = int((x * 2 ** zoom_offset * tile_size))
     end_pos = int(start_pos + total_in_length)
     f = hdf_file['values_' + str(int(next_stored_zoom))]
 
     print("start_pos:", start_pos, "end_pos:", end_pos)
+    print("f:", f[start_pos:end_pos])
     ret_array = ct.tile2(f[start_pos:end_pos], int(num_to_agg))
     return ret_array
     
@@ -62,7 +65,9 @@ def main():
 """)
 
     parser.add_argument('filepath')
-    parser.add_argument('-z', '--zoom-step', default=1, type=int)
+    parser.add_argument('-z', default=None, type=int)
+    parser.add_argument('-x', default=None, type=int)
+
     parser.add_argument('-n', '--num-trials', default=1, type=int)
     #parser.add_argument('argument', nargs=1)
     #parser.add_argument('-o', '--options', default='yo',
@@ -79,12 +84,18 @@ def main():
     if args.num_trials < 1:
         print("The number of trials needs to be greater than 0", file=sys.stderr)
 
+    if args.x is not None and args.z is not None:
+        d =  get_data(f, args.z, args.x)
+        print("z:", args.z, "x:", args.x, "len:", len(d), d)
+        return
+
+
     for i in range(args.num_trials):
         z  = random.randint(0, int(f['meta'].attrs['max-zoom']))
         x = random.randint(0, 2**z)
 
         d =  get_data(f, z, x)
-        print("z:", z, "x:", x, d)
+        print("z:", z, "x:", x, "len:", len(d), d)
         #d =  get_data(f, 1, 1)
 
         #print "z:", z, "x:", x
