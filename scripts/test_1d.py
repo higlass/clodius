@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import argparse
-import core
+import clodius.tiles as ct
 import h5py
 import math
 import numpy as np
@@ -49,7 +49,7 @@ def get_data(hdf_file, z, x):
     print "start_pos:", start_pos, "end_pos:", end_pos
     f = hdf_file['values_' + str(int(next_stored_zoom))]
 
-    ret_array = core.tile2(f[start_pos:end_pos], int(num_to_agg))
+    ret_array = ct.tile2(f[start_pos:end_pos], int(num_to_agg))
     print "ret_array:", ret_array
     
 
