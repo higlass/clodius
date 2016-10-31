@@ -1,3 +1,35 @@
+AWS_ES_DOMAIN=52.23.165.123:9872
+ASSEMBLY=hg19
+RESOLUTION=50000
+DATASET_NAME=Dixon2015-H1_hESC-HindIII-allreps-filtered.50kb.cool.genome.sorted.gz
+INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
+#INDEX_NAME=${DATASET_NAME,,}/tiles
+echo $INDEX_NAME
+FILENAME=coolers/${ASSEMBLY}/${DATASET_NAME}
+FILEPATH=~/data/${FILENAME}
+#curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+
+
+
+
+
+AWS_ES_DOMAIN=52.23.165.123:9872
+for i in 15 16 17 18 19 20;
+do 
+    DATASET_BASE=E0${i}-H3K27me3.fc.signal.bigwig
+    wget -O ~/data/encode/hg19/${DATASET_BASE}  http://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/foldChange/${DATASET_BASE}
+    DATASET_NAME=E0${i}-H3K27me3.fc.signal.bigwig.genome.sorted.gz
+    FILEPATH=~/data/encode/hg19/${DATASET_NAME}
+    INDEX_NAME=hg19.1/${DATASET_NAME}
+
+    python scripts/process_file.py --assembly hg19 --type bigwig ~/data/encode/hg19/${DATASET_BASE}
+    zcat ${FILEPATH} | /usr/bin/time python scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 3137161264 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME}
+done;
+
+
+
+
 TEST_NAME=tiles_test
 
 export PYTHONPATH=$PYTHONPATH:.
@@ -172,14 +204,16 @@ zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --mi
 curl -XGET "${AWS_ES_DOMAIN}/hg19.1/_optimize"
 
 ###########################
-DATASET_NAME=UNTR.1kb.cool.reduced.genome.gz
-INDEX_NAME=mm9/${DATASET_NAME}
+ASSEMBLY=hg19
+RESOLUTION=50000
+DATASET_NAME=Dixon2015-H1_hESC-HindIII-allreps-filtered.50kb.cool
+INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
 #INDEX_NAME=${DATASET_NAME,,}/tiles
 echo $INDEX_NAME
-FILENAME=coolers/mm9/${DATASET_NAME}
+FILENAME=coolers/${ASSEMBLY}/${DATASET_NAME}
 FILEPATH=~/data/${FILENAME}
 #curl -XDELETE "http://${AWS_ES_DOMAIN}/${DATASET_NAME,,}"
-zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 0,0 --max-pos 3137161264,3137161264 -b 256 -r 1000 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
+zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --assembly ${ASSEMBLY} -b 256 -r ${RESOLUTION} --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME} --num-threads 4 --triangular --log-file clodius.log # 16:48:26
 
 ###########################
 DATASET_NAME=UNTR.1kb.cool.reduced.genome.gz
@@ -264,13 +298,7 @@ done;
 
 ######################
 AWS_ES_DOMAIN=52.23.165.123:9872
-DATASET_NAME=E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.short.gz
-FILEPATH=~/data/encode/hg19/${DATASET_NAME}
-INDEX_NAME=hg19.1/${DATASET_NAME}
-
-zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --min-pos 1 --max-pos 5000000 -b 256 -r 1 --expand-range 1,2 --ignore-0 -k 1 -v 3 --elasticsearch-url ${AWS_ES_DOMAIN}/${INDEX_NAME}
-
-DATASET_NAME=E116-DNase.fc.signal.bigwig.bedGraph.genome.sorted.gz #112984973 lines
+DATASET_NAME=E002-H3K27me3.fc.signal.bigwig.genome.sorted.gz
 FILEPATH=~/data/encode/hg19/${DATASET_NAME}
 INDEX_NAME=hg19.1/${DATASET_NAME}
 
@@ -279,6 +307,7 @@ zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --mi
 
 ###### Gene Annotations
 
+AWS_ES_DOMAIN=52.23.165.123:9872
 INPUT_FILE=~/data/hg19/genbank-output/refgene-count-minus
 DATASET_NAME=hg19/refgene-tiles-minus
 OUTPUT_DIR=~/data/${DATASET_NAME}
@@ -316,8 +345,8 @@ zcat ${FILEPATH} | /usr/bin/time pypy scripts/make_single_threaded_tiles.py --mi
 
 curl -XGET "http://${AWS_ES_DOMAIN}/hg19/_mapping"
 
-curl -XDELETE "http://${AWS_ES_DOMAIN}/hg19"
-curl -XPUT "http://${AWS_ES_DOMAIN}/hg19" -d '
+curl -XDELETE "http://${AWS_ES_DOMAIN}/hg19.x"
+curl -XPUT "http://${AWS_ES_DOMAIN}/hg19.x" -d '
 {
   "settings": {
     "index.codec": "best_compression"

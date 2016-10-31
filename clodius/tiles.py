@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import json
 import math
 import sys
@@ -26,8 +28,8 @@ def load_entries_from_file(sc, filename, column_names=None, delimiter=None,
         entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split(delimiter))))
     else:
         entries = sc.textFile(filename).map(lambda x: dict(zip(column_names, x.strip().split())))
+    
     return entries
-
 
 def expand_range(x, from_col, to_col, range_except_0 = None):
     '''
@@ -93,11 +95,13 @@ def merge_two_dicts(x, y):
     '''Given two dicts, merge them into a new dict as a shallow copy.'''
     z = x.copy()
     z.update(y)
+    #print("z:", z)
     return z
 
 def make_tiles_by_importance(sc,entries, dim_names, max_zoom, importance_field=None,
         max_entries_per_tile=10, output_dir=None, gzip_output=False, add_uuid=False,
-        reverse_importance=False, end_dim_names=None, adapt_zoom=True):
+        reverse_importance=False, end_dim_names=None, adapt_zoom=True,
+        mins=None, maxs=None):
     '''
     Create a set of tiles by restricting the maximum number of entries that
     can be shown on each tile. If there are too many entries that are assigned
@@ -114,20 +118,25 @@ def make_tiles_by_importance(sc,entries, dim_names, max_zoom, importance_field=N
     :param importance_field: The field which contains the importance of the entries.
     :return: A set of tiles
     '''
-
     if end_dim_names is None:
         end_dim_names = dim_names
 
     entries = entries.map(lambda x: merge_two_dicts(x, {'pos': [float(x[dn]) for dn in dim_names]}))
     entries = entries.map(lambda x: merge_two_dicts(x, {'end_pos': [float(x[dn]) for dn in end_dim_names]}))
 
+    '''
     entry_ranges = entries.map(lambda x: ([x[importance_field]] + x['pos'] + x['end_pos'],
                                           [x[importance_field]] + x['pos'] + x['end_pos']))
 
+
     reduced_entry_ranges = entry_ranges.reduce(reduce_range)
 
-    mins = reduced_entry_ranges[0][1:1+len(dim_names)]
-    maxs = reduced_entry_ranges[1][1+len(dim_names):]
+    #mins = reduced_entry_ranges[0][1:1+len(dim_names)]
+    #maxs = reduced_entry_ranges[1][1+len(dim_names):]
+    '''
+
+    print("mins:", mins)
+    print("maxs:", maxs)
 
     max_width = max(map(lambda x: x[1] - x[0], zip(mins, maxs)))
 
@@ -155,13 +164,15 @@ def make_tiles_by_importance(sc,entries, dim_names, max_zoom, importance_field=N
             for (i,mind) in enumerate(mins):
                 curr_pos = entry['pos'][i]
                 dimension_tile_positions = [int((curr_pos - mind) / tile_width)]
-                curr_pos += tile_width
 
-                # if there are features that span multiple tiles, we want to inlude
-                # them in each tile that they span
-                while curr_pos < entry['end_pos'][i]:
-                    dimension_tile_positions += [int((curr_pos - mind) / tile_width)]
-                    curr_pos += tile_width;
+                # if this feature spans multiple tiles, its end will be after the start
+                # of the next tile
+                next_tile_start_pos = mind + ((curr_pos - mind) // tile_width + 1) * tile_width
+
+                while next_tile_start_pos < entry['end_pos'][i]:
+                    # spans into the next tile
+                    dimension_tile_positions += [int((next_tile_start_pos - mind) // tile_width)]
+                    next_tile_start_pos += tile_width
 
                 tile_positions += [dimension_tile_positions]
 
@@ -173,6 +184,7 @@ def make_tiles_by_importance(sc,entries, dim_names, max_zoom, importance_field=N
         current_tile_entries = entries.flatMap(place_in_tile)
         current_max_entries_per_tile = max(current_tile_entries.countByKey().values())
         tile_entries = tile_entries.union(current_tile_entries)
+        #print("adapt_zoom", adapt_zoom)
 
         if adapt_zoom and current_max_entries_per_tile <= max_entries_per_tile:
             max_zoom = zoom_level
@@ -214,7 +226,7 @@ def reduce_max(a,b):
 def reduce_min(a,b):
     return min(a,b)
 
-def reduce_range((mins_a, maxs_a), (mins_b, maxs_b)):
+def reduce_range(range_a, range_b):
     '''
     Get the range of two ranges, a and b.
 
@@ -223,6 +235,8 @@ def reduce_range((mins_a, maxs_a), (mins_b, maxs_b)):
              ------------------
           result [(0,3),(7,10)]
     '''
+    (mins_a, maxs_a) = range_a
+    (mins_b, maxs_b) = range_b
     mins_c = [min(a,b) for (a,b) in zip(mins_a, mins_b)]
     maxs_c = [max(a,b) for (a,b) in zip(maxs_a, maxs_b)]
 
@@ -253,7 +267,7 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
         (should operate on a single tile)
     '''
     max_data_in_sparse = bins_per_dimension ** len(dim_names) / 30.
-    print "max_data_in_sparse", max_data_in_sparse
+    print("max_data_in_sparse", max_data_in_sparse)
 
     epsilon = 0.0000    # for calculating the max width so that all entries
                         # end up in the same top_level bucket
@@ -269,7 +283,8 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
                       'importance': float(entry[importance_field]) }
         return new_entry
 
-    def add_sparse_tile_metadata((tile_id, tile_entries_iterator)):
+    def add_sparse_tile_metadata(tile_stuff):
+        (tile_id, tile_entries_iterator) = tile_stuff
         z = tile_id[0]
         tile_width = max_width / 2 ** z
         bin_width = tile_width / bins_per_dimension
@@ -300,10 +315,11 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
         return (tile_id, tile_data)
 
     # add the tile meta-data
-    def add_dense_tile_metadata((tile_id, tile_entries_iterator)):
+    def add_dense_tile_metadata(tile_stuff):
         '''
         Add the tile's start and end data positions.
         '''
+        (tile_id, tile_entries_iterator) = tile_stuff
         shown = []
 
         initial_values = [0.0] * (bins_per_dimension ** len(dim_names))
@@ -333,7 +349,8 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
 
         return (0, max(values))
 
-    def tile_pos_to_string((key, tile_value)):
+    def tile_pos_to_string(tile):
+        (key, tile_value) = tile
         if len(tile_value) > max_data_in_sparse:
             (min_value, max_value) = dense_range(tile_value)
             output_str = {'dense': tile_value}
@@ -398,7 +415,7 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
         if max_max_zoom < max_zoom:
             max_zoom = int(max_max_zoom)
 
-    print "max_zoom:", max_zoom
+    print("max_zoom:", max_zoom)
 
     # get all the different zoom levels
     zoom_levels = range(max_zoom+1)
@@ -431,12 +448,15 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
         bin_width = tile_width / bins_per_dimension
         start_time = time.time()
 
-        def place_in_bin((prev_pos, value)):
+        def place_in_bin(pos_value):
+            (prev_pos, value) = pos_value
             new_bin_pos = tuple([int(int(x / bin_width) * bin_width) for x in prev_pos])
 
             return (new_bin_pos, value)
 
-        def place_in_tile((bin_pos, value)):
+        def place_in_tile(bin_pos_value):
+            (bin_pos, value) = bin_pos_value
+
             # we have a bin position and we need to place it in a tile
             tile_pos = [int(x / tile_width) for x in bin_pos]
             tile_mins = [x * tile_width for x in tile_pos]
@@ -458,12 +478,6 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
         total_tiles += tile_count
         '''
 
-
-        #print "bin_entry:", zoom_level, bin_entries.count(), bin_entries.take(1)
-        #print "tile_entry", zoom_level, tile_entries.count() 
-        #print "zoom_level:", zoom_level, "count:", bin_entries.count()
-
-        #print "tile_entry:", tile_entries.count(), tile_entries.take(1)
         '''
 
         def place_in_tile(entry):
@@ -486,18 +500,16 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
         tiles_with_meta_string = tiles_with_meta.map(tile_pos_to_string)
         all_tiles = all_tiles.union(tiles_with_meta_string)
 
-    #print tiles_with_meta_string.take(1)
 
 
         end_time = time.time()
-        #print "zoom_level:", zoom_level, "bin_entries:", bin_count, "tile_entries:", tile_count, "time:", int(end_time - start_time), "time_per_Mbin:", int(1000000 * (end_time - start_time) / bin_count)
-        print "zoom_level:", zoom_level, "time:", int(end_time - start_time)
+        print("zoom_level:", zoom_level, "time:", int(end_time - start_time))
 
 
     total_end_time = time.time()
     #total_entries = entries.count()
     #print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
     #print "entries:", total_entries, "bins:", total_bins, "tiles:", total_tiles, "time:", int(total_end_time - total_start_time), 'time_per_Mbin:', int(1000000 * (total_end_time - total_start_time) / total_bins)
-    print "total_time:", int(total_end_time - total_start_time)
+    print("total_time:", int(total_end_time - total_start_time))
 
     return {"tileset_info": tileset_info, "tiles": all_tiles, "histogram": histogram}

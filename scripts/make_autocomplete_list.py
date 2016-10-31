@@ -1,15 +1,15 @@
 #!/usr/bin/python
 
+import clodius.fpark as cfp
+import clodius.save_tiles as cst
 import collections as col
-import fpark
 import json
 import os
 import os.path as op
 import sys
 import argparse
-import elasticsearch as elastic
 
-def make_autocomplete_list(entries, options):
+def make_autocomplete_list(entries, options, tile_saver):
     '''
     Make a list of autocomplete suggestions for a list of json objects
 
@@ -53,16 +53,17 @@ def make_autocomplete_list(entries, options):
 
     reduced_substr_entries = substr_entries.reduceByKey(reduce_substrs)
 
-    ess = elastic.Elasticsearch(options.elasticsearch_nodes.split(','))
-    es_index = options.elasticsearch_path.split('/')[0]
-    es_doctype = options.elasticsearch_path.split('/')[1]
-
-    def save_substr_entry((substr_key, substr_value)):
+    def save_substr_entry(entry):
+        (substr_key, substr_value) = entry
+        tile_saver.save_value(substr_key, {"suggestions": substr_value})
+        '''
         ess.index(es_index,
                   es_doctype,
                   body = {"suggestions": substr_value},
                   id = substr_key)
+        '''
 
+    tile_saver.flush()
     reduced_substr_entries.foreach(save_substr_entry)
 
 def main():
@@ -92,16 +93,17 @@ def main():
             help="The column names for the input tsv file",
             default=None)
 
-    parser.add_argument('--elasticsearch-nodes', 
+    parser.add_argument('--elasticsearch-url', 
             help='Specify elasticsearch nodes to push the completions to',
-            default='localhost:9200')
-    parser.add_argument('--elasticsearch-path',
-            help="Tile index/doctype to save the tiles to",
-            default='test/tiles')
+            default=None)
+    parser.add_argument('--print-status', action="store_true")
 
     args = parser.parse_args()
 
-    dataFile = fpark.FakeSparkContext.textFile(args.input_file[0])
+    tile_saver = cst.ElasticSearchTileSaver(es_path=args.elasticsearch_url,
+            print_status = args.print_status)
+
+    dataFile = cfp.FakeSparkContext.textFile(args.input_file[0])
 
     if args.column_names is not None:
         args.column_names = args.column_names.split(',')
@@ -109,7 +111,7 @@ def main():
     dataFile = (dataFile.map(lambda x: x.split())
                         .map(lambda x: dict(zip(args.column_names,x))))
 
-    tiles = make_autocomplete_list(dataFile, args)
+    tiles = make_autocomplete_list(dataFile, args, tile_saver)
 
 if __name__ == '__main__':
     main()

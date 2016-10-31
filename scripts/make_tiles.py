@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 from time import gmtime, strftime
 import argparse
 
@@ -7,8 +9,8 @@ import clodius.fpark as cfp
 import clodius.tiles as cti
 import clodius.describe_dataset as cdd
 import clodius.save_tiles as cst
+import negspy.coordinates as nc
 
-import fpark
 import functools as ft
 
 import json
@@ -68,6 +70,8 @@ def main():
             help='The minimum x position', type=float)
     parser.add_argument('--max-pos', dest='max_pos', default=None,
             help='The maximum x position', type=float)
+    parser.add_argument('--assembly', default=None)
+
     parser.add_argument('--min-value', 
             help='The field which will be used to determinethe minimum value for any data point', 
             default='min_y')
@@ -115,14 +119,18 @@ def main():
     parser.add_argument('--elasticsearch-doctype',
             help="The type of document to index",
             default="autocomplete")
+    parser.add_argument('--print-status',
+            action="store_true",
+            help="Print status messages")
 
     args = parser.parse_args()
 
     if not args.importance:
         if args.output_format not in ['sparse', 'dense']:
-            print >>sys.stderr, 'ERROR: The output format must be one of "dense" or "sparse"'
+            print('ERROR: The output format must be one of "dense" or "sparse"', file=sys.stderr)
 
     dim_names = args.position.split(',')
+    position_cols = dim_names
 
     sc = None
 
@@ -136,11 +144,20 @@ def main():
     if args.column_names is not None:
         args.column_names = args.column_names.split(',')
 
-    print "start time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    if args.assembly is not None:
+        mins = [1 for p in position_cols]
+        maxs = [nc.get_chrominfo(args.assembly).total_length for p in position_cols]
+    else: 
+        mins = [float(p) for p in args.min_pos.split(',')]
+        maxs = [float(p) for p in args.max_pos.split(',')]
+
+    max_width = max([b - a for (a,b) in zip(mins, maxs)])
+
+    print("start time:", strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     entries = cti.load_entries_from_file(sc, args.input_file, args.column_names,
             delimiter=args.delimiter,
             elasticsearch_path=args.elasticsearch_path)
-    print "load entries time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    print("load entries time:", strftime("%Y-%m-%d %H:%M:%S", gmtime()))
 
     if args.range is not None:
         # if a pair of columns specifies a range of values, then create multiple
@@ -158,7 +175,8 @@ def main():
                 output_dir=args.output_dir,
                 max_entries_per_tile = args.max_entries_per_tile,
                 gzip_output=args.gzip, add_uuid=args.add_uuid,
-                reverse_importance=args.reverse_importance)
+                reverse_importance=args.reverse_importance, adapt_zoom=False,
+                mins=mins, maxs=maxs)
     else:
         # Data will be aggregated by binning. This means that it two adjacent bins should be able
         # to be reduced into one using some function (i.e. 'sum', 'min', 'max')
@@ -173,13 +191,14 @@ def main():
         # save the tiles to an elasticsearch database
         save_tile_to_elasticsearch = ft.partial(cst.save_tile_to_elasticsearch,
             elasticsearch_nodes = args.elasticsearch_nodes,
-            elasticsearch_path = args.elasticsearch_path)
+            elasticsearch_path = args.elasticsearch_path,
+            print_status = args.print_status)
 
         (all_tiles.map(lambda x: {"tile_id": ".".join(map(str,x[0])), "tile_value": x[1]})
                  .foreachPartition(save_tile_to_elasticsearch))
 
         dataset_info = cdd.describe_dataset(sys.argv, args)
-        print "saving tileset_info to:", args.elasticsearch_path
+        print("saving tileset_info to:", args.elasticsearch_path)
         (sc.parallelize([{"tile_value": tileset['tileset_info'], 
                           "tile_id": "tileset_info"}])
            .foreachPartition(save_tile_to_elasticsearch))
