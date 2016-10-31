@@ -7,12 +7,10 @@ import time
 
 def tile2(in_array, num_to_agg):
     import numpy as np
-    import weave
+    import scipy.weave as weave
 
     length = len(in_array)
-    print("in_array:", in_array)
     out_array = np.zeros(length / num_to_agg)
-    print("out_array:", out_array, "length:", length, num_to_agg)
     support = "#include <math.h>"
 
     code = """

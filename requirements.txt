@@ -1,4 +1,6 @@
 slugid
 requests
 negspy
+pandas
 sortedcontainers
+weave
