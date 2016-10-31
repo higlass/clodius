@@ -14,7 +14,7 @@ def tile2(in_array, num_to_agg):
     support = "#include <math.h>"
 
     code = """
-    for (int i = 0; i < length-1; i += num_to_agg) {
+    for (int i = 0; i < length; i += num_to_agg) {
         out_array[i / num_to_agg] = 0;
         for (int j = 0; j < num_to_agg; j++) {
             out_array[i / num_to_agg] += in_array[i + j];

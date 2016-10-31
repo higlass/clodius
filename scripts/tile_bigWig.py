@@ -65,6 +65,7 @@ def main():
     z = 0
     positions = []   # store where we are at the current dataset
     data_buffers = [[]]
+
     while assembly_size / 2 ** z > tile_size:
         dsets += [f.create_dataset('values_' + str(z), (assembly_size / 2 ** z,), dtype='f',compression='gzip')]
         data_buffers += [[]]
@@ -72,6 +73,7 @@ def main():
         z += args.zoom_step
 
     # load the bigWig file
+    print("filepath:", args.filepath)
     bwf = pbw.open(args.filepath) 
 
     # store some meta data
