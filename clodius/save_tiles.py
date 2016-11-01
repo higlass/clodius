@@ -353,12 +353,13 @@ def save_to_elasticsearch(url, data, print_status=False):
     saved = False
     to_sleep = 1
     uid = slugid.nice()
-    print("print_status:", print_status)
+    #print("print_status:", print_status)
     while not saved:
         try:
             r = requests.post(url, data=data, timeout=8)
             if print_status:
                 print("\nSaved", uid,  r, "len(data):", len(data), url)
+                #print("data:", data)
             saved = True
             #print "data:", data
         except Exception as ex:

@@ -55,7 +55,7 @@ def make_autocomplete_list(entries, options, tile_saver):
 
     def save_substr_entry(entry):
         (substr_key, substr_value) = entry
-        tile_saver.save_value(substr_key, {"suggestions": substr_value})
+        tile_saver.save_value("ac_" + substr_key, {"suggestions": substr_value})
         '''
         ess.index(es_index,
                   es_doctype,
