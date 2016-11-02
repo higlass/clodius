@@ -23,7 +23,7 @@ def make_autocomplete_list(entries, options, tile_saver):
     substrs = col.defaultdict(list)
 
     def entry_to_substrs(entry):
-        substrs = []
+        substrs = {}
 
         if options.name not in entry:
             # if an entry doesn't have a name field, print a warning and continue
@@ -40,8 +40,10 @@ def make_autocomplete_list(entries, options, tile_saver):
                 substr = substr.replace('/', ' ').lower()
                 substr = ' '.join(substr.split()).replace(' ', '_')
 
-                substrs += [((substr), [entry])]
-        return substrs
+                #substrs += [((substr), [entry])]
+                substrs[substr] = [entry]
+
+        return substrs.items()
 
     def reduce_substrs(substrs1, substrs2):
         if options.reverse_importance:
@@ -50,6 +52,7 @@ def make_autocomplete_list(entries, options, tile_saver):
             return sorted(substrs1 + substrs2, key=lambda x: float(x[options.importance]))[:options.max_entries_per_autocomplete]
 
     substr_entries = entries.flatMap(entry_to_substrs)
+    print("substr_entries:", substr_entries.take(2))
 
     reduced_substr_entries = substr_entries.reduceByKey(reduce_substrs)
 
@@ -63,8 +66,8 @@ def make_autocomplete_list(entries, options, tile_saver):
                   id = substr_key)
         '''
 
-    tile_saver.flush()
     reduced_substr_entries.foreach(save_substr_entry)
+    tile_saver.flush()
 
 def main():
     parser = argparse.ArgumentParser(description="""
@@ -92,6 +95,8 @@ def main():
     parser.add_argument('-c', '--column-names', 
             help="The column names for the input tsv file",
             default=None)
+    parser.add_argument('-d', '--delimiter', default=None, 
+            help='The delimiter separating columns in the gene_count file')
 
     parser.add_argument('--elasticsearch-url', 
             help='Specify elasticsearch nodes to push the completions to',
@@ -108,8 +113,15 @@ def main():
     if args.column_names is not None:
         args.column_names = args.column_names.split(',')
 
-    dataFile = (dataFile.map(lambda x: x.split())
-                        .map(lambda x: dict(zip(args.column_names,x))))
+    if args.delimiter is None:
+        dataFile = (dataFile.map(lambda x: x.split())
+                            .map(lambda x: dict(zip(args.column_names,x))))
+    else:
+        print("delimiter:", args.delimiter)
+        dataFile = (dataFile.map(lambda x: x.split(args.delimiter))
+                            .map(lambda x: dict(zip(args.column_names,x))))
+
+    print("one:", dataFile.take(1))
 
     tiles = make_autocomplete_list(dataFile, args, tile_saver)
 

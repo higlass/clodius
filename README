@@ -28,14 +28,18 @@ do
 done;
 
 
+###################################################################################################################################
 # Creating autocomplete tiles
 
 #AWS_ES_DOMAIN=52.23.165.123:9872
+# wget https://raw.githubusercontent.com/pkerpedjiev/gene-citation-counts/master/all_gene_counts.tsv
+# mv all_gene_counts.tsv ~/data/genbank-data/human/
 AWS_ES_DOMAIN=52.45.229.11:9872
 workon py3
 ASSEMBLY=hg19
 python scripts/make_autocomplete_list.py -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count ~/data/hg19/genbank-output/refgene-count/ -n geneName -i count --elasticsearch-url ${AWS_ES_DOMAIN}/${ASSEMBLY}.autocomplete --reverse-importance
 
+################################################################################################################################
 # Gene Density Data
 FILEPATH=~/data/encode/hg19/gencodeDensity
 awk '{ print $1, $2, $1, $3, $4}' ${FILEPATH}.bedGraph | chr_pos_to_genome_pos.py -c 1,2:3,4 -a hg19 | /usr/bin/time sort -k1,1n -k2,2n - | gzip > ${FILEPATH}.genome.sorted.gz
@@ -99,6 +103,42 @@ INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
 ### Cooler to tiles
 
 python scripts/cooler_to_tiles.py /data/tmp/UNTR.1kb.multires.cool --assembly mm9 --max-zoom 3 --elasticsearch-url 52.23.165.123:9872/hg19.1/mm9.UNTR.1kb.multires.cool
+
+
+
+################################################################################################################################
+### Tile BigWig
+
+workon py2
+python scripts/tile_bigWig.py ~/data/clodius-input/hg19/E014-H3K27me3.fc.signal.bigwig --assembly hg19
+
+################################################################################################################################
+###### Gene Annotations
+
+AWS_ES_DOMAIN=52.23.165.123:9872
+INPUT_FILE=~/data/hg19/genbank-output/refgene-count-minus
+DATASET_NAME=hg19/refgene-tiles-minus
+OUTPUT_DIR=~/data/${DATASET_NAME}
+/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $DATASET_NAME -v count --position genomeTxStart --end-position genomeTxEnd  -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count,uid --max-zoom 18 -i count --importance --reverse-importance --max-entries-per-tile 16 $INPUT_FILE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ###
