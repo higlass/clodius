@@ -30,7 +30,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 def tile_saver_worker(q, tile_saver, finished):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    while q.qsize() > 0 or (not finished.value):
+    while not q.empty() or (not finished.value):
         #print "working...", q.qsize()
         try:
             (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
@@ -44,7 +44,7 @@ def tile_saver_worker(q, tile_saver, finished):
         except queue.Empty:
             tile_saver.flush()
 
-    print("finishing", q.qsize(), tile_saver)
+    #print("finishing", q.qsize(), tile_saver)
     tile_saver.flush()
 
 class TileSaver(object):

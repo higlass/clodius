@@ -75,7 +75,7 @@ for i in $(seq -f "%02g" 21) X Y;
 do 
     pv -cN chr${i} ${BASE_PATH}/${IDENTIFIER}/b1000/UMB5144-final-${i}.b1000.bin | grep -v start  | awk -v chrom=${i} '{ gsub("^0*", "", chrom); print "chr" chrom "\t" $1 "\t" "chr" chrom "\t" $2 "\t" $3 "\t" $4 "\t" $5 }' | chr_pos_to_genome_pos.py -c 1,2:3,4 -a hg19  >> ${FILEPATH}
 done;
-pv -cN sorting... ${FILEPATH} | sort -k1,1n -k2,2n - | gzip > ${FILEPATH}.sorted.genome.gz
+pv -cN sorting... ${FILEPATH} | sort -k1,1n -k2,2n - | gzip > ${FILEPATH}.genome.sorted.gz
 
 ################### Tile Ratios
 
@@ -95,7 +95,7 @@ INPUT_FILE=${CNV_PATH}.genome
 AWS_ES_DOMAIN=52.45.229.11:9872
 ASSEMBLY=hg19
 INDEX_NAME=${ASSEMBLY}/${DATASET_NAME}
-/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $INDEX_NAME -v count --position start --end-position end  -c chrom,start,end,binNum,observed,expected,log2.copyRatio,pValue --max-zoom 18 -i pValue --importance --max-entries-per-tile 16 --assembly ${ASSEMBLY} ${INPUT_FILE}
+/usr/bin/time python scripts/make_tiles.py --elasticsearch-nodes ${AWS_ES_DOMAIN} --elasticsearch-path $INDEX_NAME -v count --position start --end-position end  -c chrom,start,end,binNum,observed,expected,log2_copyRatio,pValue --max-zoom 18 -i pValue --importance --max-entries-per-tile 16 --assembly ${ASSEMBLY} ${INPUT_FILE}
 
 
 

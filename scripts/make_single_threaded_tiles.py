@@ -95,10 +95,10 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             value = [float(line_parts[vp]) for vp in value_pos]
             #print "entry_pos:", entry_pos, value
 
-            if line_num != prev_line_num and line_num % 100000 == 0:
-                time_str = time.strftime("%Y-%m-%d %H:%M:%S")
-                if print_status:
-                    print( "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time), 'qsize:', q.qsize())
+            if print_status is not None:
+                if line_num != prev_line_num and line_num % print_status == 0:
+                    time_str = time.strftime("%Y-%m-%d %H:%M:%S")
+                    print( "current_time:", time_str, "line_num:", line_num, "time:", int(1000 * (time.time() - prev_time)), "total_time", int(time.time() - start_time))
 
                 prev_time = time.time()
             prev_line_num = line_num
@@ -156,7 +156,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
                         # make sure old requests get saved before we create new ones
                         already_sleeping = False
-                        while q.qsize() > max_queue_size:
+                        while q.full(): #q.qsize() > max_queue_size:
                             if print_status:
                                 if already_sleeping:
                                     sys.stdout.write('.')
@@ -268,7 +268,7 @@ def main():
     parser.add_argument('--triangular', default=False, action='store_true')
     parser.add_argument('--log-file', default=None)
     parser.add_argument('--max-queue-size', default=40000, type=int)
-    parser.add_argument('--print-status', action="store_true")
+    parser.add_argument('--print-status', default=None, type=int)
 
     args = parser.parse_args()
 
@@ -350,7 +350,7 @@ def main():
     print("maxs:", maxs, "max_zoom:", max_zoom, "max_data_in_sparse:", max_data_in_sparse, "url:", args.elasticsearch_url)
 
     #bin_counts = col.defaultdict(col.defaultdict(int))
-    q = mpr.Queue()
+    q = mpr.Queue(maxsize=args.max_queue_size)
 
     tilesaver_processes = []
     finished = mpr.Value('b', False)
