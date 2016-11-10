@@ -312,3 +312,10 @@ We would need to allow a zoom level of 24 to display the genome at a resolution 
 
 To display it at 1K (~2 ^ 10) base pairs per pixel, we would need 14 zoom levels
 
+## Push new changes to pypi
+
+```
+bumpversion patch
+python setup.py sdist upload -r pypi
+```
+
