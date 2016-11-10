@@ -36,3 +36,9 @@ def test_1d_tile():
     print("d[512]:", d[512])
     print("d[513]:", d[513])
     assert(d[513] == 4)
+
+def test_tileset_info():
+    f = h5py.File('test/sample_data/test.tile_generation.hdf5')
+
+    ti = ch.get_tileset_info(f)
+    print("ti:", ti);

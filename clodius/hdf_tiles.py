@@ -1,6 +1,18 @@
 import clodius.tiles as ct
 import math
 
+def get_tileset_info(hdf_file):
+    '''
+    Get information about the tileset.
+    '''
+    d = hdf_file['meta']
+
+    return {
+                "max_pos": d.attrs['max-length'],
+                "max_width": d.attrs['max-length'],
+                "max_zoom": d.attrs['max-zoom']
+            }
+
 def get_data(hdf_file, z, x):
 
     # is the title within the range of possible tiles
