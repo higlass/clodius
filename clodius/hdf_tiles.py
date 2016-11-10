@@ -4,6 +4,8 @@ import math
 def get_tileset_info(hdf_file):
     '''
     Get information about the tileset.
+
+    :param hdf_file: A file handle for an HDF5 file (h5py.File('...'))
     '''
     d = hdf_file['meta']
 
@@ -14,6 +16,13 @@ def get_tileset_info(hdf_file):
             }
 
 def get_data(hdf_file, z, x):
+    '''
+    Return a tile from an hdf_file.
+
+    :param hdf_file: A file handle for an HDF5 file (h5py.File('...'))
+    :param z: The zoom level
+    :param x: The x position of the tile
+    '''
 
     # is the title within the range of possible tiles
     if x > 2**z:
