@@ -4,7 +4,6 @@ import json
 import math
 import sys
 import time
-import pyximport; pyximport.install()
 import fast
 
 def aggregate(in_array, num_to_agg):
