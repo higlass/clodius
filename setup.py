@@ -17,7 +17,7 @@ setup(name='clodius',
       setup_requires = [
           'cython>=0.x'
           ],
-      extensions = [Extension("*", ["*.pyx"])],
+      extensions = [Extension("clodius.fast", ["clodius/fast.pyx"])],
       cmdclass={'build_ext': build_ext},
       scripts=['scripts/make_single_threaded_tiles.py']
      )
