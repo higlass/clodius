@@ -12,5 +12,8 @@ setup(name='clodius',
       author_email='pkerpedjiev@gmail.com',
       url='',
       packages=['clodius'],
+      install_requires=[
+                    'cython',
+                    'numpy' ],
       scripts=['scripts/make_single_threaded_tiles.py']
      )
