@@ -8,7 +8,7 @@ import numpy
 
 setup(name='clodius',
      include_dirs=[numpy.get_include()],
-      version='0.2.4',
+      version='0.2.5',
       description='Tile generation of big data',
       author='Peter Kerpedjiev',
       author_email='pkerpedjiev@gmail.com',
