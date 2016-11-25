@@ -1,10 +1,12 @@
 from distutils.core import setup
+from distutils.extension import Extension
+
 from Cython.Build import cythonize
 
 import numpy 
 
 setup(name='clodius',
-    ext_modules=cythonize("clodius/fast.pyx"),
+    ext_modules=[Extension("clodius.fast", ["clodius/fast.pyx"])],
      include_dirs=[numpy.get_include()],
       version='0.2.1',
       description='Tile generation of big data',
