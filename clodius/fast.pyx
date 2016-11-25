@@ -1,7 +1,7 @@
 import numpy as np
 cimport numpy as np
 
-def aggregate(np.ndarray[np.int_t,ndim=1] in_array, int num_to_agg):
+def aggregate(np.ndarray[np.float,ndim=1] in_array, int num_to_agg):
     '''
     Calculate a new array which contains the sums of every
     num_to_agg elements of the original array.
@@ -15,7 +15,7 @@ def aggregate(np.ndarray[np.int_t,ndim=1] in_array, int num_to_agg):
     :return: A numpy array
     '''
     cdef int length = len(in_array)
-    cdef np.ndarray[np.int_t,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.int)
+    cdef np.ndarray[np.float,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.int)
     cdef int i = 0
     cdef int j = 0
 
