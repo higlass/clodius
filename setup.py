@@ -8,6 +8,7 @@ import numpy
 
 setup(name='clodius',
      include_dirs=[numpy.get_include()],
+      extensions = [Extension("clodius.fast", ["clodius/fast.c"])],
       version='0.2.6',
       description='Tile generation of big data',
       author='Peter Kerpedjiev',
@@ -17,7 +18,5 @@ setup(name='clodius',
       setup_requires = [
           'cython>=0.x'
           ],
-      extensions = [Extension("clodius.fast", ["clodius/fast.pyx"])],
-      cmdclass={'build_ext': build_ext},
       scripts=['scripts/make_single_threaded_tiles.py']
      )

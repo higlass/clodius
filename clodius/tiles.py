@@ -4,6 +4,8 @@ import json
 import math
 import sys
 import time
+import pyximport
+pyximport.install( setup_args= {"include_dirs":np.get_include()})
 import fast
 
 def aggregate(in_array, num_to_agg):
