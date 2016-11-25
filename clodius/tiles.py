@@ -5,7 +5,6 @@ import math
 import numpy as np
 import sys
 import time
-import pyximport
 import clodius.fast as cf
 
 def aggregate(in_array, num_to_agg):
