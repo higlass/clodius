@@ -24,8 +24,6 @@ def load_entries_from_file(sc, filename, column_names=None, delimiter=None,
         contains column_names. column_names should be an array.
     :return: An array of dictionaries containing the data.
     '''
-    sys.stderr.write("Loading entries...")
-    sys.stderr.flush()
 
     def add_column_names(x):
         return dict(zip(column_names, x))
@@ -101,7 +99,6 @@ def merge_two_dicts(x, y):
     '''Given two dicts, merge them into a new dict as a shallow copy.'''
     z = x.copy()
     z.update(y)
-    #print("z:", z)
     return z
 
 def make_tiles_by_importance(sc,entries, dim_names, max_zoom, mins, maxs, importance_field=None,
@@ -140,9 +137,6 @@ def make_tiles_by_importance(sc,entries, dim_names, max_zoom, mins, maxs, import
     #mins = reduced_entry_ranges[0][1:1+len(dim_names)]
     #maxs = reduced_entry_ranges[1][1+len(dim_names):]
     '''
-
-    print("mins:", mins)
-    print("maxs:", maxs)
 
     max_width = max(map(lambda x: x[1] - x[0], zip(mins, maxs)))
 
@@ -190,7 +184,6 @@ def make_tiles_by_importance(sc,entries, dim_names, max_zoom, mins, maxs, import
         current_tile_entries = entries.flatMap(place_in_tile)
         current_max_entries_per_tile = max(current_tile_entries.countByKey().values())
         tile_entries = tile_entries.union(current_tile_entries)
-        #print("adapt_zoom", adapt_zoom)
 
         if adapt_zoom and current_max_entries_per_tile <= max_entries_per_tile:
             max_zoom = zoom_level
@@ -273,7 +266,6 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
         (should operate on a single tile)
     '''
     max_data_in_sparse = bins_per_dimension ** len(dim_names) / 30.
-    print("max_data_in_sparse", max_data_in_sparse)
 
     epsilon = 0.0000    # for calculating the max width so that all entries
                         # end up in the same top_level bucket
@@ -421,8 +413,6 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
         if max_max_zoom < max_zoom:
             max_zoom = int(max_max_zoom)
 
-    print("max_zoom:", max_zoom)
-
     # get all the different zoom levels
     zoom_levels = range(max_zoom+1)
 
@@ -509,13 +499,9 @@ def make_tiles_by_binning(sc, entries, dim_names, max_zoom, value_field='count',
 
 
         end_time = time.time()
-        print("zoom_level:", zoom_level, "time:", int(end_time - start_time))
 
 
     total_end_time = time.time()
     #total_entries = entries.count()
-    #print "save time:", strftime("%Y-%m-%d %H:%M:%S", gmtime())
-    #print "entries:", total_entries, "bins:", total_bins, "tiles:", total_tiles, "time:", int(total_end_time - total_start_time), 'time_per_Mbin:', int(1000000 * (total_end_time - total_start_time) / total_bins)
-    print("total_time:", int(total_end_time - total_start_time))
 
     return {"tileset_info": tileset_info, "tiles": all_tiles, "histogram": histogram}

@@ -65,10 +65,7 @@ def test_make_tiles_with_resolution():
             bins_per_dimension=2,
             resolution=1)
 
-    print "tiles:", tiles
     tiles = tiles['tiles'].collect()
-
-    print "tiles:", tiles
 
     # make sure the top-level tile is there
     assert((0,0,0) in [t[0] for t in tiles])
@@ -163,8 +160,6 @@ def test_end_position():
     tiles = tileset['tiles'].collect()
     tile_ids = map(lambda x: x[0], tiles)
 
-    print "tiles:", tiles, tile_ids
-
     # this data point should be in every tile
     assert((0,0) in tile_ids)
     assert((1,1) in tile_ids)
@@ -182,10 +177,7 @@ def test_end_position():
                                            importance_field='value', adapt_zoom=False)
 
     tiles = tileset['tiles'].collect()
-    print "tiles:", tiles
     tile_ids = map(lambda x: x[0], tiles)
-
-    print "tiles:", tiles, tile_ids
 
     # this data point should be in every tile
     assert((0,0) in tile_ids)
@@ -228,7 +220,6 @@ def test_single_threaded_binning():
 
             # which bins will never be touched again?
             # all bins at the current zoom level where (entry_pos[0] / tile_width) < current_bin[0]
-            print "zoom_level, tile_width", zoom_level, entry_pos, current_bin, active_bins[zoom_level]
             while len(active_bins[zoom_level]) > 0:
                 if active_bins[zoom_level][0][0] < current_bin[0]:
                     active_bins[zoom_level].pop(0)

@@ -12,8 +12,6 @@ def test_1d_tile():
     max_zoom = f['meta'].attrs['max-zoom']
     tile_size = f['meta'].attrs['tile-size']
 
-    print("max_zoom:", max_zoom)
-
     d = ch.get_data(f, max_zoom, 0)
 
     # lowest zoom should have values of 1
@@ -21,24 +19,18 @@ def test_1d_tile():
         assert(d[i] == 1)
 
     d = ch.get_data(f, max_zoom-1, 0)
-    print("d:", d)
 
     for i in range(tile_size):
         assert(d[i] == 2)
 
     d = ch.get_data(f, max_zoom-2, 0)
-    print("d:", d)
 
     for i in range(tile_size / 2):
         assert(d[i] == 4)
 
-    print("d[511]:", d[511])
-    print("d[512]:", d[512])
-    print("d[513]:", d[513])
     assert(d[513] == 4)
 
 def test_tileset_info():
     f = h5py.File('test/sample_data/test.tile_generation.hdf5')
 
     ti = ch.get_tileset_info(f)
-    print("ti:", ti);
