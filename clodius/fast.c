@@ -1228,7 +1228,6 @@ static PyObject *__pyx_builtin_RuntimeError;
 static const char __pyx_k_i[] = "i";
 static const char __pyx_k_j[] = "j";
 static const char __pyx_k_np[] = "np";
-static const char __pyx_k_int[] = "int";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_dtype[] = "dtype";
@@ -1237,6 +1236,7 @@ static const char __pyx_k_range[] = "range";
 static const char __pyx_k_zeros[] = "zeros";
 static const char __pyx_k_import[] = "__import__";
 static const char __pyx_k_length[] = "length";
+static const char __pyx_k_float32[] = "float32";
 static const char __pyx_k_in_array[] = "in_array";
 static const char __pyx_k_aggregate[] = "aggregate";
 static const char __pyx_k_out_array[] = "out_array";
@@ -1260,10 +1260,10 @@ static PyObject *__pyx_n_s_ValueError;
 static PyObject *__pyx_n_s_aggregate;
 static PyObject *__pyx_n_s_clodius_fast;
 static PyObject *__pyx_n_s_dtype;
+static PyObject *__pyx_n_s_float32;
 static PyObject *__pyx_n_s_i;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_in_array;
-static PyObject *__pyx_n_s_int;
 static PyObject *__pyx_n_s_j;
 static PyObject *__pyx_n_s_length;
 static PyObject *__pyx_n_s_main;
@@ -1404,7 +1404,7 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
  *     :return: A numpy array
  *     '''
  *     cdef int length = len(in_array)             # <<<<<<<<<<<<<<
- *     cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.int)
+ *     cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.float32)
  *     cdef int i = 0
  */
   __pyx_t_1 = PyObject_Length(((PyObject *)__pyx_v_in_array)); if (unlikely(__pyx_t_1 == -1)) __PYX_ERR(0, 17, __pyx_L1_error)
@@ -1413,7 +1413,7 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
   /* "clodius/fast.pyx":18
  *     '''
  *     cdef int length = len(in_array)
- *     cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.int)             # <<<<<<<<<<<<<<
+ *     cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.float32)             # <<<<<<<<<<<<<<
  *     cdef int i = 0
  *     cdef int j = 0
  */
@@ -1441,7 +1441,7 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_5 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_int); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 18, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float32); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_6) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
@@ -1467,7 +1467,7 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
 
   /* "clodius/fast.pyx":19
  *     cdef int length = len(in_array)
- *     cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.int)
+ *     cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.float32)
  *     cdef int i = 0             # <<<<<<<<<<<<<<
  *     cdef int j = 0
  * 
@@ -1475,7 +1475,7 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
   __pyx_v_i = 0;
 
   /* "clodius/fast.pyx":20
- *     cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.int)
+ *     cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(length / num_to_agg, dtype=np.float32)
  *     cdef int i = 0
  *     cdef int j = 0             # <<<<<<<<<<<<<<
  * 
@@ -3797,10 +3797,10 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_aggregate, __pyx_k_aggregate, sizeof(__pyx_k_aggregate), 0, 0, 1, 1},
   {&__pyx_n_s_clodius_fast, __pyx_k_clodius_fast, sizeof(__pyx_k_clodius_fast), 0, 0, 1, 1},
   {&__pyx_n_s_dtype, __pyx_k_dtype, sizeof(__pyx_k_dtype), 0, 0, 1, 1},
+  {&__pyx_n_s_float32, __pyx_k_float32, sizeof(__pyx_k_float32), 0, 0, 1, 1},
   {&__pyx_n_s_i, __pyx_k_i, sizeof(__pyx_k_i), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_in_array, __pyx_k_in_array, sizeof(__pyx_k_in_array), 0, 0, 1, 1},
-  {&__pyx_n_s_int, __pyx_k_int, sizeof(__pyx_k_int), 0, 0, 1, 1},
   {&__pyx_n_s_j, __pyx_k_j, sizeof(__pyx_k_j), 0, 0, 1, 1},
   {&__pyx_n_s_length, __pyx_k_length, sizeof(__pyx_k_length), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},

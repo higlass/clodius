@@ -2,13 +2,14 @@ from __future__ import print_function
 
 import json
 import math
+import numpy as np
 import sys
 import time
 import pyximport
-import fast
+import clodius.fast as cf
 
 def aggregate(in_array, num_to_agg):
-    return fast.aggregate(in_array, num_to_agg)
+    return cf.aggregate(in_array.astype(np.float32), num_to_agg)
 
 def load_entries_from_file(sc, filename, column_names=None, delimiter=None, 
         elasticsearch_path=None):
@@ -103,10 +104,9 @@ def merge_two_dicts(x, y):
     #print("z:", z)
     return z
 
-def make_tiles_by_importance(sc,entries, dim_names, max_zoom, importance_field=None,
+def make_tiles_by_importance(sc,entries, dim_names, max_zoom, mins, maxs, importance_field=None,
         max_entries_per_tile=10, output_dir=None, gzip_output=False, add_uuid=False,
-        reverse_importance=False, end_dim_names=None, adapt_zoom=True,
-        mins=None, maxs=None):
+        reverse_importance=False, end_dim_names=None, adapt_zoom=True):
     '''
     Create a set of tiles by restricting the maximum number of entries that
     can be shown on each tile. If there are too many entries that are assigned
@@ -125,6 +125,7 @@ def make_tiles_by_importance(sc,entries, dim_names, max_zoom, importance_field=N
     '''
     if end_dim_names is None:
         end_dim_names = dim_names
+
 
     entries = entries.map(lambda x: merge_two_dicts(x, {'pos': [float(x[dn]) for dn in dim_names]}))
     entries = entries.map(lambda x: merge_two_dicts(x, {'end_pos': [float(x[dn]) for dn in end_dim_names]}))
