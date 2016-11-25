@@ -4,28 +4,11 @@ import json
 import math
 import sys
 import time
+import pyximport; pyximport.install()
+import fast
 
-def tile2(in_array, num_to_agg):
-    import numpy as np
-    import scipy.weave as weave
-
-    length = len(in_array)
-    out_array = np.zeros(length / num_to_agg)
-    support = "#include <math.h>"
-
-    code = """
-    for (int i = 0; i < length; i += num_to_agg) {
-        out_array[i / num_to_agg] = 0;
-        for (int j = 0; j < num_to_agg; j++) {
-            out_array[i / num_to_agg] += in_array[i + j];
-        }
-    }
-    """
-    weave.inline(code, ['in_array', 'out_array', 'length', 'num_to_agg'], 
-            support_code = support,
-            libraries=['m'])
-
-    return out_array
+def aggregate(in_array, num_to_agg):
+    return fast.aggregate(in_array, num_to_agg)
 
 def load_entries_from_file(sc, filename, column_names=None, delimiter=None, 
         elasticsearch_path=None):

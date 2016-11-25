@@ -64,6 +64,6 @@ def get_data(hdf_file, z, x):
 
     print("start_pos:", start_pos, "end_pos:", end_pos)
     print("f:", f[start_pos:end_pos])
-    ret_array = ct.tile2(f[start_pos:end_pos], int(num_to_agg))
+    ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
     return ret_array
     
