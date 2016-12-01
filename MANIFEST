@@ -2,6 +2,8 @@
 setup.py
 clodius/__init__.py
 clodius/describe_dataset.py
+clodius/fast.c
+clodius/fast.pyx
 clodius/fpark.py
 clodius/hdf_tiles.py
 clodius/higlass_getter.py

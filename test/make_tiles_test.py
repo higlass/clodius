@@ -41,54 +41,56 @@ def test_make_matrix_tiles():
     pass
 
 def test_make_tiles_by_binning():
-    entries = cmt.load_entries_from_file('test/sample_data/simpleMatrix.tsv', 
+    sc = cfp.FakeSparkContext()
+    entries = cmt.load_entries_from_file(sc, 'test/sample_data/simpleMatrix.tsv', 
                 column_names = ['pos1', 'pos2', 'count'])
     dim_names = ['pos1', 'pos2']
     
     max_zoom = 2
 
-    tiles = cmt.make_tiles_by_binning(entries, dim_names, max_zoom,
+    tiles = cmt.make_tiles_by_binning(sc, entries, dim_names, max_zoom,
             value_field='count',
             bins_per_dimension=2)
 
 def test_make_tiles_with_resolution():
-    entries = cmt.load_entries_from_file('test/sample_data/smallFullMatrix.tsv', 
+    sc = cfp.FakeSparkContext()
+    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallFullMatrix.tsv', 
                 column_names = ['pos1', 'pos2', 'count'])
 
     dim_names = ['pos1', 'pos2']
     max_zoom = 1
     # create sparse format tiles (default)
-    tiles = cmt.make_tiles_by_binning(entries, dim_names, max_zoom,
+    tiles = cmt.make_tiles_by_binning(sc, entries, dim_names, max_zoom,
             value_field='count',
             bins_per_dimension=2,
             resolution=1)
 
-    print "tiles:", tiles
     tiles = tiles['tiles'].collect()
-
-    print "tiles:", tiles
 
     # make sure the top-level tile is there
     assert((0,0,0) in [t[0] for t in tiles])
     assert('dense' in tiles[0][1])
 
     # create dense format tiles
-    tiles = cmt.make_tiles_by_binning(entries, dim_names, max_zoom,
+    tiles = cmt.make_tiles_by_binning(sc, entries, dim_names, max_zoom,
             value_field='count',
             bins_per_dimension=2,
             resolution=1)
     tiles = tiles['tiles'].collect()
 
 def test_make_tiles_with_importance():
-    entries = cmt.load_entries_from_file('test/sample_data/smallRefGeneCounts.tsv',
+    sc = cfp.FakeSparkContext()
+    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallRefGeneCounts.tsv',
             column_names=['refseqid', 'chr', 'strand', 'txStart', 'txEnd', 'genomeTxStart', 'genomeTxEnd', 'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds', 'count'])
 
     #tiles = cmt.make_tiles_by_importance(entries, dim_names, max_zoom, value_field
     dim_names = ['txStart']
     max_zoom = None
-
-    tiles = cmt.make_tiles_by_importance(entries, dim_names = ['txStart'], 
+    
+    tiles = cmt.make_tiles_by_importance(sc, entries, dim_names = ['txStart'], 
             max_zoom = None, 
+            mins=[1],
+            maxs=[3000000000],
             importance_field='count', 
             max_entries_per_tile=1)
 
@@ -96,7 +98,8 @@ def test_make_tiles_with_importance():
         assert(len(tile_values) <= 1)
 
 def test_data_bounds():
-    entries = cmt.load_entries_from_file('test/sample_data/smallBedGraph.tsv', 
+    sc = cfp.FakeSparkContext()
+    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallBedGraph.tsv', 
             column_names=['chr1', 'pos1', 'pos2', 'val'],
             delimiter=' ')
 
@@ -109,7 +112,8 @@ def test_data_bounds():
     assert(maxs[0] == 8.0)
 
 def test_position_ranges():
-    entries = cmt.load_entries_from_file('test/sample_data/smallBedGraph.tsv', 
+    sc = cfp.FakeSparkContext()
+    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallBedGraph.tsv', 
             column_names=['chr1', 'pos1', 'pos2', 'val'],
             delimiter=' ')
     entries = entries.map(lambda x: dict(x, pos1=int(x['pos1']), pos2=int(x['pos2'])))
@@ -129,11 +133,12 @@ def test_position_ranges():
         assert(entry['pos1'] != 10)
 
 def test_dnase_sample_data():
-    entries = cmt.load_entries_from_file('test/sample_data/E116-DNase.fc.signal.bigwig.bedGraph.genome.225',
+    sc = cfp.FakeSparkContext()
+    entries = cmt.load_entries_from_file(sc,'test/sample_data/E116-DNase.fc.signal.bigwig.bedGraph.genome.225',
             column_names=['pos1', 'pos2', 'val'], delimiter=None)
     entries = entries.flatMap(lambda x: cmt.expand_range(x, 'pos1', 'pos2', range_except_0 = 'val'))
 
-    tile_sample_data = cmt.make_tiles_by_binning(entries, 
+    tile_sample_data = cmt.make_tiles_by_binning(sc, entries, 
             ['pos1'], max_zoom = 1000,
             value_field = 'val', importance_field = 'val',
             resolution = 1, bins_per_dimension = 64)
@@ -148,12 +153,12 @@ def test_end_position():
     entries = cfp.FakeSparkContext.parallelize(entries)
 
     tileset = cmt.make_tiles_by_importance(sc, entries, ['x1'], end_dim_names=['x2'], max_zoom=2, 
+                                            mins=[1],
+                                            maxs=[10],
                                            importance_field='value', adapt_zoom=False)
 
     tiles = tileset['tiles'].collect()
     tile_ids = map(lambda x: x[0], tiles)
-
-    print "tiles:", tiles, tile_ids
 
     # this data point should be in every tile
     assert((0,0) in tile_ids)
@@ -167,13 +172,12 @@ def test_end_position():
     entries = cfp.FakeSparkContext.parallelize(entries)
 
     tileset = cmt.make_tiles_by_importance(sc, entries, ['x1'], max_zoom=2, 
+                                            mins=[1],
+                                            maxs=[10],
                                            importance_field='value', adapt_zoom=False)
 
     tiles = tileset['tiles'].collect()
-    print "tiles:", tiles
     tile_ids = map(lambda x: x[0], tiles)
-
-    print "tiles:", tiles, tile_ids
 
     # this data point should be in every tile
     assert((0,0) in tile_ids)
@@ -216,7 +220,6 @@ def test_single_threaded_binning():
 
             # which bins will never be touched again?
             # all bins at the current zoom level where (entry_pos[0] / tile_width) < current_bin[0]
-            print "zoom_level, tile_width", zoom_level, entry_pos, current_bin, active_bins[zoom_level]
             while len(active_bins[zoom_level]) > 0:
                 if active_bins[zoom_level][0][0] < current_bin[0]:
                     active_bins[zoom_level].pop(0)
