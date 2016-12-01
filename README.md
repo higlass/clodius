@@ -58,10 +58,10 @@ This creates an absolute genome position bed graph (agped graph) file:
 
 #### BigWig files
 
-BigWig files can also be processed much like BedGraph files:
+BigWig files can be tiled using the bigWig format tile script (should take about 10 minutes for hg19):
 
 ```
-python scripts/process_file.py /data/encode/hg19/E002-H3K27me3.fc.signal.bigwig.bedGraph --type bigwig --assembly hg19
+python scripts/tile_bigWig.py ~/Downloads/wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig --output-file ~/Downloads/wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.hitile
 ```
 
 An example bigWig file can be downloaded from the [ENCODE project](http://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/foldChange/E044-H3K27me3.fc.signal.bigwig).
