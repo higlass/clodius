@@ -144,7 +144,7 @@ def make_tiles_by_importance(sc,entries, dim_names, max_zoom, mins, maxs, import
 
     if max_zoom is None:
         # hopefully it'll end up being smaller than that
-        max_zoom = sys.maxint
+        max_zoom = 1024
 
     if importance_field is None:
         importance_field = dim_names[0]

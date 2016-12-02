@@ -10,7 +10,7 @@ def test_1d_tile():
     f = h5py.File('test/sample_data/test.tile_generation.hdf5')
 
     max_zoom = f['meta'].attrs['max-zoom']
-    tile_size = f['meta'].attrs['tile-size']
+    tile_size = int(f['meta'].attrs['tile-size'])
 
     d = ch.get_data(f, max_zoom, 0)
 
@@ -25,7 +25,9 @@ def test_1d_tile():
 
     d = ch.get_data(f, max_zoom-2, 0)
 
-    for i in range(tile_size / 2):
+    print("tile_size:", tile_size)
+
+    for i in range(tile_size // 2):
         assert(d[i] == 4)
 
     assert(d[513] == 4)
