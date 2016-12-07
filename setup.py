@@ -9,7 +9,7 @@ import numpy
 setup(name='clodius',
      include_dirs=[numpy.get_include()],
       ext_modules = cythonize([Extension("clodius.fast", ["clodius/fast.pyx"])]),
-      version='0.2.14',
+      version='0.2.15',
       description='Tile generation of big data',
       author='Peter Kerpedjiev',
       author_email='pkerpedjiev@gmail.com',
