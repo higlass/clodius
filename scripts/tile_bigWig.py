@@ -81,7 +81,7 @@ def main():
 
     d.attrs['zoom-step'] = args.zoom_step
     d.attrs['max-length'] = assembly_size
-    d.attrs['assembly'] = 'hg19'
+    d.attrs['assembly'] = args.assembly
     d.attrs['chrom-names'] = bwf.chroms().keys()
     d.attrs['chrom-sizes'] = bwf.chroms().values()
     d.attrs['chrom-order'] = chrom_order
@@ -93,10 +93,11 @@ def main():
     print("max-width", d.attrs['max-width'])
     print("max_zoom:", d.attrs['max-zoom'])
     print("chunk-size:", chunk_size)
+    print("chrom-order", d.attrs['chrom-order'])
 
     t1 = time.time()
 
-    for chrom in chrom_order:
+    for chrom in nc.get_chromorder(args.assembly):
         if chrom not in bwf.chroms():
             print("skipping chrom (not in bigWig file):", chrom)
             continue
