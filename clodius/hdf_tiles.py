@@ -37,10 +37,11 @@ def get_data(hdf_file, z, x):
     zoom_step = int(d.attrs['zoom-step'])
     max_length = int(d.attrs['max-length'])
     max_zoom = int(d.attrs['max-zoom'])
+    max_width = tile_size * 2 ** max_zoom
 
     rz = max_zoom - z
     #print("rz:", rz)
-    tile_width = max_length / 2**z
+    tile_width = max_width / 2**z
 
     # because we only store some a subsection of the zoom levels
     next_stored_zoom = zoom_step * math.floor(rz / zoom_step)

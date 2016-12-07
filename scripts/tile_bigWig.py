@@ -87,7 +87,10 @@ def main():
     d.attrs['chrom-order'] = chrom_order
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
+    d.attrs['max-width'] = tile_size * 2 ** max_zoom
 
+    print("assembly size (max-length)", d.attrs['max-length'])
+    print("max-width", d.attrs['max-width'])
     print("max_zoom:", d.attrs['max-zoom'])
     print("chunk-size:", chunk_size)
 
