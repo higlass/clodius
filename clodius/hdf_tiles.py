@@ -11,8 +11,9 @@ def get_tileset_info(hdf_file):
 
     return {
                 "max_pos": d.attrs['max-length'],
-                "max_width": d.attrs['max-length'],
-                "max_zoom": d.attrs['max-zoom']
+                "max_width": d.attrs['max-width'],
+                "max_zoom": d.attrs['max-zoom'],
+                "tile_size": d.attrs['tile-size']
             }
 
 def get_data(hdf_file, z, x):
