@@ -25,8 +25,6 @@ def test_1d_tile():
 
     d = ch.get_data(f, max_zoom-2, 0)
 
-    print("tile_size:", tile_size)
-
     for i in range(tile_size // 2):
         assert(d[i] == 4)
 
