@@ -18,5 +18,5 @@ setup(name='clodius',
       setup_requires = [
           'cython>=0.x'
           ],
-      scripts=['scripts/make_single_threaded_tiles.py']
+      scripts=['scripts/make_single_threaded_tiles.py', 'scripts/tile_bigWig.py']
      )
