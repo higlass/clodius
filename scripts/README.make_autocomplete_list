@@ -1,0 +1,1 @@
+python scripts/make_autocomplete_list.py -c refseqid,chr,strand,txStart,txEnd,genomeTxStart,genomeTxEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds,geneName,count ~/data/hg19/genbank-output/refgene-count/ -n geneName -i count --elasticsearch-nodes localhost:9200 --elasticsearch-index test --elasticsearch-doctype autocomplete --reverse-importance
