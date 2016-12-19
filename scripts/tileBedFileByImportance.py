@@ -10,6 +10,7 @@ import numpy as np
 import os
 import os.path as op
 import pybedtools as pbt
+import random
 import sys
 import argparse
 
@@ -34,9 +35,11 @@ def main():
 """)
 
     parser.add_argument('bedfile')
-    parser.add_argument('--importance-column', type=float, 
+    parser.add_argument('--importance-column', type=str,
             help='The column containing information about how important'
-            "that row is. If it's absent, then use the length of the region")
+            "that row is. If it's absent, then use the length of the region."
+            "If the value is equal to `random`, then a random value will be"
+            "used for the importance (effectively leading to random sampling)")
     parser.add_argument('--assembly', type=str, default='hg19',
             help='The genome assembly to use')
     parser.add_argument('--max-per-tile', type=int, default=100)
@@ -94,6 +97,8 @@ def main():
 
         if args.importance_column is None:
             importance = line.stop - line.start
+        elif args.importance_columns == 'random':
+            imporance = random.random()
         else:
             importance = line.fields[importance]
 
@@ -117,7 +122,9 @@ def main():
     curr_zoom = max_zoom - 1
 
     tile_width = tile_size
-    pdset = cf.ParallelData(dset).map(lambda x: (int(x[0] / tile_width), x))
+
+    # each entry in pdset will correspond to the values visible for that tile
+    pdset = cf.ParallelData(dset).map(lambda x: (int(x[0] / tile_width), [x]))
 
     print('pd:', pdset.take(10))
 
@@ -127,9 +134,12 @@ def main():
         pdset = pdset.reduceByKey(lambda e1,e2: reduce_values_by_importance(e1, e2, 
             max_entries_per_tile = args.max_per_tile))
         #tile_nums_values = [(int(d[0] / tile_size), d) for d in dset]
-        pdset = pdset.map(lambda x: (x[0] / 2, x))
+        pdset = pdset.map(lambda x: (x[0] / 2, x[1]))
 
-        print("zd:", pdset.take(5))
+        new_dset = [item for sublist in [d[1] for d in pdset.collect()] for item in sublist]
+        print("len(new_dset)", len(new_dset))
+        f.create_dataset('{}'.format(curr_zoom), data=new_dset, compression='gzip')
+
         curr_zoom -= 1
         
 
