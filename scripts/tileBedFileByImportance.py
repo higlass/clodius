@@ -126,18 +126,14 @@ def main():
     # each entry in pdset will correspond to the values visible for that tile
     pdset = cf.ParallelData(dset).map(lambda x: (int(x[0] / tile_width), [x]))
 
-    print('pd:', pdset.take(10))
-
 
     while curr_zoom >= 0:
-        print("x1:", pdset.take(2))
         pdset = pdset.reduceByKey(lambda e1,e2: reduce_values_by_importance(e1, e2, 
             max_entries_per_tile = args.max_per_tile))
         #tile_nums_values = [(int(d[0] / tile_size), d) for d in dset]
         pdset = pdset.map(lambda x: (x[0] / 2, x[1]))
 
         new_dset = [item for sublist in [d[1] for d in pdset.collect()] for item in sublist]
-        print("len(new_dset)", len(new_dset))
         f.create_dataset('{}'.format(curr_zoom), data=new_dset, compression='gzip')
 
         curr_zoom -= 1
