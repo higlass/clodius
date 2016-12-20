@@ -150,14 +150,11 @@ def main():
     while curr_zoom >= 0:
         pdset = pdset.reduceByKey(lambda e1,e2: reduce_values_by_importance(e1, e2, 
             max_entries_per_tile = args.max_per_tile))
-        print("pdset:", pdset.take(2))
         #tile_nums_values = [(int(d[0] / tile_size), d) for d in dset]
         pdset = pdset.map(lambda x: (x[0] / 2, x[1]))
 
         new_dset = [item for sublist in [d[1] for d in pdset.collect()] for item in sublist]
         f.create_dataset('{}'.format(int(curr_zoom)), data=new_dset, compression='gzip')
-
-        print("curr_zoom:", curr_zoom)
 
         curr_zoom -= 1
         
