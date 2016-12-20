@@ -128,10 +128,7 @@ def get_discrete_data(hdf_file, z, x):
     tile_data_start = bisect_left(f, [tile_start], comparator=comparator_start)
     tile_data_end = bisect_right(f, [tile_end], comparator=comparator_start)
 
-    print("tile_width:", tile_width, "tile_start:", tile_start, 'tile_end', tile_end)
-    print('tile_data_start:', tile_data_start, 'tile_data_end:', tile_data_end)
-    print("len(f):", len(f))
-    print('f[:3]:', f[:3])
+    return f[tile_data_start:tile_data_end]
 
 
 def get_data(hdf_file, z, x):

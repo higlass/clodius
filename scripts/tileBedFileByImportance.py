@@ -7,6 +7,7 @@ import h5py
 import math
 import negspy.coordinates as nc
 import numpy as np
+import slugid
 import os
 import os.path as op
 import pybedtools as pbt
@@ -57,37 +58,7 @@ def main():
     if op.exists(args.output_file):
         os.remove(args.output_file)
 
-    # The tileset will be stored as an hdf5 file
-    print("Writing to: {}".format(args.output_file), file=sys.stderr)
-    f = h5py.File(args.output_file, 'w')
-
-    # We neeed chromosome information as well as the assembly size to properly
-    # tile this data
-    tile_size = args.tile_size
-    chrom_info = nc.get_chrominfo(args.assembly)
-    assembly_size = chrom_info.total_length
-    max_zoom = int(math.ceil(math.log(assembly_size / tile_size) / math.log(2)))
-
-
-    # store some meta data
-    d = f.create_dataset('meta', (1,), dtype='f')
-
-    d.attrs['zoom-step'] = 1            # we'll store data for every zoom level
-    d.attrs['max-length'] = assembly_size
-    d.attrs['assembly'] = args.assembly
-    d.attrs['chrom-names'] = nc.get_chromorder(args.assembly)
-    d.attrs['chrom-sizes'] = nc.get_chromsizes(args.assembly)
-    d.attrs['chrom-order'] = nc.get_chromorder(args.assembly)
-    d.attrs['tile-size'] = tile_size
-    d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
-    d.attrs['max-width'] = tile_size * 2 ** max_zoom
-
     bed_file = pbt.BedTool(args.bedfile)
-
-
-    print("max_zoom:", max_zoom)
-
-    all_parts = []
 
     def line_to_np_array(line):
         '''
@@ -104,12 +75,45 @@ def main():
 
         genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, args.assembly)
         genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
-        parts = [genome_start, genome_end] + map(str,line.fields[3:]) + [importance]
+        parts = [genome_start, genome_end] + map(str,line.fields[3:]) + [slugid.nice()] + [importance]
 
         return parts
 
 
     dset = sorted([line_to_np_array(line) for line in bed_file], key=lambda x: x[0])
+    min_feature_width = min(map(lambda x: int(x[1]) - int(x[0]), dset))
+    max_feature_width = max(map(lambda x: int(x[1]) - int(x[0]), dset))
+
+    print("min_feature_width:", min_feature_width)
+    print("max_feature_width:", max_feature_width)
+
+    # The tileset will be stored as an hdf5 file
+    print("Writing to: {}".format(args.output_file), file=sys.stderr)
+    f = h5py.File(args.output_file, 'w')
+
+    # We neeed chromosome information as well as the assembly size to properly
+    # tile this data
+    tile_size = args.tile_size
+    chrom_info = nc.get_chrominfo(args.assembly)
+    assembly_size = chrom_info.total_length
+    #max_zoom = int(math.ceil(math.log(assembly_size / min_feature_width) / math.log(2)))
+    max_zoom = int(math.ceil(math.log(assembly_size / tile_size) / math.log(2)))
+
+    # store some meta data
+    d = f.create_dataset('meta', (1,), dtype='f')
+
+    d.attrs['zoom-step'] = 1            # we'll store data for every zoom level
+    d.attrs['max-length'] = assembly_size
+    d.attrs['assembly'] = args.assembly
+    d.attrs['chrom-names'] = nc.get_chromorder(args.assembly)
+    d.attrs['chrom-sizes'] = nc.get_chromsizes(args.assembly)
+    d.attrs['chrom-order'] = nc.get_chromorder(args.assembly)
+    d.attrs['tile-size'] = tile_size
+    d.attrs['max-zoom'] = max_zoom
+    d.attrs['max-width'] = tile_size * 2 ** max_zoom
+
+    print("max_zoom:", max_zoom)
+
     #dset = [line_to_np_array(line) for line in bed_file]
 
     '''
@@ -128,8 +132,10 @@ def main():
 
         output = []
         while i < int(entry[2]):
-            i += tile_width
             output += [[i] + entry[1:]]
+            i += tile_width
+        
+        output += [[int(entry[2])] + entry[1:]]
 
         return output
 
@@ -138,10 +144,11 @@ def main():
     # add a tile position
     pdset = (cf.ParallelData(dset).map(lambda x: [-1] + x)
             .flatMap(lambda x: spread_across_tiles(x, tile_size)))
-    f.create_dataset('{}'.format(int(max_zoom)), data=pdset.data, compression='gzip')
+    f.create_dataset('{}'.format(int(max_zoom)), 
+                     data=sorted(pdset.data, key=lambda x: x[0]), compression='gzip')
 
-    print("pdset:", pdset.take(2))
-    pdset = cf.ParallelData(dset).map(lambda x: (int(x[0] / tile_width), [x]))
+    print("pdset:", len(pdset.data))
+    pdset = pdset.map(lambda x: (int(x[0] / tile_width), [x]))
     #pdset = cf.ParallelData(dset).flatMap(lambda x: 
 
     curr_zoom = max_zoom - 1
@@ -154,11 +161,11 @@ def main():
         pdset = pdset.map(lambda x: (x[0] / 2, x[1]))
 
         new_dset = [item for sublist in [d[1] for d in pdset.collect()] for item in sublist]
-        f.create_dataset('{}'.format(int(curr_zoom)), data=new_dset, compression='gzip')
+        print("curr_zoom:", curr_zoom, "new_dset:", len(new_dset))
+        f.create_dataset('{}'.format(int(curr_zoom)), 
+                data=sorted(new_dset, key=lambda x: x[0]), compression='gzip')
 
         curr_zoom -= 1
-        
-
 
     #print("dset:", dset)
     

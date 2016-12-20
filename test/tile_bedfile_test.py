@@ -6,8 +6,14 @@ import pybedtools as pbt
 
 def test_get_tiles():
     f = h5py.File('test/sample_data/cnv.hibed')
-    cht.get_discrete_data(f, 22, 48)
+    data = cht.get_discrete_data(f, 22, 48)
 
-    cht.get_discrete_data(f, 22, 50)
+    assert(len(data) > 0)
 
+    data = cht.get_discrete_data(f, 22, 50)
+    assert(len(data) > 0)
 
+    data = cht.get_discrete_data(f, 0, 0)
+    assert(len(data) == 100)
+
+    print("data:", data[0])
