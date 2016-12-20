@@ -16,6 +16,124 @@ def get_tileset_info(hdf_file):
                 "tile_size": d.attrs['tile-size']
             }
 
+def bisect_left(a, x, lo=0, hi=None, comparator=None):
+    '''Bisect_left with with an additional comparator.
+
+    Based on the bisect_left function from the python bisect module.
+
+    Return the index where to insert item x in list a, assuming a is sorted.
+
+    The return value i is such that all e in a[:i] have e < x, and all e in
+    a[i:] have e >= x.  So if x already appears in the list, a.insert(x) will
+    insert just before the leftmost x already there.
+
+    Optional args lo (default 0) and hi (default len(a)) bound the
+    slice of a to be searched.
+
+    Args:
+        a (array): The array to bisect
+        x (object): The object to find the insertion point of
+        lo (int): The starting index of items to search in a
+        hi (int): The end index of items to search in a
+        comparator (function(a,b)): A way to compare objects
+    '''
+
+    if lo < 0:
+        raise ValueError('lo must be non-negative')
+    if hi is None:
+        hi = len(a)
+    while lo < hi:
+        mid = (lo+hi)//2
+        if comparator(a[mid],x) < 0: lo = mid+1
+        else: hi = mid
+    return lo
+
+def bisect_right(a, x, lo=0, hi=None, comparator=None):
+    '''Bisect_right with with an additional comparator.
+
+    Based on the bisect_right function from the python bisect module.
+
+    Return the index where to insert item x in list a, assuming a is sorted.
+
+    The return value i is such that all e in a[:i] have e <= x, and all e in
+    a[i:] have e > x.  So if x already appears in the list, a.insert(x) will
+    insert just after the rightmost x already there.
+
+    Optional args lo (default 0) and hi (default len(a)) bound the
+    slice of a to be searched.
+
+
+    Args:
+        a (array): The array to bisect
+        x (object): The object to find the insertion point of
+        lo (int): The starting index of items to search in a
+        hi (int): The end index of items to search in a
+        comparator (function(a,b)): A way to compare objects
+    '''
+    if lo < 0:
+        raise ValueError('lo must be non-negative')
+    if hi is None:
+        hi = len(a)
+    while lo < hi:
+        mid = (lo+hi)//2
+        if comparator(x,a[mid]) < 0: hi = mid
+        else: lo = mid+1
+    return lo
+
+def get_discrete_data(hdf_file, z, x):
+    '''
+    Get a discrete set of data from an hdf_tile file.
+
+    Args:
+        hdf_file (h5py.File): File handle for the file containing the information
+        z (int): The zoom level of this tile
+        x (int): The x position of this tile
+
+    Returns:
+        A 2D array of entries at that position. It is assumed that names of the 
+        columns are known.
+    '''
+    # is the title within the range of possible tiles
+    if x > 2**z:
+        print("OUT OF RIGHT RANGE")
+        return []
+    if x < 0:
+        print("OUT OF LEFT RANGE")
+        return []
+
+    d = hdf_file['meta'] 
+    tile_size = int(d.attrs['tile-size'])
+    max_length = int(d.attrs['max-length'])
+    max_zoom = int(d.attrs['max-zoom'])
+    max_width = tile_size * 2 ** max_zoom
+
+    # f is an array of data (e.g. [['34','53', 'x'],['48','57', 'y']] )
+    # where the first two columns indicate the start and end points
+    f = hdf_file[str(z)]
+
+    # the tile width depends on the zoom level, lower zoom tiles encompass
+    # a broader swatch of the data
+    tile_width = tile_size * 2 ** (max_zoom - z)
+    tile_start = x * tile_width
+    tile_end = tile_start + tile_width
+
+    # We need a way to compare data points that aren't numbers
+    # (e.g. the arrays that are in f)
+    def comparator_start(a,b):
+        return int(a[0]) - int(b[0])
+
+    def comparator_end(a,b):
+        return int(a[1]) - int(b[1])
+
+    tile_data_start = bisect_left(f, [tile_start], comparator=comparator_start)
+    tile_data_end = bisect_right(f, [tile_end], comparator=comparator_start)
+
+    print("tile_width:", tile_width, "tile_start:", tile_start, 'tile_end', tile_end)
+    print('tile_data_start:', tile_data_start, 'tile_data_end:', tile_data_end)
+    print("len(f):", len(f))
+    print('f[:3]:', f[:3])
+
+
 def get_data(hdf_file, z, x):
     '''
     Return a tile from an hdf_file.

@@ -117,24 +117,47 @@ def main():
         col = [d[i] for d in dset]
         f.create_dataset('{}_{}'.format(max_zoom, i), data=col, compression='gzip')
     '''
-    f.create_dataset('{}'.format(max_zoom), data=dset, compression='gzip')
-
-    curr_zoom = max_zoom - 1
 
     tile_width = tile_size
 
+    def spread_across_tiles(entry, tile_width):
+        ''' 
+        Spread an entry across multiple tiles
+        '''
+        i = int(entry[1])
+
+        output = []
+        while i < int(entry[2]):
+            i += tile_width
+            output += [[i] + entry[1:]]
+
+        return output
+
     # each entry in pdset will correspond to the values visible for that tile
+
+    # add a tile position
+    pdset = (cf.ParallelData(dset).map(lambda x: [-1] + x)
+            .flatMap(lambda x: spread_across_tiles(x, tile_size)))
+    f.create_dataset('{}'.format(int(max_zoom)), data=pdset.data, compression='gzip')
+
+    print("pdset:", pdset.take(2))
     pdset = cf.ParallelData(dset).map(lambda x: (int(x[0] / tile_width), [x]))
+    #pdset = cf.ParallelData(dset).flatMap(lambda x: 
+
+    curr_zoom = max_zoom - 1
 
 
     while curr_zoom >= 0:
         pdset = pdset.reduceByKey(lambda e1,e2: reduce_values_by_importance(e1, e2, 
             max_entries_per_tile = args.max_per_tile))
+        print("pdset:", pdset.take(2))
         #tile_nums_values = [(int(d[0] / tile_size), d) for d in dset]
         pdset = pdset.map(lambda x: (x[0] / 2, x[1]))
 
         new_dset = [item for sublist in [d[1] for d in pdset.collect()] for item in sublist]
-        f.create_dataset('{}'.format(curr_zoom), data=new_dset, compression='gzip')
+        f.create_dataset('{}'.format(int(curr_zoom)), data=new_dset, compression='gzip')
+
+        print("curr_zoom:", curr_zoom)
 
         curr_zoom -= 1
         
