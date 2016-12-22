@@ -21,12 +21,19 @@ import argparse
 # (notice that [entry] is an array), this format will be important when
 # reducing to the most important values
 def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, reverse_importance=False):
+    def extract_key(entries):
+        return [(e[-2], e) for e in entries]
+    by_uid = dict(extract_key(entry1) + extract_key(entry2))
+    combined_by_uid = by_uid.values()
+
     if reverse_importance:
-        combined_entries = sorted(entry1 + entry2,
+        combined_entries = sorted(combined_by_uid,
                 key=lambda x: float(x[-1]))
     else:
-        combined_entries = sorted(entry1 + entry2,
+        combined_entries = sorted(combined_by_uid,
                 key=lambda x: -float(x[-1]))
+
+    byKey = {}
 
     #print("ce", [c[-1] for c in combined_entries[:max_entries_per_tile]])
     #print("ce", [c[2] - c[1] for c in combined_entries[:max_entries_per_tile]])
@@ -169,8 +176,7 @@ def main():
         print("pd1:", pdset.take(2))
         print("tile_width:", tile_width)
         
-
-
+        # calculate the tile number for each entry
         pdset = pdset_spread.map(lambda x: (int(x[0] / tile_width), [x]))
         pdset = pdset.reduceByKey(lambda e1,e2: reduce_values_by_importance(e1, e2, 
             max_entries_per_tile = args.max_per_tile))
