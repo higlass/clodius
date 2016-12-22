@@ -23,10 +23,13 @@ import argparse
 def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, reverse_importance=False):
     if reverse_importance:
         combined_entries = sorted(entry1 + entry2,
-                key=lambda x: -float(x[-1]))
+                key=lambda x: float(x[-1]))
     else:
         combined_entries = sorted(entry1 + entry2,
-                key=lambda x: float(x[-1]))
+                key=lambda x: -float(x[-1]))
+
+    #print("ce", [c[-1] for c in combined_entries[:max_entries_per_tile]])
+    #print("ce", [c[2] - c[1] for c in combined_entries[:max_entries_per_tile]])
     return combined_entries[:max_entries_per_tile]
 
 def main():
