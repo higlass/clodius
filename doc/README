@@ -1,3 +1,6 @@
+### Tile a BEDfile
+
+
 AWS_ES_DOMAIN=52.23.165.123:9872
 
 # Create tiles from coolers
