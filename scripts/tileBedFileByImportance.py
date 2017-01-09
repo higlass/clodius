@@ -47,7 +47,7 @@ def main():
 
     parser.add_argument('bedfile')
     parser.add_argument('--importance-column', type=str,
-            help='The column containing information about how important'
+            help='The column (1-based) containing information about how important'
             "that row is. If it's absent, then use the length of the region."
             "If the value is equal to `random`, then a random value will be"
             "used for the importance (effectively leading to random sampling)")
@@ -78,10 +78,10 @@ def main():
 
         if args.importance_column is None:
             importance = line.stop - line.start
-        elif args.importance_columns == 'random':
+        elif args.importance_column == 'random':
             imporance = random.random()
         else:
-            importance = line.fields[importance]
+            importance = int(line.fields[int(args.importance_column)-1])
 
         genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, args.assembly)
         genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
@@ -94,12 +94,11 @@ def main():
     min_feature_width = min(map(lambda x: int(x[1]) - int(x[0]), dset))
     max_feature_width = max(map(lambda x: int(x[1]) - int(x[0]), dset))
 
-    print("min_feature_width:", min_feature_width)
-    print("max_feature_width:", max_feature_width)
-
     # The tileset will be stored as an hdf5 file
+    '''
     print("Writing to: {}".format(args.output_file), file=sys.stderr)
     f = h5py.File(args.output_file, 'w')
+    '''
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -110,6 +109,7 @@ def main():
     max_zoom = int(math.ceil(math.log(assembly_size / tile_size) / math.log(2)))
 
     # store some meta data
+    '''
     d = f.create_dataset('meta', (1,), dtype='f')
 
     d.attrs['zoom-step'] = 1            # we'll store data for every zoom level
@@ -121,6 +121,7 @@ def main():
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
+    '''
 
     print("max_zoom:", max_zoom)
 
@@ -134,6 +135,7 @@ def main():
 
     tile_width = tile_size
 
+    """
     def spread_across_tiles(entry, tile_width):
         ''' 
         Spread an entry across multiple tiles
@@ -148,8 +150,12 @@ def main():
         output += [[int(entry[2])] + entry[1:]]
 
         return output
+    """
 
     # each entry in pdset will correspond to the values visible for that tile
+
+    print("dset[:2]", dset[:2])
+    return
 
     # add a tile position
     pdset = (cf.ParallelData(dset).map(lambda x: [-1] + x)
