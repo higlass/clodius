@@ -15,7 +15,7 @@ def test_get_tileset_info():
     assert(t['max_width'] > 4000000000)
     assert(t['max_width'] < 5000000000)
 
-def test_get_tiles():
+def test_table_created():
     filename = 'test/sample_data/gene_annotations.short.db';
     conn = sqlite3.connect(filename)
     c = conn.cursor()
@@ -36,16 +36,33 @@ def test_get_tiles():
 
     assert(counter > 0)
 
-    rows0 = cdt.get_tile(filename, 0, 0)
 
-    for row in rows0:
-        print("row[4]", row[4])
+def test_get_tiles():
+    filename = 'test/sample_data/gene_annotations.short.db';
 
-    rows1 = cdt.get_tile(filename, 1, 0)
+    rows00 = cdt.get_tile(filename, 0, 0)
 
-    print('----------------')
-    for row in rows1:
-        print("row[4]", row[4])
+    rows10 = cdt.get_tile(filename, 1, 0)
+    rows11 = cdt.get_tile(filename, 1, 1)
+
+    rows20 = cdt.get_tile(filename, 2, 0)
+    rows21 = cdt.get_tile(filename, 2, 1)
+
+    assert(len(rows00) <= len(rows10) + len(rows11))
+    assert(len(rows10) <= len(rows20) + len(rows21))
+
+
+    rows30 = cdt.get_tile(filename, 3, 0)
+    rows31 = cdt.get_tile(filename, 3, 1)
+
+    rows40 = cdt.get_tile(filename, 4, 0)
+    rows41 = cdt.get_tile(filename, 4, 1)
+
+    print("30", len(rows30))
+    print("40", len(rows40))
+    print("41", len(rows41))
+    assert(len(rows30) <= len(rows40) + len(rows41))
+
 """
 def test_get_tiles():
     f = h5py.File('test/sample_data/cnv.hibed')
