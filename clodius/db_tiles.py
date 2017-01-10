@@ -13,7 +13,9 @@ def get_tileset_info(db_file):
             'chrom_sizes': row[4],
             'tile_size': row[5],
             'max_zoom': row[6],
-            'max_width': row[7]
+            'max_width': row[7],
+            "min_pos": [1],
+            "max_pos": [row[1]]
             }
     conn.close()
 
