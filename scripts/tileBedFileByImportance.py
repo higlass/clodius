@@ -179,7 +179,7 @@ def main():
     c.execute('''
         CREATE VIRTUAL TABLE position_index USING rtree(
             id,
-            startPos, endPos
+            rStartPos, rEndPos
         )
         ''')
 
@@ -201,7 +201,6 @@ def main():
             from_value = tile_num * tile_width
             to_value = (tile_num + 1) * tile_width
             entries = [i for i in intervals if (i[0] < to_value and i[1] > from_value)]
-            print("entries:", entries)
             values_in_tile = sorted(entries,
                     key=lambda x: -uid_to_entry[x[-1]][-1])[:args.max_per_tile]   # the importance is always the last column
                                                             # take the negative because we want to prioritize
@@ -233,6 +232,7 @@ def main():
                             )
                     conn.commit()
                     intervals.remove(v)
+        print ("curr_zoom:", curr_zoom, file=sys.stderr)
         curr_zoom += 1
 
     conn.commit()

@@ -10,8 +10,19 @@ def test_get_tiles():
     c = conn.cursor()
 
     print("fetching...")
+
+    '''
     for row in c.execute('SELECT * from intervals'):
         print ("row:", row)
+    '''
+
+    row = c.execute('SELECT * from intervals')
+    print("row:", row)
+    rows = c.execute('SELECT * from intervals,position_index where intervals.id=position_index.id and zoomLevel < 1 and rStartPos > 2400000000 and rEndPos < 2500000000')
+    print("row:", row)
+    for row in rows:
+        assert(row[2] > 2400000000)
+        assert(row[3] < 2500000000)
 
 """
 def test_get_tiles():
