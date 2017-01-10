@@ -1,9 +1,19 @@
 from __future__ import print_function
 
 import clodius.hdf_tiles as cht
+import clodius.db_tiles as cdt
 import h5py
 import pybedtools as pbt
 import sqlite3
+
+def test_get_tileset_info():
+    filename = 'test/sample_data/gene_annotations.short.db';
+    t = cdt.get_tileset_info(filename)
+
+    assert(t['zoom_step'] == 1)
+    assert(t['max_length'] == 3137161264)
+    assert(t['max_width'] > 4000000000)
+    assert(t['max_width'] < 5000000000)
 
 def test_get_tiles():
     conn = sqlite3.connect('test/sample_data/gene_annotations.short.db')
@@ -16,8 +26,6 @@ def test_get_tiles():
         print ("row:", row)
     '''
 
-    row = c.execute('SELECT * from intervals')
-    print("row:", row)
     rows = c.execute('SELECT * from intervals,position_index where intervals.id=position_index.id and zoomLevel < 1 and rStartPos > 2400000000 and rEndPos < 2500000000')
     counter = 0
     for row in rows:

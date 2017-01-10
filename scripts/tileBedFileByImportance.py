@@ -18,8 +18,30 @@ import random
 import sqlite3
 import sys
 
-def store_meta_data(conn, zoom_step, max_length, assembly, chrom_names, 
-        chrom_sizes, chrom_order, tile_size, max_zoom, max_width):
+def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names, 
+        chrom_sizes, tile_size, max_zoom, max_width):
+    print("chrom_names:", chrom_names)
+
+    cursor.execute('''
+        CREATE TABLE tileset_info
+        (
+            zoom_step INT,
+            max_length INT,
+            assembly text,
+            chrom_names text,
+            chrom_sizes text,
+            tile_size REAL,
+            max_zoom INT,
+            max_width REAL
+        )
+        ''')
+
+    cursor.execute('INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?)',
+            (zoom_step, max_length, assembly, 
+                "\t".join(chrom_names), "\t".join(map(str,chrom_sizes)),
+                tile_size, max_zoom, max_width))
+    cursor.commit()
+
     pass
 
 # all entries are broked up into ((tile_pos), [entry]) tuples
@@ -42,8 +64,6 @@ def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, revers
 
     byKey = {}
 
-    #print("ce", [c[-1] for c in combined_entries[:max_entries_per_tile]])
-    #print("ce", [c[2] - c[1] for c in combined_entries[:max_entries_per_tile]])
     return combined_entries[:max_entries_per_tile]
 
 def main():
@@ -132,7 +152,6 @@ def main():
             assembly = args.assembly,
             chrom_names = nc.get_chromorder(args.assembly),
             chrom_sizes = nc.get_chromsizes(args.assembly),
-            chrom_order = nc.get_chromorder(args.assembly),
             tile_size = tile_size,
             max_zoom = max_zoom,
             max_width = tile_size * 2 ** max_zoom)
@@ -204,7 +223,6 @@ def main():
 
                     value = uid_to_entry[v[-1]]
 
-                    print("startPos:", value['startPos'], 'endPos:', value['endPos'])
                     # one extra question mark for the primary key
                     exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?)'
                     ret = c.execute(
