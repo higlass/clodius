@@ -1,6 +1,7 @@
 ### Tile gene annotations BEDfile
 
-
+python scripts/tileBedFileByImportance.py ~/data/genbank-data/human/geneAnnotationsExonUnions.bed --max-per-tile 60 --importance-column 5 > /tmp/tiled_bed
+rm test/sample_data/gene_annotations.short.db; python scripts/tileBedFileByImportance.py test/sample_data/geneAnnotationsExonsUnions.short.bed --max-per-tile 60 --importance-column 5 test/sample_data/gene_annotations.short.db
 
 ### Tile a BEDfile
 

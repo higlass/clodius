@@ -3,7 +3,17 @@ from __future__ import print_function
 import clodius.hdf_tiles as cht
 import h5py
 import pybedtools as pbt
+import sqlite3
 
+def test_get_tiles():
+    conn = sqlite3.connect('test/sample_data/gene_annotations.short.db')
+    c = conn.cursor()
+
+    print("fetching...")
+    for row in c.execute('SELECT * from intervals'):
+        print ("row:", row)
+
+"""
 def test_get_tiles():
     f = h5py.File('test/sample_data/cnv.hibed')
     data = cht.get_discrete_data(f, 22, 48)
@@ -62,3 +72,4 @@ def test_tile_ranges():
 
     d4 = cht.get_discrete_data(f, 12, 11)
     #print("d3:", len(d4))
+"""

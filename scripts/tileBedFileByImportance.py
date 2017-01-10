@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import argparse
 import clodius.fpark as cf
 import collections as col
 import intervaltree as itree
@@ -14,8 +15,12 @@ import os
 import os.path as op
 import pybedtools as pbt
 import random
+import sqlite3
 import sys
-import argparse
+
+def store_meta_data(conn, zoom_step, max_length, assembly, chrom_names, 
+        chrom_sizes, chrom_order, tile_size, max_zoom, max_width):
+    pass
 
 # all entries are broked up into ((tile_pos), [entry]) tuples
 # we just need to reduce the tiles so that no tile contains more than
@@ -44,10 +49,13 @@ def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, revers
 def main():
     parser = argparse.ArgumentParser(description="""
     
-    python tileBedFileByImportance.py file.bed
+    python tileBedFileByImportance.py file.bed output.db
+
+    Tile a bed file and store it as a sqlite database
 """)
 
     parser.add_argument('bedfile')
+    parser.add_argument('outfile')
     parser.add_argument('--importance-column', type=str,
             help='The column (1-based) containing information about how important'
             "that row is. If it's absent, then use the length of the region."
@@ -58,6 +66,7 @@ def main():
     parser.add_argument('--max-per-tile', type=int, default=100)
     parser.add_argument('--tile-size', default=1024)
     parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
+    parser.add_argument('--max-zoom', type=int, help="The default maximum zoom value")
 
     #parser.add_argument('argument', nargs=1)
     #parser.add_argument('-o', '--options', default='yo',
@@ -85,22 +94,18 @@ def main():
         else:
             importance = int(line.fields[int(args.importance_column)-1])
 
+        # convert chromosome coordinates to genome coordinates
         genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, args.assembly)
         genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
-        parts = [genome_start, genome_end] + map(str,line.fields[3:]) + [slugid.nice()] + [importance]
+        pos_offset = genome_start - line.start
+        parts = [genome_start, genome_end] + map(str,line.fields[3:]) + [slugid.nice()] + [importance] + [pos_offset]
 
         return parts
-
 
     dset = sorted([line_to_np_array(line) for line in bed_file], key=lambda x: x[0])
     min_feature_width = min(map(lambda x: int(x[1]) - int(x[0]), dset))
     max_feature_width = max(map(lambda x: int(x[1]) - int(x[0]), dset))
 
-    # The tileset will be stored as an hdf5 file
-    '''
-    print("Writing to: {}".format(args.output_file), file=sys.stderr)
-    f = h5py.File(args.output_file, 'w')
-    '''
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -109,21 +114,24 @@ def main():
     assembly_size = chrom_info.total_length
     #max_zoom = int(math.ceil(math.log(assembly_size / min_feature_width) / math.log(2)))
     max_zoom = int(math.ceil(math.log(assembly_size / tile_size) / math.log(2)))
+    '''
+    if args.max_zoom is not None and args.max_zoom < max_zoom:
+        max_zoom = args.max_zoom
+    '''
+
+    # this script stores data in a sqlite database
+    conn = sqlite3.connect(args.outfile)
 
     # store some meta data
-    '''
-    d = f.create_dataset('meta', (1,), dtype='f')
-
-    d.attrs['zoom-step'] = 1            # we'll store data for every zoom level
-    d.attrs['max-length'] = assembly_size
-    d.attrs['assembly'] = args.assembly
-    d.attrs['chrom-names'] = nc.get_chromorder(args.assembly)
-    d.attrs['chrom-sizes'] = nc.get_chromsizes(args.assembly)
-    d.attrs['chrom-order'] = nc.get_chromorder(args.assembly)
-    d.attrs['tile-size'] = tile_size
-    d.attrs['max-zoom'] = max_zoom
-    d.attrs['max-width'] = tile_size * 2 ** max_zoom
-    '''
+    store_meta_data(conn, 1, 
+            max_length = assembly_size,
+            assembly = args.assembly,
+            chrom_names = nc.get_chromorder(args.assembly),
+            chrom_sizes = nc.get_chromsizes(args.assembly),
+            chrom_order = nc.get_chromorder(args.assembly),
+            tile_size = tile_size,
+            max_zoom = max_zoom,
+            max_width = tile_size * 2 ** max_zoom)
 
     max_width = tile_size * 2 ** max_zoom
     interval_tree = itree.IntervalTree()
@@ -131,25 +139,59 @@ def main():
 
     intervals = []
 
-
+    # store each bed file entry as an interval
     for d in dset:
-        uid = d[-2]
+        uid = d[-3]
         uid_to_entry[uid] = d
         intervals += [(d[0], d[1], uid)]
-        #interval_tree[d[0]:d[1]] = uid
-
-        #interval_tree.verify()
-
-        #print("interval_tree[{}:{}]='{}'".format(d[0],d[1], uid))
 
     tile_width = tile_size
 
-    # each entry in pdset will correspond to the values visible for that tile
-
     removed = set()
 
+    c = conn.cursor()
+    c.execute(
+    '''
+    CREATE TABLE intervals
+    (
+        id int,
+        zoomLevel int,
+        startPos int,
+        endPos int,
+        geneName text,
+        score real,
+        strand text,
+        transcriptId text,
+        geneId int,
+        geneType text,
+        geneDesc text,
+        cdsStart int,
+        cdsEnd int,
+        exonStarts text,
+        exonEnds text,
+        uid TEXT PRIMARY KEY,
+        importance real,
+        pos_offset int
+    )
+    ''')
+
+    print("creating rtree")
+    c.execute('''
+        CREATE VIRTUAL TABLE position_index USING rtree(
+            id,
+            startPos, endPos
+        )
+        ''')
+
     curr_zoom = 0
-    while curr_zoom <= max_zoom:
+    counter = 0
+    
+    max_viewable_zoom = max_zoom
+
+    if args.max_zoom is not None and args.max_zoom < max_zoom:
+        max_viewable_zoom = args.max_zoom
+
+    while curr_zoom <= max_viewable_zoom and len(intervals) > 0:
         # at each zoom level, add the top genes
         tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
 
@@ -159,13 +201,12 @@ def main():
             from_value = tile_num * tile_width
             to_value = (tile_num + 1) * tile_width
             entries = [i for i in intervals if (i[0] < to_value and i[1] > from_value)]
+            print("entries:", entries)
             values_in_tile = sorted(entries,
                     key=lambda x: -uid_to_entry[x[-1]][-1])[:args.max_per_tile]   # the importance is always the last column
                                                             # take the negative because we want to prioritize
                                                             # higher values
 
-
-            #print("len:", len(values_in_tile), file=sys.stderr)
 
             if len(values_in_tile) > 0:
                 for v in values_in_tile:
@@ -173,67 +214,33 @@ def main():
                     if v[0] < from_value and v[1] > to_value:
                         print("from_value:", from_value, "to_value", to_value, "entry", v[0], v[1], v[2])
                     '''
-                    print("{}\t{}".format(curr_zoom, "\t".join(map(str,uid_to_entry[v[-1]]))))
+                    counter += 1
+                    output_line = "{}\t{}".format(curr_zoom, "\t".join(map(str,uid_to_entry[v[-1]])))
+                    output_parts = output_line.split('\t')
+
+                    # one extra question mark for the primary key
+                    exec_statement = 'INSERT INTO intervals VALUES (?,{})'.format(",".join(['?' for p in output_parts])) 
+                    ret = c.execute(
+                            exec_statement,
+                            tuple([counter] + output_parts)     # add counter as a primary key
+                            )
+                    conn.commit()
+
+                    exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
+                    ret = c.execute(
+                            exec_statement,
+                            tuple([counter] + [output_parts[1], output_parts[2]])     # add counter as a primary key
+                            )
+                    conn.commit()
                     intervals.remove(v)
-                    #print("interval_tree.remove(itree.Interval({},{},'{}'))".format(v[0], v[1], v[2]))
-                    #interval_tree.verify()
-                    #interval_tree.remove(v)
-                    #removed.add(v[0])
-        print ("curr_zoom:", curr_zoom, file=sys.stderr)
         curr_zoom += 1
+
+    conn.commit()
+
+    conn.close()
 
 
     return
-
-    # add a tile position
-    '''
-    pdset = (cf.ParallelData(dset).map(lambda x: [-1] + x)
-            .flatMap(lambda x: spread_across_tiles(x, tile_size)))
-    f.create_dataset('{}'.format(int(max_zoom)), 
-                     data=sorted(pdset.data, key=lambda x: x[0]), compression='gzip')
-
-    print("pdset:", len(pdset.data))
-    '''
-    
-    #pdset = cf.ParallelData(dset).flatMap(lambda x: 
-
-    curr_zoom = max_zoom - 1
-    tiles = col.defaultdict(list)
-
-    for item in dset:
-        pass
-
-
-
-    while curr_zoom >= 0:
-        print ("pd3:", pdset.take(4))
-        pdset = (pdset.map(lambda x: (x[-2], x))   # remove the tile anchor generated by
-                 .reduceByKey(lambda e1, e2: e1))      # spread_across_tiles and order by uid
-        
-        print("pd2:", pdset.take(4))
-        pdset_orig = cf.ParallelData([x[1] for x in pdset.collect()])
-        tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
-
-        pdset_spread = pdset_orig.flatMap(lambda x: spread_across_tiles(x, tile_width))
-        print("pd1:", pdset.take(2))
-        print("tile_width:", tile_width)
-        
-        # calculate the tile number for each entry
-        pdset = pdset_spread.map(lambda x: (int(x[0] / tile_width), [x]))
-        pdset = pdset.reduceByKey(lambda e1,e2: reduce_values_by_importance(e1, e2, 
-            max_entries_per_tile = args.max_per_tile))
-        #tile_nums_values = [(int(d[0] / tile_size), d) for d in dset]
-        pdset = pdset.map(lambda x: (x[0] / 2, x[1]))
-
-        new_dset = [item for sublist in [d[1] for d in pdset.collect()] for item in sublist]
-        print("curr_zoom:", curr_zoom, "new_dset:", len(new_dset))
-        f.create_dataset('{}'.format(int(curr_zoom)), 
-                data=sorted(new_dset, key=lambda x: x[0]), compression='gzip')
-
-        pdset = cf.ParallelData(new_dset)
-        curr_zoom -= 1
-
-    #print("dset:", dset)
     
 
 if __name__ == '__main__':
