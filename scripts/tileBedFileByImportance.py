@@ -182,7 +182,7 @@ def main():
         startPos int,
         endPos int,
         posOffset int,
-        value text
+        fields text
     )
     ''')
 
