@@ -3,6 +3,8 @@
 from __future__ import print_function
 
 import clodius.fpark as cf
+import collections as col
+import intervaltree as itree
 import h5py
 import math
 import negspy.coordinates as nc
@@ -123,50 +125,84 @@ def main():
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
     '''
 
-    print("max_zoom:", max_zoom)
+    max_width = tile_size * 2 ** max_zoom
+    interval_tree = itree.IntervalTree()
+    uid_to_entry = {}
 
-    #dset = [line_to_np_array(line) for line in bed_file]
+    intervals = []
 
-    '''
-    for i in range(len(dset[0])):
-        col = [d[i] for d in dset]
-        f.create_dataset('{}_{}'.format(max_zoom, i), data=col, compression='gzip')
-    '''
+
+    for d in dset:
+        uid = d[-2]
+        uid_to_entry[uid] = d
+        intervals += [(d[0], d[1], uid)]
+        #interval_tree[d[0]:d[1]] = uid
+
+        #interval_tree.verify()
+
+        #print("interval_tree[{}:{}]='{}'".format(d[0],d[1], uid))
 
     tile_width = tile_size
 
-    """
-    def spread_across_tiles(entry, tile_width):
-        ''' 
-        Spread an entry across multiple tiles
-        '''
-        i = int(entry[1])
-
-        output = []
-        while i < int(entry[2]):
-            output += [[i] + entry[1:]]
-            i += tile_width
-        
-        output += [[int(entry[2])] + entry[1:]]
-
-        return output
-    """
-
     # each entry in pdset will correspond to the values visible for that tile
 
-    print("dset[:2]", dset[:2])
+    removed = set()
+
+    curr_zoom = 0
+    while curr_zoom <= max_zoom:
+        # at each zoom level, add the top genes
+        tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
+
+        for tile_num in range(max_width / tile_width):
+            # go over each tile and distribute the remaining values
+            #values = interval_tree[tile_num * tile_width: (tile_num+1) * tile_width]
+            from_value = tile_num * tile_width
+            to_value = (tile_num + 1) * tile_width
+            entries = [i for i in intervals if (i[0] < to_value and i[1] > from_value)]
+            values_in_tile = sorted(entries,
+                    key=lambda x: -uid_to_entry[x[-1]][-1])[:args.max_per_tile]   # the importance is always the last column
+                                                            # take the negative because we want to prioritize
+                                                            # higher values
+
+
+            #print("len:", len(values_in_tile), file=sys.stderr)
+
+            if len(values_in_tile) > 0:
+                for v in values_in_tile:
+                    '''
+                    if v[0] < from_value and v[1] > to_value:
+                        print("from_value:", from_value, "to_value", to_value, "entry", v[0], v[1], v[2])
+                    '''
+                    print("{}\t{}".format(curr_zoom, "\t".join(map(str,uid_to_entry[v[-1]]))))
+                    intervals.remove(v)
+                    #print("interval_tree.remove(itree.Interval({},{},'{}'))".format(v[0], v[1], v[2]))
+                    #interval_tree.verify()
+                    #interval_tree.remove(v)
+                    #removed.add(v[0])
+        print ("curr_zoom:", curr_zoom, file=sys.stderr)
+        curr_zoom += 1
+
+
     return
 
     # add a tile position
+    '''
     pdset = (cf.ParallelData(dset).map(lambda x: [-1] + x)
             .flatMap(lambda x: spread_across_tiles(x, tile_size)))
     f.create_dataset('{}'.format(int(max_zoom)), 
                      data=sorted(pdset.data, key=lambda x: x[0]), compression='gzip')
 
     print("pdset:", len(pdset.data))
+    '''
+    
     #pdset = cf.ParallelData(dset).flatMap(lambda x: 
 
     curr_zoom = max_zoom - 1
+    tiles = col.defaultdict(list)
+
+    for item in dset:
+        pass
+
 
 
     while curr_zoom >= 0:
