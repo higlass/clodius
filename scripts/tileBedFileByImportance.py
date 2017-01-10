@@ -98,14 +98,18 @@ def main():
         genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, args.assembly)
         genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
         pos_offset = genome_start - line.start
-        parts = [genome_start, genome_end] + map(str,line.fields[3:]) + [slugid.nice()] + [importance] + [pos_offset]
+        parts = {
+                    'startPos': genome_end,
+                    'endPos': genome_end,
+                    'uid': slugid.nice(),
+                    'posOffset': pos_offset,
+                    'fields': '\t'.join(line.fields),
+                    'importance': importance
+                    }
 
         return parts
 
-    dset = sorted([line_to_np_array(line) for line in bed_file], key=lambda x: x[0])
-    min_feature_width = min(map(lambda x: int(x[1]) - int(x[0]), dset))
-    max_feature_width = max(map(lambda x: int(x[1]) - int(x[0]), dset))
-
+    dset = [line_to_np_array(line) for line in bed_file]
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -141,9 +145,9 @@ def main():
 
     # store each bed file entry as an interval
     for d in dset:
-        uid = d[-3]
+        uid = d['uid']
         uid_to_entry[uid] = d
-        intervals += [(d[0], d[1], uid)]
+        intervals += [(d['startPos'], d['endPos'], uid)]
 
     tile_width = tile_size
 
@@ -154,24 +158,12 @@ def main():
     '''
     CREATE TABLE intervals
     (
-        id int,
+        id int PRIMARY KEY,
         zoomLevel int,
         startPos int,
         endPos int,
-        geneName text,
-        score real,
-        strand text,
-        transcriptId text,
-        geneId int,
-        geneType text,
-        geneDesc text,
-        cdsStart int,
-        cdsEnd int,
-        exonStarts text,
-        exonEnds text,
-        uid TEXT PRIMARY KEY,
-        importance real,
-        pos_offset int
+        posOffset int,
+        value text
     )
     ''')
 
@@ -202,37 +194,35 @@ def main():
             to_value = (tile_num + 1) * tile_width
             entries = [i for i in intervals if (i[0] < to_value and i[1] > from_value)]
             values_in_tile = sorted(entries,
-                    key=lambda x: -uid_to_entry[x[-1]][-1])[:args.max_per_tile]   # the importance is always the last column
+                    key=lambda x: -uid_to_entry[x[-1]]['importance'])[:args.max_per_tile]   # the importance is always the last column
                                                             # take the negative because we want to prioritize
                                                             # higher values
 
-
             if len(values_in_tile) > 0:
                 for v in values_in_tile:
-                    '''
-                    if v[0] < from_value and v[1] > to_value:
-                        print("from_value:", from_value, "to_value", to_value, "entry", v[0], v[1], v[2])
-                    '''
                     counter += 1
-                    output_line = "{}\t{}".format(curr_zoom, "\t".join(map(str,uid_to_entry[v[-1]])))
-                    output_parts = output_line.split('\t')
 
+                    value = uid_to_entry[v[-1]]
+
+                    print("startPos:", value['startPos'], 'endPos:', value['endPos'])
                     # one extra question mark for the primary key
-                    exec_statement = 'INSERT INTO intervals VALUES (?,{})'.format(",".join(['?' for p in output_parts])) 
+                    exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?)'
                     ret = c.execute(
                             exec_statement,
-                            tuple([counter] + output_parts)     # add counter as a primary key
+                            # primary key, zoomLevel, startPos, endPos, posOffset, line
+                            (counter, curr_zoom, value['startPos'], value['endPos'],
+                                value['posOffset'], value['fields'])
                             )
                     conn.commit()
 
                     exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
                     ret = c.execute(
                             exec_statement,
-                            tuple([counter] + [output_parts[1], output_parts[2]])     # add counter as a primary key
+                            (counter, value['startPos'], value['endPos'])  #add counter as a primary key
                             )
                     conn.commit()
                     intervals.remove(v)
-        print ("curr_zoom:", curr_zoom, file=sys.stderr)
+        #print ("curr_zoom:", curr_zoom, file=sys.stderr)
         curr_zoom += 1
 
     conn.commit()

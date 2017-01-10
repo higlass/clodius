@@ -19,11 +19,13 @@ def test_get_tiles():
     row = c.execute('SELECT * from intervals')
     print("row:", row)
     rows = c.execute('SELECT * from intervals,position_index where intervals.id=position_index.id and zoomLevel < 1 and rStartPos > 2400000000 and rEndPos < 2500000000')
-    print("row:", row)
+    counter = 0
     for row in rows:
         assert(row[2] > 2400000000)
         assert(row[3] < 2500000000)
+        counter += 1
 
+    assert(counter > 0)
 """
 def test_get_tiles():
     f = h5py.File('test/sample_data/cnv.hibed')
