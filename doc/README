@@ -2,7 +2,7 @@
 
 #### Tile real data
 
-    /usr/bin/time    python scripts/tileBedFileByImportance.py ~/data/genbank-data/human/geneAnnotationsExonUnions.bed --max-per-tile 60 --importance-column 5 ~/projects/higlass-server/real-data/gene-annotations.db
+    /usr/bin/time    python scripts/tileBedFileByImportance.py ~/data/genbank-data/human/geneAnnotationsExonUnions.bed --max-per-tile 60 --importance-column 5 ~/projects/higlass-server/data/gene-annotations.db
 
 #### Tile sample data
 
