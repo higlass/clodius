@@ -1,10 +1,16 @@
 ### Tile gene annotations BEDfile
 
-head -n 100 ~/data/genbank-data/human/geneAnnotationsExonUnions.bed > test/sample_data/geneAnnotationsExonsUnions.short.bed
+#### Tile real data
 
-rm test/sample_data/gene_annotations.short.db; python scripts/tileBedFileByImportance.py test/sample_data/geneAnnotationsExonsUnions.short.bed --max-per-tile 60 --importance-column 5 test/sample_data/gene_annotations.short.db
+    /usr/bin/time    python scripts/tileBedFileByImportance.py ~/data/genbank-data/human/geneAnnotationsExonUnions.bed --max-per-tile 60 --importance-column 5 ~/projects/higlass-server/real-data/gene-annotations.db
 
-cp test/sample_data/gene_annotations.short.db ~/projects/higlass-server/data/
+#### Tile sample data
+
+    head -n 100 ~/data/genbank-data/human/geneAnnotationsExonUnions.bed > test/sample_data/geneAnnotationsExonsUnions.short.bed
+
+    rm test/sample_data/gene_annotations.short.db; python scripts/tileBedFileByImportance.py test/sample_data/geneAnnotationsExonsUnions.short.bed --max-per-tile 60 --importance-column 5 test/sample_data/gene_annotations.short.db
+
+    cp test/sample_data/gene_annotations.short.db ~/projects/higlass-server/data/
 
 ### Tile a BEDfile
 
