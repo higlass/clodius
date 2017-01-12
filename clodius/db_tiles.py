@@ -31,11 +31,17 @@ def get_tile(db_file, zoom, tile_x_pos):
     tile_start_pos = tile_width * tile_x_pos
     tile_end_pos = tile_start_pos + tile_width
 
-    rows = c.execute('''
+    print("tile_start_pos:", tile_start_pos, 'tile_end_pos:', tile_end_pos)
+
+    query = '''
     SELECT chrOffset, fields from intervals,position_index 
     where 
-    intervals.id=position_index.id and zoomLevel <= {} and rStartPos > {} and rEndPos < {}
-    '''.format(zoom, tile_start_pos, tile_end_pos)).fetchall()
+    intervals.id=position_index.id and zoomLevel <= {} and rEndPos >= {} and rStartPos <= {}
+    '''.format(zoom, tile_start_pos, tile_end_pos)
+
+    print("query", query)
+
+    rows = c.execute(query).fetchall()
 
 
     # add the position offset to the returned values

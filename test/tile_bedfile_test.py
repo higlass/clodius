@@ -30,8 +30,8 @@ def test_table_created():
     rows = c.execute('SELECT * from intervals,position_index where intervals.id=position_index.id and zoomLevel < 1 and rStartPos > 2400000000 and rEndPos < 2500000000')
     counter = 0
     for row in rows:
-        assert(row[2] > 2400000000)
-        assert(row[3] < 2500000000)
+        assert(row[3] > 2400000000)
+        assert(row[4] < 2500000000)
         counter += 1
 
     assert(counter > 0)
@@ -39,6 +39,18 @@ def test_table_created():
 
 def test_get_tiles():
     filename = 'test/sample_data/gene_annotations.short.db';
+
+    tiles = cdt.get_tile(filename, 18, 169282)
+    print("tiles:", tiles)
+    for tile in tiles:
+        f = int(tile[1]) + int(tile[-1])
+        t = int(tile[1]) + int(tile[-1])
+
+        print("f:", f, "t:", t)
+
+    print("tile:", tile)
+    return
+
 
     rows00 = cdt.get_tile(filename, 0, 0)
 
