@@ -5,7 +5,6 @@ from __future__ import print_function
 import argparse
 import clodius.fpark as cf
 import collections as col
-import intervaltree as itree
 import h5py
 import math
 import negspy.coordinates as nc
@@ -122,7 +121,7 @@ def main():
                     'startPos': genome_end,
                     'endPos': genome_end,
                     'uid': slugid.nice(),
-                    'posOffset': pos_offset,
+                    'chrOffset': pos_offset,
                     'fields': '\t'.join(line.fields),
                     'importance': importance
                     }
@@ -157,7 +156,6 @@ def main():
             max_width = tile_size * 2 ** max_zoom)
 
     max_width = tile_size * 2 ** max_zoom
-    interval_tree = itree.IntervalTree()
     uid_to_entry = {}
 
     intervals = []
@@ -179,9 +177,10 @@ def main():
     (
         id int PRIMARY KEY,
         zoomLevel int,
+        importance real,
         startPos int,
         endPos int,
-        posOffset int,
+        chrOffset int,
         fields text
     )
     ''')
@@ -224,12 +223,14 @@ def main():
                     value = uid_to_entry[v[-1]]
 
                     # one extra question mark for the primary key
-                    exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?)'
+                    exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?)'
                     ret = c.execute(
                             exec_statement,
-                            # primary key, zoomLevel, startPos, endPos, posOffset, line
-                            (counter, curr_zoom, value['startPos'], value['endPos'],
-                                value['posOffset'], value['fields'])
+                            # primary key, zoomLevel, startPos, endPos, chrOffset, line
+                            (counter, curr_zoom, 
+                                value['importance'],
+                                value['startPos'], value['endPos'],
+                                value['chrOffset'], value['fields'])
                             )
                     conn.commit()
 

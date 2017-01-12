@@ -32,7 +32,7 @@ def get_tile(db_file, zoom, tile_x_pos):
     tile_end_pos = tile_start_pos + tile_width
 
     rows = c.execute('''
-    SELECT posOffset, fields from intervals,position_index 
+    SELECT chrOffset, fields from intervals,position_index 
     where 
     intervals.id=position_index.id and zoomLevel <= {} and rStartPos > {} and rEndPos < {}
     '''.format(zoom, tile_start_pos, tile_end_pos)).fetchall()
