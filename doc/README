@@ -36,3 +36,5 @@ for file in ~/data/encode/hg19/*.bigWig;
 done;
 
 for file in ~/data/encode/hg19/*.hitile; do aws s3 cp $file s3://pkerp/public/hg-server/data/; done;
+for file in $(ls ~/Downloads/*10kb*multires*); do aws s3 cp $file s3://pkerp/public/hg-server/data/; done;
+aws s3 cp ~/data/genbank-data/human/geneAnnotationsExonUnions.bed s3://pkerp/public/data/hg-server/preprocessed/
