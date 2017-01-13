@@ -39,12 +39,17 @@ def main():
     parser.add_argument('-c', '--chunk-size', default=14, type=int)
     parser.add_argument('-z', '--zoom-step', default=8, type=int)
     parser.add_argument('-t', '--tile-size', default=1024, type=int)
-    parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
+    parser.add_argument('-o', '--output-file', default=None)
     parser.add_argument('-a', '--assembly', default='hg19')
 
     args = parser.parse_args()
     last_end = 0
     data = []
+
+    if args.output_file is None:
+        args.output_file = op.splitext(args.filepath)[0] + '.hitile'
+
+    print("output file:", args.output_file)
 
     # Override the output file if it existts
     if op.exists(args.output_file):
@@ -53,7 +58,7 @@ def main():
 
     # get the information about the chromosomes in this assembly
     chrom_info = nc.get_chrominfo(args.assembly)
-    chrom_order = [i[0] for i in sorted(chrom_info.cum_chrom_lengths.items(), key=lambda x: x[1])]
+    chrom_order = nc.get_chromorder(args.assembly)
     assembly_size = chrom_info.total_length
 
     tile_size = args.tile_size

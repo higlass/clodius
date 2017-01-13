@@ -1,9 +1,81 @@
 from __future__ import print_function
 
 import clodius.hdf_tiles as cht
+import clodius.db_tiles as cdt
 import h5py
 import pybedtools as pbt
+import sqlite3
 
+def test_get_tileset_info():
+    filename = 'test/sample_data/gene_annotations.short.db';
+    t = cdt.get_tileset_info(filename)
+
+    assert(t['zoom_step'] == 1)
+    assert(t['max_length'] == 3137161264)
+    assert(t['max_width'] > 4000000000)
+    assert(t['max_width'] < 5000000000)
+
+def test_table_created():
+    filename = 'test/sample_data/gene_annotations.short.db';
+    conn = sqlite3.connect(filename)
+    c = conn.cursor()
+
+    print("fetching...")
+
+    '''
+    for row in c.execute('SELECT * from intervals'):
+        print ("row:", row)
+    '''
+
+    rows = c.execute('SELECT * from intervals,position_index where intervals.id=position_index.id and zoomLevel < 1 and rStartPos > 2400000000 and rEndPos < 2500000000')
+    counter = 0
+    for row in rows:
+        assert(row[3] > 2400000000)
+        assert(row[4] < 2500000000)
+        counter += 1
+
+    assert(counter > 0)
+
+
+def test_get_tiles():
+    filename = 'test/sample_data/gene_annotations.short.db';
+
+    tiles = cdt.get_tile(filename, 18, 169283)
+    print("tiles:", tiles)
+    for tile in tiles:
+        f = int(tile[1]) + int(tile[-1])
+        t = int(tile[1]) + int(tile[-1])
+
+        print("f:", f, "t:", t)
+
+        print("tile:", tile)
+    return
+
+
+    rows00 = cdt.get_tile(filename, 0, 0)
+
+    rows10 = cdt.get_tile(filename, 1, 0)
+    rows11 = cdt.get_tile(filename, 1, 1)
+
+    rows20 = cdt.get_tile(filename, 2, 0)
+    rows21 = cdt.get_tile(filename, 2, 1)
+
+    assert(len(rows00) <= len(rows10) + len(rows11))
+    assert(len(rows10) <= len(rows20) + len(rows21))
+
+
+    rows30 = cdt.get_tile(filename, 3, 0)
+    rows31 = cdt.get_tile(filename, 3, 1)
+
+    rows40 = cdt.get_tile(filename, 4, 0)
+    rows41 = cdt.get_tile(filename, 4, 1)
+
+    print("30", len(rows30))
+    print("40", len(rows40))
+    print("41", len(rows41))
+    assert(len(rows30) <= len(rows40) + len(rows41))
+
+"""
 def test_get_tiles():
     f = h5py.File('test/sample_data/cnv.hibed')
     data = cht.get_discrete_data(f, 22, 48)
@@ -62,3 +134,4 @@ def test_tile_ranges():
 
     d4 = cht.get_discrete_data(f, 12, 11)
     #print("d3:", len(d4))
+"""
