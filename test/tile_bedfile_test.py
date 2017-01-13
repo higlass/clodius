@@ -40,7 +40,7 @@ def test_table_created():
 def test_get_tiles():
     filename = 'test/sample_data/gene_annotations.short.db';
 
-    tiles = cdt.get_tile(filename, 18, 169282)
+    tiles = cdt.get_tile(filename, 18, 169283)
     print("tiles:", tiles)
     for tile in tiles:
         f = int(tile[1]) + int(tile[-1])
@@ -48,7 +48,7 @@ def test_get_tiles():
 
         print("f:", f, "t:", t)
 
-    print("tile:", tile)
+        print("tile:", tile)
     return
 
 

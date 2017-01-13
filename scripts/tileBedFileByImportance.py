@@ -118,7 +118,7 @@ def main():
         genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
         pos_offset = genome_start - line.start
         parts = {
-                    'startPos': genome_end,
+                    'startPos': genome_start,
                     'endPos': genome_end,
                     'uid': slugid.nice(),
                     'chrOffset': pos_offset,

@@ -42,6 +42,7 @@ def get_tile(db_file, zoom, tile_x_pos):
     print("query", query)
 
     rows = c.execute(query).fetchall()
+    print("rows:", rows)
 
 
     # add the position offset to the returned values
