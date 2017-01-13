@@ -39,12 +39,17 @@ def main():
     parser.add_argument('-c', '--chunk-size', default=14, type=int)
     parser.add_argument('-z', '--zoom-step', default=8, type=int)
     parser.add_argument('-t', '--tile-size', default=1024, type=int)
-    parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
+    parser.add_argument('-o', '--output-file', default=None)
     parser.add_argument('-a', '--assembly', default='hg19')
 
     args = parser.parse_args()
     last_end = 0
     data = []
+
+    if args.output_file is None:
+        args.output_file = op.splitext(args.filepath)[0] + '.hitile'
+
+    print("output file:", args.output_file)
 
     # Override the output file if it existts
     if op.exists(args.output_file):
@@ -53,7 +58,7 @@ def main():
 
     # get the information about the chromosomes in this assembly
     chrom_info = nc.get_chrominfo(args.assembly)
-    chrom_order = [i[0] for i in sorted(chrom_info.cum_chrom_lengths.items(), key=lambda x: x[1])]
+    chrom_order = nc.get_chromorder(args.assembly)
     assembly_size = chrom_info.total_length
 
     tile_size = args.tile_size
@@ -81,19 +86,23 @@ def main():
 
     d.attrs['zoom-step'] = args.zoom_step
     d.attrs['max-length'] = assembly_size
-    d.attrs['assembly'] = 'hg19'
+    d.attrs['assembly'] = args.assembly
     d.attrs['chrom-names'] = bwf.chroms().keys()
     d.attrs['chrom-sizes'] = bwf.chroms().values()
     d.attrs['chrom-order'] = chrom_order
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
+    d.attrs['max-width'] = tile_size * 2 ** max_zoom
 
+    print("assembly size (max-length)", d.attrs['max-length'])
+    print("max-width", d.attrs['max-width'])
     print("max_zoom:", d.attrs['max-zoom'])
     print("chunk-size:", chunk_size)
+    print("chrom-order", d.attrs['chrom-order'])
 
     t1 = time.time()
 
-    for chrom in chrom_order:
+    for chrom in nc.get_chromorder(args.assembly):
         if chrom not in bwf.chroms():
             print("skipping chrom (not in bigWig file):", chrom)
             continue

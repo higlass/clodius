@@ -5,7 +5,7 @@
 * Kent-tools (`brew install kent-tools`)
 * Pipe viewer (`brew install pv`)
 
-* Python egspy (`pip install negspy`)
+* Python negspy (`pip install negspy`)
 * Python requests (`pip install requests`)
 
 Install `clodius` by running:

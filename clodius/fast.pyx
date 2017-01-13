@@ -16,7 +16,7 @@ def aggregate(np.ndarray[np.float32_t,ndim=1] in_array, int num_to_agg):
     :return: A numpy array
     '''
     cdef int length = len(in_array)
-    cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(math.ceil(length / float(num_to_agg)), 
+    cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(int(math.ceil(length / float(num_to_agg))), 
                                                               dtype=np.float32)
     cdef int i = 0
     cdef int j = 0
