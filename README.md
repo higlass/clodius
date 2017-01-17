@@ -2,15 +2,16 @@
 
 ### Requirements
 
+Optionally:
 * Kent-tools (`brew install kent-tools`)
 * Pipe viewer (`brew install pv`)
 
-* Python negspy (`pip install negspy`)
-* Python requests (`pip install requests`)
-
 Install `clodius` by running:
 
-`python setup.py install`
+```
+python setup.py install
+git diff requirements.txt
+```
 
 ## Documentation
 
