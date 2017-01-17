@@ -1,6 +1,5 @@
-slugid
-requests
-negspy
-pandas
-sortedcontainers
-weave
+clodius==0.3.0
+Cython==0.24.1
+negspy==0.2.0
+numpy==1.12.0
+requests==2.12.4
