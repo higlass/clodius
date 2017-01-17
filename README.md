@@ -2,15 +2,16 @@
 
 ### Requirements
 
+Optionally:
 * Kent-tools (`brew install kent-tools`)
 * Pipe viewer (`brew install pv`)
 
-* Python negspy (`pip install negspy`)
-* Python requests (`pip install requests`)
-
 Install `clodius` by running:
 
-`python setup.py install`
+```
+python setup.py install
+git diff requirements.txt
+```
 
 ## Documentation
 
@@ -96,7 +97,7 @@ directory is specified using the (`--output-dir` or `-o` parameter). This
 contains the `tile_info.json` file which contains all of the metadata about the
 tiling:
 
-```
+```json
 {
   "min_importance": 1.0, 
   "min_pos": [
@@ -126,7 +127,7 @@ was 1D, then the id would have one less number.
 Tile boundaries are half-open. This an be illustrated using the following
 code block:
 
-```
+```python
     import json
     import clodius.fpark as cfp
     import clodius.tiles as cti
@@ -144,7 +145,7 @@ code block:
 
 The output will be:
 
-```
+```json
 [
   [
     (0,1),
@@ -201,7 +202,7 @@ that has a value along with its value.
 Used when there are not enough entries to make it worthwhile to return dense
 matrix format. 
 
-```
+```json
 {
   "sparse": [
     {
@@ -225,7 +226,7 @@ area that this tile occupies.
 
 The output of a single tile is just an array of values under the key `dense`.
 
-```
+```json
 {
     "dense": [3.0, 0, 2.0, 1.0]
 }
@@ -233,7 +234,7 @@ The output of a single tile is just an array of values under the key `dense`.
 
 The encoding from bin positions, to positions in the flat array is performed thusly:
 
-```
+```python
 for (bin_pos, bin_val) in tile_entries_iterator.items():
     index = sum([bp * bins_per_dimension ** i for i,bp in enumerate(bin_pos)])
     initial_values[index] = bin_val
