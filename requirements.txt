@@ -2,3 +2,12 @@ Cython==0.24.1
 negspy==0.2.0
 numpy==1.12.0
 requests==2.12.4
+argparse
+pandas
+slugid
+sortedcontainers
+weave
+
+#Cooler
+-e git://github.com/mirnylab/cooler@f510ff3c10087b13246024d89a1331614d5e585d#egg=cooler
+
