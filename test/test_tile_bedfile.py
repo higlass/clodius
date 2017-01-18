@@ -1,9 +1,7 @@
 from __future__ import print_function
 
-import clodius.hdf_tiles as cht
 import clodius.db_tiles as cdt
-import h5py
-import pybedtools as pbt
+
 import sqlite3
 
 def test_get_tileset_info():
