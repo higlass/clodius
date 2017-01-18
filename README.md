@@ -1,3 +1,5 @@
+# Clodius <img src="https://travis-ci.org/hms-dbmi/clodius.svg?branch=develop"/>
+
 ## Installation
 
 ### Requirements
