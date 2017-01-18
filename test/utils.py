@@ -13,7 +13,8 @@ def get_cooler_info(file_path):
     Returns:
         dict: Dictionary containing basic information about the cooler file.
     """
-
+    TILE_SIZE = 256
+    CHROM_CUM_LEN = 0
     with h5py.File(file_path, 'r') as f:
         max_zoom = f.attrs.get('max-zoom')
 
@@ -23,7 +24,7 @@ def get_cooler_info(file_path):
                 'The `max_zoom` attribute is missing.'
             )
 
-        total_length = int(CHROM_CUM_LEN[-1])
+        total_length = CHROM_CUM_LEN
         max_zoom = f.attrs['max-zoom']
         bin_size = int(f[str(max_zoom)].attrs['bin-size'])
 
