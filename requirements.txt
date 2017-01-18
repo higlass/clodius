@@ -10,6 +10,7 @@ slugid
 sortedcontainers
 weave
 nose
+pyBigWig
 
 #Cooler
 -e git://github.com/scottx611x/cooler@develop#egg=cooler
