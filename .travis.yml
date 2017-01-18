@@ -7,4 +7,4 @@ install:
 script:
   - set -e
   - python setup.py install
-  - nosetests -s test/
+  - nosetests .
