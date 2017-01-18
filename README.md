@@ -8,7 +8,9 @@ Optionally:
 
 Install `clodius` by running:
 
+
 ```
+pip install -r requirements.txt
 python setup.py install
 git diff requirements.txt
 ```
