@@ -1,5 +1,4 @@
-#!/usr/bin/python
-
+#!/usr/bin/python 
 from __future__ import print_function
 
 import argparse
@@ -42,28 +41,6 @@ def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names,
     cursor.commit()
 
     pass
-
-# all entries are broked up into ((tile_pos), [entry]) tuples
-# we just need to reduce the tiles so that no tile contains more than
-# max_entries_per_tile entries
-# (notice that [entry] is an array), this format will be important when
-# reducing to the most important values
-def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, reverse_importance=False):
-    def extract_key(entries):
-        return [(e[-2], e) for e in entries]
-    by_uid = dict(extract_key(entry1) + extract_key(entry2))
-    combined_by_uid = by_uid.values()
-
-    if reverse_importance:
-        combined_entries = sorted(combined_by_uid,
-                key=lambda x: float(x[-1]))
-    else:
-        combined_entries = sorted(combined_by_uid,
-                key=lambda x: -float(x[-1]))
-
-    byKey = {}
-
-    return combined_entries[:max_entries_per_tile]
 
 def main():
     parser = argparse.ArgumentParser(description="""
@@ -109,56 +86,35 @@ def main():
     else:
         outfile = args.outfile
 
-    def line_to_np_array(line):
-        '''
-        Convert a bed file line to a numpy array which can later
-        be used as an entry in an h5py file.
-        '''
-
-        if args.importance_column is None:
-            importance = line.stop - line.start
-        elif args.importance_column == 'random':
-            imporance = random.random()
-        else:
-            importance = int(line.fields[int(args.importance_column)-1])
-
-        # convert chromosome coordinates to genome coordinates
-        genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, args.assembly)
-        genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
-        pos_offset = genome_start - line.start
-        parts = {
-                    'startPos': genome_start,
-                    'endPos': genome_end,
-                    'uid': slugid.nice(),
-                    'chrOffset': pos_offset,
-                    'fields': '\t'.join(line.fields),
-                    'importance': importance
-                    }
-
-        return parts
+    if op.exists(outfile):
+        os.remove(outfile)
 
     def line_to_dict(line):
         parts = line.split()
         d = {}
-        d['froms'] = [nc.chr_pos_to_genome_pos(parts[0], int(parts[1]), args.assembly), 
+        d['xs'] = [nc.chr_pos_to_genome_pos(parts[0], int(parts[1]), args.assembly), 
                       nc.chr_pos_to_genome_pos(parts[0], int(parts[2]), args.assembly)]
-        d['tos'] = [nc.chr_pos_to_genome_pos(parts[3], int(parts[4]), args.assembly), 
+        d['ys'] = [nc.chr_pos_to_genome_pos(parts[3], int(parts[4]), args.assembly), 
                     nc.chr_pos_to_genome_pos(parts[3], int(parts[5]), args.assembly)]
 
-        d['pos_offset'] = d['froms'][0] - int(parts[1])
+        d['uid'] = slugid.nice()
+
+        d['chrOffset'] = d['xs'][0] - int(parts[1])
 
         if args.importance_column is None:
-            d['importance'] = max(d['tos'][1] - d['froms'][1], d['tos'][0] - d['froms'][0]) 
+            d['importance'] = max(d['xs'][1] - d['xs'][0], d['ys'][1] - d['ys'][0]) 
         elif args.importance_column == 'random':
             d['importance'] = random.random()
         else:
             d['importance'] = float(d[args.importance_column])
 
-        d['line'] = line
+        d['fields'] = line
+
+        return d
 
     if args.skip_first_line:
         f.readline()
-    dset = [line_to_dict(line) for line in f]
+    entries = [line_to_dict(line) for line in f]
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -188,12 +144,6 @@ def main():
     max_width = tile_size * 2 ** max_zoom
     uid_to_entry = {}
 
-    intervals = []
-
-    tile_width = tile_size
-
-    removed = set()
-
     c = conn.cursor()
     c.execute(
     '''
@@ -215,8 +165,8 @@ def main():
     c.execute('''
         CREATE VIRTUAL TABLE position_index USING rtree(
             id,
-            fromX, toX,
-            fromY, toY
+            rFromX, rToX,
+            rFromY, rToY
         )
         ''')
 
@@ -228,16 +178,18 @@ def main():
     if args.max_zoom is not None and args.max_zoom < max_zoom:
         max_viewable_zoom = args.max_zoom
 
-
     tile_counts = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
+    entries = sorted(entries, key=lambda x: -x['importance'])
     
     counter = 0
     for d in entries:
         curr_zoom = 0
 
-        while curr_zoom >= max_zoom:
-            tile_from = map(d['froms'], lambda x: x / tile_width)
-            tile_to = map(d['tos'], lambda x: x / tile_width)
+        while curr_zoom <= max_zoom:
+            tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
+            #print("d:", d)
+            tile_from = map(lambda x: x / tile_width, [d['xs'][0], d['ys'][0]] )
+            tile_to = map(lambda x: x / tile_width, [d['xs'][1], d['ys'][1]])
 
             empty_tiles = True
 
@@ -248,6 +200,8 @@ def main():
 
                 for j in range(tile_from[1], tile_to[1]+1):
                     if tile_counts[curr_zoom][i][j] > args.max_per_tile:
+
+
                         empty_tiles = False
                         break
 
@@ -258,84 +212,30 @@ def main():
                     for j in range(tile_from[1], tile_to[1]+1):
                         tile_counts[curr_zoom][i][j] += 1
 
+                print("addding:", curr_zoom, d)
                 exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?)'
                 ret = c.execute(
                         exec_statement,
                         (counter, curr_zoom, 
-                            value['importance'],
-                            value['startPos'], value['endPos'],
-                            value['froms'][0], value['tos'][0],
-                            value['froms'][1], values['tos'][1],
-                            value['chrOffset'], value['fields'])
+                            d['importance'],
+                            d['xs'][0], d['xs'][1],
+                            d['ys'][0], d['ys'][1],
+                            d['chrOffset'], d['fields'])
                         )
                 conn.commit()
 
                 exec_statement = 'INSERT INTO position_index VALUES (?,?,?,?,?)'
                 ret = c.execute(
                         exec_statement,
-                        (counter, value['froms'][0], value['tos'][0], 
-                            value['froms'][1], value['tos'][1])  #add counter as a primary key
+                        (counter, d['xs'][0], d['xs'][1], 
+                            d['ys'][0], d['ys'][1])  #add counter as a primary key
                         )
                 conn.commit()
 
                 counter += 1
-
-            
-                        
-
+                break
 
             curr_zoom += 1
-
-
-    
-
-    while curr_zoom <= max_viewable_zoom and len(intervals) > 0:
-        # at each zoom level, add the top genes
-        tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
-
-        for tile_num in range(max_width / tile_width):
-            # go over each tile and distribute the remaining values
-            #values = interval_tree[tile_num * tile_width: (tile_num+1) * tile_width]
-            from_value = tile_num * tile_width
-            to_value = (tile_num + 1) * tile_width
-            entries = [i for i in intervals if (i[0] < to_value and i[1] > from_value)]
-            values_in_tile = sorted(entries,
-                    key=lambda x: -uid_to_entry[x[-1]]['importance'])[:args.max_per_tile]   # the importance is always the last column
-                                                            # take the negative because we want to prioritize
-                                                            # higher values
-
-            if len(values_in_tile) > 0:
-                for v in values_in_tile:
-                    counter += 1
-
-                    value = uid_to_entry[v[-1]]
-
-                    # one extra question mark for the primary key
-                    exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?)'
-                    ret = c.execute(
-                            exec_statement,
-                            # primary key, zoomLevel, startPos, endPos, chrOffset, line
-                            (counter, curr_zoom, 
-                                value['importance'],
-                                value['startPos'], value['endPos'],
-                                value['chrOffset'], value['fields'])
-                            )
-                    conn.commit()
-
-                    exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
-                    ret = c.execute(
-                            exec_statement,
-                            (counter, value['startPos'], value['endPos'])  #add counter as a primary key
-                            )
-                    conn.commit()
-                    intervals.remove(v)
-        #print ("curr_zoom:", curr_zoom, file=sys.stderr)
-        curr_zoom += 1
-
-    conn.commit()
-
-    conn.close()
-
 
     return
     
