@@ -5,8 +5,8 @@ import sys
 
 from scripts import conversion_wrapper
 from scripts.conversion_wrapper import format_output_filename
-from tile_bedfile_test import check_table
-from tile_bigwig_test import check_tileset_info
+from test_tile_bedfile import check_table
+from test_tile_bigwig import check_tileset_info
 from utils import get_cooler_info
 
 
