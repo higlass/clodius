@@ -11,6 +11,8 @@ install:
   - pip install -r requirements.txt
 script:
   - set -e
+  - ls -all
   - python setup.py install
-  - pwd
-  - nosetests .
+  - ls -all #check if fast.so is created?
+  - which nosetests
+  - nosetests -v
