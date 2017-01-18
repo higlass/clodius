@@ -1,5 +1,6 @@
 from unittest import TestCase
 import os
+from os.path import abspath
 import sys
 
 from scripts import conversion_wrapper
@@ -12,12 +13,11 @@ from utils import get_cooler_info
 class ConversionWrapperTests(TestCase):
 
     def setUp(self):
-        self.bigwig_input = \
-            "sample_data/test1.bw"
-        self.gene_annotation_input = \
-            "sample_data/geneAnnotationsExonsUnions.short.bed"
-        self.cooler_input = \
-            "sample_data/Dixon2012-J1-NcoI-R1-filtered.1000kb.cool"
+        self.bigwig_input = abspath("test/sample_data/test1.bw")
+        self.gene_annotation_input = abspath(
+            "test/sample_data/geneAnnotationsExonsUnions.short.bed")
+        self.cooler_input = abspath(
+            "test/sample_data/Dixon2012-J1-NcoI-R1-filtered.1000kb.cool")
 
     def tearDown(self):
         try:
@@ -44,20 +44,20 @@ class ConversionWrapperTests(TestCase):
         )
 
     def test_wrapper_gene_annotation(self):
-        sys.argv = ["fake.py", "--input_file", os.path.abspath(
-            self.gene_annotation_input), "--data_type", "gene_annotation"]
+        sys.argv = ["fake.py", "--input_file", self.gene_annotation_input,
+                    "--data_type", "gene_annotation"]
         conversion_wrapper.main()
         check_table("geneAnnotationsExonsUnions.short.multires.bed")
 
     def test_wrapper_bigwig(self):
-        sys.argv = ["fake.py", "--input_file", os.path.abspath(
-            self.bigwig_input), "--data_type", "bigwig"]
+        sys.argv = ["fake.py", "--input_file", self.bigwig_input,
+                    "--data_type", "bigwig"]
         conversion_wrapper.main()
         check_tileset_info("test1.multires.bw")
 
     def test_wrapper_cooler(self):
-        sys.argv = ["fake.py", "--input_file", os.path.abspath(
-            self.cooler_input), "--data_type", "cooler"]
+        sys.argv = ["fake.py", "--input_file", self.cooler_input,
+                    "--data_type", "cooler"]
         conversion_wrapper.main()
         get_cooler_info(
             "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
