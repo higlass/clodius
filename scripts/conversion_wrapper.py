@@ -37,7 +37,8 @@ def main():
         tile_bigWig.main()
 
     if data_type == "cooler":
-        recursive_agg_onefile.main(input_file, output_file, int(10e6))
+        recursive_agg_onefile.main(
+            input_file, output_file, int(10e6), n_cpus=2)
 
     if data_type == "gene_annotation":
         sys.argv = ["fake.py", input_file, output_file]
