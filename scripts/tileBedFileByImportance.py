@@ -181,6 +181,7 @@ def main():
         startPos int,
         endPos int,
         chrOffset int,
+        uid text,
         fields text
     )
     ''')
@@ -223,12 +224,13 @@ def main():
                     value = uid_to_entry[v[-1]]
 
                     # one extra question mark for the primary key
-                    exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?)'
+                    exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
                     ret = c.execute(
                             exec_statement,
                             # primary key, zoomLevel, startPos, endPos, chrOffset, line
                             (counter, curr_zoom, 
                                 value['importance'],
+                                value['uid'],
                                 value['startPos'], value['endPos'],
                                 value['chrOffset'], value['fields'])
                             )

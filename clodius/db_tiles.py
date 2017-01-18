@@ -53,7 +53,7 @@ def get_tile(db_file, zoom, tile_x_pos):
     tile_end_pos = tile_start_pos + tile_width
 
     query = '''
-    SELECT chrOffset, fields from intervals,position_index 
+    SELECT startPos, endPos, chrOffset, importance, fields, uid from intervals,position_index 
     where 
     intervals.id=position_index.id and zoomLevel <= {} and rEndPos >= {} and rStartPos <= {}
     '''.format(zoom, tile_start_pos, tile_end_pos)
@@ -63,7 +63,12 @@ def get_tile(db_file, zoom, tile_x_pos):
 
 
     # add the position offset to the returned values
-    rows = [r[1].split('\t') + [r[0]] for r in rows]
+    rows = [{'xStart': r[0],
+             'xEnd': r[1],
+             'chrOffset': r[2],
+             'importance': r[3],
+             'uid': r[5],
+             'fields': r[4].split('\t')} for r in rows]
     conn.close()
 
     return rows
@@ -82,7 +87,7 @@ def get_2d_tile(db_file, zoom, tile_x_pos, tile_y_pos):
     tile_y_end_pos = tile_y_start_pos + tile_width
 
     query = '''
-    SELECT chrOffset, fields, uid from intervals,position_index 
+    SELECT fromX, toX, fromY, toY, chrOffset, importance, fields, uid from intervals,position_index 
     where 
     intervals.id=position_index.id and zoomLevel <= {} and rToX >= {} and rFromX <= {} and rToY >= {} and rFromY <= {}
     '''.format(zoom, tile_x_start_pos, tile_x_end_pos, tile_y_start_pos, tile_y_end_pos)
@@ -90,7 +95,14 @@ def get_2d_tile(db_file, zoom, tile_x_pos, tile_y_pos):
     rows = c.execute(query).fetchall()
 
     # add the position offset to the returned values
-    rows = [r[1].split('\t') + [r[0]] + [r[2]] for r in rows]
+    rows = [{'xStart': r[0],
+             'xEnd': r[1],
+             'yStart': r[2],
+             'yEnd': r[3],
+             'chrOffset': r[4],
+             'importance': r[5],
+             'uid': r[7],
+             'fields': r[6].split('\t')} for r in rows]
     conn.close()
 
     return rows
