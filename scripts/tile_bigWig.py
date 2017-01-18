@@ -10,8 +10,6 @@ import math
 import numpy as np
 import os
 import os.path as op
-import pandas as pd
-import sys
 import time
 import argparse
 
@@ -23,7 +21,7 @@ def reduce_data(data_array):
     t1 = time.time()
     new_data = [lookup_table[d] for d in data_array]
     t2 = time.time()
-    
+
     print("Set size:", len(s), 'data size:', len(data_array))
     print("time taken:", 1000000 * (t2 - t1) / len(data_array))
     return (np.array(new_data), list(s))
@@ -31,7 +29,7 @@ def reduce_data(data_array):
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python main.py
 """)
 
@@ -79,7 +77,7 @@ def main():
 
     # load the bigWig file
     print("filepath:", args.filepath)
-    bwf = pbw.open(args.filepath) 
+    bwf = pbw.open(args.filepath)
 
     # store some meta data
     d = f.create_dataset('meta', (1,), dtype='f')
