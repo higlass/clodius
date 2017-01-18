@@ -104,7 +104,7 @@ def main():
         if args.importance_column is None:
             importance = line.stop - line.start
         elif args.importance_column == 'random':
-            imporance = random.random()
+            importance = random.random()
         else:
             importance = int(line.fields[int(args.importance_column)-1])
 
