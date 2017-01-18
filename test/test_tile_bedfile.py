@@ -42,13 +42,6 @@ def test_get_tiles():
 
     tiles = cdt.get_tile(filename, 18, 169283)
     print("tiles:", tiles)
-    for tile in tiles:
-        f = int(tile[1]) + int(tile[-1])
-        t = int(tile[1]) + int(tile[-1])
-
-        print("f:", f, "t:", t)
-
-        print("tile:", tile)
     return
 
 

@@ -12,8 +12,6 @@
 
     cp test/sample_data/gene_annotations.short.db ~/projects/higlass-server/data/
 
-
-
 ### Get real data files
 
 
