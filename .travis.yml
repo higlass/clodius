@@ -1,9 +1,7 @@
+sudo: required
 language: python
 python:
   - "2.7"
-before_install:
-# See: https://github.com/travis-ci/travis-ci/issues/2890#issuecomment-59882675
-  - pip install scipy
 install:
   - pip install -r requirements.txt
 script:
