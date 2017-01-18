@@ -1,6 +1,7 @@
 ## Installation
 
 ### Requirements
+* [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html#installing-stable-releases)
 
 Optionally:
 * Kent-tools (`brew install kent-tools`)
