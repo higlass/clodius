@@ -82,12 +82,6 @@ def main():
     parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
     parser.add_argument('--max-zoom', type=int, help="The default maximum zoom value")
 
-    #parser.add_argument('argument', nargs=1)
-    #parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
-    #parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
-
     args = parser.parse_args()
 
     if op.exists(args.output_file):
