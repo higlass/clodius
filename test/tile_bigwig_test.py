@@ -7,7 +7,7 @@ import sys
 sys.path.append("scripts")
 
 def test_1d_tile():
-    f = h5py.File('test/sample_data/test.tile_generation.hdf5')
+    f = h5py.File('test/sample_data/test1.tile_generation.hdf5')
 
     max_zoom = f['meta'].attrs['max-zoom']
     tile_size = int(f['meta'].attrs['tile-size'])
@@ -31,6 +31,6 @@ def test_1d_tile():
     assert(d[513] == 4)
 
 def test_tileset_info():
-    f = h5py.File('test/sample_data/test.tile_generation.hdf5')
+    f = h5py.File('test/sample_data/test1.tile_generation.hdf5')
 
     ti = ch.get_tileset_info(f)

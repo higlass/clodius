@@ -157,6 +157,7 @@ def main():
         fromY int,
         toY int,
         chrOffset int,
+        uid text,
         fields text
     )
     ''')
@@ -213,14 +214,16 @@ def main():
                         tile_counts[curr_zoom][i][j] += 1
 
                 print("addding:", curr_zoom, d)
-                exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?)'
+                exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?,?)'
                 ret = c.execute(
                         exec_statement,
                         (counter, curr_zoom, 
                             d['importance'],
                             d['xs'][0], d['xs'][1],
                             d['ys'][0], d['ys'][1],
-                            d['chrOffset'], d['fields'])
+                            d['chrOffset'], 
+                            d['uid'],
+                            d['fields'])
                         )
                 conn.commit()
 

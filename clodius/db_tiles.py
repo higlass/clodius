@@ -82,7 +82,7 @@ def get_2d_tile(db_file, zoom, tile_x_pos, tile_y_pos):
     tile_y_end_pos = tile_y_start_pos + tile_width
 
     query = '''
-    SELECT chrOffset, fields from intervals,position_index 
+    SELECT chrOffset, fields, uid from intervals,position_index 
     where 
     intervals.id=position_index.id and zoomLevel <= {} and rToX >= {} and rFromX <= {} and rToY >= {} and rFromY <= {}
     '''.format(zoom, tile_x_start_pos, tile_x_end_pos, tile_y_start_pos, tile_y_end_pos)
@@ -90,7 +90,7 @@ def get_2d_tile(db_file, zoom, tile_x_pos, tile_y_pos):
     rows = c.execute(query).fetchall()
 
     # add the position offset to the returned values
-    rows = [r[1].split('\t') + [r[0]] for r in rows]
+    rows = [r[1].split('\t') + [r[0]] + [r[2]] for r in rows]
     conn.close()
 
     return rows
