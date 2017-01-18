@@ -12,5 +12,5 @@ weave
 nose
 
 #Cooler
--e git://github.com/mirnylab/cooler@f510ff3c10087b13246024d89a1331614d5e585d#egg=cooler
+-e git://github.com/scottx611x/cooler@develop#egg=cooler
 
