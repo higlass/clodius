@@ -18,13 +18,18 @@ def main():
         '-d', '--data_type', choices=[
             "bigwig", "cooler", "gene_annotation", "hitile"],
         help='Data Type of input file.', required=True)
+    parser.add_argument(
+        '-n', '--n_cpus',
+        help='Number of cpus to use for converting cooler files',
+        required=False, default=1)
 
     args = vars(parser.parse_args())
 
     data_type = args["data_type"]
     input_file = args["input_file"]
-
     output_file = args["output_file"]
+    n_cpus = args["n_cpus"]
+
 
     if output_file is None:
         output_file = format_output_filename(input_file, data_type)
@@ -38,7 +43,7 @@ def main():
 
     if data_type == "cooler":
         recursive_agg_onefile.main(
-            input_file, output_file, int(10e6), n_cpus=2)
+            input_file, output_file, int(10e6), n_cpus=n_cpus)
 
     if data_type == "gene_annotation":
         sys.argv = ["fake.py", input_file, output_file]
