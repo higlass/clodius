@@ -11,8 +11,8 @@ install:
   - pip install -r requirements.txt
 script:
   - set -e
-  - ls -all
+  - ls -al clodius
   - python setup.py install
-  - ls -all #check if fast.so is created?
+  - ls -al clodius #check if fast.so is created?
   - which nosetests
   - nosetests -v
