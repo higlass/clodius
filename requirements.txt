@@ -2,3 +2,16 @@ Cython==0.24.1
 negspy==0.2.0
 numpy==1.12.0
 requests==2.12.4
+h5py
+pybedtools
+argparse
+pandas
+slugid
+sortedcontainers
+weave
+nose
+pyBigWig
+
+#Cooler
+-e git://github.com/scottx611x/cooler@develop#egg=cooler
+

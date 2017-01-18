@@ -1,14 +1,18 @@
+sudo: required
+cache: pip
+addons:
+  apt:
+    packages:
+      - bedtools
 language: python
 python:
   - "2.7"
-
-#cache: apt
-#addons:
-#  apt:
-#    packages:
-
 install:
   - pip install -r requirements.txt
 script:
   - set -e
+  - ls -al clodius
   - python setup.py install
+  - ls -al clodius #check if fast.so is created?
+  - which nosetests
+  - nosetests -v

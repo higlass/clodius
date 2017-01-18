@@ -5,7 +5,7 @@ from pyspark import SparkContext
 
 def main():
     usage = """
-    python big_spark_test.py
+    python big_spark.py
 
     Parse a large input file, group its input by key and output it somewhere.
     """

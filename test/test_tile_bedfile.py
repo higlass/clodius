@@ -16,7 +16,9 @@ def test_get_tileset_info():
     assert(t['max_width'] < 5000000000)
 
 def test_table_created():
-    filename = 'test/sample_data/gene_annotations.short.db';
+    check_table('test/sample_data/gene_annotations.short.db')
+
+def check_table(filename):
     conn = sqlite3.connect(filename)
     c = conn.cursor()
 
@@ -93,7 +95,7 @@ def check_tile_for_duplicate_entries(discrete_data):
     Make sure that there are no entries with the same UID in any tile.
     '''
     seen = set()
-    
+
     for i,d in enumerate(discrete_data):
         uid = d[-2]
 
