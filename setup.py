@@ -1,8 +1,6 @@
 from distutils.core import setup
 from distutils.extension import Extension
 
-import pip
-pip.main(['install', 'cython'])
 from Cython.Build import cythonize
 
 
