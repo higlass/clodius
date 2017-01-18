@@ -1,5 +1,8 @@
-sudo: required
 cache: pip
+addons:
+  apt:
+    packages:
+      - bedtools
 language: python
 python:
   - "2.7"
@@ -8,4 +11,5 @@ install:
 script:
   - set -e
   - python setup.py install
+  - pwd
   - nosetests .
