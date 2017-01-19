@@ -1,6 +1,18 @@
-slugid
-requests
+Cython
 negspy
+numpy
+pysam==0.9.1.3
+requests
+h5py
+pybedtools
+argparse
 pandas
+slugid
 sortedcontainers
 weave
+nose
+pyBigWig
+
+#Cooler
+-e git://github.com/scottx611x/cooler@develop#egg=cooler
+

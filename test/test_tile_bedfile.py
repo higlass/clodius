@@ -1,9 +1,7 @@
 from __future__ import print_function
 
-import clodius.hdf_tiles as cht
 import clodius.db_tiles as cdt
-import h5py
-import pybedtools as pbt
+
 import sqlite3
 
 def test_get_tileset_info():
@@ -16,7 +14,9 @@ def test_get_tileset_info():
     assert(t['max_width'] < 5000000000)
 
 def test_table_created():
-    filename = 'test/sample_data/gene_annotations.short.db';
+    check_table('test/sample_data/gene_annotations.short.db')
+
+def check_table(filename):
     conn = sqlite3.connect(filename)
     c = conn.cursor()
 
@@ -41,14 +41,12 @@ def test_get_tiles():
     filename = 'test/sample_data/gene_annotations.short.db';
 
     tiles = cdt.get_tile(filename, 18, 169283)
-    print("tiles:", tiles)
-    for tile in tiles:
-        f = int(tile[1]) + int(tile[-1])
-        t = int(tile[1]) + int(tile[-1])
 
-        print("f:", f, "t:", t)
+    x = int(tiles[0]['xStart'])
 
-        print("tile:", tile)
+    fields = tiles[0]['fields']
+    assert(len(fields) > 1)
+
     return
 
 
@@ -93,7 +91,7 @@ def check_tile_for_duplicate_entries(discrete_data):
     Make sure that there are no entries with the same UID in any tile.
     '''
     seen = set()
-    
+
     for i,d in enumerate(discrete_data):
         uid = d[-2]
 

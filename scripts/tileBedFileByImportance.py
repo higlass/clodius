@@ -3,21 +3,16 @@
 from __future__ import print_function
 
 import argparse
-import clodius.fpark as cf
-import collections as col
-import h5py
 import math
 import negspy.coordinates as nc
-import numpy as np
 import slugid
 import os
 import os.path as op
 import pybedtools as pbt
 import random
 import sqlite3
-import sys
 
-def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names, 
+def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names,
         chrom_sizes, tile_size, max_zoom, max_width):
     print("chrom_names:", chrom_names)
 
@@ -36,7 +31,7 @@ def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names,
         ''')
 
     cursor.execute('INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?)',
-            (zoom_step, max_length, assembly, 
+            (zoom_step, max_length, assembly,
                 "\t".join(chrom_names), "\t".join(map(str,chrom_sizes)),
                 tile_size, max_zoom, max_width))
     cursor.commit()
@@ -67,7 +62,7 @@ def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, revers
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python tileBedFileByImportance.py file.bed output.db
 
     Tile a bed file and store it as a sqlite database
@@ -87,16 +82,10 @@ def main():
     parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
     parser.add_argument('--max-zoom', type=int, help="The default maximum zoom value")
 
-    #parser.add_argument('argument', nargs=1)
-    #parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
-    #parser.add_argument('-u', '--useless', action='store_true', 
-    #					 help='Another useless option')
-
     args = parser.parse_args()
 
-    if op.exists(args.output_file):
-        os.remove(args.output_file)
+    if op.exists(args.outfile):
+        os.remove(args.outfile)
 
     bed_file = pbt.BedTool(args.bedfile)
 
@@ -109,7 +98,7 @@ def main():
         if args.importance_column is None:
             importance = line.stop - line.start
         elif args.importance_column == 'random':
-            imporance = random.random()
+            importance = random.random()
         else:
             importance = int(line.fields[int(args.importance_column)-1])
 
@@ -146,7 +135,7 @@ def main():
     conn = sqlite3.connect(args.outfile)
 
     # store some meta data
-    store_meta_data(conn, 1, 
+    store_meta_data(conn, 1,
             max_length = assembly_size,
             assembly = args.assembly,
             chrom_names = nc.get_chromorder(args.assembly),
@@ -181,6 +170,7 @@ def main():
         startPos int,
         endPos int,
         chrOffset int,
+        uid text,
         fields text
     )
     ''')
@@ -195,7 +185,7 @@ def main():
 
     curr_zoom = 0
     counter = 0
-    
+
     max_viewable_zoom = max_zoom
 
     if args.max_zoom is not None and args.max_zoom < max_zoom:
@@ -223,14 +213,16 @@ def main():
                     value = uid_to_entry[v[-1]]
 
                     # one extra question mark for the primary key
-                    exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?)'
+                    exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
                     ret = c.execute(
                             exec_statement,
                             # primary key, zoomLevel, startPos, endPos, chrOffset, line
-                            (counter, curr_zoom, 
+                            (counter, curr_zoom,
                                 value['importance'],
                                 value['startPos'], value['endPos'],
-                                value['chrOffset'], value['fields'])
+                                value['chrOffset'], 
+                                value['uid'],
+                                value['fields'])
                             )
                     conn.commit()
 
@@ -250,7 +242,7 @@ def main():
 
 
     return
-    
+
 
 if __name__ == '__main__':
     main()

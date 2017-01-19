@@ -12,3 +12,8 @@ clodius/save_tiles.py
 clodius/tiles.py
 scripts/make_single_threaded_tiles.py
 scripts/tile_bigWig.py
+test/test_conversion_wrapper.py
+test/test_fpark.py
+test/test_make_tiles.py
+test/test_tile_bedfile.py
+test/test_tile_bigwig.py

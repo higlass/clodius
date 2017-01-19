@@ -1,5 +1,3 @@
-import shortuuid
-import sys
 import clodius.fpark as cfp
 import clodius.tiles as cmt
 
@@ -42,10 +40,10 @@ def test_make_matrix_tiles():
 
 def test_make_tiles_by_binning():
     sc = cfp.FakeSparkContext()
-    entries = cmt.load_entries_from_file(sc, 'test/sample_data/simpleMatrix.tsv', 
+    entries = cmt.load_entries_from_file(sc, 'test/sample_data/simpleMatrix.tsv',
                 column_names = ['pos1', 'pos2', 'count'])
     dim_names = ['pos1', 'pos2']
-    
+
     max_zoom = 2
 
     tiles = cmt.make_tiles_by_binning(sc, entries, dim_names, max_zoom,
@@ -54,7 +52,7 @@ def test_make_tiles_by_binning():
 
 def test_make_tiles_with_resolution():
     sc = cfp.FakeSparkContext()
-    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallFullMatrix.tsv', 
+    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallFullMatrix.tsv',
                 column_names = ['pos1', 'pos2', 'count'])
 
     dim_names = ['pos1', 'pos2']
@@ -86,12 +84,12 @@ def test_make_tiles_with_importance():
     #tiles = cmt.make_tiles_by_importance(entries, dim_names, max_zoom, value_field
     dim_names = ['txStart']
     max_zoom = None
-    
-    tiles = cmt.make_tiles_by_importance(sc, entries, dim_names = ['txStart'], 
-            max_zoom = None, 
+
+    tiles = cmt.make_tiles_by_importance(sc, entries, dim_names = ['txStart'],
+            max_zoom = None,
             mins=[1],
             maxs=[3000000000],
-            importance_field='count', 
+            importance_field='count',
             max_entries_per_tile=1)
 
     for (tile_pos, tile_values) in tiles['tiles'].collect():
@@ -99,7 +97,7 @@ def test_make_tiles_with_importance():
 
 def test_data_bounds():
     sc = cfp.FakeSparkContext()
-    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallBedGraph.tsv', 
+    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallBedGraph.tsv',
             column_names=['chr1', 'pos1', 'pos2', 'val'],
             delimiter=' ')
 
@@ -113,7 +111,7 @@ def test_data_bounds():
 
 def test_position_ranges():
     sc = cfp.FakeSparkContext()
-    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallBedGraph.tsv', 
+    entries = cmt.load_entries_from_file(sc, 'test/sample_data/smallBedGraph.tsv',
             column_names=['chr1', 'pos1', 'pos2', 'val'],
             delimiter=' ')
     entries = entries.map(lambda x: dict(x, pos1=int(x['pos1']), pos2=int(x['pos2'])))
@@ -138,7 +136,7 @@ def test_dnase_sample_data():
             column_names=['pos1', 'pos2', 'val'], delimiter=None)
     entries = entries.flatMap(lambda x: cmt.expand_range(x, 'pos1', 'pos2', range_except_0 = 'val'))
 
-    tile_sample_data = cmt.make_tiles_by_binning(sc, entries, 
+    tile_sample_data = cmt.make_tiles_by_binning(sc, entries,
             ['pos1'], max_zoom = 1000,
             value_field = 'val', importance_field = 'val',
             resolution = 1, bins_per_dimension = 64)
@@ -152,7 +150,7 @@ def test_end_position():
     entries = [{'x1': 1, 'x2': 10, 'value': 5}]
     entries = cfp.FakeSparkContext.parallelize(entries)
 
-    tileset = cmt.make_tiles_by_importance(sc, entries, ['x1'], end_dim_names=['x2'], max_zoom=2, 
+    tileset = cmt.make_tiles_by_importance(sc, entries, ['x1'], end_dim_names=['x2'], max_zoom=2,
                                             mins=[1],
                                             maxs=[10],
                                            importance_field='value', adapt_zoom=False)
@@ -171,7 +169,7 @@ def test_end_position():
     entries = [{'x1': 1, 'value': 5}, {'x1': 10, 'value': 6}]
     entries = cfp.FakeSparkContext.parallelize(entries)
 
-    tileset = cmt.make_tiles_by_importance(sc, entries, ['x1'], max_zoom=2, 
+    tileset = cmt.make_tiles_by_importance(sc, entries, ['x1'], max_zoom=2,
                                             mins=[1],
                                             maxs=[10],
                                            importance_field='value', adapt_zoom=False)
