@@ -41,7 +41,12 @@ def test_get_tiles():
     filename = 'test/sample_data/gene_annotations.short.db';
 
     tiles = cdt.get_tile(filename, 18, 169283)
-    print("tiles:", tiles)
+
+    x = int(tiles[0]['xStart'])
+
+    fields = tiles[0]['fields']
+    assert(len(fields) > 1)
+
     return
 
 
