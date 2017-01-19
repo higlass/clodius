@@ -21,7 +21,7 @@ def main():
     parser.add_argument(
         '-n', '--n_cpus',
         help='Number of cpus to use for converting cooler files',
-        required=False, default=1)
+        required=False, default=1, type=int)
 
     args = vars(parser.parse_args())
 
