@@ -84,8 +84,8 @@ def main():
 
     args = parser.parse_args()
 
-    if op.exists(args.output_file):
-        os.remove(args.output_file)
+    if op.exists(args.outfile):
+        os.remove(args.outfile)
 
     bed_file = pbt.BedTool(args.bedfile)
 
@@ -219,9 +219,10 @@ def main():
                             # primary key, zoomLevel, startPos, endPos, chrOffset, line
                             (counter, curr_zoom,
                                 value['importance'],
-                                value['uid'],
                                 value['startPos'], value['endPos'],
-                                value['chrOffset'], value['fields'])
+                                value['chrOffset'], 
+                                value['uid'],
+                                value['fields'])
                             )
                     conn.commit()
 
