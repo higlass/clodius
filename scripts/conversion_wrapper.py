@@ -60,7 +60,7 @@ def main():
 
     if data_type == "cooler":
         from cooler.contrib import recursive_agg_onefile
-        recursive_agg_onefile.main(
+        recursive_agg_onefile.aggregate(
             input_file, output_file, chunk_size, n_cpus=n_cpus)
 
     if data_type == "gene_annotation":
