@@ -12,6 +12,7 @@ sortedcontainers
 weave
 nose
 pyBigWig
+ipdb
 
 #Cooler
 -e git://github.com/scottx611x/cooler@develop#egg=cooler
