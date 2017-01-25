@@ -5,9 +5,9 @@ import sys
 
 from scripts import conversion_wrapper
 from scripts.conversion_wrapper import format_output_filename
-from .test_tile_bedfile import check_table
-from .test_tile_bigwig import check_tileset_info
-from .utils import get_cooler_info
+from test_tile_bedfile import check_table
+from test_tile_bigwig import check_tileset_info
+from utils import get_cooler_info
 
 
 class ConversionWrapperTests(TestCase):
