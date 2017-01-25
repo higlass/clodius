@@ -16,12 +16,18 @@ class ConversionWrapperTests(TestCase):
         self.bigwig_input = abspath("test/sample_data/test1.bw")
         self.gene_annotation_input = abspath(
             "test/sample_data/geneAnnotationsExonsUnions.short.bed")
+        self.gene_annotation_input1 = abspath(
+            "test/sample_data/geneAnnotationsExonsUnions1.short.bed")
+        self.gene_annotation_input2 = abspath(
+            "test/sample_data/geneAnnotationsExonsUnions2.short.bed")
         self.cooler_input = abspath(
             "test/sample_data/Dixon2012-J1-NcoI-R1-filtered.1000kb.cool")
 
     def tearDown(self):
         try:
             os.remove("geneAnnotationsExonsUnions.short.multires.bed")
+            os.remove("geneAnnotationsExonsUnions1.short.multires.bed")
+            os.remove("geneAnnotationsExonsUnions2.short.multires.bed")
             os.remove("test1.multires.bw")
             os.remove(
                 "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
@@ -44,20 +50,30 @@ class ConversionWrapperTests(TestCase):
         )
 
     def test_wrapper_gene_annotation(self):
-        sys.argv = ["fake.py", "--input_file", self.gene_annotation_input,
+        sys.argv = ["fake.py", "--input_file_list", self.gene_annotation_input,
                     "--data_type", "gene_annotation"]
         conversion_wrapper.main()
         check_table("geneAnnotationsExonsUnions.short.multires.bed")
 
     def test_wrapper_bigwig(self):
-        sys.argv = ["fake.py", "--input_file", self.bigwig_input,
+        sys.argv = ["fake.py", "--input_file_list", self.bigwig_input,
                     "--data_type", "bigwig"]
         conversion_wrapper.main()
         check_tileset_info("test1.multires.bw")
 
     def test_wrapper_cooler(self):
-        sys.argv = ["fake.py", "--input_file", self.cooler_input,
+        sys.argv = ["fake.py", "--input_file_list", self.cooler_input,
                     "--data_type", "cooler"]
         conversion_wrapper.main()
         get_cooler_info(
             "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
+
+    def test_multiple_inputs(self):
+        sys.argv = ["fake.py", "--input_file_list",
+                    self.gene_annotation_input, self.gene_annotation_input1,
+                    self.gene_annotation_input2,
+                    "--data_type", "gene_annotation"]
+        conversion_wrapper.main()
+        check_table("geneAnnotationsExonsUnions.short.multires.bed")
+        check_table("geneAnnotationsExonsUnions1.short.multires.bed")
+        check_table("geneAnnotationsExonsUnions2.short.multires.bed")
