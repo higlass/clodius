@@ -73,9 +73,6 @@ def main():
             import tileBedFileByImportance
             tileBedFileByImportance.main()
 
-        # Clear output_file
-        output_file = None
-
 
 def check_if_file_exists(path_to_file):
     """

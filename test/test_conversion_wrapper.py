@@ -1,12 +1,10 @@
-import argparse
 from unittest import TestCase
 import os
 from os.path import abspath
 import sys
 
 from scripts import conversion_wrapper
-from scripts.conversion_wrapper import format_output_filename, \
-    check_if_file_exists
+from scripts.conversion_wrapper import format_output_filename
 from test_tile_bedfile import check_table
 from test_tile_bigwig import check_tileset_info
 from utils import get_cooler_info
@@ -33,7 +31,6 @@ class ConversionWrapperTests(TestCase):
             os.remove("test1.multires.bw")
             os.remove(
                 "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
-            os.remove("test_file.txt")
         except OSError:
             pass
 
@@ -51,12 +48,6 @@ class ConversionWrapperTests(TestCase):
             "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool",
             format_output_filename(self.cooler_input, "cooler")
         )
-
-    def test_check_if_file_exists(self):
-        open("test_file.txt", "w")
-        check_if_file_exists("test_file.txt")
-        self.assertRaises(argparse.ArgumentTypeError, check_if_file_exists,
-                          "non_existant_file.txt")
 
     def test_wrapper_gene_annotation(self):
         sys.argv = ["fake.py", "--input_file_list", self.gene_annotation_input,
@@ -77,7 +68,7 @@ class ConversionWrapperTests(TestCase):
         get_cooler_info(
             "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
 
-    def test_wrapper_with_multiple_inputs(self):
+    def test_multiple_inputs(self):
         sys.argv = ["fake.py", "--input_file_list",
                     self.gene_annotation_input, self.gene_annotation_input1,
                     self.gene_annotation_input2,
