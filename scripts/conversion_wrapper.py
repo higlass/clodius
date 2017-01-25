@@ -2,9 +2,19 @@ import argparse
 import os
 import sys
 
+def set_postmortem_hook():
+    import sys, traceback, ipdb
+    def _excepthook(exc_type, value, tb):
+        traceback.print_exception(exc_type, value, tb)
+        print()
+        ipdb.pm()
+    sys.excepthook = _excepthook
 
-from cooler.contrib import recursive_agg_onefile
-import tileBedFileByImportance, tile_bigWig
+set_postmortem_hook()
+
+
+# the appropriate aggregation modules will be imported in their time and
+# place
 
 def main():
 
@@ -22,6 +32,10 @@ def main():
         '-n', '--n_cpus',
         help='Number of cpus to use for converting cooler files',
         required=False, default=1, type=int)
+    parser.add_argument(
+        '-c', '--chunk-size',
+        help='Number of records each worker handles at a time',
+        required=False, default=int(1e6), type=int)
 
     args = vars(parser.parse_args())
 
@@ -29,6 +43,7 @@ def main():
     input_file = args["input_file"]
     output_file = args["output_file"]
     n_cpus = args["n_cpus"]
+    chunk_size = args["chunk_size"]
 
 
     if output_file is None:
@@ -39,14 +54,18 @@ def main():
 
     if data_type in ["bigwig", "hitile"]:
         sys.argv = ["fake.py", input_file, "-o", output_file]
+        import  tile_bigWig
+
         tile_bigWig.main()
 
     if data_type == "cooler":
+        from cooler.contrib import recursive_agg_onefile
         recursive_agg_onefile.main(
-            input_file, output_file, int(10e6), n_cpus=n_cpus)
+            input_file, output_file, chunk_size, n_cpus=n_cpus)
 
     if data_type == "gene_annotation":
         sys.argv = ["fake.py", input_file, output_file]
+        import tileBedFileByImportance
         tileBedFileByImportance.main()
 
 
