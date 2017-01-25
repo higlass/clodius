@@ -31,11 +31,11 @@ def main():
     parser.add_argument(
         '-n', '--n_cpus',
         help='Number of cpus to use for converting cooler files',
-        required=False, default=1, type=int)
+        required=False, default="1")
     parser.add_argument(
         '-c', '--chunk-size',
         help='Number of records each worker handles at a time',
-        required=False, default=int(1e6), type=int)
+        required=False, default=str(int(10e6)))
 
     args = vars(parser.parse_args())
 
@@ -60,8 +60,9 @@ def main():
 
     if data_type == "cooler":
         from cooler.contrib import recursive_agg_onefile
-        recursive_agg_onefile.aggregate(
-            input_file, output_file, chunk_size, n_cpus=n_cpus)
+        sys.argv = ["fake.py", input_file, "-o", output_file,
+                    "-c", chunk_size, "-n", n_cpus]
+        recursive_agg_onefile.main()
 
     if data_type == "gene_annotation":
         sys.argv = ["fake.py", input_file, output_file]
