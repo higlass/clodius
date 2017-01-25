@@ -17,7 +17,6 @@ set_postmortem_hook()
 # place
 
 def main():
-
     parser = argparse.ArgumentParser(
         description="Wrapper around conversion tools available for higlass")
     parser.add_argument(
@@ -31,11 +30,11 @@ def main():
     parser.add_argument(
         '-n', '--n_cpus',
         help='Number of cpus to use for converting cooler files',
-        required=False, default=1, type=int)
+        required=False, default="1")
     parser.add_argument(
         '-c', '--chunk-size',
         help='Number of records each worker handles at a time',
-        required=False, default=int(1e6), type=int)
+        required=False, default=str(int(10e6)))
 
     args = vars(parser.parse_args())
 
@@ -45,7 +44,6 @@ def main():
     n_cpus = args["n_cpus"]
     chunk_size = args["chunk_size"]
 
-
     if output_file is None:
         output_file = format_output_filename(input_file, data_type)
 
@@ -54,14 +52,14 @@ def main():
 
     if data_type in ["bigwig", "hitile"]:
         sys.argv = ["fake.py", input_file, "-o", output_file]
-        import  tile_bigWig
-
+        import tile_bigWig
         tile_bigWig.main()
 
     if data_type == "cooler":
         from cooler.contrib import recursive_agg_onefile
-        recursive_agg_onefile.aggregate(
-            input_file, output_file, chunk_size, n_cpus=n_cpus)
+        sys.argv = ["fake.py", input_file, "-o", output_file,
+                    "-c", chunk_size, "-n", n_cpus]
+        recursive_agg_onefile.main()
 
     if data_type == "gene_annotation":
         sys.argv = ["fake.py", input_file, output_file]
