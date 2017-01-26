@@ -38,7 +38,7 @@ def main():
     parser.add_argument(
         '-c', '--chunk-size',
         help='Number of records each worker handles at a time',
-        required=False, default=str(int(10e6)))
+        required=False, default=str(int(1e6)))
 
     args = vars(parser.parse_args())
 
