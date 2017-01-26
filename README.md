@@ -1,6 +1,6 @@
 # Clodius <img src="https://travis-ci.org/hms-dbmi/clodius.svg?branch=develop"/>
 
-## Installation (Tested on `Ubuntu 16.04 LTS`
+## Installation (Tested on `Ubuntu 16.04 LTS`)
 
 ### Requirements
 * [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html#installing-stable-releases)
