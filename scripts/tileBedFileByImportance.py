@@ -75,7 +75,7 @@ def main():
             "that row is. If it's absent, then use the length of the region."
             "If the value is equal to `random`, then a random value will be"
             "used for the importance (effectively leading to random sampling)")
-    parser.add_argument('--assembly', type=str, default='hg19',
+    parser.add_argument('-a', '--assembly', type=str, default='hg19',
             help='The genome assembly to use')
     parser.add_argument('--max-per-tile', type=int, default=100)
     parser.add_argument('--tile-size', default=1024)
@@ -220,7 +220,7 @@ def main():
                             (counter, curr_zoom,
                                 value['importance'],
                                 value['startPos'], value['endPos'],
-                                value['chrOffset'], 
+                                value['chrOffset'],
                                 value['uid'],
                                 value['fields'])
                             )

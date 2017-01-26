@@ -29,6 +29,9 @@ def main():
             "bigwig", "cooler", "gene_annotation", "hitile"],
         help='Data Type of input file.', required=True)
     parser.add_argument(
+        '-a', '--assembly', choices=["hg19", "mm9"],
+        help='Genome assembly to use', required=False, default="hg19")
+    parser.add_argument(
         '-n', '--n_cpus',
         help='Number of cpus to use for converting cooler files',
         required=False, default="1")
@@ -39,6 +42,7 @@ def main():
 
     args = vars(parser.parse_args())
 
+    assembly = args["assembly"]
     data_type = args["data_type"]
     input_file = args["input_file"]
     output_file = args["output_file"]
@@ -53,8 +57,8 @@ def main():
         sys.stdout.write("Output to stdout")
 
     if data_type in ["bigwig", "hitile"]:
-        sys.argv = ["fake.py", input_file, "-o", output_file]
-        import  tile_bigWig
+        sys.argv = ["fake.py", input_file, "-o", output_file, "-a", assembly]
+        import tile_bigWig
 
         tile_bigWig.main()
 
@@ -65,7 +69,7 @@ def main():
         recursive_agg_onefile.main()
 
     if data_type == "gene_annotation":
-        sys.argv = ["fake.py", input_file, output_file]
+        sys.argv = ["fake.py", input_file, output_file, "-a", assembly]
         import tileBedFileByImportance
         tileBedFileByImportance.main()
 

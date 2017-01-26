@@ -45,13 +45,13 @@ class ConversionWrapperTests(TestCase):
 
     def test_wrapper_gene_annotation(self):
         sys.argv = ["fake.py", "--input_file", self.gene_annotation_input,
-                    "--data_type", "gene_annotation"]
+                    "--data_type", "gene_annotation", "--assembly", "hg19"]
         conversion_wrapper.main()
         check_table("geneAnnotationsExonsUnions.short.multires.bed")
 
     def test_wrapper_bigwig(self):
         sys.argv = ["fake.py", "--input_file", self.bigwig_input,
-                    "--data_type", "bigwig"]
+                    "--data_type", "bigwig", "--assembly", "hg19"]
         conversion_wrapper.main()
         check_tileset_info("test1.multires.bw")
 
