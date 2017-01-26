@@ -9,7 +9,6 @@ argparse
 pandas
 slugid
 sortedcontainers
-weave
 nose
 pyBigWig
 ipdb

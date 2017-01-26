@@ -6,8 +6,6 @@ import math
 import numpy as np
 import os
 import os.path as op
-import pandas as pd
-import weave
 import sys
 import time
 import argparse
@@ -20,7 +18,7 @@ def reduce_data(data_array):
     t1 = time.time()
     new_data = [lookup_table[d] for d in data_array]
     t2 = time.time()
-    
+
     print("Set size:", len(s), 'data size:', len(data_array))
     print("time taken:", 1000000 * (t2 - t1) / len(data_array))
     return (np.array(new_data), list(s))
@@ -28,7 +26,7 @@ def reduce_data(data_array):
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python main.py
 """)
 
@@ -39,7 +37,7 @@ def main():
     parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
     #parser.add_argument('-o', '--options', default='yo',
     #					 help="Some option", type='str')
-    #parser.add_argument('-u', '--useless', action='store_true', 
+    #parser.add_argument('-u', '--useless', action='store_true',
     #					 help='Another useless option')
     args = parser.parse_args()
     last_end = 0
