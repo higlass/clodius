@@ -1,16 +1,11 @@
 # Clodius <img src="https://travis-ci.org/hms-dbmi/clodius.svg?branch=develop"/>
 
-## Installation
+## Installation (Tested on `Ubuntu 16.04 LTS`
 
 ### Requirements
 * [bedtools](http://bedtools.readthedocs.io/en/latest/content/installation.html#installing-stable-releases)
 
-Optionally:
-* Kent-tools (`brew install kent-tools`)
-* Pipe viewer (`brew install pv`)
-
 Install `clodius` by running:
-
 
 ```
 pip install -r requirements.txt
