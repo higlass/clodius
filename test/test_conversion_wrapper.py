@@ -69,23 +69,3 @@ class ConversionWrapperTests(TestCase):
         get_cooler_info(
             "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
 
-    def test_wrapper_cooler_three_cpus(self):
-        sys.argv = ["fake.py", "--input_file", self.cooler_input,
-                    "--data_type", "cooler", "--n_cpus", "3"]
-        conversion_wrapper.main()
-        get_cooler_info(
-            "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
-
-    def test_wrapper_cooler_four_cpus(self):
-        sys.argv = ["fake.py", "--input_file", self.cooler_input,
-                    "--data_type", "cooler", "--n_cpus", "4"]
-        conversion_wrapper.main()
-        get_cooler_info(
-            "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
-
-    def test_wrapper_cooler_eight_cpus(self):
-        sys.argv = ["fake.py", "--input_file", self.cooler_input,
-                    "--data_type", "cooler", "--n_cpus", "8"]
-        conversion_wrapper.main()
-        get_cooler_info(
-            "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
