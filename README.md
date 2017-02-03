@@ -276,21 +276,7 @@ Or, for a more realistic data set:
 OUTPUT_DIR=output; rm -rf $OUTPUT_DIR; python scripts/make_tiles.py -o $OUTPUT_DIR -v count -p pos1,pos2 -c pos1,pos2,count -i count -r 5000 -b 128 --max-zoom 14 data/128k.raw; du --max-depth=0 -h output; find output/ | wc -l;
 ```
 
-The parameters:
-
-
-## Tests
-
-There are a limited number of tests provided.
-
-```
-nosetests -s test/ 
-```
-
 ## Examples
-
-
-
 
 ## Profiling
 
@@ -316,8 +302,7 @@ To display it at 1K (~2 ^ 10) base pairs per pixel, we would need 14 zoom levels
 ## Testing
 
 ```
-python setup.py build_ext --inplace
-nosetests test
+nosetests
 ```
 
 ## Push new changes to pypi
