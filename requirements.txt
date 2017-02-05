@@ -14,6 +14,7 @@ nose
 pyBigWig
 ipdb
 
-#Cooler
+# Cooler
 -e git://github.com/scottx611x/cooler@develop#egg=cooler
+# Multiprocess
 -e git://github.com/uqfoundation/multiprocess@02c1480e3e0a8d6740a2234f1f757d8d90dc7705#egg=multiprocess

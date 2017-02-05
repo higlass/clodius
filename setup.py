@@ -12,7 +12,7 @@ setup(
     ext_modules = cythonize([Extension(
         "clodius.fast", ["clodius/fast.pyx"], include_dirs=[
             numpy.get_include()])]),
-    version='0.3.4',
+    version='0.3.5',
     description='Tile generation of big data',
     author='Peter Kerpedjiev',
     author_email='pkerpedjiev@gmail.com',
