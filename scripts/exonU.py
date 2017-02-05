@@ -20,7 +20,8 @@ def merge_gene_info(gene_infos, gene_info):
     merged = False
 
     for existing_gene_info in gene_infos[gene_info.geneId]:
-        if (existing_gene_info.txEnd > gene_info.txStart and
+        if (existing_gene_info.chrName == gene_info.chrName and 
+                existing_gene_info.txEnd > gene_info.txStart and
                 gene_info.txEnd > existing_gene_info.txStart):
 
             # overlapping genes, merge the exons of the second into the first
@@ -90,7 +91,7 @@ def main():
 
     for gene_id in gene_infos:
         for contig in gene_infos[gene_id]:
-            output = "\t".join(map(str, [contig.geneId, contig.txStart, contig.txEnd,
+            output = "\t".join(map(str, [contig.chrName, contig.txStart, contig.txEnd,
                                 contig.geneName, contig.score, contig.strand,
                                 'union_' + gene_id, gene_id, contig.geneType, contig.geneDesc,
                                 contig.cdsStart, contig.cdsEnd, 
