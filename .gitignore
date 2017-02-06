@@ -17,3 +17,4 @@ aws_keys.py
 .ipynb_checkpoints/
 /build
 /dist
+.idea/
