@@ -13,9 +13,9 @@ install:
 
 script:
   - REPO=gehlenborglab/clodius
-  - docker pull $REPO:latest
-  - docker build --cache-from $REPO:latest --tag clodius-image .
-  - docker run clodius-image nosetests
+  - sudo docker pull $REPO:latest
+  - sudo docker build --cache-from $REPO:latest --tag clodius-image .
+  - sudo docker run clodius-image nosetests
 
 after_success:
   - tag_push() { echo "Tagging into $2"; sudo docker tag $1 $2; sudo docker push $2; }
