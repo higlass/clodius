@@ -11,9 +11,14 @@ RUN apt-get install -y zlib1g-dev=1:1.2.8.dfsg-4ubuntu1
 #  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /home/root
-# TODO: Could we be less aggressive here?
+
+# Copy and install just the requirements.txt, so that this cache layer isn't lost when other files are modified.
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
 COPY . .
 
-RUN pip install -r requirements.txt
 RUN python setup.py install
 RUN python setup.py build_ext --inplace
+
+RUN nosetests
