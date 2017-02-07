@@ -10,8 +10,6 @@ import math
 import numpy as np
 import os
 import os.path as op
-import pandas as pd
-import sys
 import time
 import argparse
 
@@ -23,7 +21,7 @@ def reduce_data(data_array):
     t1 = time.time()
     new_data = [lookup_table[d] for d in data_array]
     t2 = time.time()
-    
+
     print("Set size:", len(s), 'data size:', len(data_array))
     print("time taken:", 1000000 * (t2 - t1) / len(data_array))
     return (np.array(new_data), list(s))
@@ -31,7 +29,7 @@ def reduce_data(data_array):
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python main.py
 """)
 
@@ -39,12 +37,17 @@ def main():
     parser.add_argument('-c', '--chunk-size', default=14, type=int)
     parser.add_argument('-z', '--zoom-step', default=8, type=int)
     parser.add_argument('-t', '--tile-size', default=1024, type=int)
-    parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
+    parser.add_argument('-o', '--output-file', default=None)
     parser.add_argument('-a', '--assembly', default='hg19')
 
     args = parser.parse_args()
     last_end = 0
     data = []
+
+    if args.output_file is None:
+        args.output_file = op.splitext(args.filepath)[0] + '.hitile'
+
+    print("output file:", args.output_file)
 
     # Override the output file if it existts
     if op.exists(args.output_file):
@@ -53,7 +56,7 @@ def main():
 
     # get the information about the chromosomes in this assembly
     chrom_info = nc.get_chrominfo(args.assembly)
-    chrom_order = [i[0] for i in sorted(chrom_info.cum_chrom_lengths.items(), key=lambda x: x[1])]
+    chrom_order = nc.get_chromorder(args.assembly)
     assembly_size = chrom_info.total_length
 
     tile_size = args.tile_size
@@ -74,7 +77,7 @@ def main():
 
     # load the bigWig file
     print("filepath:", args.filepath)
-    bwf = pbw.open(args.filepath) 
+    bwf = pbw.open(args.filepath)
 
     # store some meta data
     d = f.create_dataset('meta', (1,), dtype='f')
