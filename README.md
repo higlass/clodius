@@ -2,7 +2,7 @@
 
 ## Quick start with Docker
 
-If you don't have your own data, get some sample data:
+If you don't have your own, get some sample data:
 ```
 mkdir -p /tmp/clodius/input
 mkdir -p /tmp/clodius/output
@@ -20,11 +20,11 @@ docker run -v /tmp/clodius/input:/tmp/input \
                -o /tmp/output/sample.multires.bed \
                --data_type gene_annotation \
                --assembly hg19
-ls /tmp/clodius/output # Should contain the outout file
+ls /tmp/clodius/output # Should contain the output file
 ```
 
 If you already have a good location for your input and output files,
-reference that in the `-v` arguments above, instead of `/tmp`.
+reference that in the `-v` arguments above, instead of `/tmp/clodius`.
 The other scripts referenced below can be wrapped similarly.
 
 ## Development install

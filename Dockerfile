@@ -20,5 +20,3 @@ COPY . .
 
 RUN python setup.py install
 RUN python setup.py build_ext --inplace
-
-RUN nosetests
