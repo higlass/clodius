@@ -1,20 +1,23 @@
-Cython
-negspy
-numpy
+Cython==0.25.2
+negspy==0.2.1
+numpy==1.12.0
+
 # Pinning necessary here to avoid compilation errors in 0.9.1.4
 pysam==0.9.1.3
-requests
-h5py
-pybedtools
-argparse
-pandas
-slugid
-sortedcontainers
-nose
-pyBigWig
+
+requests==2.13.0
+h5py==2.6.0
+pybedtools==0.7.9
+#argparse # part of standard library
+pandas==0.19.2
+slugid==1.0.7
+sortedcontainers==1.5.7
+nose==1.3.7
+pyBigWig==0.3.2
 ipdb
 
 # Cooler
+# TODO: Does this need to be a fork? Can we pin a release? Can we get a tarball rather than using git?
 -e git://github.com/scottx611x/cooler@develop#egg=cooler
 # Multiprocess
 -e git://github.com/uqfoundation/multiprocess@02c1480e3e0a8d6740a2234f1f757d8d90dc7705#egg=multiprocess
