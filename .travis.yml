@@ -1,16 +1,44 @@
+# Docker on Travis requires sudo.
 sudo: required
-cache: pip
-addons:
-  apt:
-    packages:
-      - bedtools
-language: python
-python:
-  - "2.7"
+
 install:
-  - pip install -r requirements.txt
+  # Docker 1.13 adds "--cache-from" which really speeds up our Travis builds.
+  # Travis is currently several versions behind: When/if they catch up,
+  # this can all go away, and we can stop sudoing docker.
+  - sudo apt-get install libapparmor1
+  - DEB=docker-engine_1.13.0-0~ubuntu-precise_amd64.deb
+  - wget https://apt.dockerproject.org/repo/pool/main/d/docker-engine/$DEB
+  - sudo dpkg -i $DEB
+  - sudo docker --version
+
 script:
   - set -e
-  - python setup.py install
-  - python setup.py build_ext --inplace
-  - nosetests
+  - REPO=gehlenborglab/clodius
+  - sudo docker pull $REPO:latest
+  - sudo docker build --cache-from $REPO:latest --tag clodius-image .
+  - sudo docker run clodius-image nosetests
+
+after_success:
+  - tag_push() { echo "Tagging into $2"; sudo docker tag $1 $2; sudo docker push $2; }
+
+  - sudo docker login -u $DOCKER_USER -p $DOCKER_PASS
+  # Always update "latest": the cache will be used for the next build.
+  - tag_push clodius-image $REPO
+  - >
+      if [ "$TRAVIS_EVENT_TYPE" == "pull_request" ]; then
+        echo "PR!";
+
+        BRANCH=`echo ${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH} | perl -pne 'chomp;s{.*/}{};s/\W/-/g'`;
+        tag_push clodius-image $REPO:$BRANCH;
+
+        HASH=`git rev-parse HEAD`;
+        tag_push clodius-image $REPO:git-$HASH;
+
+        tag_push clodius-image $REPO:travis-$TRAVIS_JOB_NUMBER;
+      fi
+  - >
+      if [ ! -z "$TRAVIS_TAG" ]; then
+        echo "Git tag!";
+        tag_push clodius-image $REPO:$TRAVIS_TAG;
+      fi
+
