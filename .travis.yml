@@ -12,6 +12,7 @@ install:
   - sudo docker --version
 
 script:
+  - set -e
   - REPO=gehlenborglab/clodius
   - sudo docker pull $REPO:latest
   - sudo docker build --cache-from $REPO:latest --tag clodius-image .
