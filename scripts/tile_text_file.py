@@ -112,10 +112,8 @@ def main():
         data_buffers[0] += values
         curr_time = time.time() - t1
         percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
-        '''
         print("progress: {:.2f} elapsed: {:.2f} remaining: {:.2f}".format(percent_progress,
             curr_time, curr_time / (percent_progress) - curr_time))
-        '''
 
         while len(data_buffers[curr_zoom]) >= chunk_size:
             # get the current chunk and store it, converting nans to 0
@@ -150,14 +148,15 @@ def main():
 
         values += [float(parts[args.value_col-1])] * (int(parts[args.to_pos_col-1]) - int(parts[args.from_pos_col-1]))
 
-        if len(values) > chunk_size:
-            add_values_to_data_buffers(values)
-            values = []
+        while len(values) > chunk_size:
+            add_values_to_data_buffers(values[:chunk_size])
+            values = values[chunk_size:]
 
     add_values_to_data_buffers(values)
 
     # store the remaining data
     print("tile_size:", tile_size, positions[0])
+    print("chunk_size:", chunk_size)
 
     while True:
         # get the current chunk and store it
@@ -168,7 +167,8 @@ def main():
         print("curr_zoom:", curr_zoom, "position:", positions[curr_zoom] + len(curr_chunk))
         print("len:", [len(d) for d in data_buffers])
 
-        print("curr_chunk:", len(curr_chunk))
+        print("curr_chunk:", len(curr_chunk), 2 ** args.zoom_step)
+        print("db:", len(data_buffers[curr_zoom+1]))
         # aggregate and store aggregated values in the next zoom_level's data
         data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
         data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
