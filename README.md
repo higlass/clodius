@@ -10,6 +10,7 @@ pip install --upgrade -r requirements.txt
 
 python scripts/conversion_wrapper.py    \
     -i ~/Downloads/Dixon2012-H1hESC-HindIII-allreps-filtered.1000kb.cool   \
+    -o ~/Downloads/Dixon2012-H1hESC-HindIII-allreps-filtered.1000kb.multires.cool   \
     --filetype cooler \
     --assembly hg19
 ```
