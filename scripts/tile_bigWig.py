@@ -13,20 +13,6 @@ import os.path as op
 import time
 import argparse
 
-def reduce_data(data_array):
-    s = set(data_array)
-    lookup_table = dict([(x,i) for i,x in enumerate(s)])
-
-    print("len lookup_table:", len(lookup_table), "len data_array:", len(data_array))
-    t1 = time.time()
-    new_data = [lookup_table[d] for d in data_array]
-    t2 = time.time()
-
-    print("Set size:", len(s), 'data size:', len(data_array))
-    print("time taken:", 1000000 * (t2 - t1) / len(data_array))
-    return (np.array(new_data), list(s))
-
-
 def main():
     parser = argparse.ArgumentParser(description="""
 
@@ -39,6 +25,9 @@ def main():
     parser.add_argument('-t', '--tile-size', default=1024, type=int)
     parser.add_argument('-o', '--output-file', default=None)
     parser.add_argument('-a', '--assembly', default='hg19')
+    parser.add_argument('-r', '--chromosome', default=None, 
+                        help="Only extract values for a particular chromosome. \
+                              Use all chromosomes if not set")
 
     args = parser.parse_args()
     last_end = 0
@@ -100,7 +89,14 @@ def main():
 
     t1 = time.time()
 
-    for chrom in nc.get_chromorder(args.assembly):
+    # Do we only want values from a single chromosome?
+    if args.chromosome is not None:
+        print("chromosome:", args.chromosome)
+        chroms_to_use = [args.chromosome]
+    else:
+        chroms_to_use = nc.get_chromorder(args.assembly)
+
+    for chrom in chroms_to_use:
         if chrom not in bwf.chroms():
             print("skipping chrom (not in bigWig file):", chrom)
             continue
@@ -162,36 +158,6 @@ def main():
 
     data = np.array(data)
     t1 = time.time()
-
-    '''
-    curr_zoom = 0
-    dsets = []
-    while len(data) > tile_size:
-        (to_store_data, values_list) = reduce_data(data)
-        if len(values_list) < 2 **16 and len(data) > 2**20:
-            print "storing lookup"
-            dsets += [f.create_dataset("zoom_" + str(curr_zoom), (len(data),), dtype='i2', compression='gzip')]
-            lookup_dset = f.create_dataset("values_" + str(curr_zoom), (len(values_list), ), dtype='f')
-            lookup_dset[:] = np.array(values_list)
-
-            dsets[curr_zoom][:len(data)] = to_store_data
-        else:
-            print "storing raw...."
-            dsets += [f.create_dataset(str(curr_zoom), (len(data),), dtype='f4', compression='gzip')]
-            dsets[curr_zoom][:len(data)] = data
-
-        new_data = ct.aggregate(data, 32)
-        data = new_data
-        curr_zoom += 1
-
-    dsets += [f.create_dataset(str(curr_zoom), (len(data),), dtype='i2', compression='gzip')]
-    dsets[curr_zoom][:len(data)] = data
-
-    print "time:", time.time() - t1
-    print "len(data):", len(data)
-    '''
-
-    #print data
 
 if __name__ == '__main__':
     main()
