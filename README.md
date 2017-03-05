@@ -33,7 +33,7 @@ docker run -v /tmp/clodius/input:/tmp/input \
            python scripts/conversion_wrapper.py \
                -i /tmp/input/sample.short.bed \
                -o /tmp/output/sample.multires.bed \
-               --data_type gene_annotation \
+               --filetype gene_annotation \
                --assembly hg19
 ls /tmp/clodius/output # Should contain the output file
 ```
