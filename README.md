@@ -17,6 +17,7 @@ python scripts/conversion_wrapper.py    \
     --filetype cooler \
     --assembly hg19
 ```
+The output files can then be displayed using the [higlass-docker container](https://github.com/hms-dbmi/higlass-docker).
 
 ## Quick start with Docker
 
