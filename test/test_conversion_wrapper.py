@@ -1,6 +1,7 @@
 from unittest import TestCase
 import os
 from os.path import abspath
+import os.path as op
 import sys
 
 from scripts import conversion_wrapper
@@ -30,42 +31,39 @@ class ConversionWrapperTests(TestCase):
 
     def test_format_output_filename(self):
         self.assertEqual(
-            "test1.multires.bw",
+            op.splitext(self.bigwig_input)[0] + ".multires.bw",
             format_output_filename(self.bigwig_input, "bigwig")
         )
         self.assertEqual(
-            "geneAnnotationsExonsUnions.short.multires.bed",
+            op.splitext(self.gene_annotation_input)[0] + ".multires.bed",
             format_output_filename(
                 self.gene_annotation_input, "gene_annotation")
         )
         self.assertEqual(
-            "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool",
+            op.splitext(self.cooler_input)[0] + ".multires.cool",
             format_output_filename(self.cooler_input, "cooler")
         )
 
     def test_wrapper_gene_annotation(self):
-        sys.argv = ["fake.py", "--input_file", self.gene_annotation_input,
-                    "--data_type", "gene_annotation", "--assembly", "hg19"]
+        sys.argv = ["fake.py", "--input-file", self.gene_annotation_input,
+                    "--filetype", "gene_annotation", "--assembly", "hg19"]
         conversion_wrapper.main()
-        check_table("geneAnnotationsExonsUnions.short.multires.bed")
+        check_table(format_output_filename(self.gene_annotation_input, 'gene_annotation'))
 
     def test_wrapper_bigwig(self):
-        sys.argv = ["fake.py", "--input_file", self.bigwig_input,
-                    "--data_type", "bigwig", "--assembly", "hg19"]
+        sys.argv = ["fake.py", "--input-file", self.bigwig_input,
+                    "--filetype", "bigwig", "--assembly", "hg19"]
         conversion_wrapper.main()
-        check_tileset_info("test1.multires.bw")
+        check_tileset_info(format_output_filename(self.bigwig_input, 'bigwig'))
 
     def test_wrapper_cooler(self):
-        sys.argv = ["fake.py", "--input_file", self.cooler_input,
-                    "--data_type", "cooler"]
+        sys.argv = ["fake.py", "--input-file", self.cooler_input,
+                    "--filetype", "cooler"]
         conversion_wrapper.main()
-        get_cooler_info(
-            "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
+        get_cooler_info(format_output_filename(self.cooler_input, 'cooler'))
 
     def test_wrapper_cooler_multiple_cpus(self):
-        sys.argv = ["fake.py", "--input_file", self.cooler_input,
-                    "--data_type", "cooler", "--n_cpus", "2"]
+        sys.argv = ["fake.py", "--input-file", self.cooler_input,
+                    "--filetype", "cooler", "--n-cpus", "2"]
         conversion_wrapper.main()
-        get_cooler_info(
-            "Dixon2012-J1-NcoI-R1-filtered.1000kb.multires.cool")
-
+        get_cooler_info(format_output_filename(self.cooler_input, 'cooler'))
