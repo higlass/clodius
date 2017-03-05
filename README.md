@@ -7,13 +7,17 @@ Clone the clodius repository (preferably into a virtual environment) and install
 ```
 git clone https://github.com/hms-dbmi/clodius.git
 pip install --upgrade -r requirements.txt
+```
+Then run `conversion_wrapper.py` on the input file to generate a multires file. Supported input file types: `cooler`, `bigwig`.
 
+```
 python scripts/conversion_wrapper.py    \
     -i ~/Downloads/Dixon2012-H1hESC-HindIII-allreps-filtered.1000kb.cool   \
     -o ~/Downloads/Dixon2012-H1hESC-HindIII-allreps-filtered.1000kb.multires.cool   \
     --filetype cooler \
     --assembly hg19
 ```
+The output files can then be displayed using the [higlass-docker container](https://github.com/hms-dbmi/higlass-docker).
 
 ## Quick start with Docker
 
