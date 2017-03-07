@@ -133,7 +133,12 @@ def main():
     # tile this data
     tile_size = args.tile_size
     chrom_info = nc.get_chrominfo(args.assembly)
-    assembly_size = chrom_info.total_length
+    if args.chromosome is None:
+        assembly_size = chrom_info.total_length
+    else:
+        assembly_size = chrom_info.chrom_lengths[args.chromosome]
+    print("assembly-size:", assembly_size)
+
     #max_zoom = int(math.ceil(math.log(assembly_size / min_feature_width) / math.log(2)))
     max_zoom = int(math.ceil(math.log(assembly_size / tile_size) / math.log(2)))
     '''
