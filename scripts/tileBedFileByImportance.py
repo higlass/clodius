@@ -14,7 +14,6 @@ import sqlite3
 
 def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names,
         chrom_sizes, tile_size, max_zoom, max_width):
-    print("chrom_names:", chrom_names)
 
     cursor.execute('''
         CREATE TABLE tileset_info
@@ -81,6 +80,7 @@ def main():
     parser.add_argument('--tile-size', default=1024)
     parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
     parser.add_argument('--max-zoom', type=int, help="The default maximum zoom value")
+    parser.add_argument('--chromosome', help="Tile only values for a particular chromosome")
 
     args = parser.parse_args()
 
@@ -103,8 +103,14 @@ def main():
             importance = int(line.fields[int(args.importance_column)-1])
 
         # convert chromosome coordinates to genome coordinates
-        genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, args.assembly)
-        genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
+
+        if args.chromosome is None:
+            genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, args.assembly)
+            genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
+        else:
+            genome_start = line.start
+            genome_end = line.end
+
         pos_offset = genome_start - line.start
         parts = {
                     'startPos': genome_start,
@@ -112,12 +118,16 @@ def main():
                     'uid': slugid.nice(),
                     'chrOffset': pos_offset,
                     'fields': '\t'.join(line.fields),
-                    'importance': importance
+                    'importance': importance,
+                    'chromosome': str(line.chrom)
                     }
 
         return parts
 
     dset = [line_to_np_array(line) for line in bed_file]
+    
+    if args.chromosome is not None:
+        dset = [d for d in dset if d['chromosome'] == args.chromosome]
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -175,7 +185,6 @@ def main():
     )
     ''')
 
-    print("creating rtree")
     c.execute('''
         CREATE VIRTUAL TABLE position_index USING rtree(
             id,
