@@ -65,7 +65,6 @@ def main():
         z += args.zoom_step
 
     # load the bigWig file
-    print("filepath:", args.filepath)
     bwf = pbw.open(args.filepath)
 
     # store some meta data
@@ -96,7 +95,6 @@ def main():
 
     # Do we only want values from a single chromosome?
     if args.chromosome is not None:
-        print("chromosome:", args.chromosome)
         chroms_to_use = [args.chromosome]
     else:
         chroms_to_use = nc.get_chromorder(args.assembly)
@@ -138,7 +136,6 @@ def main():
                 curr_zoom += 1
 
     # store the remaining data
-    print("tile_size:", tile_size, positions[0])
 
     while True:
         # get the current chunk and store it
