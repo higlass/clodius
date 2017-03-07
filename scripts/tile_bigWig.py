@@ -65,11 +65,15 @@ def main():
         z += args.zoom_step
 
     # load the bigWig file
-    print("filepath:", args.filepath)
     bwf = pbw.open(args.filepath)
 
     # store some meta data
     d = f.create_dataset('meta', (1,), dtype='f')
+
+    if args.chromosome is not None:
+        assembly_size = bwf.chroms()[args.chromosome]
+
+    print("assembly_size:", assembly_size)
 
     d.attrs['zoom-step'] = args.zoom_step
     d.attrs['max-length'] = assembly_size
@@ -91,7 +95,6 @@ def main():
 
     # Do we only want values from a single chromosome?
     if args.chromosome is not None:
-        print("chromosome:", args.chromosome)
         chroms_to_use = [args.chromosome]
     else:
         chroms_to_use = nc.get_chromorder(args.assembly)
@@ -123,6 +126,7 @@ def main():
                 curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
                 curr_chunk[np.isnan(curr_chunk)] = 0
                 dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
+                #print("setting:", curr_zoom, positions[curr_zoom], positions[curr_zoom]+chunk_size)
 
                 # aggregate and store aggregated values in the next zoom_level's data
                 data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
@@ -132,16 +136,20 @@ def main():
                 curr_zoom += 1
 
     # store the remaining data
-    print("tile_size:", tile_size, positions[0])
 
     while True:
         # get the current chunk and store it
         chunk_size = len(data_buffers[curr_zoom])
         curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
+        curr_chunk[np.isnan(curr_chunk)] = 0
         dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
+        '''
+        print("setting1:", curr_zoom, positions[curr_zoom], positions[curr_zoom]+chunk_size)
+        print("curr_chunk:", curr_chunk)
 
         print("curr_zoom:", curr_zoom, "position:", positions[curr_zoom] + len(curr_chunk))
         print("len:", [len(d) for d in data_buffers])
+        '''
 
         # aggregate and store aggregated values in the next zoom_level's data
         data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))

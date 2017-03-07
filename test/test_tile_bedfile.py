@@ -1,8 +1,12 @@
 from __future__ import print_function
 
 import clodius.db_tiles as cdt
-
+import os
+import scripts.tileBedFileByImportance as tbfbi
 import sqlite3
+import sys
+import tempfile
+
 
 def test_get_tileset_info():
     filename = 'test/sample_data/gene_annotations.short.db';
@@ -73,6 +77,52 @@ def test_get_tiles():
     print("41", len(rows41))
     assert(len(rows30) <= len(rows40) + len(rows41))
 
+
+def test_no_chromosome_limit():
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    sys.argv = ['fake.py', 'test/sample_data/geneAnnotationsExonsUnions.short.bed',
+                '--max-per-tile', '60', '--importance-column', '5',
+                '--assembly', 'hg19', f.name]
+
+    tbfbi.main()
+
+    rows = cdt.get_tile(f.name, 0, 0)
+    foundOther = False
+    
+    for row in rows:
+        if row['fields'][0] != 'chr1':
+            print("row", row)
+            assert(row['xStart'] > 200000000)
+        if row['fields'][0] != 'chr14':
+            foundOther = True
+        break
+    # make sure there's chromosome other than 14 in the output
+    assert(foundOther == True)
+
+    os.remove(f.name)
+    pass
+
+def test_chromosome_limit():
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    sys.argv = ['fake.py', 'test/sample_data/geneAnnotationsExonsUnions.short.bed',
+                '--max-per-tile', '60', '--importance-column', '5',
+                '--assembly', 'hg19', '--chromosome', 'chr14', f.name]
+
+    tbfbi.main()
+
+    rows = cdt.get_tile(f.name, 0, 0)
+    foundOther = False
+    
+    for row in rows:
+        assert(row['fields'][0] == 'chr14')
+
+        # rows should start before the genome position of chr14
+        assert(row['xStart'] < 200000000)
+
+    os.remove(f.name)
+    pass
 """
 def test_get_tiles():
     f = h5py.File('test/sample_data/cnv.hibed')
@@ -132,4 +182,7 @@ def test_tile_ranges():
 
     d4 = cht.get_discrete_data(f, 12, 11)
     #print("d3:", len(d4))
+
+def test_limit_by_chromosome():
+
 """
