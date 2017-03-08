@@ -11,6 +11,7 @@ import os.path as op
 import pybedtools as pbt
 import random
 import sqlite3
+import sys
 
 def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names,
         chrom_sizes, tile_size, max_zoom, max_width):
@@ -136,7 +137,11 @@ def main():
     if args.chromosome is None:
         assembly_size = chrom_info.total_length
     else:
-        assembly_size = chrom_info.chrom_lengths[args.chromosome]
+        try:
+            assembly_size = chrom_info.chrom_lengths[args.chromosome]
+        except KeyError:
+            print("ERROR: Chromosome {} not found in assembly {}.".format(args.chromosome, args.assembly), file=sys.stderr)
+            return 1
     print("assembly-size:", assembly_size)
 
     #max_zoom = int(math.ceil(math.log(assembly_size / min_feature_width) / math.log(2)))
