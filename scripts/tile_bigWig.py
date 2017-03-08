@@ -34,7 +34,10 @@ def main():
     data = []
 
     if args.output_file is None:
-        args.output_file = op.splitext(args.filepath)[0] + '.hitile'
+        if args.chromosome is None:
+            args.output_file = op.splitext(args.filepath)[0] + '.hitile'
+        else:
+            args.output_file = op.splitext(args.filepath)[0] + '.' + args.chromosome + '.hitile'
 
     print("output file:", args.output_file)
 
