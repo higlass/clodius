@@ -2,22 +2,19 @@
 
 ## Quick start without docker
 
-Clone the clodius repository (preferably into a virtual environment) and install the requirements:
+Install the clodius package:
 
 ```
-git clone https://github.com/hms-dbmi/clodius.git
-pip install --upgrade -r requirements.txt
+pip install clodius
 ```
-Then run `conversion_wrapper.py` on the input file to generate a multires file. Supported input file types: `cooler`, `bigwig`.
+
+And use it aggregate a bigWig file:
 
 ```
-python scripts/conversion_wrapper.py    \
-    -i ~/Downloads/Dixon2012-H1hESC-HindIII-allreps-filtered.1000kb.cool   \
-    -o ~/Downloads/Dixon2012-H1hESC-HindIII-allreps-filtered.1000kb.multires.cool   \
-    --filetype cooler \
-    --assembly hg19
+clodius aggregate bigwig ~/Downloads/E116-DNase.fc.signal.bigwig
 ```
-The output files can then be displayed using the [higlass-docker container](https://github.com/hms-dbmi/higlass-docker).
+
+The output files can then be displayed using the [higlass-docker container](https://github.com/hms-dbmi/higlass-docker). For more information about viewing these types of files take a look at the [higlass wiki](https://github.com/hms-dbmi/higlass/wiki#bigwig-files).
 
 ## Quick start with Docker
 
