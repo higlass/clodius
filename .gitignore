@@ -18,3 +18,4 @@ aws_keys.py
 /build
 /dist
 .idea/
+clodius.egg-info
