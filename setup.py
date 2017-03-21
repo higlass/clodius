@@ -34,7 +34,7 @@ def extensions():
     clodius_fast = Extension(
         "clodius.fast", ["clodius/fast.pyx"], include_dirs=[
             numpy.get_include()])
-    return [clodius_fast]
+    return cythonize([clodius_fast])
 
 def numpy_include():
     import numpy
