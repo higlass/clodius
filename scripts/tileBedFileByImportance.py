@@ -11,10 +11,10 @@ import os.path as op
 import pybedtools as pbt
 import random
 import sqlite3
+import sys
 
 def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names,
         chrom_sizes, tile_size, max_zoom, max_width):
-    print("chrom_names:", chrom_names)
 
     cursor.execute('''
         CREATE TABLE tileset_info
@@ -81,6 +81,7 @@ def main():
     parser.add_argument('--tile-size', default=1024)
     parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
     parser.add_argument('--max-zoom', type=int, help="The default maximum zoom value")
+    parser.add_argument('--chromosome', help="Tile only values for a particular chromosome")
 
     args = parser.parse_args()
 
@@ -103,8 +104,14 @@ def main():
             importance = int(line.fields[int(args.importance_column)-1])
 
         # convert chromosome coordinates to genome coordinates
-        genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, args.assembly)
-        genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
+
+        if args.chromosome is None:
+            genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, args.assembly)
+            genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, args.assembly)
+        else:
+            genome_start = line.start
+            genome_end = line.end
+
         pos_offset = genome_start - line.start
         parts = {
                     'startPos': genome_start,
@@ -112,18 +119,31 @@ def main():
                     'uid': slugid.nice(),
                     'chrOffset': pos_offset,
                     'fields': '\t'.join(line.fields),
-                    'importance': importance
+                    'importance': importance,
+                    'chromosome': str(line.chrom)
                     }
 
         return parts
 
     dset = [line_to_np_array(line) for line in bed_file]
+    
+    if args.chromosome is not None:
+        dset = [d for d in dset if d['chromosome'] == args.chromosome]
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
     tile_size = args.tile_size
     chrom_info = nc.get_chrominfo(args.assembly)
-    assembly_size = chrom_info.total_length
+    if args.chromosome is None:
+        assembly_size = chrom_info.total_length
+    else:
+        try:
+            assembly_size = chrom_info.chrom_lengths[args.chromosome]
+        except KeyError:
+            print("ERROR: Chromosome {} not found in assembly {}.".format(args.chromosome, args.assembly), file=sys.stderr)
+            return 1
+    print("assembly-size:", assembly_size)
+
     #max_zoom = int(math.ceil(math.log(assembly_size / min_feature_width) / math.log(2)))
     max_zoom = int(math.ceil(math.log(assembly_size / tile_size) / math.log(2)))
     '''
@@ -175,7 +195,6 @@ def main():
     )
     ''')
 
-    print("creating rtree")
     c.execute('''
         CREATE VIRTUAL TABLE position_index USING rtree(
             id,

@@ -173,6 +173,9 @@ def get_data(hdf_file, z, x):
     end_pos = int(start_pos + total_in_length)
     f = hdf_file['values_' + str(int(next_stored_zoom))]
 
+    print("next_stored_zoom", next_stored_zoom)
+    print('start_pos:', start_pos, 'end_pos:', end_pos, 'x:', f[start_pos:end_pos])
+
     ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
     return ret_array
     

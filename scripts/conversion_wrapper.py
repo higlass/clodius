@@ -1,5 +1,9 @@
+from __future__ import print_function
+
 import argparse
+import clodius.cli.aggregate as cca
 import os
+import os.path as op
 import sys
 
 def set_postmortem_hook():
@@ -21,18 +25,18 @@ def main():
     parser = argparse.ArgumentParser(
         description="Wrapper around conversion tools available for higlass")
     parser.add_argument(
-        '-i', '--input_file', help="Path to input file", required=True)
+        '-i', '--input-file', help="Path to input file", required=True)
     parser.add_argument(
-        '-o', '--output_file', help="Path of output file", required=False)
+        '-o', '--output-file', help="Path of output file", required=False)
     parser.add_argument(
-        '-d', '--data_type', choices=[
+        '-d', '--filetype', choices=[
             "bigwig", "cooler", "gene_annotation", "hitile"],
         help='Data Type of input file.', required=True)
     parser.add_argument(
         '-a', '--assembly', choices=["hg19", "mm9"],
         help='Genome assembly to use', required=False, default="hg19")
     parser.add_argument(
-        '-n', '--n_cpus',
+        '-n', '--n-cpus',
         help='Number of cpus to use for converting cooler files',
         required=False, default="1")
     parser.add_argument(
@@ -43,7 +47,7 @@ def main():
     args = vars(parser.parse_args())
 
     assembly = args["assembly"]
-    data_type = args["data_type"]
+    filetype = args["filetype"]
     input_file = args["input_file"]
     output_file = args["output_file"]
     n_cpus = args["n_cpus"]
@@ -51,35 +55,33 @@ def main():
 
 
     if output_file is None:
-        output_file = format_output_filename(input_file, data_type)
+        output_file = format_output_filename(input_file, filetype)
 
+    print("Output file:", output_file, file=sys.stderr)
     if output_file == "-":
         sys.stdout.write("Output to stdout")
 
-    if data_type in ["bigwig", "hitile"]:
-        sys.argv = ["fake.py", input_file, "-o", output_file, "-a", assembly]
-        import tile_bigWig
+    if filetype in ["bigwig", "hitile"]:
+        cca._bigwig(filepath=input_file, output_file=output_file, assembly=assembly)
 
-        tile_bigWig.main()
-
-    if data_type == "cooler":
+    if filetype == "cooler":
         from cooler.contrib import recursive_agg_onefile
         sys.argv = ["fake.py", input_file, "-o", output_file,
                     "-c", chunk_size, "-n", n_cpus]
         recursive_agg_onefile.main()
 
-    if data_type == "gene_annotation":
+    if filetype == "gene_annotation":
         sys.argv = ["fake.py", input_file, output_file, "-a", assembly]
         import tileBedFileByImportance
         tileBedFileByImportance.main()
 
 
-def format_output_filename(input_file, data_type):
+def format_output_filename(input_file, filetype):
     """
-    Takes an input_file and data_type and returns the properly
+    Takes an input_file and filetype and returns the properly
     formatted output filename
     :param input_file: String
-    :param data_type: String
+    :param filetype: String
     """
 
     input_file_basename = os.path.basename(input_file)
@@ -91,8 +93,7 @@ def format_output_filename(input_file, data_type):
         "bigwig": "bw"
     }
 
-    return "{}.multires.{}".format(
-        input_file_basename.rpartition(".")[0], file_extentions[data_type])
+    return "{}.multires.{}".format(op.splitext(input_file)[0], file_extentions[filetype])
 
 
 if __name__ == '__main__':

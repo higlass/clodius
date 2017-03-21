@@ -1,0 +1,24 @@
+.git
+
+# Copy the rest from .gitignore:
+
+.DS_Store
+clodius/fast.cpython-35m-darwin.so
+clodius/fast.so
+tmp
+checkpoint
+*~
+*.swp
+*.swo
+*.tiles
+*.pyc
+/data
+output.tar
+profile.dat
+profile.png
+output/
+aws_keys.py
+.ipynb_checkpoints/
+/build
+/dist
+.idea/
