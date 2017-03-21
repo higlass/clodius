@@ -19,3 +19,4 @@ aws_keys.py
 /dist
 .idea/
 clodius.egg-info
+.eggs
