@@ -210,4 +210,4 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
              "Use all chromosomes if not set."
              )
 def bigwig(filepath, chunk_size, zoom_step, tile_size, output_file, assembly, chromosome):
-    _bigwig(filepath, chunk_size, zoom_step, tile_size, outptu_file, assembly, chromosome)
+    _bigwig(filepath, chunk_size, zoom_step, tile_size, output_file, assembly, chromosome)
