@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import argparse
+import clodius.cli.aggregate as cca
 import os
 import os.path as op
 import sys
@@ -61,10 +62,7 @@ def main():
         sys.stdout.write("Output to stdout")
 
     if filetype in ["bigwig", "hitile"]:
-        sys.argv = ["fake.py", input_file, "-o", output_file, "-a", assembly]
-        import tile_bigWig
-
-        tile_bigWig.main()
+        cca._bigwig(filepath=input_file, output_file=output_file, assembly=assembly)
 
     if filetype == "cooler":
         from cooler.contrib import recursive_agg_onefile

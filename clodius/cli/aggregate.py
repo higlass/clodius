@@ -22,51 +22,8 @@ def aggregate():
     '''
     pass
 
-@aggregate.command()
-@click.argument(
-        'filepath',
-        metavar='FILEPATH'
-        )
-@click.option(
-        '--chunk-size',
-        '-c',
-        help='How many values to aggregate at once.'
-             'Specified as a power of two multiplier of the tile'
-             'size',
-        default=14)
-@click.option(
-        '--zoom-step',
-        '-z',
-        help="The number of intermediate aggregation levels to"
-             "omit",
-        default=8)
-@click.option(
-        '--tile-size',
-        '-t',
-        default=1024,
-        help="The number of data points in each tile."
-             "Used to determine the number of zoom levels"
-             "to create.")
-@click.option(
-        '--output-file',
-        '-o',
-        default=None,
-        help="The default output file name to use. If this isn't"
-             "specified, clodius will replace the current extension"
-             "with .hitile"
-        )
-@click.option(
-        '--assembly',
-        '-a',
-        help='The genome assembly that this file was created against',
-        default='hg19')
-@click.option(
-        '--chromosome',
-        default=None,
-        help="Only extract values for a particular chromosome."
-             "Use all chromosomes if not set."
-             )
-def bigwig(filepath, chunk_size, zoom_step, tile_size, output_file, assembly, chromosome):
+
+def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=None, assembly='hg19', chromosome=None):
     last_end = 0
     data = []
 
@@ -207,3 +164,50 @@ def bigwig(filepath, chunk_size, zoom_step, tile_size, output_file, assembly, ch
     data = np.array(data)
     t1 = time.time()
     pass
+
+@aggregate.command()
+@click.argument(
+        'filepath',
+        metavar='FILEPATH'
+        )
+@click.option(
+        '--chunk-size',
+        '-c',
+        help='How many values to aggregate at once.'
+             'Specified as a power of two multiplier of the tile'
+             'size',
+        default=14)
+@click.option(
+        '--zoom-step',
+        '-z',
+        help="The number of intermediate aggregation levels to"
+             "omit",
+        default=8)
+@click.option(
+        '--tile-size',
+        '-t',
+        default=1024,
+        help="The number of data points in each tile."
+             "Used to determine the number of zoom levels"
+             "to create.")
+@click.option(
+        '--output-file',
+        '-o',
+        default=None,
+        help="The default output file name to use. If this isn't"
+             "specified, clodius will replace the current extension"
+             "with .hitile"
+        )
+@click.option(
+        '--assembly',
+        '-a',
+        help='The genome assembly that this file was created against',
+        default='hg19')
+@click.option(
+        '--chromosome',
+        default=None,
+        help="Only extract values for a particular chromosome."
+             "Use all chromosomes if not set."
+             )
+def bigwig(filepath, chunk_size, zoom_step, tile_size, output_file, assembly, chromosome):
+    _bigwig(filepath, chunk_size, zoom_step, tile_size, outptu_file, assembly, chromosome)
