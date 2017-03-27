@@ -11,7 +11,9 @@ import negspy.coordinates as nc
 import numpy as np
 import os
 import os.path as op
+import pybedtools as pbt
 import pyBigWig as pbw
+import slugid
 import time
 
 @cli.group()
@@ -71,7 +73,7 @@ def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, revers
 
 def _bedfile(filepath, output_file, assembly, importance_column, chromosome, max_per_tile, tile_size):
     if output_file is None:
-        output_file = filepath.replace('.cool', '.multires.cool')
+        output_file = filepath + ".multires"
     else:
         output_file = output_file
 
@@ -142,7 +144,8 @@ def _bedfile(filepath, output_file, assembly, importance_column, chromosome, max
     '''
 
     # this script stores data in a sqlite database
-    conn = sqlite3.connect(outfile)
+    import sqlite3
+    conn = sqlite3.connect(output_file)
 
     # store some meta data
     store_meta_data(conn, 1,
@@ -204,7 +207,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, chromosome, max
         # at each zoom level, add the top genes
         tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
 
-        for tile_num in range(max_width / tile_width):
+        for tile_num in range(max_width // tile_width):
             # go over each tile and distribute the remaining values
             #values = interval_tree[tile_num * tile_width: (tile_num+1) * tile_width]
             from_value = tile_num * tile_width
@@ -460,7 +463,6 @@ def bigwig(filepath, output_file, assembly, chromosome, tile_size, chunk_size, z
         default='hg19')
 @click.option(
         '--importance-column',
-        type='str',
         help='The column (1-based) containing information about how important'
         "that row is. If it's absent, then use the length of the region."
         "If the value is equal to `random`, then a random value will be"
@@ -479,12 +481,8 @@ def bigwig(filepath, output_file, assembly, chromosome, tile_size, chunk_size, z
 @click.option(
         '--tile-size', 
         default=1024,
-        help='The number of nucleotides that the highest resolution tiles should span.'
-             'This determines the maximum zoom level')
+        help="The number of nucleotides that the highest resolution tiles should span."
+             "This determines the maximum zoom level"
+        )
 def bedfile(filepath, output_file, assembly, importance_column, chromosome, max_per_tile, tile_size):
-    """
-    python tileBedFileByImportance.py file.bed output.db
-
-    Tile a bed file and store it as a sqlite database
-    """
     _bedfile(filepath, output_file, assembly, importance_column, chromosome, max_per_tile, tile_size)
