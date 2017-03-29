@@ -20,7 +20,6 @@ install_requires = [
         'pysam',
         'requests',
         'h5py',
-        'pybedtools',
         'pandas',
         'slugid',
         'sortedcontainers',
