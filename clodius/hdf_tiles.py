@@ -8,9 +8,21 @@ def get_tileset_info(hdf_file):
     :param hdf_file: A file handle for an HDF5 file (h5py.File('...'))
     '''
     d = hdf_file['meta']
+    max_pox = d.attrs['max-length']
+
+    if "min-pos" in d.attrs:
+        min_pos = d.attrs['min-pos']
+    else:
+        min_pos = 0
+
+    if "max-pos" in d.attrs:
+        max_pos = d.attrs['max-pos']
+    else:
+        max_pos = d.attrs['max-length']
 
     return {
-                "max_pos": d.attrs['max-length'],
+                "max_pos": max_pos,
+                'min_pos': min_pos,
                 "max_width": d.attrs['max-width'],
                 "max_zoom": d.attrs['max-zoom'],
                 "tile_size": d.attrs['tile-size']
@@ -153,10 +165,15 @@ def get_data(hdf_file, z, x):
     zoom_step = int(d.attrs['zoom-step'])
     max_length = int(d.attrs['max-length'])
     max_zoom = int(d.attrs['max-zoom'])
+
+    if 'min-pos' in d.attrs:
+        min_pos = d.attrs['min-pos']
+    else:
+        min_pos = 0
+
     max_width = tile_size * 2 ** max_zoom
 
     rz = max_zoom - z
-    #print("rz:", rz)
     tile_width = max_width / 2**z
 
     # because we only store some a subsection of the zoom levels
@@ -166,15 +183,13 @@ def get_data(hdf_file, z, x):
     # the number of entries to aggregate for each new value
     num_to_agg = 2 ** zoom_offset
     total_in_length = tile_size * num_to_agg
-    #print("num_to_agg:", num_to_agg, total_in_length)
 
     # which positions we need to retrieve in order to dynamically aggregate
     start_pos = int((x * 2 ** zoom_offset * tile_size))
     end_pos = int(start_pos + total_in_length)
     f = hdf_file['values_' + str(int(next_stored_zoom))]
 
-    print("next_stored_zoom", next_stored_zoom)
-    print('start_pos:', start_pos, 'end_pos:', end_pos, 'x:', f[start_pos:end_pos])
+    #print('start_pos:', start_pos, 'end_pos:', end_pos, 'x:', f[start_pos:end_pos])
 
     ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
     return ret_array
