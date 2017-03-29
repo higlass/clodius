@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import clodius.db_tiles as cdt
 import os
-import scripts.tileBedFileByImportance as tbfbi
 import sqlite3
 import sys
 import tempfile
