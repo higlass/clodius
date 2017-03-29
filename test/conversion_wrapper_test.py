@@ -44,6 +44,7 @@ class ConversionWrapperTests(TestCase):
             format_output_filename(self.cooler_input, "cooler")
         )
 
+    '''
     def test_wrapper_gene_annotation(self):
         sys.argv = ["fake.py", "--input-file", self.gene_annotation_input,
                     "--filetype", "gene_annotation", "--assembly", "hg19"]
@@ -56,7 +57,6 @@ class ConversionWrapperTests(TestCase):
         conversion_wrapper.main()
         check_tileset_info(format_output_filename(self.bigwig_input, 'bigwig'))
 
-    '''
     def test_wrapper_cooler(self):
         sys.argv = ["fake.py", "--input-file", self.cooler_input,
                     "--filetype", "cooler"]
