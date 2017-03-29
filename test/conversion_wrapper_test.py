@@ -56,6 +56,7 @@ class ConversionWrapperTests(TestCase):
         conversion_wrapper.main()
         check_tileset_info(format_output_filename(self.bigwig_input, 'bigwig'))
 
+    '''
     def test_wrapper_cooler(self):
         sys.argv = ["fake.py", "--input-file", self.cooler_input,
                     "--filetype", "cooler"]
@@ -67,3 +68,4 @@ class ConversionWrapperTests(TestCase):
                     "--filetype", "cooler", "--n-cpus", "2"]
         conversion_wrapper.main()
         get_cooler_info(format_output_filename(self.cooler_input, 'cooler'))
+    '''

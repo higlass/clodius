@@ -97,14 +97,8 @@ def _bedfile(filepath, output_file, assembly, importance_column, chromosome, max
 
         # convert chromosome coordinates to genome coordinates
 
-        '''
-        if chromosome is None:
-            genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, assembly)
-            genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, assembly)
-        else:
-        '''
-        genome_start = line.start
-        genome_end = line.end
+        genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, assembly)
+        genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, assembly)
 
         pos_offset = genome_start - line.start
         parts = {
@@ -121,10 +115,8 @@ def _bedfile(filepath, output_file, assembly, importance_column, chromosome, max
 
     dset = [line_to_np_array(line) for line in bed_file]
     
-    '''
     if chromosome is not None:
         dset = [d for d in dset if d['chromosome'] == chromosome]
-    '''
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -140,7 +132,6 @@ def _bedfile(filepath, output_file, assembly, importance_column, chromosome, max
             print("ERROR: Chromosome {} not found in assembly {}.".format(chromosome, assembly), file=sys.stderr)
             return 1
     '''
-    print("assembly-size:", assembly_size)
 
     #max_zoom = int(math.ceil(math.log(assembly_size / min_feature_width) / math.log(2)))
     max_zoom = int(math.ceil(math.log(assembly_size / tile_size) / math.log(2)))
@@ -272,8 +263,6 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
         else:
             output_file = op.splitext(filepath)[0] + '.' + chromosome + '.hitile'
 
-    print("output file:", output_file)
-
     # Override the output file if it existts
     if op.exists(output_file):
         os.remove(output_file)
@@ -294,11 +283,6 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     positions = []   # store where we are at the current dataset
     data_buffers = [[]]
 
-    while assembly_size / 2 ** z > tile_size:
-        dsets += [f.create_dataset('values_' + str(z), (assembly_size / 2 ** z,), dtype='f',compression='gzip')]
-        data_buffers += [[]]
-        positions += [0]
-        z += zoom_step
 
     # load the bigWig file
     bwf = pbw.open(filepath)
@@ -306,15 +290,23 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     # store some meta data
     d = f.create_dataset('meta', (1,), dtype='f')
 
-    '''
     if chromosome is not None:
-        assembly_size = bwf.chroms()[chromosome]
-    '''
+        d.attrs['min-pos'] = chrom_info.cum_chrom_lengths[chromosome]
+        d.attrs['max-pos'] = chrom_info.cum_chrom_lengths[chromosome] + bwf.chroms()[chromosome]
+    else:
+        d.attrs['min-pos'] = 0
+        d.attrs['max-pos'] = assembly_size
 
-    print("assembly_size:", assembly_size)
+    data_size = d.attrs['max-pos'] - d.attrs['min-pos'] + 1
+
+    while data_size / 2 ** z > tile_size:
+        dsets += [f.create_dataset('values_' + str(z), (math.ceil(data_size / 2 ** z),), dtype='f',compression='gzip')]
+        data_buffers += [[]]
+        positions += [0]
+        z += zoom_step
 
     d.attrs['zoom-step'] = zoom_step
-    d.attrs['max-length'] = assembly_size
+    d.attrs['max-length'] = d.attrs['max-pos'] - d.attrs['min-pos'] + 1
     d.attrs['assembly'] = assembly
     d.attrs['chrom-names'] = bwf.chroms().keys()
     d.attrs['chrom-sizes'] = bwf.chroms().values()
@@ -322,7 +314,6 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
-
     print("assembly size (max-length)", d.attrs['max-length'])
     print("max-width", d.attrs['max-width'])
     print("max_zoom:", d.attrs['max-zoom'])
@@ -332,13 +323,14 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     t1 = time.time()
 
     # Do we only want values from a single chromosome?
-    '''
     if chromosome is not None:
         chroms_to_use = [chromosome]
     else:
-    '''
-    chroms_to_use = nc.get_chromorder(assembly)
+        chroms_to_use = nc.get_chromorder(assembly)
     print("chroms to use:", chroms_to_use)
+
+    print("min-pos:", d.attrs['min-pos'])
+    print('max-pos:', d.attrs['max-pos'])
 
     for chrom in chroms_to_use:
         if chrom not in bwf.chroms():
@@ -351,19 +343,14 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
         while counter < chrom_size:
             remaining = min(chunk_size, chrom_size - counter)
 
-            if chromosome is None or chrom == chromosome:
-                values = bwf.values(chrom, counter, counter + remaining)
-            else:
-                values = np.empty(remaining)
-                values[:] = np.NAN
-                values = list(values)
+            values = bwf.values(chrom, counter, counter + remaining)
 
             #print("counter:", counter, "remaining:", remaining, "counter + remaining:", counter + remaining)
             counter += remaining
             curr_zoom = 0
             data_buffers[0] += values
             curr_time = time.time() - t1
-            percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
+            percent_progress = (positions[curr_zoom] + 1) / float(data_size)
             print("progress: {:.2f} elapsed: {:.2f} remaining: {:.2f}".format(percent_progress,
                 curr_time, curr_time / (percent_progress) - curr_time))
 
