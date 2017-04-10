@@ -7,7 +7,6 @@ pysam==0.9.1.4
 
 requests==2.13.0
 h5py==2.6.0
-pybedtools==0.7.9
 #argparse # part of standard library
 pandas==0.19.2
 slugid==1.0.7

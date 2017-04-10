@@ -11,7 +11,6 @@ import negspy.coordinates as nc
 import numpy as np
 import os
 import os.path as op
-import pybedtools as pbt
 import pyBigWig as pbw
 import slugid
 import time
@@ -80,40 +79,43 @@ def _bedfile(filepath, output_file, assembly, importance_column, chromosome, max
     if op.exists(output_file):
         os.remove(output_file)
 
-    bed_file = pbt.BedTool(filepath)
+    bed_file = open(filepath, 'r')
 
     def line_to_np_array(line):
         '''
         Convert a bed file line to a numpy array which can later
         be used as an entry in an h5py file.
         '''
+        start = int(line[1])
+        stop = int(line[2])
+        chrom = line[0]
 
         if importance_column is None:
-            importance = line.stop - line.start
+            importance = stop - start
         elif importance_column == 'random':
             importance = random.random()
         else:
-            importance = int(line.fields[int(importance_column)-1])
+            importance = int(line[int(importance_column)-1])
 
         # convert chromosome coordinates to genome coordinates
 
-        genome_start = nc.chr_pos_to_genome_pos(str(line.chrom), line.start, assembly)
-        genome_end = nc.chr_pos_to_genome_pos(line.chrom, line.stop, assembly)
+        genome_start = nc.chr_pos_to_genome_pos(str(chrom), start, assembly)
+        genome_end = nc.chr_pos_to_genome_pos(chrom, stop, assembly)
 
-        pos_offset = genome_start - line.start
+        pos_offset = genome_start - start
         parts = {
                     'startPos': genome_start,
                     'endPos': genome_end,
                     'uid': slugid.nice(),
                     'chrOffset': pos_offset,
-                    'fields': '\t'.join(line.fields),
+                    'fields': '\t'.join(line),
                     'importance': importance,
-                    'chromosome': str(line.chrom)
+                    'chromosome': str(chrom)
                     }
 
         return parts
 
-    dset = [line_to_np_array(line) for line in bed_file]
+    dset = [line_to_np_array(line.strip().split()) for line in bed_file]
     
     if chromosome is not None:
         dset = [d for d in dset if d['chromosome'] == chromosome]
