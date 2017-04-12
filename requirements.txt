@@ -16,7 +16,7 @@ pyBigWig==0.3.2
 ipdb
 
 # To convert README markdown to reST for PyPI
-pypandoc
+#pypandoc
 
 # Cooler
 # TODO: Does this need to be a fork? Can we pin a release? Can we get a tarball rather than using git?
