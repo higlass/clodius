@@ -1758,35 +1758,35 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
  *     cdef int i = 0
  *     cdef int j = 0             # <<<<<<<<<<<<<<
  * 
- *     #print "length:", length, "num_to_agg:", num_to_agg, "new length:", len(out_array), math.ceil(length / num_to_agg) ,
+ *     while i < length:
  */
   __pyx_v_j = 0;
 
-  /* "clodius/fast.pyx":26
- *     #print "length:", length, "num_to_agg:", num_to_agg, "new length:", len(out_array), math.ceil(length / num_to_agg) ,
+  /* "clodius/fast.pyx":24
+ *     cdef int j = 0
  * 
  *     while i < length:             # <<<<<<<<<<<<<<
- *         #print "i/num_to_agg:", length, i, i / num_to_agg
  *         out_array[i / num_to_agg] = 0;
+ *         j = 0
  */
   while (1) {
     __pyx_t_9 = ((__pyx_v_i < __pyx_v_length) != 0);
     if (!__pyx_t_9) break;
 
-    /* "clodius/fast.pyx":28
+    /* "clodius/fast.pyx":25
+ * 
  *     while i < length:
- *         #print "i/num_to_agg:", length, i, i / num_to_agg
  *         out_array[i / num_to_agg] = 0;             # <<<<<<<<<<<<<<
  *         j = 0
  *         while j < num_to_agg and (i+j) < length:
  */
     if (unlikely(__pyx_v_num_to_agg == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "integer division or modulo by zero");
-      __PYX_ERR(0, 28, __pyx_L1_error)
+      __PYX_ERR(0, 25, __pyx_L1_error)
     }
     else if (sizeof(int) == sizeof(long) && (!(((int)-1) > 0)) && unlikely(__pyx_v_num_to_agg == (int)-1)  && unlikely(UNARY_NEG_WOULD_OVERFLOW(__pyx_v_i))) {
       PyErr_SetString(PyExc_OverflowError, "value too large to perform division");
-      __PYX_ERR(0, 28, __pyx_L1_error)
+      __PYX_ERR(0, 25, __pyx_L1_error)
     }
     __pyx_t_10 = __Pyx_div_int(__pyx_v_i, __pyx_v_num_to_agg);
     __pyx_t_11 = -1;
@@ -1796,12 +1796,12 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
     } else if (unlikely(__pyx_t_10 >= __pyx_pybuffernd_out_array.diminfo[0].shape)) __pyx_t_11 = 0;
     if (unlikely(__pyx_t_11 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_11);
-      __PYX_ERR(0, 28, __pyx_L1_error)
+      __PYX_ERR(0, 25, __pyx_L1_error)
     }
     *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_out_array.rcbuffer->pybuffer.buf, __pyx_t_10, __pyx_pybuffernd_out_array.diminfo[0].strides) = 0.0;
 
-    /* "clodius/fast.pyx":29
- *         #print "i/num_to_agg:", length, i, i / num_to_agg
+    /* "clodius/fast.pyx":26
+ *     while i < length:
  *         out_array[i / num_to_agg] = 0;
  *         j = 0             # <<<<<<<<<<<<<<
  *         while j < num_to_agg and (i+j) < length:
@@ -1809,7 +1809,7 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
  */
     __pyx_v_j = 0;
 
-    /* "clodius/fast.pyx":30
+    /* "clodius/fast.pyx":27
  *         out_array[i / num_to_agg] = 0;
  *         j = 0
  *         while j < num_to_agg and (i+j) < length:             # <<<<<<<<<<<<<<
@@ -1828,7 +1828,7 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
       __pyx_L7_bool_binop_done:;
       if (!__pyx_t_9) break;
 
-      /* "clodius/fast.pyx":31
+      /* "clodius/fast.pyx":28
  *         j = 0
  *         while j < num_to_agg and (i+j) < length:
  *             out_array[i / num_to_agg] += in_array[i+j]             # <<<<<<<<<<<<<<
@@ -1843,15 +1843,15 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
       } else if (unlikely(__pyx_t_13 >= __pyx_pybuffernd_in_array.diminfo[0].shape)) __pyx_t_11 = 0;
       if (unlikely(__pyx_t_11 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_11);
-        __PYX_ERR(0, 31, __pyx_L1_error)
+        __PYX_ERR(0, 28, __pyx_L1_error)
       }
       if (unlikely(__pyx_v_num_to_agg == 0)) {
         PyErr_SetString(PyExc_ZeroDivisionError, "integer division or modulo by zero");
-        __PYX_ERR(0, 31, __pyx_L1_error)
+        __PYX_ERR(0, 28, __pyx_L1_error)
       }
       else if (sizeof(int) == sizeof(long) && (!(((int)-1) > 0)) && unlikely(__pyx_v_num_to_agg == (int)-1)  && unlikely(UNARY_NEG_WOULD_OVERFLOW(__pyx_v_i))) {
         PyErr_SetString(PyExc_OverflowError, "value too large to perform division");
-        __PYX_ERR(0, 31, __pyx_L1_error)
+        __PYX_ERR(0, 28, __pyx_L1_error)
       }
       __pyx_t_14 = __Pyx_div_int(__pyx_v_i, __pyx_v_num_to_agg);
       __pyx_t_11 = -1;
@@ -1861,11 +1861,11 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
       } else if (unlikely(__pyx_t_14 >= __pyx_pybuffernd_out_array.diminfo[0].shape)) __pyx_t_11 = 0;
       if (unlikely(__pyx_t_11 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_11);
-        __PYX_ERR(0, 31, __pyx_L1_error)
+        __PYX_ERR(0, 28, __pyx_L1_error)
       }
       *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_out_array.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_out_array.diminfo[0].strides) += (*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_in_array.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_in_array.diminfo[0].strides));
 
-      /* "clodius/fast.pyx":32
+      /* "clodius/fast.pyx":29
  *         while j < num_to_agg and (i+j) < length:
  *             out_array[i / num_to_agg] += in_array[i+j]
  *             j += 1             # <<<<<<<<<<<<<<
@@ -1875,7 +1875,7 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
       __pyx_v_j = (__pyx_v_j + 1);
     }
 
-    /* "clodius/fast.pyx":33
+    /* "clodius/fast.pyx":30
  *             out_array[i / num_to_agg] += in_array[i+j]
  *             j += 1
  *         i += num_to_agg             # <<<<<<<<<<<<<<
@@ -1885,7 +1885,7 @@ static PyObject *__pyx_pf_7clodius_4fast_aggregate(CYTHON_UNUSED PyObject *__pyx
     __pyx_v_i = (__pyx_v_i + __pyx_v_num_to_agg);
   }
 
-  /* "clodius/fast.pyx":35
+  /* "clodius/fast.pyx":32
  *         i += num_to_agg
  * 
  *     return out_array             # <<<<<<<<<<<<<<
