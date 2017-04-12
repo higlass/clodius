@@ -15,6 +15,9 @@ nose==1.3.7
 pyBigWig==0.3.2
 ipdb
 
+# To convert README markdown to reST for PyPI
+pypandoc
+
 # Cooler
 # TODO: Does this need to be a fork? Can we pin a release? Can we get a tarball rather than using git?
 -e git://github.com/scottx611x/cooler@develop#egg=cooler
