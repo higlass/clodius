@@ -33,7 +33,7 @@ install_requires = [
     'pandas',
     'requests',
     'nose',
-    'Click'
+    'Click',
     'sortedcontainers',
     'slugid',
     'pysam',
