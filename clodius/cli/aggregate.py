@@ -316,11 +316,13 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
+    '''
     print("assembly size (max-length)", d.attrs['max-length'])
     print("max-width", d.attrs['max-width'])
     print("max_zoom:", d.attrs['max-zoom'])
     print("chunk-size:", chunk_size)
     print("chrom-order", d.attrs['chrom-order'])
+    '''
 
     t1 = time.time()
 
@@ -329,10 +331,11 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
         chroms_to_use = [chromosome]
     else:
         chroms_to_use = nc.get_chromorder(assembly)
+    '''
     print("chroms to use:", chroms_to_use)
-
     print("min-pos:", d.attrs['min-pos'])
     print('max-pos:', d.attrs['max-pos'])
+    '''
 
     for chrom in chroms_to_use:
         if chrom not in bwf.chroms():
@@ -403,6 +406,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     t1 = time.time()
     pass
 
+##################################################################################################
 def _tsv(filepath, output_file, assembly, chrom_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, zoom_step):
@@ -480,11 +484,11 @@ def _tsv(filepath, output_file, assembly, chrom_col,
     curr_zoom = 0
 
     def add_values_to_data_buffers(buffers_to_add):
+        print("adding:", sum(buffers_to_add))
         curr_zoom = 0
         data_buffers[0] += values
         curr_time = time.time() - t1
         percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
-        print("curr_zoom:", curr_zoom);
         print("progress: {:.2f} elapsed: {:.2f} remaining: {:.2f}".format(percent_progress,
             curr_time, curr_time / (percent_progress) - curr_time))
 
@@ -495,7 +499,6 @@ def _tsv(filepath, output_file, assembly, chrom_col,
             dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
 
             # aggregate and store aggregated values in the next zoom_level's data
-            print("curr_chunk:", curr_chunk)
             data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** zoom_step))
             data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
             positions[curr_zoom] += chunk_size
@@ -511,15 +514,22 @@ def _tsv(filepath, output_file, assembly, chrom_col,
     if has_header:
         f.readline()
 
+    # the genome position up to which we've filled in values
+    curr_genome_pos = 0
     for line in f:
         # each line should indicate a chromsome, start position and end position
         parts = line.split()
 
-        if parts[0] != prev_chrom:
-            add_values_to_data_buffers(values)
-            values = []
+        start_genome_pos = nc.chr_pos_to_genome_pos(parts[0], int(parts[from_pos_col-1]), assembly)
+        print("genome_pos:", start_genome_pos)
 
-        values += [float(parts[value_col-1])] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
+        if start_genome_pos - curr_genome_pos > 1:
+            values += [0] * (start_genome_pos - curr_genome_pos - 1)
+            curr_genome_pos += len(values)
+
+        values_to_add = [float(parts[value_col-1])] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
+        values += values_to_add
+        curr_genome_pos += len(values_to_add)
 
         while len(values) > chunk_size:
             add_values_to_data_buffers(values[:chunk_size])
@@ -528,20 +538,13 @@ def _tsv(filepath, output_file, assembly, chrom_col,
     add_values_to_data_buffers(values)
 
     # store the remaining data
-    print("tile_size:", tile_size, positions[0])
-    print("chunk_size:", chunk_size)
-
     while True:
         # get the current chunk and store it
         chunk_size = len(data_buffers[curr_zoom])
         curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
+        print('curr_zoom:', curr_zoom, "curr_chunk:", sum(curr_chunk))
         dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
 
-        print("curr_zoom:", curr_zoom, "position:", positions[curr_zoom] + len(curr_chunk))
-        print("len:", [len(d) for d in data_buffers])
-
-        print("curr_chunk:", len(curr_chunk), 2 ** zoom_step)
-        print("db:", len(data_buffers[curr_zoom+1]))
         # aggregate and store aggregated values in the next zoom_level's data
         data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** zoom_step))
         data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
@@ -616,9 +619,9 @@ def _tsv(filepath, output_file, assembly, chrom_col,
              "position",
         default=4)
 @click.option(
-        '--has-header',
+        '--has-header/--no-header',
         help="Does this file have a header that we should ignore",
-        default=4)
+        default=False)
 @click.option(
         '--zoom-step',
         '-z',
