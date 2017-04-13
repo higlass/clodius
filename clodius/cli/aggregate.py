@@ -423,6 +423,7 @@ def _tsv(filepath, output_file, assembly, chrom_col,
     chrom_info = nc.get_chrominfo(assembly)
     chrom_order = nc.get_chromorder(assembly)
     assembly_size = chrom_info.total_length
+    print('assembly_size:', assembly_size)
 
     tile_size = tile_size
     chunk_size = tile_size * 2**chunk_size     # how many values to read in at once while tiling
@@ -446,6 +447,7 @@ def _tsv(filepath, output_file, assembly, chrom_col,
     # store some meta data
     d = f.create_dataset('meta', (1,), dtype='f')
 
+    print("assembly:", assembly)
     print("chrom_info:", nc.get_chromorder(assembly))
 
     d.attrs['zoom-step'] = zoom_step
@@ -473,7 +475,6 @@ def _tsv(filepath, output_file, assembly, chrom_col,
     else:
         f = open(filepath, 'r')
 
-
     prev_chrom = ''
     curr_data = []
     curr_zoom = 0
@@ -483,6 +484,7 @@ def _tsv(filepath, output_file, assembly, chrom_col,
         data_buffers[0] += values
         curr_time = time.time() - t1
         percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
+        print("curr_zoom:", curr_zoom);
         print("progress: {:.2f} elapsed: {:.2f} remaining: {:.2f}".format(percent_progress,
             curr_time, curr_time / (percent_progress) - curr_time))
 
