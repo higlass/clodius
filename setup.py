@@ -10,7 +10,8 @@ print("packages:", find_packages())
  
 setup_requires = [
         'cython',
-        'numpy'
+        'numpy',
+        'pyBigWig'
         ]
 
 install_requires = [

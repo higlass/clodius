@@ -21,10 +21,7 @@ def aggregate(np.ndarray[np.float32_t,ndim=1] in_array, int num_to_agg):
     cdef int i = 0
     cdef int j = 0
 
-    #print "length:", length, "num_to_agg:", num_to_agg, "new length:", len(out_array), math.ceil(length / num_to_agg) , 
-
     while i < length:
-        #print "i/num_to_agg:", length, i, i / num_to_agg
         out_array[i / num_to_agg] = 0;
         j = 0
         while j < num_to_agg and (i+j) < length:
