@@ -1,3 +1,7 @@
+v0.4.6
+
+- Bug fixes in tile-text-file (tsv tiling)
+
 v0.4.3
 
 - When extracting a certain chromosome, place features at the position of the
