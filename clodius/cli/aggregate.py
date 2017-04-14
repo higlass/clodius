@@ -316,6 +316,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
+
     print("assembly size (max-length)", d.attrs['max-length'])
     print("max-width", d.attrs['max-width'])
     print("max_zoom:", d.attrs['max-zoom'])
@@ -329,10 +330,11 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
         chroms_to_use = [chromosome]
     else:
         chroms_to_use = nc.get_chromorder(assembly)
+    '''
     print("chroms to use:", chroms_to_use)
-
     print("min-pos:", d.attrs['min-pos'])
     print('max-pos:', d.attrs['max-pos'])
+    '''
 
     for chrom in chroms_to_use:
         if chrom not in bwf.chroms():
@@ -402,6 +404,237 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     data = np.array(data)
     t1 = time.time()
     pass
+
+##################################################################################################
+def _tsv(filepath, output_file, assembly, chrom_col, 
+        from_pos_col, to_pos_col, value_col, has_header, 
+        chromosome, tile_size, chunk_size, zoom_step):
+    last_end = 0
+    data = []
+
+    if output_file is None:
+        output_file = op.splitext(filepath)[0] + '.hitile'
+
+    print("output file:", output_file)
+
+    # Override the output file if it existts
+    if op.exists(output_file):
+        os.remove(output_file)
+    f = h5py.File(output_file, 'w')
+
+    # get the information about the chromosomes in this assembly
+    chrom_info = nc.get_chrominfo(assembly)
+    chrom_order = nc.get_chromorder(assembly)
+    assembly_size = chrom_info.total_length
+    print('assembly_size:', assembly_size)
+
+    tile_size = tile_size
+    chunk_size = tile_size * 2**chunk_size     # how many values to read in at once while tiling
+
+    dsets = []     # data sets at each zoom level
+
+    # initialize the arrays which will store the values at each stored zoom level
+    z = 0
+    positions = []   # store where we are at the current dataset
+    data_buffers = [[]]
+
+    while assembly_size / 2 ** z > tile_size:
+        dsets += [f.create_dataset('values_' + str(z), (assembly_size / 2 ** z,), dtype='f',compression='gzip')]
+        data_buffers += [[]]
+        positions += [0]
+        z += zoom_step
+
+    # load the bigWig file
+    print("filepath:", filepath)
+
+    # store some meta data
+    d = f.create_dataset('meta', (1,), dtype='f')
+
+    print("assembly:", assembly)
+    print("chrom_info:", nc.get_chromorder(assembly))
+
+    d.attrs['zoom-step'] = zoom_step
+    d.attrs['max-length'] = assembly_size
+    d.attrs['assembly'] = assembly
+    d.attrs['chrom-names'] = nc.get_chromorder(assembly)
+    d.attrs['chrom-sizes'] = nc.get_chromsizes(assembly)
+    d.attrs['chrom-order'] = chrom_order
+    d.attrs['tile-size'] = tile_size
+    d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
+    d.attrs['max-width'] = tile_size * 2 ** max_zoom
+
+    print("assembly size (max-length)", d.attrs['max-length'])
+    print("max-width", d.attrs['max-width'])
+    print("max_zoom:", d.attrs['max-zoom'])
+    print("chunk-size:", chunk_size)
+    print("chrom-order", d.attrs['chrom-order'])
+
+    t1 = time.time()
+
+    # are we reading the input from stdin or from a file?
+
+    if filepath == '-':
+        f = sys.stdin
+    else:
+        f = open(filepath, 'r')
+
+    prev_chrom = ''
+    curr_data = []
+    curr_zoom = 0
+
+    def add_values_to_data_buffers(buffers_to_add):
+        print("adding:", sum(buffers_to_add))
+        curr_zoom = 0
+        data_buffers[0] += buffers_to_add
+        curr_time = time.time() - t1
+        percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
+        print("progress: {:.2f} elapsed: {:.2f} remaining: {:.2f}".format(percent_progress,
+            curr_time, curr_time / (percent_progress) - curr_time))
+
+        while len(data_buffers[curr_zoom]) >= chunk_size:
+            # get the current chunk and store it, converting nans to 0
+            curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
+            curr_chunk[np.isnan(curr_chunk)] = 0
+            print("cc:", sum(curr_chunk))
+            dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
+
+            # aggregate and store aggregated values in the next zoom_level's data
+            data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** zoom_step))
+            data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
+            positions[curr_zoom] += chunk_size
+            data = data_buffers[curr_zoom+1]
+            curr_zoom += 1
+
+            if curr_zoom * zoom_step >= max_zoom:
+                break
+
+
+    values = []
+
+    if has_header:
+        f.readline()
+
+    # the genome position up to which we've filled in values
+    curr_genome_pos = 0
+    for line in f:
+        # each line should indicate a chromsome, start position and end position
+        parts = line.split()
+
+        start_genome_pos = nc.chr_pos_to_genome_pos(parts[0], int(parts[from_pos_col-1]), assembly)
+
+        if start_genome_pos - curr_genome_pos > 1:
+            values += [0] * (start_genome_pos - curr_genome_pos - 1)
+            curr_genome_pos += len(values)
+
+        values_to_add = [float(parts[value_col-1])] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
+        values += values_to_add
+        curr_genome_pos += len(values_to_add)
+
+        while len(values) > chunk_size:
+            add_values_to_data_buffers(values[:chunk_size])
+            values = values[chunk_size:]
+
+
+    add_values_to_data_buffers(values)
+
+    print("db:", sum(data_buffers[0]))
+
+    # store the remaining data
+    while True:
+        # get the current chunk and store it
+        chunk_size = len(data_buffers[curr_zoom])
+        curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
+        dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
+
+        # aggregate and store aggregated values in the next zoom_level's data
+        data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** zoom_step))
+        data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
+        positions[curr_zoom] += chunk_size
+        data = data_buffers[curr_zoom+1]
+        curr_zoom += 1
+
+        # we've created enough tile levels to cover the entire maximum width
+        if curr_zoom * zoom_step >= max_zoom:
+            break
+
+    # still need to take care of the last chunk
+
+    data = np.array(data)
+    t1 = time.time()
+
+@aggregate.command()
+@click.argument(
+        'filepath',
+        metavar='FILEPATH'
+        )
+@click.option(
+        '--output-file',
+        '-o',
+        default=None,
+        help="The default output file name to use. If this isn't"
+             "specified, clodius will replace the current extension"
+             "with .hitile"
+        )
+@click.option(
+        '--assembly',
+        '-a',
+        help='The genome assembly that this file was created against',
+        default='hg19')
+@click.option(
+        '--chromosome',
+        default=None,
+        help="Only extract values for a particular chromosome."
+             "Use all chromosomes if not set.")
+@click.option(
+        '--tile-size',
+        '-t',
+        default=1024,
+        help="The number of data points in each tile."
+             "Used to determine the number of zoom levels"
+             "to create.")
+@click.option(
+        '--chunk-size',
+        '-c',
+        help='How many values to aggregate at once.'
+             'Specified as a power of two multiplier of the tile'
+             'size',
+        default=14)
+@click.option(
+        '--chrom-col',
+        help="The column number (1-based) which contains the chromosom "
+              "name",
+        default=1)
+@click.option(
+        '--from-pos-col',
+        help="The column number (1-based) which contains the starting "
+             "position",
+        default=2)
+@click.option(
+        '--to-pos-col',
+        help="The column number (1-based) which contains the ending"
+             "position",
+        default=3)
+@click.option(
+        '--value-col',
+        help="The column number (1-based) which contains the actual value"
+             "position",
+        default=4)
+@click.option(
+        '--has-header/--no-header',
+        help="Does this file have a header that we should ignore",
+        default=False)
+@click.option(
+        '--zoom-step',
+        '-z',
+        help="The number of intermediate aggregation levels to"
+             "omit",
+        default=8)
+def tsv(filepath, output_file, assembly, chrom_col, 
+        from_pos_col, to_pos_col, value_col, has_header, 
+        chromosome, tile_size, chunk_size, zoom_step):
+    _tsv(filepath, output_file, assembly, chrom_col, 
+        from_pos_col, to_pos_col, value_col, has_header, 
+        chromosome, tile_size, chunk_size, zoom_step)
 
 @aggregate.command()
 @click.argument(
