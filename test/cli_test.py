@@ -22,18 +22,10 @@ def test_clodius_aggregate_bigwig():
             '--output-file', output_file,
             '--assembly', 'dm3'])
 
-    print('output:', result.output, result)
-
     f = h5py.File('/tmp/dm3_values.hitile')
     max_zoom = f['meta'].attrs['max-zoom']
-
-    print('max_zoom:', max_zoom)
-    print("len", len(f['values_0']))
-
     values = f['values_0']
     
-    print('values', values[:100])
-
     # genome positions are 0 based as stored in hitile files
     assert(values[8] == 0)
     assert(values[9] == 1)
@@ -53,7 +45,6 @@ def test_clodius_aggregate_bigwig():
     assert(result.exit_code == 0)
 
     d = cht.get_data(f, 0, 0)
-    #print("d:", d, sum(d))
     assert(sum(d) == 5 + 770)
 
     return

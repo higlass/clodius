@@ -316,13 +316,12 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
-    '''
+
     print("assembly size (max-length)", d.attrs['max-length'])
     print("max-width", d.attrs['max-width'])
     print("max_zoom:", d.attrs['max-zoom'])
     print("chunk-size:", chunk_size)
     print("chrom-order", d.attrs['chrom-order'])
-    '''
 
     t1 = time.time()
 
@@ -486,7 +485,7 @@ def _tsv(filepath, output_file, assembly, chrom_col,
     def add_values_to_data_buffers(buffers_to_add):
         print("adding:", sum(buffers_to_add))
         curr_zoom = 0
-        data_buffers[0] += values
+        data_buffers[0] += buffers_to_add
         curr_time = time.time() - t1
         percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
         print("progress: {:.2f} elapsed: {:.2f} remaining: {:.2f}".format(percent_progress,
@@ -522,7 +521,6 @@ def _tsv(filepath, output_file, assembly, chrom_col,
         parts = line.split()
 
         start_genome_pos = nc.chr_pos_to_genome_pos(parts[0], int(parts[from_pos_col-1]), assembly)
-        print("genome_pos:", start_genome_pos)
 
         if start_genome_pos - curr_genome_pos > 1:
             values += [0] * (start_genome_pos - curr_genome_pos - 1)
@@ -533,11 +531,9 @@ def _tsv(filepath, output_file, assembly, chrom_col,
         curr_genome_pos += len(values_to_add)
 
         while len(values) > chunk_size:
-            print("values sum:", sum(values))
             add_values_to_data_buffers(values[:chunk_size])
             values = values[chunk_size:]
-            print("pdb:", sum(data_buffers[0]))
-            print("sdb:", sum(values))
+
 
     add_values_to_data_buffers(values)
 
@@ -548,7 +544,6 @@ def _tsv(filepath, output_file, assembly, chrom_col,
         # get the current chunk and store it
         chunk_size = len(data_buffers[curr_zoom])
         curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
-        print('curr_zoom:', curr_zoom, "curr_chunk:", sum(curr_chunk))
         dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
 
         # aggregate and store aggregated values in the next zoom_level's data
