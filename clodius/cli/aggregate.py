@@ -406,7 +406,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     pass
 
 ##################################################################################################
-def _bedlike(filepath, output_file, assembly, chrom_col, 
+def _bedgraph(filepath, output_file, assembly, chrom_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, zoom_step):
     last_end = 0
@@ -629,10 +629,10 @@ def _bedlike(filepath, output_file, assembly, chrom_col,
         help="The number of intermediate aggregation levels to"
              "omit",
         default=8)
-def bedlike(filepath, output_file, assembly, chromosome_col, 
+def bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, zoom_step):
-    _bedlike(filepath, output_file, assembly, chromosome_col, 
+    _bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, zoom_step)
 

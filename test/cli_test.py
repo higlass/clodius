@@ -17,7 +17,7 @@ def test_clodius_aggregate_bigwig():
 
     runner = clt.CliRunner()
     result = runner.invoke(
-            cca.bedlike,
+            cca.bedgraph,
             [input_file,
             '--output-file', output_file,
             '--assembly', 'dm3'])
@@ -54,7 +54,7 @@ def test_clodius_aggregate_bigwig():
 
     runner = clt.CliRunner()
     result = runner.invoke(
-            cca.bedlike,
+            cca.bedgraph,
             [input_file,
             '--output-file', output_file,
             '--assembly', 'test3chroms'])
