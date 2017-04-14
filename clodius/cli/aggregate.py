@@ -406,7 +406,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     pass
 
 ##################################################################################################
-def _tsv(filepath, output_file, assembly, chrom_col, 
+def _bedlike(filepath, output_file, assembly, chrom_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, zoom_step):
     last_end = 0
@@ -600,8 +600,8 @@ def _tsv(filepath, output_file, assembly, chrom_col,
              'size',
         default=14)
 @click.option(
-        '--chrom-col',
-        help="The column number (1-based) which contains the chromosom "
+        '--chromosome-col',
+        help="The column number (1-based) which contains the chromosome "
               "name",
         default=1)
 @click.option(
@@ -629,10 +629,10 @@ def _tsv(filepath, output_file, assembly, chrom_col,
         help="The number of intermediate aggregation levels to"
              "omit",
         default=8)
-def tsv(filepath, output_file, assembly, chrom_col, 
+def bedlike(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, zoom_step):
-    _tsv(filepath, output_file, assembly, chrom_col, 
+    _bedlike(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, zoom_step)
 

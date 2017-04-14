@@ -64,7 +64,7 @@ setup(
     name='clodius',
     include_dirs= lazy_cythonize(numpy_include),
     ext_modules = lazy_cythonize(extensions),
-    version='0.4.5',
+    version='0.4.6',
     description='Tile generation for big data',
     author='Peter Kerpedjiev',
     author_email='pkerpedjiev@gmail.com',
