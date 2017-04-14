@@ -543,7 +543,6 @@ def _tsv(filepath, output_file, assembly, chrom_col,
         chunk_size = len(data_buffers[curr_zoom])
         curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
         print('curr_zoom:', curr_zoom, "curr_chunk:", sum(curr_chunk))
-        assert(sum(curr_chunk) <= 775)
         dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
 
         # aggregate and store aggregated values in the next zoom_level's data
