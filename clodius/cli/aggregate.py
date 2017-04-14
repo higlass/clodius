@@ -496,6 +496,7 @@ def _tsv(filepath, output_file, assembly, chrom_col,
             # get the current chunk and store it, converting nans to 0
             curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
             curr_chunk[np.isnan(curr_chunk)] = 0
+            print("cc:", sum(curr_chunk))
             dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
 
             # aggregate and store aggregated values in the next zoom_level's data
@@ -532,10 +533,15 @@ def _tsv(filepath, output_file, assembly, chrom_col,
         curr_genome_pos += len(values_to_add)
 
         while len(values) > chunk_size:
+            print("values sum:", sum(values))
             add_values_to_data_buffers(values[:chunk_size])
             values = values[chunk_size:]
+            print("pdb:", sum(data_buffers[0]))
+            print("sdb:", sum(values))
 
     add_values_to_data_buffers(values)
+
+    print("db:", sum(data_buffers[0]))
 
     # store the remaining data
     while True:
