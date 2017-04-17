@@ -28,11 +28,15 @@ def test_clodius_aggregate_bedpe():
             cca.bedpe,
             [input_file,
             '--output-file', output_file,
+            '--importance-column', 'random',
             '--has-header', 
             '--assembly', 'b37'])
 
-    print('output:', result.output, result)
+    #print('output:', result.output, result)
     assert(result.exit_code == 0)
 
     entries = cdt.get_2d_tile(output_file, 0, 0, 0)
-    print("entries:", entries)
+    #print("entries:", entries)
+
+    tileset_info = cdt.get_tileset_info(output_file)
+    #print('tileset_info', tileset_info)
