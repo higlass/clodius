@@ -1,3 +1,8 @@
+v0.5.0
+
+- Added clodius aggregate bedpe
+- More extensive unit tests
+
 v0.4.7
 
 - Renamed tsv to bedlike
