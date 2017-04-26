@@ -246,7 +246,7 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
 
     return
 
-def _bedfile(filepath, output_file, assembly, importance_column, chromosome, max_per_tile, tile_size):
+def _bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size):
     if output_file is None:
         output_file = filepath + ".multires"
     else:
@@ -880,6 +880,10 @@ def bigwig(filepath, output_file, assembly, chromosome, tile_size, chunk_size, z
         "used for the importance (effectively leading to random sampling)"
         )
 @click.option(
+        '--has-header/--no-header',
+        help="Does this file have a header that we should ignore",
+        default=False)
+@click.option(
         '--chromosome',
         default=None,
         help="Only extract values for a particular chromosome."
@@ -895,8 +899,8 @@ def bigwig(filepath, output_file, assembly, chromosome, tile_size, chunk_size, z
         help="The number of nucleotides that the highest resolution tiles should span."
              "This determines the maximum zoom level"
         )
-def bedfile(filepath, output_file, assembly, importance_column, chromosome, max_per_tile, tile_size):
-    _bedfile(filepath, output_file, assembly, importance_column, chromosome, max_per_tile, tile_size)
+def bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size):
+    _bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size)
 
 @aggregate.command()
 @click.argument( 
