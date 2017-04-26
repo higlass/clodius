@@ -13,8 +13,10 @@ import numpy as np
 import os
 import os.path as op
 import pyBigWig as pbw
+import random
 import slugid
 import sqlite3
+import sys
 import time
 
 @cli.group()
@@ -95,10 +97,18 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
     def line_to_dict(line):
         parts = line.split()
         d = {}
-        d['xs'] = [nc.chr_pos_to_genome_pos(parts[0], int(parts[1]), assembly), 
-                      nc.chr_pos_to_genome_pos(parts[0], int(parts[2]), assembly)]
-        d['ys'] = [nc.chr_pos_to_genome_pos(parts[3], int(parts[4]), assembly), 
-                    nc.chr_pos_to_genome_pos(parts[3], int(parts[5]), assembly)]
+        try:
+            d['xs'] = [nc.chr_pos_to_genome_pos(parts[0], int(parts[1]), assembly), 
+                          nc.chr_pos_to_genome_pos(parts[0], int(parts[2]), assembly)]
+            d['ys'] = [nc.chr_pos_to_genome_pos(parts[3], int(parts[4]), assembly), 
+                        nc.chr_pos_to_genome_pos(parts[3], int(parts[5]), assembly)]
+        except KeyError:
+            error_str = ("ERROR converting chromosome position to genome position. "
+                        "Please make sure you've specified the correct assembly "
+                        "using the --assembly option. "
+                        "Current assembly: {}, chromosomes: {},{}".format(assembly,
+                    parts[0], parts[3]))
+            raise(KeyError(error_str))
 
         d['uid'] = slugid.nice()
 
@@ -115,9 +125,24 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
 
         return d
 
+    entries = []
+
     if has_header:
         f.readline()
-    entries = [line_to_dict(line) for line in f]
+    else:
+        first_line = f.readline()
+        try:
+            parts = first_line.split()
+            pos = int(parts[1])
+            pos = int(parts[2])
+            pos = int(parts[4])
+            pos = int(parts[5])
+        except ValueError as ve:
+            error_str = "Couldn't convert one of the bedpe coordinates to an integer. If the input file contains a header, make sure to indicate that with the --has-header option. Line: {}".format(first_line)
+            raise(ValueError(error_str))
+        entries = [line_to_dict(first_line)]
+
+    entries += [line_to_dict(line) for line in f]
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -924,7 +949,8 @@ def bedfile(filepath, output_file, assembly, importance_column, has_header, chro
         help='The column (1-based) containing information about how important'
         "that row is. If it's absent, then use the length of the region."
         "If the value is equal to `random`, then a random value will be"
-        "used for the importance (effectively leading to random sampling)"
+        "used for the importance (effectively leading to random sampling)",
+        default='random'
         )
 @click.option(
         '--has-header/--no-header',
@@ -947,5 +973,4 @@ def bedfile(filepath, output_file, assembly, importance_column, has_header, chro
              "Use all chromosomes if not set."
              )
 def bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile, tile_size, chromosome):
-    print("hey:")
     _bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile, tile_size, chromosome)
