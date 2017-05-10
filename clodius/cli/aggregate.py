@@ -287,8 +287,12 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header, chr
         Convert a bed file line to a numpy array which can later
         be used as an entry in an h5py file.
         '''
-        start = int(line[1])
-        stop = int(line[2])
+        try:
+            start = int(line[1])
+            stop = int(line[2])
+        except ValueError:
+            raise ValueError("Error parsing the position, line: {}".format(line))
+
         chrom = line[0]
 
         if importance_column is None:
@@ -316,7 +320,17 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header, chr
 
         return parts
 
-    dset = [line_to_np_array(line.strip().split()) for line in bed_file]
+    dset = []
+
+    if has_header:
+        bed_file.readline()
+    else:
+        line = f.readline()
+        dset += [line_to_np_array(line.strip().split())]
+
+    for line in bed_file:
+        dset += [line_to_np_array(line.strip().split())]
+    #dset = [line_to_np_array(line.strip().split()) for line in bed_file]
     
     if chromosome is not None:
         dset = [d for d in dset if d['chromosome'] == chromosome]
