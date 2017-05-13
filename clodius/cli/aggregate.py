@@ -19,6 +19,14 @@ import sqlite3
 import sys
 import time
 
+def validate_assembly(assembly):
+    try:
+        chrom_info = nc.get_chrominfo(assembly)
+    except FileNotFoundError:
+        print("Assembly not found: ", assembly, file=sys.stderr) 
+
+    return
+
 @cli.group()
 def aggregate():
     '''
