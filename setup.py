@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages, Extension
+from distutils import sysconfig
 
 #from distutils.extension import Extension
 
@@ -29,12 +30,20 @@ install_requires = [
         'Click']
 
 def extensions():
-    import numpy
     from Cython.Build import cythonize
-    clodius_fast = Extension(
-        "clodius.fast", ["clodius/fast.pyx"], include_dirs=[
-            numpy.get_include()])
-    return cythonize([clodius_fast])
+    import numpy
+
+    extensions = [
+        Extension(
+            "clodius.fast", 
+            ["clodius/fast.pyx"], 
+            include_dirs=[
+                sysconfig.get_python_inc(),
+                numpy.get_include()
+            ]
+        )
+    ]
+    return cythonize(extensions)
 
 def numpy_include():
     import numpy
