@@ -21,3 +21,6 @@ aws_keys.py
 .idea/
 clodius.egg-info
 .eggs
+clodius/*.c
+*.so
+
