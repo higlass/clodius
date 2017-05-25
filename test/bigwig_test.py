@@ -3,6 +3,7 @@ from __future__ import print_function
 import click.testing as clt
 import clodius.cli.aggregate as cca
 import clodius.hdf_tiles as ch
+import clodius.bigWig_tiles as cbt
 import h5py
 import os.path as op
 import sys
@@ -59,3 +60,18 @@ def test_clodius_aggregate_bigwig():
     print('output:', result.output, result)
 
     assert(result.exit_code == 0)
+
+def test_read_bigwig():
+    #ti = cbt.get_tileset_info('data/ENCFF956QEM.bigWig', 'hg19')
+    import negspy.coordinates as nc
+
+    import time
+    t1 = time.time()
+
+    i = 5
+    #td = cbt.get_data('data/ENCFF956QEM.bigWig', i, 0, nc.get_chromorder('hg19'))
+        #print("td:", sum(td))
+
+    td = cbt.get_data('http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign75mer.bigWig', i, 0, nc.get_chromorder('hg19'))
+    t2 = time.time()
+    print("elapsed:", t2 - t1)
