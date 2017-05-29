@@ -11,6 +11,12 @@ import tempfile
 
 testdir = op.realpath(op.dirname(__file__))
 
+def get_gene_annotations():
+    filename = 'data/gene-annotations-dm6.db'
+
+    tile = cdt.get_tile(filename, 0, 0)
+    print("tile:", tile)
+
 def test_get_tileset_info():
     filename = 'test/sample_data/gene_annotations.short.db';
     t = cdt.get_tileset_info(filename)

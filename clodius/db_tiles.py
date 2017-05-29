@@ -61,7 +61,6 @@ def get_tile(db_file, zoom, tile_x_pos):
 
     rows = c.execute(query).fetchall()
 
-
     # add the position offset to the returned values
     rows = [{'xStart': r[0],
              'xEnd': r[1],

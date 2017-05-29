@@ -325,7 +325,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header, chr
     if has_header:
         bed_file.readline()
     else:
-        line = f.readline()
+        line = bed_file.readline()
         dset += [line_to_np_array(line.strip().split())]
 
     for line in bed_file:
