@@ -72,6 +72,11 @@ def test_read_bigwig():
     #td = cbt.get_data('data/ENCFF956QEM.bigWig', i, 0, nc.get_chromorder('hg19'))
         #print("td:", sum(td))
 
-    td = cbt.get_data('http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign75mer.bigWig', i, 0, nc.get_chromorder('hg19'))
+    chrom_sizes = zip(nc.get_chromorder('hg19'),
+                      nc.get_chromsizes('hg19'))
+    print("chrom_sizes:", chrom_sizes)
+
+    for i in range(5, 6):
+        td = cbt.get_data('http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign75mer.bigWig', i, 0, chrom_sizes)
     t2 = time.time()
     print("elapsed:", t2 - t1)

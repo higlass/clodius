@@ -1,6 +1,7 @@
-import pyBigWig as pbw
+import bbi
 import math
 import negspy.coordinates as nc
+import time
 
 def get_tileset_info(bigWig_file, assembly):
     '''
@@ -34,7 +35,7 @@ def get_tileset_info(bigWig_file, assembly):
     pass
 
 
-def get_data(bigWig_file, z, x, chrom_order):
+def get_data(bigWig_file, z, x, chrom_sizes):
     '''
     Retrieve data from a bigWig file for the given zoom level.
 
@@ -46,9 +47,8 @@ def get_data(bigWig_file, z, x, chrom_order):
         The zoom level
     x: int
         The tile number
-    chrom_order: [str]
-        The order of the chromosomes to use when fetching data.
-        Especially important when fetching data that spans multiple
+    chrom_sizes: [(str,int),...]
+        An ordered list of tuples specifying the sizes of the individual
         chromosomes.
 
     Returns
@@ -56,23 +56,28 @@ def get_data(bigWig_file, z, x, chrom_order):
     numpy array
         A 1024 element array containing the values for this tile
     '''
-    bwf = pbw.open(bigWig_file)
-    total_size = sum([bwf.chroms()[c] for c in chrom_order if c in bwf.chroms()])   
+    '''
+    chrom_sizes = bbi.chromsizes(bigWig_file)
+    print("cs:", time.time() - t1)
+    total_size = sum(chrom_sizes.values())
     max_pos = total_size
     tile_size = 1024
     max_length = total_size
     max_zoom =  int(math.ceil(math.log(total_size / tile_size) / math.log(2)))
-
+    '''
+    t1 = time.time()
+    tile_size = 1024
+    total_size = sum([x[1] for x in chrom_sizes])
+    max_zoom =  int(math.ceil(math.log(total_size / tile_size) / math.log(2)))
     max_width = tile_size * 2 ** max_zoom
-    rz = max_zoom - z
     tile_width = max_width / 2**z
 
-
     #print("tile_width:", tile_width)
-    print("chrom:", chrom_order[0])
     print("tile_size:", tile_size)
     print("tile_width:", tile_width)
-    print(chrom_order[0], x*tile_width, (x+1) * tile_width)
+    print("max_width:", max_width)
 
-    data = bwf.stats(chrom_order[0], x * tile_width, (x+1) * tile_width, type="mean", nBins=tile_size)
+    data = []
+    #data = bbi.fetch(bigWig_file, chrom_order[0], x * tile_width, (x+1) * tile_width, tile_size)
+    print("cs1:", time.time() - t1)
     return data
