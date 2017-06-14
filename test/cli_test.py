@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import clodius.db_tiles as cdt
 import clodius.hdf_tiles as cht
 import click.testing as clt
 import clodius.cli.aggregate as cca
@@ -9,6 +10,30 @@ import os.path as op
 import sys
 
 sys.path.append("scripts")
+
+testdir = op.realpath(op.dirname(__file__))
+def test_clodius_aggregate_bedpe():
+    input_file = op.join(testdir, 'sample_data', 'Rao_RepA_GM12878_Arrowhead.txt')
+    output_file = '/tmp/bedpe.db'
+
+    runner = clt.CliRunner()
+    result = runner.invoke(
+            cca.bedpe,
+            [input_file,
+            '--output-file', output_file,
+            '--assembly', 'hg19',
+            '--chr1-col', '1',
+            '--from1-col', '2',
+            '--to1-col', '3',
+            '--chr2-col', '1',
+            '--from2-col', '2',
+            '--to2-col', '3'])
+    print("result:", result)
+    print("result.output", result.output)
+
+    tiles = cdt.get_2d_tile(output_file, 0,0,0)
+    print("tiles:", tiles)
+
 
 testdir = op.realpath(op.dirname(__file__))
 def test_clodius_aggregate_bigwig():
