@@ -78,6 +78,6 @@ def get_data(bigWig_file, z, x, chrom_sizes):
     print("max_width:", max_width)
 
     data = []
-    #data = bbi.fetch(bigWig_file, chrom_order[0], x * tile_width, (x+1) * tile_width, tile_size)
+    data = bbi.fetch(bigWig_file, 'chr1', x * tile_width, (x+1) * tile_width, tile_size)
     print("cs1:", time.time() - t1)
     return data

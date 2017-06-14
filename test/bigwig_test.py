@@ -78,5 +78,6 @@ def test_read_bigwig():
 
     for i in range(5, 6):
         td = cbt.get_data('http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign75mer.bigWig', i, 0, chrom_sizes)
+        print("td:", td)
     t2 = time.time()
     print("elapsed:", t2 - t1)
