@@ -523,9 +523,9 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     d.attrs['zoom-step'] = zoom_step
     d.attrs['max-length'] = d.attrs['max-pos'] - d.attrs['min-pos'] + 1
     d.attrs['assembly'] = assembly
-    d.attrs['chrom-names'] = bwf.chroms().keys()
-    d.attrs['chrom-sizes'] = bwf.chroms().values()
-    d.attrs['chrom-order'] = chrom_order
+    d.attrs['chrom-names'] = [s.encode('utf-8') for s in bwf.chroms().keys()]
+    d.attrs['chrom-sizes'] = list(bwf.chroms().values())
+    d.attrs['chrom-order'] = [s.encode('utf-8') for s in chrom_order]
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
