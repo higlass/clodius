@@ -5,8 +5,9 @@ clodius/fast.so
 tmp
 checkpoint
 *~
-*.swp
+*.swn
 *.swo
+*.swp
 *.tiles
 *.pyc
 /data

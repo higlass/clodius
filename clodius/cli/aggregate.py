@@ -76,7 +76,9 @@ def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, revers
     return combined_entries[:max_entries_per_tile]
 
 def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile, 
-        tile_size, max_zoom=None, chromosome=None):
+        tile_size, max_zoom=None, chromosome=None, 
+        chr1_col=0, from1_col=1, to1_col=2,
+        chr2_col=3, from2_col=4, to2_col=5):
     print('output_file:', output_file)
 
     if filepath[-3:] == '.gz':
@@ -98,21 +100,21 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         parts = line.split()
         d = {}
         try:
-            d['xs'] = [nc.chr_pos_to_genome_pos(parts[0], int(parts[1]), assembly), 
-                          nc.chr_pos_to_genome_pos(parts[0], int(parts[2]), assembly)]
-            d['ys'] = [nc.chr_pos_to_genome_pos(parts[3], int(parts[4]), assembly), 
-                        nc.chr_pos_to_genome_pos(parts[3], int(parts[5]), assembly)]
+            d['xs'] = [nc.chr_pos_to_genome_pos(parts[chr1_col], int(parts[from1_col]), assembly), 
+                          nc.chr_pos_to_genome_pos(parts[chr1_col], int(parts[to1_col]), assembly)]
+            d['ys'] = [nc.chr_pos_to_genome_pos(parts[chr2_col], int(parts[from2_col]), assembly), 
+                        nc.chr_pos_to_genome_pos(parts[chr2_col], int(parts[to2_col]), assembly)]
         except KeyError:
             error_str = ("ERROR converting chromosome position to genome position. "
                         "Please make sure you've specified the correct assembly "
                         "using the --assembly option. "
                         "Current assembly: {}, chromosomes: {},{}".format(assembly,
-                    parts[0], parts[3]))
+                    parts[chr1_col], parts[chr2_col]))
             raise(KeyError(error_str))
 
         d['uid'] = slugid.nice()
 
-        d['chrOffset'] = d['xs'][0] - int(parts[1])
+        d['chrOffset'] = d['xs'][0] - int(parts[from1_col])
 
         if importance_column is None:
             d['importance'] = max(d['xs'][1] - d['xs'][0], d['ys'][1] - d['ys'][0]) 
@@ -133,10 +135,15 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         first_line = f.readline()
         try:
             parts = first_line.split()
-            pos = int(parts[1])
-            pos = int(parts[2])
-            pos = int(parts[4])
-            pos = int(parts[5])
+
+            print("chr1_col", chr1_col, "chr2_col", chr2_col, 
+                  "from1_col:", from1_col, "from2_col", from2_col, 
+                  "to1_col", to1_col, "to2_col", to2_col)
+
+            pos = int(parts[from1_col])
+            pos = int(parts[to1_col])
+            pos = int(parts[from2_col])
+            pos = int(parts[to2_col])
         except ValueError as ve:
             error_str = "Couldn't convert one of the bedpe coordinates to an integer. If the input file contains a header, make sure to indicate that with the --has-header option. Line: {}".format(first_line)
             raise(ValueError(error_str))
@@ -325,7 +332,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header, chr
     if has_header:
         bed_file.readline()
     else:
-        line = f.readline()
+        line = bed_file.readline()
         dset += [line_to_np_array(line.strip().split())]
 
     for line in bed_file:
@@ -986,5 +993,47 @@ def bedfile(filepath, output_file, assembly, importance_column, has_header, chro
         help="Only extract values for a particular chromosome."
              "Use all chromosomes if not set."
              )
-def bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile, tile_size, chromosome):
-    _bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile, tile_size, chromosome)
+@click.option(
+        '--chr1-col',
+        default=1,
+        help="The column containing the first chromosome"
+             )
+@click.option(
+        '--chr2-col',
+        default=4,
+        help="The column containing the second chromosome"
+             )
+@click.option(
+        '--from1-col',
+        default=2,
+        help="The column containing the first start position"
+             )
+@click.option(
+        '--from2-col',
+        default=5,
+        help="The column containing the second start position"
+             )
+@click.option(
+        '--to1-col',
+        default=3,
+        help="The column containing the first end position"
+             )
+@click.option(
+        '--to2-col',
+        default=6,
+        help="The column containing the second end position"
+             )
+
+def bedpe(filepath, output_file, assembly, importance_column, 
+        has_header, max_per_tile, tile_size, chromosome,
+        chr1_col, from1_col, to1_col,
+        chr2_col, from2_col, to2_col):
+
+    print("## chr1_col", chr1_col, "chr2_col", chr2_col, 
+          "from1_col:", from1_col, "from2_col", from2_col, 
+          "to1_col", to1_col, "to2_col", to2_col)
+    _bedpe(filepath, output_file, assembly, importance_column, has_header, 
+            max_per_tile, tile_size, chromosome,
+            chr1_col=chr1_col-1, from1_col=from1_col-1, to1_col=to1_col-1,
+            chr2_col=chr2_col-1, from2_col=from2_col-1, to2_col=to2_col-1
+            )
