@@ -843,6 +843,10 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         help="Does this file have a header that we should ignore",
         default=False)
 @click.option(
+        '--method',
+        help='The method used to aggregate values (e.g. sum, average...)',
+        default='sum')
+@click.option(
         '--zoom-step',
         '-z',
         help="The number of intermediate aggregation levels to"
@@ -850,10 +854,10 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         default=8)
 def bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
-        chromosome, tile_size, chunk_size, zoom_step):
+        chromosome, tile_size, chunk_size, method, zoom_step):
     _bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
-        chromosome, tile_size, chunk_size, zoom_step)
+        chromosome, tile_size, chunk_size, method, zoom_step)
 
 @aggregate.command()
 @click.argument(
