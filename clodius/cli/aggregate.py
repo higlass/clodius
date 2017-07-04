@@ -81,9 +81,9 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         chr2_col=3, from2_col=4, to2_col=5):
     print('output_file:', output_file)
 
-    if filepath[-3:] == '.gz':
+    if filepath.endswith('.gz'):
         print("gzip")
-        f = gzip.open(filepath, 'r')
+        f = gzip.open(filepath, 'rt')
     else:
         print("plain")
         f = open(filepath, 'r')
@@ -699,7 +699,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     else:
         if filepath.endswith('.gz'):
             import gzip
-            f = gzip.open(filepath, 'r')
+            f = gzip.open(filepath, 'rt')
         else:
             f = open(filepath, 'r')
 
@@ -744,6 +744,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         # each line should indicate a chromsome, start position and end position
         parts = line.split()
 
+        print("chrom_col:", parts[chrom_col-1])
         start_genome_pos = nc.chr_pos_to_genome_pos(parts[chrom_col-1], int(parts[from_pos_col-1]), assembly)
 
         if start_genome_pos - curr_genome_pos > 1:
