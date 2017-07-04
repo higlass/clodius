@@ -41,6 +41,7 @@ def test_clodius_aggregate_bedgraph():
     f = h5py.File(output_file)
     prev_tile_3_0 = cht.get_data(f,3,0)
 
+    assert(result.exit_code == 0)
     assert(sum(prev_tile_3_0) < 0)
 
     input_file = op.join(testdir, 'sample_data', 'cnvs_hw.tsv.gz')
