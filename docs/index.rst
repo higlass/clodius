@@ -47,6 +47,7 @@ of the data file contains a header using the (``--has-header``) option.
         --to-pos-col 4                  \
         --value-col 5                   \
         --assembly grch37               \
+        --nan-value NA                  \
         --has-header                    
 
 NaN Values

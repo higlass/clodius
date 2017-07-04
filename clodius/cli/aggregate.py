@@ -750,7 +750,6 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         # each line should indicate a chromsome, start position and end position
         parts = line.split()
 
-        print("chrom_col:", parts[chrom_col-1])
         start_genome_pos = nc.chr_pos_to_genome_pos(parts[chrom_col-1], int(parts[from_pos_col-1]), assembly)
 
         if start_genome_pos - curr_genome_pos > 1:
