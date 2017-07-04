@@ -26,42 +26,72 @@ Aggregation by addition
 
 Assume we have an input file that has ``id chr start end value1 value2`` pairs::
 
+    location        chrom   start   end     copynumber      segmented
     1:2900001-3000000       1       2900001 3000000 -0.614  -0.495
     1:3000001-3100000       1       3000001 3100000 -0.407  -0.495
     1:3100001-3200000       1       3100001 3200000 -0.428  -0.495
     1:3200001-3300000       1       3200001 3300000 -0.437  -0.495
 
-We can aggregate this file by recursively summing adjacent values. We have to 
-indicate which column corresponds to the chromosome (``--chrom-col 2``), the
-start position (``--from-pos-col 3``), the end position (``--to-pos-col 4``) and 
-the value column (``--value-col 5``).
+We can aggregate this file by recursively summing adjacent values. We have to
+indicate which column corresponds to the chromosome (``--chromosome-col 2``),
+the start position (``--from-pos-col 3``), the end position (``--to-pos-col
+4``) and the value column (``--value-col 5``). We specify that the first line
+of the data file contains a header using the (``--has-header``) option.
 
 .. code-block:: bash
 
-    clodius aggregate bedgraph 
-        input_file.bg       \
-        --from-pos-col 3    \
-        --to-pos-col 4      \
-        --value-col 5       \
-        --assembly grch37
+    clodius aggregate bedgraph          \
+        test/sample_data/cnvs_hw.tsv    \
+        --chromosome-col 2              \
+        --from-pos-col 3                \
+        --to-pos-col 4                  \
+        --value-col 5                   \
+        --assembly grch37               \
+        --has-header                    
 
-Aggregation by average
-^^^^^^^^^^^^^^^^^^^^^^
+NaN Values
+""""""""""
 
-In certain cases, the aggregation should be done by averaging adjacent
-rather than just summing them:
+NaN (not a number) values in the input file can be specified using the
+``--nan-value`` option.  For example, ``--nan-value NA`` indicates that
+whenever *NA* is encountered as a value it should be treated as NaN. In the
+current implementation, NaN values are simply treated as 0. In the future, they
+should be assigned a special value so that they are ignored by `HiGlass`_.
+
+.. _higlass: http://higlass.io
+
+Development
+-----------
+
+Testing
+^^^^^^^
+
+The unit tests for clodius can be run using `nosetests`_::
+
+    nosetests tests
+
+Individual unit tests can be specified by indicating the file and function
+they are defined in::
+
+    nosetests test/cli_test.py:test_clodius_aggregate_bedgraph
 
 
-.. code-block:: bash
+.. _nosetests: http://nose.readthedocs.io/en/latest/
 
-    clodius aggregate bedgraph 
-        input_file.bg       \
-        --from-pos-col 3    \
-        --to-pos-col 4      \
-        --value-col 5       \
-        --assembly grch37   \
-        --method average
 
+
+Building the documentation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Building the documentation from the root directory is a matter of running
+``sphinx-build``::
+
+    sphinx-build docs -b html docs/_build/html
+
+To view the documentation, go to the build directory and start an http server::
+
+    cd docs/_build/html
+    python -m http 8081
 
 Indices and tables
 ==================

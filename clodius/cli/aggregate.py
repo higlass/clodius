@@ -628,7 +628,8 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
 ##################################################################################################
 def _bedgraph(filepath, output_file, assembly, chrom_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
-        chromosome, tile_size, chunk_size, zoom_step):
+        chromosome, tile_size, chunk_size, method, nan_value,
+        zoom_step):
     last_end = 0
     data = []
 
@@ -644,7 +645,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
     # get the information about the chromosomes in this assembly
     chrom_info = nc.get_chrominfo(assembly)
-    chrom_order = nc.get_chromorder(assembly)
+    chrom_order = [a.encode('utf-8') for a in nc.get_chromorder(assembly)]
     assembly_size = chrom_info.total_length
     print('assembly_size:', assembly_size)
 
@@ -676,7 +677,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     d.attrs['zoom-step'] = zoom_step
     d.attrs['max-length'] = assembly_size
     d.attrs['assembly'] = assembly
-    d.attrs['chrom-names'] = nc.get_chromorder(assembly)
+    d.attrs['chrom-names'] = chrom_order
     d.attrs['chrom-sizes'] = nc.get_chromsizes(assembly)
     d.attrs['chrom-order'] = chrom_order
     d.attrs['tile-size'] = tile_size
@@ -696,7 +697,11 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     if filepath == '-':
         f = sys.stdin
     else:
-        f = open(filepath, 'r')
+        if filepath.endswith('.gz'):
+            import gzip
+            f = gzip.open(filepath, 'r')
+        else:
+            f = open(filepath, 'r')
 
     prev_chrom = ''
     curr_data = []
@@ -739,13 +744,15 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         # each line should indicate a chromsome, start position and end position
         parts = line.split()
 
-        start_genome_pos = nc.chr_pos_to_genome_pos(parts[0], int(parts[from_pos_col-1]), assembly)
+        start_genome_pos = nc.chr_pos_to_genome_pos(parts[chrom_col-1], int(parts[from_pos_col-1]), assembly)
 
         if start_genome_pos - curr_genome_pos > 1:
             values += [0] * (start_genome_pos - curr_genome_pos - 1)
             curr_genome_pos += len(values)
 
-        values_to_add = [float(parts[value_col-1])] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
+        value = float(parts[value_col-1]) if not parts[value_col-1] == nan_value else 0
+
+        values_to_add = [value] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
         values += values_to_add
         curr_genome_pos += len(values_to_add)
 
@@ -798,6 +805,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         '--assembly',
         '-a',
         help='The genome assembly that this file was created against',
+        type=click.Choice(nc.available_chromsizes()),
         default='hg19')
 @click.option(
         '--chromosome',
@@ -845,7 +853,13 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 @click.option(
         '--method',
         help='The method used to aggregate values (e.g. sum, average...)',
+        type=click.Choice(['sum', 'average']),
         default='sum')
+@click.option(
+        '--nan-value',
+        help='The string to use as a NaN value',
+        type=str,
+        default=None)
 @click.option(
         '--zoom-step',
         '-z',
@@ -854,10 +868,10 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         default=8)
 def bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
-        chromosome, tile_size, chunk_size, method, zoom_step):
+        chromosome, tile_size, chunk_size, method, nan_value, zoom_step):
     _bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
-        chromosome, tile_size, chunk_size, method, zoom_step)
+        chromosome, tile_size, chunk_size, method, nan_value, zoom_step)
 
 @aggregate.command()
 @click.argument(
