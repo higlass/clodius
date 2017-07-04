@@ -56,6 +56,14 @@ def test_clodius_aggregate_bigwig():
             [input_file,
             '--output-file', '/tmp/test.mr.bw'])
 
-    print('output:', result.output, result)
+    '''
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+    '''
 
     assert(result.exit_code == 0)

@@ -94,6 +94,7 @@ def test_no_chromosome_limit():
                 '--assembly', 'hg19',
                 '--output-file', f.name])
 
+    print("output:", result.output)
     rows = cdt.get_tile(f.name, 0, 0)
     foundOther = False
     

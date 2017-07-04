@@ -12,6 +12,67 @@ import sys
 sys.path.append("scripts")
 
 testdir = op.realpath(op.dirname(__file__))
+def test_clodius_aggregate_bedgraph():
+    input_file = op.join(testdir, 'sample_data', 'cnvs_hw.tsv')
+    output_file = '/tmp/cnvs_hw.hitile'
+
+    runner = clt.CliRunner()
+    result = runner.invoke(
+            cca.bedgraph,
+            [input_file,
+            '--output-file', output_file,
+            '--assembly', 'grch37',
+            '--chromosome-col', '2',
+            '--from-pos-col', '3',
+            '--to-pos-col', '4',
+            '--value-col', '5',
+            '--has-header',
+            '--nan-value', 'NA'])
+
+    '''
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+    '''
+    f = h5py.File(output_file)
+    prev_tile_3_0 = cht.get_data(f,3,0)
+
+    assert(result.exit_code == 0)
+    assert(sum(prev_tile_3_0) < 0)
+
+    input_file = op.join(testdir, 'sample_data', 'cnvs_hw.tsv.gz')
+    result = runner.invoke(
+            cca.bedgraph,
+            [input_file,
+            '--output-file', output_file,
+            '--assembly', 'grch37',
+            '--chromosome-col', '2',
+            '--from-pos-col', '3',
+            '--to-pos-col', '4',
+            '--value-col', '5',
+            '--has-header',
+            '--nan-value', 'NA'])
+
+    '''
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+    '''
+
+    f = h5py.File(output_file)
+    tile_3_0 = cht.get_data(f,3,0)
+
+    assert(sum(tile_3_0) - sum(prev_tile_3_0) < 0.0001)
+
+testdir = op.realpath(op.dirname(__file__))
 def test_clodius_aggregate_bedpe():
     input_file = op.join(testdir, 'sample_data', 'Rao_RepA_GM12878_Arrowhead.txt')
     output_file = '/tmp/bedpe.db'
