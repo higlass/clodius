@@ -2,6 +2,8 @@ import math
 import numpy as np
 cimport numpy as np
 
+from libc.math cimport isnan
+
 def aggregate(np.ndarray[np.float32_t,ndim=1] in_array, int num_to_agg):
     '''
     Calculate a new array which contains the sums of every
@@ -21,11 +23,29 @@ def aggregate(np.ndarray[np.float32_t,ndim=1] in_array, int num_to_agg):
     cdef int i = 0
     cdef int j = 0
 
+    cdef float a = 0
+    cdef float b = 0
+
     while i < length:
         out_array[i / num_to_agg] = 0;
         j = 0
         while j < num_to_agg and (i+j) < length:
-            out_array[i / num_to_agg] += in_array[i+j]
+            a = out_array[i / num_to_agg]
+            b = in_array[i+j]
+
+            # two nans sum to nan
+            if isnan(a) and isnan(b):
+                out_array[i / num_to_agg] = np.nan
+                j += 1
+                continue
+
+            if isnan(a):
+                a = 0.
+            if isnan(b):
+                b = 0.
+
+            #print("a:", a, "b:", b, isnan(a), isnan(b))
+            out_array[i / num_to_agg] = a + b
             j += 1
         i += num_to_agg
 

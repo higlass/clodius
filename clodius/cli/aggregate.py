@@ -635,7 +635,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
 def _bedgraph(filepath, output_file, assembly, chrom_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value,
-        zoom_step):
+        transform, count_nan, zoom_step):
     last_end = 0
     data = []
 
@@ -746,6 +746,10 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
     # the genome position up to which we've filled in values
     curr_genome_pos = 0
+
+    # keep track of the previous value so that we can use it to fill in NAN values
+    prev_value = 0
+
     for line in f:
         # each line should indicate a chromsome, start position and end position
         parts = line.split()
@@ -753,10 +757,17 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         start_genome_pos = nc.chr_pos_to_genome_pos(parts[chrom_col-1], int(parts[from_pos_col-1]), assembly)
 
         if start_genome_pos - curr_genome_pos > 1:
-            values += [0] * (start_genome_pos - curr_genome_pos - 1)
+            values += [np.nan] * (start_genome_pos - curr_genome_pos - 1)
             curr_genome_pos += len(values)
 
-        value = float(parts[value_col-1]) if not parts[value_col-1] == nan_value else 0
+        if count_nan:
+            value = 1 if parts[value_col-1] == nan_value else 0
+        else:
+            if transform == 'exp2':
+                value = 2 ** float(parts[value_col-1]) if not parts[value_col-1] == nan_value else np.nan
+            else:
+                value = float(parts[value_col-1]) if not parts[value_col-1] == nan_value else np.nan
+
 
         values_to_add = [value] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
         values += values_to_add
@@ -769,7 +780,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
     add_values_to_data_buffers(values)
 
-    print("db:", sum(data_buffers[0]))
+    #print("db:", sum(data_buffers[0]))
 
     # store the remaining data
     while True:
@@ -790,9 +801,6 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
             break
 
     # still need to take care of the last chunk
-
-    data = np.array(data)
-    t1 = time.time()
 
 @aggregate.command()
 @click.argument(
@@ -867,6 +875,15 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         type=str,
         default=None)
 @click.option(
+        '--transform',
+        help='The method used to aggregate values (e.g. sum, average...)',
+        type=click.Choice(['none', 'exp2']),
+        default='none')
+@click.option(
+        '--count-nan',
+        help="Simply count the number of nan values in the file",
+        is_flag=True)
+@click.option(
         '--zoom-step',
         '-z',
         help="The number of intermediate aggregation levels to"
@@ -874,10 +891,12 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         default=8)
 def bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
-        chromosome, tile_size, chunk_size, method, nan_value, zoom_step):
+        chromosome, tile_size, chunk_size, method, nan_value, 
+        transform, count_nan, zoom_step):
     _bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
-        chromosome, tile_size, chunk_size, method, nan_value, zoom_step)
+        chromosome, tile_size, chunk_size, method, nan_value, 
+        transform, count_nan, zoom_step)
 
 @aggregate.command()
 @click.argument(
