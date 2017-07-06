@@ -1,5 +1,6 @@
 import clodius.tiles as ct
 import math
+import numpy as np
 
 def get_tileset_info(hdf_file):
     '''
@@ -187,10 +188,28 @@ def get_data(hdf_file, z, x):
     # which positions we need to retrieve in order to dynamically aggregate
     start_pos = int((x * 2 ** zoom_offset * tile_size))
     end_pos = int(start_pos + total_in_length)
+
     f = hdf_file['values_' + str(int(next_stored_zoom))]
 
-    #print('start_pos:', start_pos, 'end_pos:', end_pos, 'x:', f[start_pos:end_pos])
-
     ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
+
+    # check to see if we counted the number of NaN values in the given
+    # interval
+
+    f_nan = None
+    if "nan_values_" + str(int(next_stored_zoom)) in hdf_file:
+        f_nan = hdf_file['nan_values_' + str(int(next_stored_zoom))]
+        nan_array = ct.aggregate(f_nan[start_pos:end_pos], int(num_to_agg))
+        num_aggregated = 2 ** (max_zoom - z)
+
+        num_vals_array = np.zeros(len(nan_array))
+        num_vals_array.fill(num_aggregated)
+        num_summed_array = num_vals_array - nan_array
+
+        averages_array = ret_array / num_summed_array
+
+
+        return averages_array
+
     return ret_array
     
