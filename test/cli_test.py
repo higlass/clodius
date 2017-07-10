@@ -38,13 +38,17 @@ def test_clodius_aggregate_bedgraph():
     print("result.error", traceback.print_tb(tb))
     print("Exception:", a,b)
     '''
-
     f = h5py.File(output_file)
+    d = cht.get_data(f,0,0)
+    #print("tile_0_0", d)
+    return
+
     print("tile:", cht.get_data(f, 22, 0))
     prev_tile_3_0 = cht.get_data(f,3,0)
 
     print("prev_tile_3_0:", prev_tile_3_0)
-    return
+
+
 
     assert(result.exit_code == 0)
     assert(sum(prev_tile_3_0) < 0)
@@ -74,6 +78,7 @@ def test_clodius_aggregate_bedgraph():
 
     f = h5py.File(output_file)
     tile_3_0 = cht.get_data(f,3,0)
+
 
     assert(sum(tile_3_0) - sum(prev_tile_3_0) < 0.0001)
 

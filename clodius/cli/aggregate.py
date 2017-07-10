@@ -668,14 +668,34 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     nan_data_buffers = [[]]
 
     while assembly_size / 2 ** z > tile_size:
-        dsets += [f.create_dataset('values_' + str(z), (assembly_size / 2 ** z,), dtype='f',compression='gzip')]
-        nan_dsets += [f.create_dataset('nan_values_' + str(z), (assembly_size / 2 ** z,), dtype='f',compression='gzip')]
+        dset_length = assembly_size / 2 ** z
+        dsets += [f.create_dataset('values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
+        nan_dsets += [f.create_dataset('nan_values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
+
+        # initialize all dsets to np.nan
+        '''
+        curr_pos = 0
+        while curr_pos < dset_length:
+            fill_length = min(dset_length - curr_pos, chunk_size * 8)
+
+            dsets[-1][curr_pos:curr_pos+fill_length] = np.nan
+            nan_dsets[-1][curr_pos:curr_pos+fill_length] = np.nan
+
+            curr_pos += fill_length
+            print("curr_pos:", curr_pos)
+
+
+        print("chunk_size:", chunk_size)
+        print("dset_length:", dset_length)
+        '''
 
         data_buffers += [[]]
         nan_data_buffers += [[]]
 
         positions += [0]
         z += zoom_step
+
+    print("dsets[0][-10:]", dsets[0][-10:])
 
     # load the bigWig file
     print("filepath:", filepath)
@@ -695,6 +715,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
+    d.attrs['max-position'] = 0
 
     print("assembly size (max-length)", d.attrs['max-length'])
     print("max-width", d.attrs['max-width'])
@@ -807,6 +828,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         
         values += values_to_add
         nan_values += nan_counts_to_add
+        d.attrs['max-position'] = start_genome_pos + len(values_to_add) 
 
         #print("values:", values[:30])
 
@@ -818,8 +840,6 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
             nan_values = nan_values[chunk_size:]
 
     add_values_to_data_buffers(values, nan_values)
-
-    #print("db:", sum(data_buffers[0]))
 
     # store the remaining data
     while True:
