@@ -1,5 +1,5 @@
-HiGlass: Serving genomic data tiles
-===================================
+HiGlass Server: Serving genomic data tiles
+==========================================
 
 .. toctree::
     :maxdepth: 2
@@ -20,3 +20,9 @@ Testing
 .. code-block:: bash
 
     python manage.py test tilesets --failfast
+
+Or to test a more specific code block:
+
+.. code-block:: bash
+
+    python manage.py test tilesets.tests.CoolerTest.test_transforms --failfast
