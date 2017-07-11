@@ -81,7 +81,6 @@ def test_clodius_aggregate_bedgraph():
     f = h5py.File(output_file)
     tile_3_0 = cht.get_data(f,3,0)
 
-
     assert(sum(tile_3_0) - sum(prev_tile_3_0) < 0.0001)
 
 testdir = op.realpath(op.dirname(__file__))

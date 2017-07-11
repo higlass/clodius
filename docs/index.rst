@@ -11,6 +11,8 @@ Clodius: Big data aggregation for visualization
     :caption: Contents:
 
     higlass_server
+    higlass_client
+    gene_annotations
 
 .. contents:: :local:
 
