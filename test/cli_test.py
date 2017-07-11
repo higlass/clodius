@@ -108,7 +108,7 @@ def test_clodius_aggregate_bedpe():
 
 
 testdir = op.realpath(op.dirname(__file__))
-def test_clodius_aggregate_bigwig():
+def test_clodius_aggregate_bedgraph1():
     input_file = op.join(testdir, 'sample_data', 'dm3_values.tsv')
     output_file = '/tmp/dm3_values.hitile'
 
@@ -195,3 +195,26 @@ def test_clodius_aggregate_bigwig():
     d = cht.get_data(f, 0, 0)
     assert(sum(d) == 770 + 880 + 5)
     #print("d:", d)
+
+testdir = op.realpath(op.dirname(__file__))
+def test_clodius_aggregate_bigwig():
+    runner = clt.CliRunner()
+    input_file = op.join(testdir, 'sample_data', 'test.bw')
+    print("input_file:", input_file)
+
+    result = runner.invoke(
+            cca.bigwig,
+            [input_file,
+            '--output-file', '/tmp/test.mr.bw'])
+
+    '''
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+    '''
+
+    assert(result.exit_code == 0)

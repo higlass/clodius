@@ -565,7 +565,6 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     print("min-pos:", d.attrs['min-pos'])
     print('max-pos:', d.attrs['max-pos'])
     '''
-
     for chrom in chroms_to_use:
         if chrom not in bwf.chroms():
             print("skipping chrom (not in bigWig file):", chrom)
@@ -603,6 +602,8 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
                 curr_zoom += 1
 
     # store the remaining data
+
+    curr_zoom = 0
 
     while True:
         # get the current chunk and store it
