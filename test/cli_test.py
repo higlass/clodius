@@ -6,6 +6,7 @@ import click.testing as clt
 import clodius.cli.aggregate as cca
 import h5py
 import negspy.coordinates as nc
+import numpy as np
 import os.path as op
 import sys
 
@@ -29,7 +30,6 @@ def test_clodius_aggregate_bedgraph():
             '--has-header',
             '--nan-value', 'NA'])
 
-    print("result.output", result.output)
     '''
     import traceback
     print("exc_info:", result.exc_info)
@@ -39,18 +39,21 @@ def test_clodius_aggregate_bedgraph():
     print("Exception:", a,b)
     '''
     f = h5py.File(output_file)
-    d = cht.get_data(f,0,0)
     #print("tile_0_0", d)
-    return
 
-    print("tile:", cht.get_data(f, 22, 0))
+    #print("tile:", cht.get_data(f, 22, 0))
+    #return
+    d = cht.get_data(f,0,0)
+
+    assert(not np.isnan(d[0]))
+    assert(np.isnan(d[-1]))
     prev_tile_3_0 = cht.get_data(f,3,0)
 
     print("prev_tile_3_0:", prev_tile_3_0)
 
 
-
     assert(result.exit_code == 0)
+    return
     assert(sum(prev_tile_3_0) < 0)
 
     input_file = op.join(testdir, 'sample_data', 'cnvs_hw.tsv.gz')
