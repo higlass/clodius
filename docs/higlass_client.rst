@@ -1,5 +1,5 @@
-HiGlass Client: Displaying tiled genomic data
-=============================================
+HiGlass Client
+==============
 
 Interface
 ---------

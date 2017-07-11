@@ -1,5 +1,5 @@
-HiGlass Server: Serving genomic data tiles
-==========================================
+HiGlass Server
+==============
 
 .. toctree::
     :maxdepth: 2

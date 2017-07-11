@@ -1,5 +1,5 @@
-Creating HiGlass tracks for gene annotations
-============================================
+Gene Annotations Tracks
+=======================
 
 HiGlass uses a specialized track for displaying gene annotations. It is rougly
 based on UCSC's refGene files
@@ -17,6 +17,10 @@ http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
 And a list of chromosome sizes in the negspy_ python package.
 
 .. _negspy: https://github.com/pkerpedjiev/negspy
+
+If there are no available chromosome sizes for this assembly in negspy, adding
+them is simply a matter of downloading the list from UCSC (e.g.
+http://hgdownload.cse.ucsc.edu/goldenpath/hg19/bigZips/hg19.chrom.sizes)
 
 
 Creating the track
