@@ -35,6 +35,7 @@ docker pull gehlenborglab/clodius # Ensure that you have the latest.
 docker run -v /tmp/clodius/input:/tmp/ \
            gehlenborglab/clodius \
            clodius aggregate bigwig /tmp/file.bigwig
+           
 ls /tmp/clodius/input # Should contain the output file
 ```
 
