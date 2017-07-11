@@ -27,12 +27,16 @@ curl https://raw.githubusercontent.com/hms-dbmi/clodius/develop/test/sample_data
 ```
 Then install Docker, and pull and run the Clodius image:
 ```
-docker pull gehlenborglab/clodius
-docker run -v /tmp/clodius/input:/tmp/input \
-           -v /tmp/clodius/output:/tmp/output \
+docker stop clodius; 
+docker rm clodius;
+
+docker pull gehlenborglab/clodius # Ensure that you have the latest.
+
+docker run -v /tmp/clodius/input:/tmp/ \
            gehlenborglab/clodius \
-           clodius aggregate bigwig file.bigwig
-ls /tmp/clodius/output # Should contain the output file
+           clodius aggregate bigwig /tmp/file.bigwig
+           
+ls /tmp/clodius/input # Should contain the output file
 ```
 
 If you already have a good location for your input and output files,
