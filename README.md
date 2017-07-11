@@ -31,11 +31,7 @@ docker pull gehlenborglab/clodius
 docker run -v /tmp/clodius/input:/tmp/input \
            -v /tmp/clodius/output:/tmp/output \
            gehlenborglab/clodius \
-           python scripts/conversion_wrapper.py \
-               -i /tmp/input/sample.short.bed \
-               -o /tmp/output/sample.multires.bed \
-               --filetype gene_annotation \
-               --assembly hg19
+           clodius aggregate bigwig file.bigwig
 ls /tmp/clodius/output # Should contain the output file
 ```
 
