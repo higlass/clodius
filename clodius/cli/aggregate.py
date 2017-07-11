@@ -136,9 +136,11 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         try:
             parts = first_line.split()
 
+            '''
             print("chr1_col", chr1_col, "chr2_col", chr2_col, 
                   "from1_col:", from1_col, "from2_col", from2_col, 
                   "to1_col", to1_col, "to2_col", to2_col)
+            '''
 
             pos = int(parts[from1_col])
             pos = int(parts[to1_col])
@@ -448,7 +450,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header, chr
 
                     # one extra question mark for the primary key
                     exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
-                    print("value:", value['startPos'])
+                    #print("value:", value['startPos'])
 
                     ret = c.execute(
                             exec_statement,
@@ -530,8 +532,10 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
         positions += [0]
         z += zoom_step
 
+    '''
     print("chroms.keys:", bwf.chroms().keys())
     print("chroms.values:", bwf.chroms().values())
+    '''
 
     d.attrs['zoom-step'] = zoom_step
     d.attrs['max-length'] = d.attrs['max-pos'] - d.attrs['min-pos'] + 1
@@ -695,10 +699,10 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         positions += [0]
         z += zoom_step
 
-    print("dsets[0][-10:]", dsets[0][-10:])
+    #print("dsets[0][-10:]", dsets[0][-10:])
 
     # load the bigWig file
-    print("filepath:", filepath)
+    #print("filepath:", filepath)
 
     # store some meta data
     d = f.create_dataset('meta', (1,), dtype='f')
@@ -767,7 +771,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
             # aggregate nan values
             #nan_curr_chunk[np.isnan(curr_chunk)] = 0
-            print("1na_cc:", sum(nan_curr_chunk))
+            #print("1na_cc:", sum(nan_curr_chunk))
 
             # aggregate and store aggregated values in the next zoom_level's data
             data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** zoom_step))

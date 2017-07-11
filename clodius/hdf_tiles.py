@@ -180,8 +180,6 @@ def get_data(hdf_file, z, x):
     else:
         max_position = max_width
 
-    print("max-position:", max_position)
-
     rz = max_zoom - z
     tile_width = max_width / 2**z
 
@@ -199,30 +197,31 @@ def get_data(hdf_file, z, x):
 
     max_position = int(max_position / 2 ** next_stored_zoom)
 
+    '''
     print("start_pos:", start_pos)
     print("end_pos:", end_pos)
     print("next_stored_zoom", next_stored_zoom)
     print("max_position:", int(max_position))
+    '''
 
     f = hdf_file['values_' + str(int(next_stored_zoom))]
 
     if start_pos > max_position:
         # we want a tile that's after the last bit of data
-        print("here1")
         a = np.zeros(end_pos - start_pos)
         a.fill(np.nan)
         ret_array = ct.aggregate(a, int(num_to_agg))
     elif start_pos < max_position and max_position < end_pos:
-        print("here2")
         a = f[start_pos:end_pos][:]
         a[max_position:end_pos] = np.nan
         ret_array = ct.aggregate(a, int(num_to_agg))
     else:
-        print("here3", start_pos, end_pos, f[start_pos:end_pos])
         ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
 
+    '''
     print("ret_array:", f[start_pos:end_pos])
     print('ret_array:', ret_array)
+    '''
 
     # check to see if we counted the number of NaN values in the given
     # interval

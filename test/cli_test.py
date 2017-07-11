@@ -51,7 +51,6 @@ def test_clodius_aggregate_bedgraph():
 
     print("prev_tile_3_0:", prev_tile_3_0)
 
-
     assert(result.exit_code == 0)
     return
     assert(sum(prev_tile_3_0) < 0)

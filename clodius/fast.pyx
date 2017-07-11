@@ -27,8 +27,8 @@ def aggregate(np.ndarray[np.float32_t,ndim=1] in_array, int num_to_agg):
     cdef float a = 0
     cdef float b = 0
 
-    print("num_to_agg:", num_to_agg)
-    print("in_array:", in_array[-10:])
+    #print("num_to_agg:", num_to_agg)
+    #print("in_array:", in_array[-10:])
     while i < length:
         out_array[i / num_to_agg] = np.nan;
         j = 0
