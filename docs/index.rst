@@ -10,6 +10,10 @@ Clodius: Big data aggregation for visualization
     :maxdepth: 2
     :caption: Contents:
 
+    higlass_server
+    higlass_client
+    gene_annotations
+
 .. contents:: :local:
 
 
@@ -105,6 +109,27 @@ Too see this dataset in higlass, use the docker container to load it:
 
 Development
 -----------
+
+Building for development
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The recommended way to develop ``clodius`` is to use a `conda`_ environment and 
+install ``clodius`` with develop mode:
+
+.. _conda: https://conda.io/docs/intro.html
+
+.. code-block:: bash
+
+    python setup.py develop
+
+Note that making changes to the ``clodius/fast.pyx`` `cython`_ module requires an
+explicit recompile step:
+
+.. _cython: http://docs.cython.org/en/latest/src/quickstart/cythonize.html
+
+.. code-block:: bash
+   
+    python setup.py build_ext --inplace
 
 Testing
 ^^^^^^^

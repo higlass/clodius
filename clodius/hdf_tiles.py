@@ -1,5 +1,6 @@
 import clodius.tiles as ct
 import math
+import numpy as np
 
 def get_tileset_info(hdf_file):
     '''
@@ -166,12 +167,18 @@ def get_data(hdf_file, z, x):
     max_length = int(d.attrs['max-length'])
     max_zoom = int(d.attrs['max-zoom'])
 
+
     if 'min-pos' in d.attrs:
         min_pos = d.attrs['min-pos']
     else:
         min_pos = 0
 
     max_width = tile_size * 2 ** max_zoom
+
+    if 'max-position' in d.attrs:
+        max_position = int(d.attrs['max-position'])
+    else:
+        max_position = max_width
 
     rz = max_zoom - z
     tile_width = max_width / 2**z
@@ -187,10 +194,54 @@ def get_data(hdf_file, z, x):
     # which positions we need to retrieve in order to dynamically aggregate
     start_pos = int((x * 2 ** zoom_offset * tile_size))
     end_pos = int(start_pos + total_in_length)
+
+    #print("max_position:", max_position)
+    max_position = int(max_position / 2 ** next_stored_zoom)
+    #print("new max_position:", max_position)
+
+    '''
+    print("start_pos:", start_pos)
+    print("end_pos:", end_pos)
+    print("next_stored_zoom", next_stored_zoom)
+    print("max_position:", int(max_position))
+    '''
+
     f = hdf_file['values_' + str(int(next_stored_zoom))]
 
-    #print('start_pos:', start_pos, 'end_pos:', end_pos, 'x:', f[start_pos:end_pos])
+    if start_pos > max_position:
+        # we want a tile that's after the last bit of data
+        a = np.zeros(end_pos - start_pos)
+        a.fill(np.nan)
+        ret_array = ct.aggregate(a, int(num_to_agg))
+    elif start_pos < max_position and max_position < end_pos:
+        a = f[start_pos:end_pos][:]
+        a[max_position+1:end_pos] = np.nan
+        ret_array = ct.aggregate(a, int(num_to_agg))
+    else:
+        ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
 
-    ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
+    '''
+    print("ret_array:", f[start_pos:end_pos])
+    print('ret_array:', ret_array)
+    '''
+    #print('nansum', np.nansum(ret_array))
+
+    # check to see if we counted the number of NaN values in the given
+    # interval
+
+    f_nan = None
+    if "nan_values_" + str(int(next_stored_zoom)) in hdf_file:
+        f_nan = hdf_file['nan_values_' + str(int(next_stored_zoom))]
+        nan_array = ct.aggregate(f_nan[start_pos:end_pos], int(num_to_agg))
+        num_aggregated = 2 ** (max_zoom - z)
+
+        num_vals_array = np.zeros(len(nan_array))
+        num_vals_array.fill(num_aggregated)
+        num_summed_array = num_vals_array - nan_array
+
+        averages_array = ret_array / num_summed_array
+
+        return averages_array
+
     return ret_array
     
