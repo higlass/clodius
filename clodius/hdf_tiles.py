@@ -195,7 +195,9 @@ def get_data(hdf_file, z, x):
     start_pos = int((x * 2 ** zoom_offset * tile_size))
     end_pos = int(start_pos + total_in_length)
 
+    #print("max_position:", max_position)
     max_position = int(max_position / 2 ** next_stored_zoom)
+    #print("new max_position:", max_position)
 
     '''
     print("start_pos:", start_pos)
@@ -213,7 +215,7 @@ def get_data(hdf_file, z, x):
         ret_array = ct.aggregate(a, int(num_to_agg))
     elif start_pos < max_position and max_position < end_pos:
         a = f[start_pos:end_pos][:]
-        a[max_position:end_pos] = np.nan
+        a[max_position+1:end_pos] = np.nan
         ret_array = ct.aggregate(a, int(num_to_agg))
     else:
         ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
@@ -222,6 +224,7 @@ def get_data(hdf_file, z, x):
     print("ret_array:", f[start_pos:end_pos])
     print('ret_array:', ret_array)
     '''
+    #print('nansum', np.nansum(ret_array))
 
     # check to see if we counted the number of NaN values in the given
     # interval

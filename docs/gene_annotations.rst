@@ -1,11 +1,29 @@
 Creating HiGlass tracks for gene annotations
 ============================================
 
-Starting from GenBank
----------------------
+HiGlass uses a specialized track for displaying gene annotations. It is rougly
+based on UCSC's refGene files
+(e.g. http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/). For any identifiable
+genome assembly the following commands can be run to generate a list of 
+gene annotation that can be loaded as a zoomable track in HiGlass. 
 
-Download data
-^^^^^^^^^^^^^
+Prerequisites
+-------------
+
+For any assembly, there needs to a refGene file:
+
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
+
+And a list of chromosome sizes in the negspy_ python package.
+
+.. _negspy: https://github.com/pkerpedjiev/negspy
+
+
+Creating the track
+------------------
+
+Set the assembly name and species ID
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -14,6 +32,12 @@ Download data
 
     #ASSEMBLY=hg19
     #TAXID=9606
+
+Download data from UCSC and NCBI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
 
     mkdir -p ~/data/genbank-data/${ASSEMBLY}
 
@@ -157,8 +181,11 @@ Creating a HiGlass Track
     clodius aggregate bedfile \
         --max-per-tile 20 --importance-column 5 \
         --assembly ${ASSEMBLY} \
-        ~/data/genbank-data/${ASSEMBLY}/geneAnnotationsExonUnions.bed \
-        ~/data/tiled-data/gene-annotations-${ASSEMBLY}.db
+        --output-file ~/data/tiled-data/gene-annotations-${ASSEMBLY}.db \
+        ~/data/genbank-data/${ASSEMBLY}/geneAnnotationsExonUnions.bed 
 
     aws s3 cp ~/data/tiled-data/gene-annotations-${ASSEMBLY}.db \
         s3://pkerp/public/hg-server/data/${ASSEMBLY}/
+
+Importing into HiGlass
+----------------------
