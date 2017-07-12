@@ -1,5 +1,7 @@
 ### Building the documentation
 
+make publish  # upload to PyPI
+
 sphinx-build -b html docs docs/_build/html/
 
 for file in $(ls ~/projects/francesco-tad-calls/TADcalls/Rao/GM12878/*.txt); do clodius aggregate bedpe --assembly hg19 --chr1-col 1 --from1-col 2 --to1-col 3 --chr2-col 1 --from2-col 2 --to2-col 3 $file; done;
