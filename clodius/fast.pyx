@@ -2,6 +2,8 @@ import math
 import numpy as np
 cimport numpy as np
 
+from libc.math cimport isnan
+
 def aggregate(np.ndarray[np.float32_t,ndim=1] in_array, int num_to_agg):
     '''
     Calculate a new array which contains the sums of every
@@ -16,16 +18,37 @@ def aggregate(np.ndarray[np.float32_t,ndim=1] in_array, int num_to_agg):
     :return: A numpy array
     '''
     cdef int length = len(in_array)
-    cdef np.ndarray[np.float32_t,ndim=1] out_array = np.zeros(int(math.ceil(length / float(num_to_agg))), 
+    cdef np.ndarray[np.float32_t,ndim=1] out_array = np.empty(int(math.ceil(length / float(num_to_agg))), 
                                                               dtype=np.float32)
+    out_array.fill(np.nan)
     cdef int i = 0
     cdef int j = 0
 
+    cdef float a = 0
+    cdef float b = 0
+
+    #print("num_to_agg:", num_to_agg)
+    #print("in_array:", in_array[-10:])
     while i < length:
-        out_array[i / num_to_agg] = 0;
+        out_array[i / num_to_agg] = np.nan;
         j = 0
         while j < num_to_agg and (i+j) < length:
-            out_array[i / num_to_agg] += in_array[i+j]
+            a = out_array[i / num_to_agg]
+            b = in_array[i+j]
+
+            # two nans sum to nan
+            if isnan(a) and isnan(b):
+                out_array[i / num_to_agg] = np.nan
+                j += 1
+                continue
+
+            if isnan(a):
+                a = 0.
+            if isnan(b):
+                b = 0.
+
+            #print("a:", a, "b:", b, isnan(a), isnan(b))
+            out_array[i / num_to_agg] = a + b
             j += 1
         i += num_to_agg
 

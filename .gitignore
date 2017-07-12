@@ -24,4 +24,6 @@ clodius.egg-info
 .eggs
 clodius/*.c
 *.so
-
+docs/_templates
+docs/_static
+docs/_build
