@@ -100,7 +100,7 @@ def get_2d_tile(db_file, zoom, tile_x_pos, tile_y_pos):
              'yEnd': r[3],
              'chrOffset': r[4],
              'importance': r[5],
-             'uid': r[7],
+             'uid': r[7].decode('utf-8'),
              'fields': r[6].split('\t')} for r in rows]
     conn.close()
 

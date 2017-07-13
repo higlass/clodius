@@ -108,6 +108,9 @@ def test_clodius_aggregate_bedpe():
 
     assert('\n' not in tiles[0]['fields'][2])
 
+    import json
+    json.dumps(tiles)
+
 
 testdir = op.realpath(op.dirname(__file__))
 def test_clodius_aggregate_bedgraph1():
