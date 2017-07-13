@@ -93,15 +93,24 @@ def get_2d_tile(db_file, zoom, tile_x_pos, tile_y_pos):
 
     rows = c.execute(query).fetchall()
 
-    # add the position offset to the returned values
-    rows = [{'xStart': r[0],
+    new_rows = []
+
+    for r in rows:
+        try:
+            uid = r[7].decode('utf-8')
+        except AttributeError:
+            uid = r[7]
+
+        # add the position offset to the returned values
+        new_rows += [
+            {'xStart': r[0],
              'xEnd': r[1],
              'yStart': r[2],
              'yEnd': r[3],
              'chrOffset': r[4],
              'importance': r[5],
-             'uid': r[7].decode('utf-8'),
-             'fields': r[6].split('\t')} for r in rows]
+             'uid': uid ,
+             'fields': r[6].split('\t')}]
     conn.close()
 
-    return rows
+    return new_rows
