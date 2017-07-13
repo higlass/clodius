@@ -104,7 +104,9 @@ def test_clodius_aggregate_bedpe():
     print("result.output", result.output)
 
     tiles = cdt.get_2d_tile(output_file, 0,0,0)
-    print("tiles:", tiles)
+    #print("tiles:", tiles)
+
+    assert('\n' not in tiles[0]['fields'][2])
 
 
 testdir = op.realpath(op.dirname(__file__))

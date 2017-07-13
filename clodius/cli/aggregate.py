@@ -132,7 +132,7 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
     if has_header:
         f.readline()
     else:
-        first_line = f.readline()
+        first_line = f.readline().strip()
         try:
             parts = first_line.split()
 
@@ -151,7 +151,7 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
             raise(ValueError(error_str))
         entries = [line_to_dict(first_line)]
 
-    entries += [line_to_dict(line) for line in f]
+    entries += [line_to_dict(line.strip()) for line in f]
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -334,7 +334,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header, chr
     if has_header:
         bed_file.readline()
     else:
-        line = bed_file.readline()
+        line = bed_file.readline().strip()
         dset += [line_to_np_array(line.strip().split())]
 
     for line in bed_file:
@@ -807,7 +807,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
     for line in f:
         # each line should indicate a chromsome, start position and end position
-        parts = line.split()
+        parts = line.strip().split()
 
         start_genome_pos = nc.chr_pos_to_genome_pos(parts[chrom_col-1], int(parts[from_pos_col-1]), assembly)
 
