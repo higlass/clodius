@@ -193,3 +193,14 @@ Creating a HiGlass Track
 
 Importing into HiGlass
 ----------------------
+
+.. code-block:: bash
+
+    curl -u `cat ~/.higlass-server-login`    \
+        -F "datafile=@/Users/peter/data/tiled-data/gene-annotations-${ASSEMBLY}.db"    \
+        -F "name=Gene Annotations (${ASSEMBLY})"   \ 
+        -F 'filetype=beddb'  \
+        -F 'datatype=gene-annotation'  \
+        -F 'coordSystem=${ASSEMBLY}' \
+        -F 'coordSystem2=${ASSEMBLY}'  \
+        http://higlass.io:80/api/v1/tilesets/
