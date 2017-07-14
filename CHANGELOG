@@ -1,3 +1,13 @@
+v0.6.5 (2017-07-14)
+
+- Added a delimiter option to bedfiles
+- Fixed beddb uid decoding
+- Adding decoding to slugid.nice() methods
+
+v0.6.0-0.6.4 (2017-07-13)
+
+- python3 support
+
 v0.5.0
 
 - Added clodius aggregate bedpe
