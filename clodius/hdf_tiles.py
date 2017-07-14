@@ -162,6 +162,8 @@ def get_data(hdf_file, z, x):
         return []
 
     d = hdf_file['meta'] 
+
+    print("keys:", list(d.attrs.keys()))
     tile_size = int(d.attrs['tile-size'])
     zoom_step = int(d.attrs['zoom-step'])
     max_length = int(d.attrs['max-length'])

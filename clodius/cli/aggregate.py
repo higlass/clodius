@@ -112,7 +112,7 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
                     parts[chr1_col], parts[chr2_col]))
             raise(KeyError(error_str))
 
-        d['uid'] = slugid.nice()
+        d['uid'] = slugid.nice().decode('utf-8')
 
         d['chrOffset'] = d['xs'][0] - int(parts[from1_col])
 
@@ -320,7 +320,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header, chr
         parts = {
                     'startPos': genome_start,
                     'endPos': genome_end,
-                    'uid': slugid.nice(),
+                    'uid': slugid.nice().decode('utf-8'),
                     'chrOffset': pos_offset,
                     'fields': '\t'.join(line),
                     'importance': importance,
@@ -497,7 +497,6 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
 
     # get the information about the chromosomes in this assembly
     chrom_info = nc.get_chrominfo(assembly)
-    chrom_order = [a.encode('utf-8') for a in nc.get_chromorder(assembly)]
     assembly_size = chrom_info.total_length
 
     tile_size = tile_size
@@ -542,7 +541,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
     d.attrs['assembly'] = assembly
     d.attrs['chrom-names'] = [s.encode('utf-8') for s in bwf.chroms().keys()]
     d.attrs['chrom-sizes'] = list(bwf.chroms().values())
-    d.attrs['chrom-order'] = [s.encode('utf-8') for s in chrom_order]
+    d.attrs['chrom-order'] = [s.encode('utf-8') for s in nc.get_chromorder(assembly)]
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
@@ -655,6 +654,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     f = h5py.File(output_file, 'w')
 
     # get the information about the chromosomes in this assembly
+    print("chromorder:", nc.get_chromorder(assembly))
     chrom_info = nc.get_chrominfo(assembly)
     chrom_order = [a.encode('utf-8') for a in nc.get_chromorder(assembly)]
     assembly_size = chrom_info.total_length

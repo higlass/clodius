@@ -30,14 +30,15 @@ def test_clodius_aggregate_bedgraph():
             '--has-header',
             '--nan-value', 'NA'])
 
-    '''
     import traceback
     print("exc_info:", result.exc_info)
     a,b,tb = result.exc_info
     print("result:", result)
+    print("result.output", result.output)
     print("result.error", traceback.print_tb(tb))
     print("Exception:", a,b)
-    '''
+
+    assert(result.exit_code == 0)
     f = h5py.File(output_file)
     #print("tile_0_0", d)
 
@@ -102,6 +103,8 @@ def test_clodius_aggregate_bedpe():
             '--to2-col', '3'])
     print("result:", result)
     print("result.output", result.output)
+
+    assert(result.exit_code == 0)
 
     tiles = cdt.get_2d_tile(output_file, 0,0,0)
     #print("tiles:", tiles)

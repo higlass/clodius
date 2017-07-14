@@ -194,6 +194,9 @@ Creating a HiGlass Track
 Importing into HiGlass
 ----------------------
 
+Gene Annotations
+^^^^^^^^^^^^^^^^
+
 .. code-block:: bash
 
     curl -u `cat ~/.higlass-server-login`    \
@@ -203,4 +206,18 @@ Importing into HiGlass
         -F 'datatype=gene-annotation'  \
         -F 'coordSystem=${ASSEMBLY}' \
         -F 'coordSystem2=${ASSEMBLY}'  \
+        http://higlass.io:80/api/v1/tilesets/
+
+Chromosomes
+^^^^^^^^^^^
+
+.. code-block:: bash
+
+    curl -u `cat ~/.higlass-server-login`    \
+        -F "datafile=@/Users/peter/tmp/chromSizes_hg38.csv"    \
+        -F "name=Chromosomes (hg38)"   \ 
+        -F 'filetype=chromsizes-csv'  \
+        -F 'datatype=chromsizes'  \
+        -F "coordSystem=${ASSEMBLY}" \
+        -F "coordSystem2=${ASSEMBLY}"  \
         http://higlass.io:80/api/v1/tilesets/
