@@ -452,8 +452,6 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
                     exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
                     #print("value:", value['startPos'])
 
-                    print("length:", value['endPos'] - value['startPos'])
-
                     ret = c.execute(
                             exec_statement,
                             # primary key, zoomLevel, startPos, endPos, chrOffset, line
