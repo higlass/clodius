@@ -280,7 +280,8 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
 
     return
 
-def _bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size):
+def _bedfile(filepath, output_file, assembly, importance_column, has_header, 
+        chromosome, max_per_tile, tile_size, delimiter):
     if output_file is None:
         output_file = filepath + ".multires"
     else:
@@ -335,11 +336,10 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header, chr
         bed_file.readline()
     else:
         line = bed_file.readline().strip()
-        dset += [line_to_np_array(line.strip().split())]
+        dset += [line_to_np_array(line.strip().split(delimiter))]
 
     for line in bed_file:
-        dset += [line_to_np_array(line.strip().split())]
-    #dset = [line_to_np_array(line.strip().split()) for line in bed_file]
+        dset += [line_to_np_array(line.strip().split(delimiter))]
     
     if chromosome is not None:
         dset = [d for d in dset if d['chromosome'] == chromosome]
@@ -451,6 +451,8 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header, chr
                     # one extra question mark for the primary key
                     exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
                     #print("value:", value['startPos'])
+
+                    print("length:", value['endPos'] - value['startPos'])
 
                     ret = c.execute(
                             exec_statement,
@@ -1069,8 +1071,12 @@ def bigwig(filepath, output_file, assembly, chromosome, tile_size, chunk_size, z
         help="The number of nucleotides that the highest resolution tiles should span."
              "This determines the maximum zoom level"
         )
-def bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size):
-    _bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size)
+@click.option(
+        '--delimiter',
+        default=None,
+        type=str)
+def bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size, delimiter):
+    _bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size, delimiter)
 
 @aggregate.command()
 @click.argument( 

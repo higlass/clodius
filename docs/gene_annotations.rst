@@ -182,11 +182,20 @@ Creating a HiGlass Track
 
     workon hg-server
     ASSEMBLY=mm9
+    head ~/data/genbank-data/${ASSEMBLY}/geneAnnotationsExonUnions.bed > ~/data/genbank-data/${ASSEMBLY}/geneAnnotationsExonUnions.short.bed
+
     clodius aggregate bedfile \
         --max-per-tile 20 --importance-column 5 \
         --assembly ${ASSEMBLY} \
         --output-file ~/data/tiled-data/gene-annotations-${ASSEMBLY}.db \
         ~/data/genbank-data/${ASSEMBLY}/geneAnnotationsExonUnions.bed 
+
+    clodius aggregate bedfile \
+        --max-per-tile 20 --importance-column 5 \
+        --assembly ${ASSEMBLY} \
+        --output-file ~/data/tiled-data/gene-annotations-${ASSEMBLY}.short.db \
+        ~/data/genbank-data/${ASSEMBLY}/geneAnnotationsExonUnions.short.bed 
+
 
     aws s3 cp ~/data/tiled-data/gene-annotations-${ASSEMBLY}.db \
         s3://pkerp/public/hg-server/data/${ASSEMBLY}/

@@ -13,6 +13,45 @@ import sys
 sys.path.append("scripts")
 
 testdir = op.realpath(op.dirname(__file__))
+def test_clodius_aggregate_bedfile():
+    input_file = op.join(testdir, 'sample_data', 'geneAnnotationsExonsUnions.hg19.short.bed')
+    output_file = '/tmp/geneAnnotationsExonsUnions.hg19.short.bed'
+
+    runner = clt.CliRunner()
+    result = runner.invoke(
+            cca.bedfile,
+            [input_file,
+                '--max-per-tile', 20,
+                '--importance-column', 5,
+                '--assembly', 'hg19',
+                '--output-file', output_file,
+                '--delimiter', '\t'])
+
+    assert(result.exit_code == 0)
+
+    results = cdt.get_tile(output_file, 6, 3)
+    print("results:", results)
+
+    assert(len(results[0]['fields']) == 14)
+
+    runner = clt.CliRunner()
+    result = runner.invoke(
+            cca.bedfile,
+            [input_file,
+                '--max-per-tile', 20,
+                '--importance-column', 5,
+                '--assembly', 'hg19',
+                '--output-file', output_file])
+
+    assert(result.exit_code == 0)
+
+    results = cdt.get_tile(output_file, 6, 3)
+
+    assert(len(results[0]['fields']) == 17)
+
+
+
+testdir = op.realpath(op.dirname(__file__))
 def test_clodius_aggregate_bedgraph():
     input_file = op.join(testdir, 'sample_data', 'cnvs_hw.tsv')
     output_file = '/tmp/cnvs_hw.hitile'
