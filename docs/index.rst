@@ -25,6 +25,10 @@ resolutions.
 BedGraph files
 --------------
 
+.. warning:: The order of the chromosomes in the bedgraph file have to
+    be consistent with the order specified for the assembly in 
+    `the negspy repository <https://github.com/pkerpedjiev/negspy/tree/master/negspy/data>`_.
+
 Aggregation by addition
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -106,6 +110,18 @@ Too see this dataset in higlass, use the docker container to load it:
             --filename /tmp/cnvs_hw.hitile \
             --filetype hitile \
             --datatype vector
+
+It can also be loaded using a curl commands:
+
+.. code-block:: bash
+    
+    curl -u `cat ~/.higlass-server-login`  \
+        -F "datafile=@cnvs_hw.hitile" \
+        -F "filetype=hitile" \
+        -F "datatype=vector" \
+        -F "coordSystem=hg19" \
+        http://higlass.io:80/api/v1/tilesets/
+
 
 Development
 -----------
