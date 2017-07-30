@@ -667,11 +667,12 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     nan_dsets = []  # store nan values
 
     import dask.dataframe as dd
+    import dask.array as da
 
     while assembly_size / 2 ** z > tile_size:
         dset_length = assembly_size / 2 ** z + 1    # allow for 1-based positions
-        dsets += [dd.from_array(f.create_dataset('values_' + str(z), (dset_length,), dtype='f',compression='gzip'))]
-        nan_dsets += [dd.from_array(f.create_dataset('nan_values_' + str(z), (dset_length,), dtype='f',compression='gzip'))]
+        dsets += [f.create_dataset('values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
+        nan_dsets += [f.create_dataset('nan_values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
         z += zoom_step
 
     print("hi")
@@ -679,7 +680,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     chrom_info = nc.get_chrominfo(assembly)
     prev_chrom = None
 
-    array_chunk_size = 2 ** 1024
+    array_chunk_size = 2 ** 25
 
     print("df.head()", df.head())
     for row in df.head().iterrows():
@@ -687,14 +688,17 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
         # read in data chromosome by chromosome
         if chrom != prev_chrom:
-            chunk_start = chrom_info.cum_chrom_lengths[chrom]
+            print("chrom:", chrom)
+            chunk_start = 0
+            chrom_start = chrom_info.cum_chrom_lengths[chrom]
+            print("chunk_start", chunk_start)
 
             # chunks shouldn't be larger than the chromosome
             chunk_size = min(array_chunk_size, chrom_info.chrom_lengths[chrom])
             curr_chunk = np.zeros(chunk_size)
             curr_chunk[:] = np.nan;
 
-            pass
+            prev_chrom = chrom
 
         from_pos = row[1][from_pos_col-1]
         to_pos = row[1][to_pos_col-1]
@@ -702,22 +706,37 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
         # we've filled up the current chunk and need to start a new one
         while from_pos > chunk_start + chunk_size:
-            dsets[0][chunk_start:chunk_start+chunk_size] = curr_chunk
-            chunk_start += chunk_size
+            dsets[0][chunk_start+chrom_start:chunk_start+chrom_start+chunk_size] = curr_chunk
+            nan_dsets[0][chunk_start+chrom_start:chunk_start+chrom_start+chunk_size] = np.asarray(np.isnan(curr_chunk), dtype=np.int32)
             chunk_size = min(array_chunk_size, chrom_info.chrom_lengths[chrom] - chunk_start)
+            chunk_start += chunk_size
             curr_chunk = np.zeros(chunk_size)
-            curr_chunk[:] = np.nan;
+            curr_chunk[:] = np.nan
+            from_pos += chunk_size
 
         # the current data extends beyond the end of the current chunk
         while to_pos > chunk_start + chunk_size:
-            dsets[0][chunk_start:chunk_start+chunk_size] = curr_chunk
-            chunk_start += chunk_size
+            dsets[0][chunk_start+chrom_start:chunk_start+chrom_start+chunk_size] = curr_chunk
+            nan_dsets[0][chunk_start+chrom_start:chunk_start+chrom_start+chunk_size] = np.asarray(np.isnan(curr_chunk), dtype=np.int32)
             chunk_size = min(array_chunk_size, chrom_info.chrom_lengths[chrom] - chunk_start)
+            chunk_start += chunk_size
             curr_chunk = np.zeros(chunk_size)
             curr_chunk[:] = value
             from_pos += chunk_size
 
         curr_chunk[from_pos:to_pos] = value
+
+    curr_start = 0
+    chunk_size = min(array_chunk_size, assembly_size - curr_start)
+
+    #darray = da.from_array(dsets[0], chunks=array_chunk_size * 2 ** 5)
+    #nan_darray = da.isnan(darray)
+
+    print("storing...")
+    #print("len:", len(nan_darray))
+    #da.store(nan_darray, nan_dsets[0])
+    print("stored")
+
     return
 
     chunk_size = tile_size * 2**chunk_size     # how many values to read in at once while tiling
