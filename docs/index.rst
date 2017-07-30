@@ -29,6 +29,20 @@ BedGraph files
     be consistent with the order specified for the assembly in 
     `the negspy repository <https://github.com/pkerpedjiev/negspy/tree/master/negspy/data>`_.
 
+Ordering the chromosomes in the input file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    input_file=~/Downloads/phastCons100way.txt.gz;
+    output_file=~/Downloads/phastConst100way_ordered.txt;
+    chromnames=$(awk '{print $1}' ~/projects/negspy/negspy/data/hg19/chromInfo.txt);
+    for chr in $chromnames; 
+        do echo ${chr}; 
+        zcat $input_file | grep "\t${chr}\t" >> $output_file;
+    done;
+
+
 Aggregation by addition
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -43,6 +57,7 @@ Assume we have an input file that has ``id chr start end value1 value2`` pairs::
 We can aggregate this file by recursively summing adjacent values. We have to
 indicate which column corresponds to the chromosome (``--chromosome-col 2``),
 the start position (``--from-pos-col 3``), the end position (``--to-pos-col
+
 4``) and the value column (``--value-col 5``). We specify that the first line
 of the data file contains a header using the (``--has-header``) option.
 
