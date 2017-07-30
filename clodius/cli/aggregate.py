@@ -79,6 +79,7 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         tile_size, max_zoom=None, chromosome=None, 
         chr1_col=0, from1_col=1, to1_col=2,
         chr2_col=3, from2_col=4, to2_col=5):
+    
     print('output_file:', output_file)
 
     if filepath.endswith('.gz'):
@@ -643,6 +644,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     last_end = 0
     data = []
 
+
     if output_file is None:
         output_file = op.splitext(filepath)[0] + '.hitile'
 
@@ -660,11 +662,66 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     assembly_size = chrom_info.total_length
     print('assembly_size:', assembly_size)
 
-    tile_size = tile_size
-    chunk_size = tile_size * 2**chunk_size     # how many values to read in at once while tiling
-
+    z = 0
     dsets = []     # data sets at each zoom level
     nan_dsets = []  # store nan values
+
+    import dask.dataframe as dd
+
+    while assembly_size / 2 ** z > tile_size:
+        dset_length = assembly_size / 2 ** z + 1    # allow for 1-based positions
+        dsets += [dd.from_array(f.create_dataset('values_' + str(z), (dset_length,), dtype='f',compression='gzip'))]
+        nan_dsets += [dd.from_array(f.create_dataset('nan_values_' + str(z), (dset_length,), dtype='f',compression='gzip'))]
+        z += zoom_step
+
+    print("hi")
+    df = dd.read_csv(filepath, skiprows=1 if has_header else 0, delimiter='\t')
+    chrom_info = nc.get_chrominfo(assembly)
+    prev_chrom = None
+
+    array_chunk_size = 2 ** 1024
+
+    print("df.head()", df.head())
+    for row in df.head().iterrows():
+        chrom = str(row[1][chrom_col-1])
+
+        # read in data chromosome by chromosome
+        if chrom != prev_chrom:
+            chunk_start = chrom_info.cum_chrom_lengths[chrom]
+
+            # chunks shouldn't be larger than the chromosome
+            chunk_size = min(array_chunk_size, chrom_info.chrom_lengths[chrom])
+            curr_chunk = np.zeros(chunk_size)
+            curr_chunk[:] = np.nan;
+
+            pass
+
+        from_pos = row[1][from_pos_col-1]
+        to_pos = row[1][to_pos_col-1]
+        value = row[1][value_col-1]
+
+        # we've filled up the current chunk and need to start a new one
+        while from_pos > chunk_start + chunk_size:
+            dsets[0][chunk_start:chunk_start+chunk_size] = curr_chunk
+            chunk_start += chunk_size
+            chunk_size = min(array_chunk_size, chrom_info.chrom_lengths[chrom] - chunk_start)
+            curr_chunk = np.zeros(chunk_size)
+            curr_chunk[:] = np.nan;
+
+        # the current data extends beyond the end of the current chunk
+        while to_pos > chunk_start + chunk_size:
+            dsets[0][chunk_start:chunk_start+chunk_size] = curr_chunk
+            chunk_start += chunk_size
+            chunk_size = min(array_chunk_size, chrom_info.chrom_lengths[chrom] - chunk_start)
+            curr_chunk = np.zeros(chunk_size)
+            curr_chunk[:] = value
+            from_pos += chunk_size
+
+        curr_chunk[from_pos:to_pos] = value
+    return
+
+    chunk_size = tile_size * 2**chunk_size     # how many values to read in at once while tiling
+
 
     # initialize the arrays which will store the values at each stored zoom level
     z = 0
@@ -673,10 +730,6 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     nan_data_buffers = [[]]
 
     while assembly_size / 2 ** z > tile_size:
-        dset_length = assembly_size / 2 ** z
-        dsets += [f.create_dataset('values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
-        nan_dsets += [f.create_dataset('nan_values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
-
         # initialize all dsets to np.nan
         '''
         curr_pos = 0
