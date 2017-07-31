@@ -639,7 +639,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
 def _bedgraph(filepath, output_file, assembly, chrom_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value,
-        transform, count_nan, zoom_step):
+        transform, count_nan, chromsizes_filename, zoom_step):
     last_end = 0
     data = []
 
@@ -655,8 +655,16 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
     # get the information about the chromosomes in this assembly
     print("chromorder:", nc.get_chromorder(assembly))
-    chrom_info = nc.get_chrominfo(assembly)
-    chrom_order = [a.encode('utf-8') for a in nc.get_chromorder(assembly)]
+
+    if chromsizes_filename is not None:
+        chrom_info = nc.get_chrominfo_from_file(chromsizes_filename)
+        chrom_order = [a.encode('utf-8') for a in nc.get_chromorder_from_file(chromsizes_filename)]
+        chrom_sizes = nc.get_chromsizes_from_file(chromsizes_filename)
+    else:
+        chrom_info = nc.get_chrominfo(assembly)
+        chrom_order = [a.encode('utf-8') for a in nc.get_chromorder(assembly)]
+        chrom_sizes = nc.get_chromsizes(assembly)
+
     assembly_size = chrom_info.total_length
     print('assembly_size:', assembly_size)
 
@@ -673,7 +681,8 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     nan_data_buffers = [[]]
 
     while assembly_size / 2 ** z > tile_size:
-        dset_length = assembly_size / 2 ** z
+        dset_length = math.ceil(assembly_size / 2 ** z)
+        print("data_size:", assembly_size, "dset_size", dset_length)
         dsets += [f.create_dataset('values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
         nan_dsets += [f.create_dataset('nan_values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
 
@@ -709,13 +718,13 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     d = f.create_dataset('meta', (1,), dtype='f')
 
     print("assembly:", assembly)
-    print("chrom_info:", nc.get_chromorder(assembly))
+    #print("chrom_info:", nc.get_chromorder(assembly))
 
     d.attrs['zoom-step'] = zoom_step
     d.attrs['max-length'] = assembly_size
     d.attrs['assembly'] = assembly
     d.attrs['chrom-names'] = chrom_order
-    d.attrs['chrom-sizes'] = nc.get_chromsizes(assembly)
+    d.attrs['chrom-sizes'] = chrom_sizes
     d.attrs['chrom-order'] = chrom_order
     d.attrs['tile-size'] = tile_size
     d.attrs['max-zoom'] = max_zoom =  math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
@@ -812,8 +821,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         parts = line.strip().split()
 
 
-        start_genome_pos = nc.chr_pos_to_genome_pos(parts[chrom_col-1], int(parts[from_pos_col-1]), assembly)
-
+        start_genome_pos = chrom_info.cum_chrom_lengths[parts[chrom_col-1]] + int(parts[from_pos_col-1])         
         #print("len(values):", len(values), curr_genome_pos, start_genome_pos)
         #print("line:", line)
 
@@ -872,6 +880,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         print("2db", data_buffers[curr_zoom][:100])
         '''
 
+        print("curr_zoom:", curr_zoom, len(curr_chunk), len(dsets[curr_zoom]))
         dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
         nan_dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = nan_curr_chunk
 
@@ -978,6 +987,10 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         help="Simply count the number of nan values in the file",
         is_flag=True)
 @click.option(
+        '--chromsizes-filename',
+        help="A file containing chromosome sizes and order",
+        default=None)
+@click.option(
         '--zoom-step',
         '-z',
         help="The number of intermediate aggregation levels to"
@@ -986,11 +999,11 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 def bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value, 
-        transform, count_nan, zoom_step):
+        transform, count_nan, chromsizes_filename, zoom_step):
     _bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value, 
-        transform, count_nan, zoom_step)
+        transform, count_nan, chromsizes_filename, zoom_step)
 
 @aggregate.command()
 @click.argument(
