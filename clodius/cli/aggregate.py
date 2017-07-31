@@ -753,11 +753,12 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
         curr_time = time.time() - t1
         percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
-        print("progress: {:.2f} elapsed: {:.2f} remaining: {:.2f}".format(percent_progress,
+        print("position: {} progress: {:.2f} elapsed: {:.2f} remaining: {:.2f}".format(positions[curr_zoom] + 1, percent_progress,
             curr_time, curr_time / (percent_progress) - curr_time))
 
         while len(data_buffers[curr_zoom]) >= chunk_size:
             # get the current chunk and store it, converting nans to 0
+            print("len(data_buffers[curr_zoom])", len(data_buffers[curr_zoom]))
             curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
             nan_curr_chunk = np.array(nan_data_buffers[curr_zoom][:chunk_size])
             #curr_chunk[np.isnan(curr_chunk)] = 0
@@ -766,6 +767,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
             print("1db:", data_buffers[curr_zoom][:chunk_size])
             print("1curr_chunk:", nan_curr_chunk)
             '''
+            print("positions[curr_zoom]:", positions[curr_zoom])
 
             dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
             nan_dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = nan_curr_chunk
@@ -809,16 +811,22 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         # each line should indicate a chromsome, start position and end position
         parts = line.strip().split()
 
+
         start_genome_pos = nc.chr_pos_to_genome_pos(parts[chrom_col-1], int(parts[from_pos_col-1]), assembly)
+
+        #print("len(values):", len(values), curr_genome_pos, start_genome_pos)
+        #print("line:", line)
 
         if start_genome_pos - curr_genome_pos > 1:
             values += [np.nan] * (start_genome_pos - curr_genome_pos - 1)
             nan_values += [1] * (start_genome_pos - curr_genome_pos - 1)
 
-            curr_genome_pos += len(values)
+            curr_genome_pos += (start_genome_pos - curr_genome_pos - 1)
+
 
         # count how many nan values there are in the dataset
         nan_count = 1 if parts[value_col-1] == nan_value else 0
+
 
         # if the provided values are log2 transformed, we have to un-transform them
         if transform == 'exp2':
@@ -827,12 +835,14 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
             value = float(parts[value_col-1]) if not parts[value_col-1] == nan_value else np.nan
 
 
+        # print("pos:", int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
         # we're going to add as many values are as specified in the bedfile line
         values_to_add = [value] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
         nan_counts_to_add = [nan_count] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
         
         values += values_to_add
         nan_values += nan_counts_to_add
+
         d.attrs['max-position'] = start_genome_pos + len(values_to_add) 
 
         #print("values:", values[:30])
@@ -840,9 +850,12 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         curr_genome_pos += len(values_to_add)
 
         while len(values) > chunk_size:
+            print("len(values):", len(values), chunk_size)
+            print("line:", line)
             add_values_to_data_buffers(values[:chunk_size], nan_values[:chunk_size])
             values = values[chunk_size:]
             nan_values = nan_values[chunk_size:]
+
 
     add_values_to_data_buffers(values, nan_values)
 
