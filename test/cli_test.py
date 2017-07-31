@@ -54,14 +54,32 @@ def test_clodius_aggregate_bedfile():
 testdir = op.realpath(op.dirname(__file__))
 def test_clodius_aggregate_bedgraph():
     input_file = op.join(testdir, 'sample_data', 'cnvs_hw.tsv')
+    assembly_file = op.join(testdir, 'sample_data', 'test_cnvs_assembly')
     output_file = '/tmp/cnvs_hw.hitile'
 
+    # run once to make sure it doesn't crash on a smaller genome
+    runner = clt.CliRunner()
+    result = runner.invoke(
+            cca.bedgraph,
+            [input_file,
+            '--output-file', output_file,
+            #'--assembly', 'grch37',
+            '--chromsizes-filename', assembly_file,
+            '--chromosome-col', '2',
+            '--from-pos-col', '3',
+            '--to-pos-col', '4',
+            '--value-col', '5',
+            '--has-header',
+            '--nan-value', 'NA'])
+
+    # run again with the proper assembly
     runner = clt.CliRunner()
     result = runner.invoke(
             cca.bedgraph,
             [input_file,
             '--output-file', output_file,
             '--assembly', 'grch37',
+            #'--chromsizes-filename', assembly_file,
             '--chromosome-col', '2',
             '--from-pos-col', '3',
             '--to-pos-col', '4',
