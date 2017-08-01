@@ -157,7 +157,7 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
     # tile this data
     tile_size = tile_size
     chrom_info = nc.get_chrominfo(assembly)
-    assembly_size = chrom_info.total_length
+    assembly_size = chrom_info.total_length+1
     #max_zoom = int(math.ceil(math.log(assembly_size / min_feature_width) / math.log(2)))
     max_zoom = int(math.ceil(math.log(assembly_size / tile_size) / math.log(2)))
     '''
@@ -349,7 +349,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     tile_size = tile_size
     chrom_info = nc.get_chrominfo(assembly)
     #if chromosome is None:
-    assembly_size = chrom_info.total_length
+    assembly_size = chrom_info.total_length+1
     '''
     else:
         try:
@@ -497,7 +497,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
 
     # get the information about the chromosomes in this assembly
     chrom_info = nc.get_chrominfo(assembly)
-    assembly_size = chrom_info.total_length
+    assembly_size = chrom_info.total_length+1
 
     tile_size = tile_size
     chunk_size = tile_size * 2**chunk_size     # how many values to read in at once while tiling
@@ -524,6 +524,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
         d.attrs['max-pos'] = assembly_size
 
     data_size = d.attrs['max-pos'] - d.attrs['min-pos'] + 1
+    print("data_size:", data_size)
 
     while data_size / 2 ** z > tile_size:
         dsets += [f.create_dataset('values_' + str(z), (math.ceil(data_size / 2 ** z),), dtype='f',compression='gzip')]
@@ -657,7 +658,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     print("chromorder:", nc.get_chromorder(assembly))
     chrom_info = nc.get_chrominfo(assembly)
     chrom_order = [a.encode('utf-8') for a in nc.get_chromorder(assembly)]
-    assembly_size = chrom_info.total_length
+    assembly_size = chrom_info.total_length + 1
     print('assembly_size:', assembly_size)
 
     tile_size = tile_size
@@ -673,7 +674,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     nan_data_buffers = [[]]
 
     while assembly_size / 2 ** z > tile_size:
-        dset_length = assembly_size / 2 ** z
+        dset_length = math.ceil(assembly_size / 2 ** z)
         dsets += [f.create_dataset('values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
         nan_dsets += [f.create_dataset('nan_values_' + str(z), (dset_length,), dtype='f',compression='gzip')]
 
@@ -872,6 +873,10 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         print("2db", data_buffers[curr_zoom][:100])
         '''
 
+        print("curr_zoom", curr_zoom)
+        print("len(dsets[curr_zoom])", len(dsets[curr_zoom]))
+
+        chunk_size = len(curr_chunk)
         dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
         nan_dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = nan_curr_chunk
 
