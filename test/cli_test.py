@@ -264,15 +264,18 @@ def test_clodius_aggregate_bedgraph1():
 testdir = op.realpath(op.dirname(__file__))
 def test_clodius_aggregate_bigwig():
     runner = clt.CliRunner()
-    input_file = op.join(testdir, 'sample_data', 'test.bw')
+    input_file = op.join(testdir, 'sample_data', 'test.tile_generation.bw')
     print("input_file:", input_file)
+
+    with open('/tmp/test_chrs.tsv', 'w') as f:
+        f.write('{}\t{}'.format('test', 100000))
 
     result = runner.invoke(
             cca.bigwig,
             [input_file,
+            '--chromsizes-filename', '/tmp/test_chrs.tsv',
             '--output-file', '/tmp/test.mr.bw'])
 
-    '''
     import traceback
     print("exc_info:", result.exc_info)
     a,b,tb = result.exc_info
@@ -280,6 +283,35 @@ def test_clodius_aggregate_bigwig():
     print("result.output", result.output)
     print("result.error", traceback.print_tb(tb))
     print("Exception:", a,b)
-    '''
+
+    import clodius.hdf_tiles as ch
+
+    filename = '/tmp/test.mr.bw'
+    f = h5py.File(filename)
+
+    max_zoom = f['meta'].attrs['max-zoom']
+    tile_size = int(f['meta'].attrs['tile-size'])
+
+    d = ch.get_data(f, max_zoom, 0)
+    print("d:", d)
+
+    # lowest zoom should have values of 1
+    for i in range(tile_size):
+        assert(d[i] == 1)
+
+    d = ch.get_data(f, max_zoom-1, 0)
+    print("d:", d)
+
+    for i in range(tile_size):
+        # because we're taking averages
+        assert(d[i] == 1)
+
+    d = ch.get_data(f, max_zoom-2, 0)
+
+    for i in range(tile_size // 2):
+        assert(d[i] == 1)
+
+    print("hey")
+    assert(d[513] == 1)
 
     assert(result.exit_code == 0)
