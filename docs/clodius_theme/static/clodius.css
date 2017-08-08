@@ -1,4 +1,22 @@
 @import url("alabaster.css");
+@import url('https://fonts.googleapis.com/css?family=Merriweather:300');
+@import url('https://fonts.googleapis.com/css?family=Francois+One');
+
+
+div.body h1, div.body h2, div.body h3, 
+div.body h4, div.body h5, div.body h6 {
+    font-family: 'Francois One', sans-serif;
+}
+
+div.body p {
+    line-height: 1.5em;
+}
+
+body {
+    font-family: 'Merriweather', serif;
+    font-size: 14px;
+    line-height: 1.5em;
+}
 
 a:link {
     text-decoration: none;

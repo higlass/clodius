@@ -81,11 +81,11 @@ Assume we have an input file that has ``id chr start end value1 value2`` pairs::
     1:3100001-3200000       1       3100001 3200000 -0.428  -0.495
     1:3200001-3300000       1       3200001 3300000 -0.437  -0.495
 
+
 We can aggregate this file by recursively summing adjacent values. We have to
 indicate which column corresponds to the chromosome (``--chromosome-col 2``),
-the start position (``--from-pos-col 3``), the end position (``--to-pos-col
-
-4``) and the value column (``--value-col 5``). We specify that the first line
+the start position (``--from-pos-col 3``), the end position (``--to-pos-col 4``) 
+and the value column (``--value-col 5``). We specify that the first line
 of the data file contains a header using the (``--has-header``) option.
 
 .. code-block:: bash
