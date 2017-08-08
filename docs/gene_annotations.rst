@@ -26,6 +26,9 @@ http://hgdownload.cse.ucsc.edu/goldenpath/hg19/bigZips/hg19.chrom.sizes)
 Creating the track
 ------------------
 
+.. todo::
+
+    See https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=gene&id=7157
 
 Set the assembly name and species ID
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

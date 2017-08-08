@@ -3,10 +3,15 @@
 @import url('https://fonts.googleapis.com/css?family=Francois+One');
 
 
+div.body h1 {
+    margin-bottom: 0.8em;
+}
+
 div.body h1, div.body h2, div.body h3, 
 div.body h4, div.body h5, div.body h6,
 .sphinxsidebar {
     font-family: 'Francois One', sans-serif;
+    line-height: 1.1em;
 }
 
 div.sphinxsidebar ul li.toctree-l2 > a {
