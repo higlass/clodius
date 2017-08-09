@@ -2,10 +2,12 @@
 @import url('https://fonts.googleapis.com/css?family=Merriweather:300');
 @import url('https://fonts.googleapis.com/css?family=Francois+One');
 
-
-div.body h1 {
-    margin-bottom: 0.8em;
-}
+div.body h1 { margin-bottom: 0.8em; font-size: 210%; }
+div.body h2 { font-size: 160%; }
+div.body h3 { font-size: 130%; }
+div.body h4 { font-size: 125%; }
+div.body h5 { font-size: 100%; }
+div.body h6 { font-size: 100%; }
 
 div.body h1, div.body h2, div.body h3, 
 div.body h4, div.body h5, div.body h6,

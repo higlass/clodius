@@ -186,7 +186,7 @@ It can also be loaded using a curl commands:
 
 .. todo:: And navigate to 127.0.0.1:8989, click on the '+' symbol, select a track
           position, find the dataset in the list of the datasets and click OK to
-          view it.
+          view it. And stuff.
 
 Development
 -----------
