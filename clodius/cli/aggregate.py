@@ -629,18 +629,26 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
 
     for chrom in chroms_to_use:
         print("chrom:", chrom)
+        '''
         if chrom not in bwf.chroms():
-            print("skipping chrom (not in bigWig file):", chrom)
+            print("skipping chrom (not in bigWig file):", chrom, chrom_info.chrom_lengths[chrom])
             continue
+        '''
 
         counter = 0
-        chrom_size = bwf.chroms()[chrom]
+        #chrom_size = bwf.chroms()[chrom]
+        chrom_size = chrom_info.chrom_lengths[chrom]
+        d.attrs['max-position'] += chrom_size
 
         while counter < chrom_size:
             remaining = min(chunk_size, chrom_size - counter)
 
-            values = bwf.values(chrom, counter, counter + remaining)
-            nan_values = np.isnan(values).astype('i4')
+            if chrom not in bwf.chroms():
+                values = [np.nan] * remaining
+                nan_values = [1] * remaining
+            else:
+                values = bwf.values(chrom, counter, counter + remaining)
+                nan_values = np.isnan(values).astype('i4')
 
             #print("counter:", counter, "remaining:", remaining, "counter + remaining:", counter + remaining)
             counter += remaining
@@ -648,23 +656,14 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
 
             add_values_to_data_buffers(list(values), list(nan_values))
 
-
     while True:
         # get the current chunk and store it
         chunk_size = len(data_buffers[curr_zoom])
         curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
         nan_curr_chunk = np.array(nan_data_buffers[curr_zoom][:chunk_size])
 
-        '''
-        print("2curr_chunk", curr_chunk)
-        print("2curr_zoom:", curr_zoom)
-        print("2db", data_buffers[curr_zoom][:100])
-        '''
-
         dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
         nan_dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = nan_curr_chunk
-
-        #print("chunk_size:", chunk_size, "len(curr_chunk):", len(curr_chunk), "len(nan_curr_chunk)", len(nan_curr_chunk))
 
         # aggregate and store aggregated values in the next zoom_level's data
         data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** zoom_step))

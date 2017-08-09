@@ -23,6 +23,7 @@ def main():
     #parser.add_option('-u', '--useless', dest='uselesss', default=False, action='store_true', help='Another useless option')
     parser.add_argument('-o', '--output-file', default=None, help="The file to store the downloaded gene information to")
     parser.add_argument('-f', '--id-list', default=None, help="A file containing a list of ids to retrieve information for")
+    parser.add_argument('-e', '--exclude-id-list', default=None, help="A list of IDs to exclude")
 
     args = parser.parse_args()
 
@@ -30,6 +31,7 @@ def main():
         # no ids passed as argument and no id list file passed in
         parser.print_help()
         sys.exit(1)
+
 
     gene_ids = args.gene_ids
     if args.id_list is not None:
@@ -41,10 +43,26 @@ def main():
                 except Exception as ex:
                     continue
 
+    # We may have already downloaded a bunch of IDs and want to exclude them
+    exclude_ids = set()
+    if args.exclude_id_list is not None:
+        with open(args.exclude_id_list, 'r') as f:
+            for line in f:
+                try:
+                    gene_id = int(line.strip().split()[0])
+                    exclude_ids.add(gene_id)
+                except Exception as ex:
+                    continue
+    
+
     for gene_id in gene_ids:
         try:
             gene_id = int(gene_id)
         except Exception as ex:
+            continue
+
+        if gene_id in exclude_ids:
+            print("Excluding...", gene_id, file=sys.stderr)
             continue
 
         link = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=gene&id={}&retmode=xml".format(gene_id)
