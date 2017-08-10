@@ -35,9 +35,38 @@ datatype to be properly recognized by the server and the API.
 
     docker exec higlass-container python \
             higlass-server/manage.py ingest_tileset \
-            --filename /tmp/cnvs_hw.hitile \
+            --filename /tmp/chromsizes_hg19.tsv \
             --filetype chromsizes-tsv \
             --datatype chromsizes
+
+Or using curl:
+
+.. code-block:: bash
+
+    curl -u `cat ~/.higlass-server-login` \
+        -F "datafile=@/Users/peter/projects/negspy/negspy/data/mm10/chromInfo.txt" \
+        -F "filetype=chromsizes-tsv" \
+        -F "datatype=chromsizes" \
+        -F "coordSystem=mm10" \
+        -F "name=Chromosomes (mm10)" \
+        http://higlass.io/api/v1/tilesets/
+
+This should return a JSON object contain a UUID to confirm that the data has been 
+added to the server:
+
+.. code-block:: json
+
+    {  
+       "uuid":"DRpJETNeTAShnhng6KhhXw",
+       "datafile":"http://higlass.io/api/v1/tilesets/media/uploads/chromInfo_ui7zU3M.txt",
+       "filetype":"chromsizes-tsv",
+       "datatype":"chromsizes",
+       "private":false,
+       "name":"Chromosomes (mm10)",
+       "coordSystem":"mm10",
+       "coordSystem2":"",
+       "created":"2017-08-10T18:44:40.369924Z"
+    }
 
 Testing
 ^^^^^^^
