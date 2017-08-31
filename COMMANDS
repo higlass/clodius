@@ -1,3 +1,7 @@
+### Getting gene summaries
+
+cat ~/data/genbank-data/mm9/gene_summaries_*.tsv > ~/data/genbank-data/mm9/all_gene_summaries.tsv
+
 ### Building the documentation
 
 make publish  # upload to PyPI
