@@ -1,7 +1,6 @@
 import collections as col
 import math
 import sqlite3
-import time
 
 def get_tileset_info(db_file):
     conn = sqlite3.connect(db_file)
@@ -141,16 +140,10 @@ def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
     '''
     tileset_info = get_tileset_info(db_file)
 
-    t1 = time.time()
     conn = sqlite3.connect(db_file)
-    t2 = time.time()
 
-    print("conn time:", t2 - t1)
     c = conn.cursor()
     tile_width = tileset_info['max_width'] / 2 ** zoom
-
-    print("tile_x_pos:", tile_x_pos)
-    print("tile_y_pos:", tile_y_pos)
 
     tile_x_start_pos = tile_width * tile_x_pos
     tile_x_end_pos = tile_x_start_pos + (numx * tile_width)
@@ -158,24 +151,13 @@ def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
     tile_y_start_pos = tile_width * tile_y_pos
     tile_y_end_pos = tile_y_start_pos + (numy * tile_width)
     
-    print("tile_x_start_pos:", tile_x_start_pos, tile_y_start_pos)
-
-
     query = '''
     SELECT fromX, toX, fromY, toY, chrOffset, importance, fields, uid from intervals,position_index 
     where 
     intervals.id=position_index.id and zoomLevel <= {} and rToX >= {} and rFromX <= {} and rToY >= {} and rFromY <= {}
     '''.format(zoom, tile_x_start_pos, tile_x_end_pos, tile_y_start_pos, tile_y_end_pos)
 
-    print('query', query)
-
-
-    t3 = time.time()
     rows = c.execute(query).fetchall()
-    t4 = time.time()
-    print("fetch time:", t4 - t3)
-
-
 
     new_rows = col.defaultdict(list)
 
@@ -190,8 +172,6 @@ def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
         y_start = r[2]
         y_end = r[3]
 
-        print("x:", r[0], r[0] / tile_width)
-
         for i in range(tile_x_pos, tile_x_pos + numx):
             for j in range(tile_y_pos, tile_y_pos + numy):
                 tile_x_start = i * tile_width
@@ -202,8 +182,6 @@ def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
 
                 if (x_start < tile_x_end and x_end >= tile_x_start 
                     and y_start < tile_y_end and y_end >= tile_y_start):
-
-                    print("adding:", i, j)
 
                     # add the position offset to the returned values
                     new_rows[(i,j)] += [
