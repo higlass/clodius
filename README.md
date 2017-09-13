@@ -16,6 +16,37 @@ clodius aggregate bigwig ~/Downloads/E116-DNase.fc.signal.bigwig
 
 The output files can then be displayed using the [higlass-docker container](https://github.com/hms-dbmi/higlass-docker). For more information about viewing these types of files take a look at the [higlass wiki](https://github.com/hms-dbmi/higlass/wiki#bigwig-files).
 
+## Development
+
+
+The recommended way to develop `clodius` is to use a [conda](https://conda.io/docs/intro.html) environment and
+install `clodius` with develop mode:
+
+```
+python setup.py develop
+```
+
+Note that making changes to the `clodius/fast.pyx` [cython](http://docs.cython.org/en/latest/src/quickstart/cythonize.html) module requires an
+explicit recompile step:
+
+```
+python setup.py build_ext --inplace
+```
+
+## Testing
+
+
+The unit tests for clodius can be run using [nosetests](http://nose.readthedocs.io/en/latest/):
+
+    nosetests tests
+
+Individual unit tests can be specified by indicating the file and function
+they are defined in:
+
+```
+nosetests test/cli_test.py:test_clodius_aggregate_bedgraph
+```
+
 ## Quick start with Docker
 
 If you don't have your own, get some sample data:

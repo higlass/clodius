@@ -47,39 +47,12 @@ def check_table(filename):
 def test_get_tiles():
     filename = 'test/sample_data/gene_annotations.short.db';
 
-    tiles = cdt.get_tile(filename, 18, 169283)
+    tiles = cdt.get_tiles(filename, 18, 169283)[169283]
 
+    print("tiles:", tiles)
     x = int(tiles[0]['xStart'])
 
     fields = tiles[0]['fields']
-    assert(len(fields) > 1)
-
-    return
-
-
-    rows00 = cdt.get_tile(filename, 0, 0)
-
-    rows10 = cdt.get_tile(filename, 1, 0)
-    rows11 = cdt.get_tile(filename, 1, 1)
-
-    rows20 = cdt.get_tile(filename, 2, 0)
-    rows21 = cdt.get_tile(filename, 2, 1)
-
-    assert(len(rows00) <= len(rows10) + len(rows11))
-    assert(len(rows10) <= len(rows20) + len(rows21))
-
-
-    rows30 = cdt.get_tile(filename, 3, 0)
-    rows31 = cdt.get_tile(filename, 3, 1)
-
-    rows40 = cdt.get_tile(filename, 4, 0)
-    rows41 = cdt.get_tile(filename, 4, 1)
-
-    print("30", len(rows30))
-    print("40", len(rows40))
-    print("41", len(rows41))
-    assert(len(rows30) <= len(rows40) + len(rows41))
-
 
 def test_no_chromosome_limit():
     f = tempfile.NamedTemporaryFile(delete=False)
@@ -95,7 +68,7 @@ def test_no_chromosome_limit():
                 '--output-file', f.name])
 
     print("output:", result.output)
-    rows = cdt.get_tile(f.name, 0, 0)
+    rows = cdt.get_tiles(f.name, 0, 0)[0]
     foundOther = False
     
     for row in rows:
@@ -127,7 +100,7 @@ def test_chromosome_limit():
     print('output:', result.output, result)
 
 
-    rows = cdt.get_tile(f.name, 0, 0)
+    rows = cdt.get_tiles(f.name, 0, 0)[0]
     foundOther = False
     
     for row in rows:
