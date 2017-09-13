@@ -281,7 +281,8 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
     return
 
 def _bedfile(filepath, output_file, assembly, importance_column, has_header, 
-        chromosome, max_per_tile, tile_size, delimiter):
+        chromosome, max_per_tile, tile_size, delimiter, chromsizes_filename,
+        offset):
     if output_file is None:
         output_file = filepath + ".multires"
     else:
@@ -291,6 +292,19 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
         os.remove(output_file)
 
     bed_file = open(filepath, 'r')
+
+    if chromsizes_filename is not None:
+        chrom_info = nc.get_chrominfo_from_file(chromsizes_filename)
+        chrom_names = chrom_info.chrom_order
+        chrom_sizes = [chrom_info.chrom_lengths[c] for c in chrom_info.chrom_order]
+    else:
+        chrom_info = nc.get_chrominfo(assembly)
+        chrom_names = nc.get_chromorder(assembly)
+        chrom_sizes = nc.get_chromsizes(assembly)
+
+    print("chrom_names:", chrom_info.chrom_order)
+    print("chrom_sizes:", chrom_sizes)
+
 
     def line_to_np_array(line):
         '''
@@ -314,8 +328,10 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
 
         # convert chromosome coordinates to genome coordinates
 
-        genome_start = nc.chr_pos_to_genome_pos(str(chrom), start, assembly)
-        genome_end = nc.chr_pos_to_genome_pos(chrom, stop, assembly)
+        genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
+        #nc.chr_pos_to_genome_pos(str(chrom), start, assembly)
+        genome_end = chrom_info.cum_chrom_lengths[chrom] + start + offset
+        #nc.chr_pos_to_genome_pos(chrom, stop, assembly)
 
         pos_offset = genome_start - start
         parts = {
@@ -347,7 +363,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
     tile_size = tile_size
-    chrom_info = nc.get_chrominfo(assembly)
+
     #if chromosome is None:
     assembly_size = chrom_info.total_length+1
     '''
@@ -375,8 +391,8 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     store_meta_data(conn, 1,
             max_length = assembly_size,
             assembly = assembly,
-            chrom_names = nc.get_chromorder(assembly),
-            chrom_sizes = nc.get_chromsizes(assembly),
+            chrom_names = chrom_names,
+            chrom_sizes = chrom_sizes,
             tile_size = tile_size,
             max_zoom = max_zoom,
             max_width = tile_size * 2 ** max_zoom)
@@ -707,8 +723,6 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
     f = h5py.File(output_file, 'w')
 
     # get the information about the chromosomes in this assembly
-    print("chromorder:", nc.get_chromorder(assembly))
-
     if chromsizes_filename is not None:
         chrom_info = nc.get_chrominfo_from_file(chromsizes_filename)
         chrom_order = [a.encode('utf-8') for a in nc.get_chromorder_from_file(chromsizes_filename)]
@@ -1133,8 +1147,21 @@ def bigwig(filepath, output_file, assembly, chromosome, tile_size, chunk_size, c
         '--delimiter',
         default=None,
         type=str)
-def bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size, delimiter):
-    _bedfile(filepath, output_file, assembly, importance_column, has_header, chromosome, max_per_tile, tile_size, delimiter)
+@click.option(
+        '--chromsizes-filename',
+        help="A file containing chromosome sizes and order",
+        default=None)
+@click.option(
+        '--offset',
+        help="Apply an offset to all the coordinates in this file",
+        type=int,
+        default=0)
+def bedfile(filepath, output_file, assembly, importance_column, has_header, 
+        chromosome, max_per_tile, tile_size, delimiter, chromsizes_filename,
+        offset):
+    _bedfile(filepath, output_file, assembly, importance_column, has_header, 
+            chromosome, max_per_tile, tile_size, delimiter, chromsizes_filename,
+            offset)
 
 @aggregate.command()
 @click.argument( 
