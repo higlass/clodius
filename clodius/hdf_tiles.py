@@ -163,7 +163,6 @@ def get_data(hdf_file, z, x):
 
     d = hdf_file['meta'] 
 
-    print("keys:", list(d.attrs.keys()))
     tile_size = int(d.attrs['tile-size'])
     zoom_step = int(d.attrs['zoom-step'])
     max_length = int(d.attrs['max-length'])
@@ -209,6 +208,7 @@ def get_data(hdf_file, z, x):
     '''
 
     f = hdf_file['values_' + str(int(next_stored_zoom))]
+
 
     if start_pos > max_position:
         # we want a tile that's after the last bit of data
