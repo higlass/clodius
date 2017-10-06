@@ -54,6 +54,7 @@ def test_clodius_aggregate_bigwig():
     result = runner.invoke(
             cca.bigwig,
             [input_file,
+            '--chromsizes-filename', 'test/sample_data/test.mr.chromSizes',
             '--output-file', '/tmp/test.mr.bw'])
 
     import traceback

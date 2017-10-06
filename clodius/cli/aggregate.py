@@ -647,13 +647,16 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
         print("chrom:", chrom)
         '''
         if chrom not in bwf.chroms():
-            print("skipping chrom (not in bigWig file):", chrom, chrom_info.chrom_lengths[chrom])
+            print("skipping chrom (not in bigWig file):",
+            chrom, chrom_info.chrom_lengths[chrom])
             continue
         '''
 
         counter = 0
-        #chrom_size = bwf.chroms()[chrom]
+        # chrom_size = bwf.chroms()[chrom]
         chrom_size = chrom_info.chrom_lengths[chrom]
+
+        # print("chrom_size:", chrom_size, bwf.chroms()[chrom])
         d.attrs['max-position'] += chrom_size
 
         while counter < chrom_size:
@@ -666,7 +669,8 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
                 values = bwf.values(chrom, counter, counter + remaining)
                 nan_values = np.isnan(values).astype('i4')
 
-            #print("counter:", counter, "remaining:", remaining, "counter + remaining:", counter + remaining)
+            # print("counter:", counter, "remaining:", remaining,
+            # "counter + remaining:", counter + remaining)
             counter += remaining
             curr_zoom = 0
 
