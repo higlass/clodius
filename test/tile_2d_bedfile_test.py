@@ -16,6 +16,6 @@ def test_get_tileset_info():
 def test_get_tiles():
     filename = 'test/sample_data/arrowhead_domains_short.txt.multires.db'
 
-    tiles = cdt.get_2d_tile(filename, 0,0,0)
+    tiles = cdt.get_2d_tiles(filename, 0,0,0, numx=1, numy=1)
 
     print("tiles:", tiles)

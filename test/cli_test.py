@@ -9,6 +9,7 @@ import negspy.coordinates as nc
 import numpy as np
 import os.path as op
 import sys
+import traceback
 
 sys.path.append("scripts")
 
@@ -27,12 +28,18 @@ def test_clodius_aggregate_bedfile():
                 '--output-file', output_file,
                 '--delimiter', '\t'])
 
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
     assert(result.exit_code == 0)
 
-    results = cdt.get_tile(output_file, 6, 3)
+    results = cdt.get_tiles(output_file, 6, 3, num_tiles=1 )
     print("results:", results)
 
-    assert(len(results[0]['fields']) == 14)
+    assert(len(results[3][0]['fields']) == 14)
 
     runner = clt.CliRunner()
     result = runner.invoke(
@@ -45,11 +52,9 @@ def test_clodius_aggregate_bedfile():
 
     assert(result.exit_code == 0)
 
-    results = cdt.get_tile(output_file, 6, 3)
+    results = cdt.get_tiles(output_file, 6, 3, num_tiles=3)
 
-    assert(len(results[0]['fields']) == 17)
-
-
+    assert(len(results[3][0]['fields']) == 17)
 
 testdir = op.realpath(op.dirname(__file__))
 def test_clodius_aggregate_bedgraph():
@@ -163,14 +168,13 @@ def test_clodius_aggregate_bedpe():
 
     assert(result.exit_code == 0)
 
-    tiles = cdt.get_2d_tile(output_file, 0,0,0)
-    #print("tiles:", tiles)
+    tiles = cdt.get_2d_tiles(output_file, 0,0,0, numx=1,numy=1)
+    print("tiles:", tiles)
 
-    assert('\n' not in tiles[0]['fields'][2])
+    assert('\n' not in tiles[(0,0)][0]['fields'][2])
 
-    import json
-    json.dumps(tiles)
-
+    #import json
+    #json.dumps(tiles)
 
 testdir = op.realpath(op.dirname(__file__))
 def test_clodius_aggregate_bedgraph1():
