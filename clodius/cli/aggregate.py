@@ -385,6 +385,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     # this script stores data in a sqlite database
     import sqlite3
     sqlite3.register_adapter(np.int64, lambda val: int(val))
+    print("output_file:", output_file)
     conn = sqlite3.connect(output_file)
 
     # store some meta data
