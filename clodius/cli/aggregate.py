@@ -712,7 +712,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
 def _bedgraph(filepath, output_file, assembly, chrom_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value,
-        transform, count_nan, chromsizes_filename, zoom_step):
+        transform, count_nan, closed_interval, chromsizes_filename, zoom_step):
     last_end = 0
     data = []
 
@@ -896,6 +896,12 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         # we're going to add as many values are as specified in the bedfile line
         values_to_add = [value] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
         nan_counts_to_add = [nan_count] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
+
+        if closed_interval:
+            values_to_add += [value]
+            nan_counts_to_add += [value]
+
+        # print("values_to_add", values_to_add)
         
         values += values_to_add
         nan_values += nan_counts_to_add
@@ -1035,6 +1041,10 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         help="Simply count the number of nan values in the file",
         is_flag=True)
 @click.option(
+        '--closed-interval',
+        help="Treat the to column as a closed interval",
+        is_flag=True)
+@click.option(
         '--chromsizes-filename',
         help="A file containing chromosome sizes and order",
         default=None)
@@ -1047,11 +1057,13 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 def bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value, 
-        transform, count_nan, chromsizes_filename, zoom_step):
+        transform, count_nan, closed_interval,
+        chromsizes_filename, zoom_step):
     _bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value, 
-        transform, count_nan, chromsizes_filename, zoom_step)
+        transform, count_nan, closed_interval,
+        chromsizes_filename, zoom_step)
 
 @aggregate.command()
 @click.argument(
