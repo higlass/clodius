@@ -900,7 +900,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 
         if closed_interval:
             values_to_add += [value]
-            nan_counts_to_add += [value]
+            nan_counts_to_add += [nan_count]
 
         # print("values_to_add", values_to_add)
         
