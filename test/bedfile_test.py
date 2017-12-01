@@ -54,6 +54,33 @@ def test_get_tiles():
 
     fields = tiles[0]['fields']
 
+def test_random_importance():
+    # check that when aggregating using random importance, all values that
+    # are in a higher resolution tile are also in the lower resolution
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    runner = clt.CliRunner()
+    input_file = op.join(testdir, 'sample_data', '25435_PM15-000877_SM-7QK6O.seg')
+
+    result = runner.invoke(
+            cca.bedfile,
+            [input_file,
+                '--max-per-tile', '2', '--importance-column', 'random',
+                '--assembly', 'b37', '--has-header', '--output-file', f.name])
+
+    print('output:', result.output, result)
+
+    tileset_info = cdt.get_tileset_info(f.name)
+    print("tileset_info:", tileset_info)
+
+    rows = cdt.get_tiles(f.name, 0, 0)
+    print("rows:", rows)
+
+    rows = list(cdt.get_tiles(f.name, 1, 0).values()) + list(cdt.get_tiles(f.name, 1,1).values())
+    print('rows:', rows)
+
+    pass
+
 def test_no_chromosome_limit():
     f = tempfile.NamedTemporaryFile(delete=False)
 

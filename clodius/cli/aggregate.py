@@ -28,7 +28,7 @@ def aggregate():
     pass
 
 def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names, 
-        chrom_sizes, tile_size, max_zoom, max_width):
+        chrom_sizes, tile_size, max_zoom, max_width, header=[]):
     print("chrom_names:", chrom_names)
 
     cursor.execute('''
@@ -41,14 +41,15 @@ def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names,
             chrom_sizes text,
             tile_size REAL,
             max_zoom INT,
-            max_width REAL
+            max_width REAL,
+            header text
         )
         ''')
 
-    cursor.execute('INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?)',
+    cursor.execute('INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?,?)',
             (zoom_step, max_length, assembly, 
                 "\t".join(chrom_names), "\t".join(map(str,chrom_sizes)),
-                tile_size, max_zoom, max_width))
+                tile_size, max_zoom, max_width, "\t".join(header)))
     cursor.commit()
 
     pass
@@ -349,10 +350,12 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     dset = []
 
     if has_header:
-        bed_file.readline()
+        line = bed_file.readline()
+        header = line.strip().split(delimiter)
     else:
         line = bed_file.readline().strip()
         dset += [line_to_np_array(line.strip().split(delimiter))]
+        header = range(1,len(line)+1)
 
     for line in bed_file:
         dset += [line_to_np_array(line.strip().split(delimiter))]
@@ -360,6 +363,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     if chromosome is not None:
         dset = [d for d in dset if d['chromosome'] == chromosome]
 
+    print("header", header)
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
     tile_size = tile_size
@@ -396,7 +400,8 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
             chrom_sizes = chrom_sizes,
             tile_size = tile_size,
             max_zoom = max_zoom,
-            max_width = tile_size * 2 ** max_zoom)
+            max_width = tile_size * 2 ** max_zoom,
+            header=header)
 
     max_width = tile_size * 2 ** max_zoom
     uid_to_entry = {}
