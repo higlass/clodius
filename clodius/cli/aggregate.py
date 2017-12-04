@@ -363,7 +363,6 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     if chromosome is not None:
         dset = [d for d in dset if d['chromosome'] == chromosome]
 
-    print("header", header)
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
     tile_size = tile_size

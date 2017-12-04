@@ -9,6 +9,11 @@ def get_tileset_info(db_file):
     row = c.execute("SELECT * from tileset_info").fetchone();
     print("row:", row)
     print("====================")
+    if len(row) == 9:
+        header = row[8]
+    else:
+        header = ""
+
     tileset_info = {
             'zoom_step': row[0],
             'max_length': row[1],
@@ -19,7 +24,8 @@ def get_tileset_info(db_file):
             'max_zoom': row[6],
             'max_width': row[7],
             "min_pos": [1],
-            "max_pos": [row[1]]
+            "max_pos": [row[1]],
+            "header": header
             }
     conn.close()
 
