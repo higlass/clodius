@@ -68,14 +68,37 @@ def test_random_importance():
                 '--max-per-tile', '2', '--importance-column', 'random',
                 '--assembly', 'b37', '--has-header', '--output-file', f.name])
 
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+
     tileset_info = cdt.get_tileset_info(f.name)
     # print("tileset_info:", tileset_info)
 
     rows = cdt.get_tiles(f.name, 0, 0)
-    # print("rows:", rows)
+    #print("rows:", rows)
 
     rows = list(cdt.get_tiles(f.name, 1, 0).values()) + list(cdt.get_tiles(f.name, 1,1).values())
-    # print('rows:', rows)
+    #print('rows:', rows)
+
+    found = False
+    for row in cdt.get_tiles(f.name, 6, 31).values():
+        for rect in row:
+            if rect['xEnd'] == 2195875458:
+                found = True
+
+
+    found = False
+    for row in cdt.get_tiles(f.name, 6, 32).values():
+        for rect in row:
+            if rect['xEnd'] == 2195875458:
+                found = True
+
+    assert(found == True)
 
     pass
 

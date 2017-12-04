@@ -331,7 +331,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
 
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
         #nc.chr_pos_to_genome_pos(str(chrom), start, assembly)
-        genome_end = chrom_info.cum_chrom_lengths[chrom] + start + offset
+        genome_end = chrom_info.cum_chrom_lengths[chrom] + stop + offset
         #nc.chr_pos_to_genome_pos(chrom, stop, assembly)
 
         pos_offset = genome_start - start
