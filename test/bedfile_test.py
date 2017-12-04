@@ -68,16 +68,14 @@ def test_random_importance():
                 '--max-per-tile', '2', '--importance-column', 'random',
                 '--assembly', 'b37', '--has-header', '--output-file', f.name])
 
-    print('output:', result.output, result)
-
     tileset_info = cdt.get_tileset_info(f.name)
-    print("tileset_info:", tileset_info)
+    # print("tileset_info:", tileset_info)
 
     rows = cdt.get_tiles(f.name, 0, 0)
-    print("rows:", rows)
+    # print("rows:", rows)
 
     rows = list(cdt.get_tiles(f.name, 1, 0).values()) + list(cdt.get_tiles(f.name, 1,1).values())
-    print('rows:', rows)
+    # print('rows:', rows)
 
     pass
 
@@ -94,7 +92,14 @@ def test_no_chromosome_limit():
                 '--assembly', 'hg19',
                 '--output-file', f.name])
 
-    print("output:", result.output)
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+
     rows = cdt.get_tiles(f.name, 0, 0)[0]
     foundOther = False
     

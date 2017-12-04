@@ -355,7 +355,8 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     else:
         line = bed_file.readline().strip()
         dset += [line_to_np_array(line.strip().split(delimiter))]
-        header = range(1,len(line)+1)
+        header = map(str, list(range(1,len(line.strip().split(delimiter))+1)))
+    print("header:", header)
 
     for line in bed_file:
         dset += [line_to_np_array(line.strip().split(delimiter))]

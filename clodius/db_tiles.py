@@ -7,9 +7,7 @@ def get_tileset_info(db_file):
     c = conn.cursor()
 
     row = c.execute("SELECT * from tileset_info").fetchone();
-    print("row:", row)
-    print("====================")
-    if len(row) == 9:
+    if row is not None and len(row) == 9:
         header = row[8]
     else:
         header = ""
