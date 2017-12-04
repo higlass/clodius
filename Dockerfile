@@ -5,7 +5,7 @@ RUN apt-get update
 RUN apt-get install -y bedtools=2.26.0+dfsg-3
 RUN apt-get install -y python2.7
 RUN apt-get install -y python-pip=9.0.1-2
-RUN apt-get install -y libcurl4-gnutls-dev=7.35.0-1ubuntu2.13
+RUN apt-get install -y libcurl4-gnutls-dev
 RUN apt-get install -y git=1:2.11.0-2
 RUN apt-get install -y zlib1g-dev
 #  && rm -rf /var/lib/apt/lists/*
