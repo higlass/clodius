@@ -54,6 +54,32 @@ def test_get_tiles():
 
     fields = tiles[0]['fields']
 
+def test_gene_annotations():
+    runner = clt.CliRunner()
+    input_file = op.join(testdir, 'sample_data', 'exon_unions_mm10.bed')
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    result = runner.invoke(
+            cca.bedfile,
+            [input_file,
+                '--max-per-tile', '20', '--importance-column', '5',
+                '--delimiter', '\t',
+                '--assembly', 'mm10', '--has-header', '--output-file', f.name])
+
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+
+
+    rows = cdt.get_tiles(f.name, 11, 113)
+    assert(rows[113][0]['fields'][3] == 'Lrp1b')
+    rows = cdt.get_tiles(f.name, 11, 112)
+    assert(rows[112][0]['fields'][3] == 'Lrp1b')
+
 def test_random_importance():
     # check that when aggregating using random importance, all values that
     # are in a higher resolution tile are also in the lower resolution
