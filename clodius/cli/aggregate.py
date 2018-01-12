@@ -4,6 +4,8 @@ from __future__ import division, print_function
 from . import cli
 
 import click
+import clodius.chromosomes as cch
+import clodius.multivec as cmv
 import clodius.tiles as ct
 import collections as col
 import h5py
@@ -75,6 +77,31 @@ def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, revers
     byKey = {}
 
     return combined_entries[:max_entries_per_tile]
+
+def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution):
+    '''
+    Aggregate a multivec file.
+
+    This is a file containing nxn data that is aggregated along only one axis. 
+    This data should be in an HDF5 file where each dataset is named for a chromosome.
+
+    Example: f['chr1'] = [[1,2,3],[4,5,6]]
+
+    The resulting data will be organized by resolution and chromosome.
+
+    Example: f_out['1000']['chr1']=[[1000,2000,3000],[4000,5000,6000]]
+
+    Aggregation is currently done by summing adjacent values.
+    '''
+    f_in = h5py.File(filepath, 'r')
+
+    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromosizes(chromsizes_filename, assembly)
+
+    cmv.create_multivec_multires(f_in, 
+            chromsizes = zip(chrom_names, chrom_sizes),
+            starting_resolution=starting_resolution,
+            tile_size=tile_size,
+            output_file=output_file)
 
 def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile, 
         tile_size, max_zoom=None, chromosome=None, 
@@ -294,18 +321,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
 
     bed_file = open(filepath, 'r')
 
-    if chromsizes_filename is not None:
-        chrom_info = nc.get_chrominfo_from_file(chromsizes_filename)
-        chrom_names = chrom_info.chrom_order
-        chrom_sizes = [chrom_info.chrom_lengths[c] for c in chrom_info.chrom_order]
-    else:
-        chrom_info = nc.get_chrominfo(assembly)
-        chrom_names = nc.get_chromorder(assembly)
-        chrom_sizes = nc.get_chromsizes(assembly)
-
-    print("chrom_names:", chrom_info.chrom_order)
-    print("chrom_sizes:", chrom_sizes)
-
+    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromosizes(chromsizes_filename, assembly)
 
     def line_to_np_array(line):
         '''
@@ -1274,3 +1290,41 @@ def bedpe(filepath, output_file, assembly, importance_column,
             chr1_col=chr1_col-1, from1_col=from1_col-1, to1_col=to1_col-1,
             chr2_col=chr2_col-1, from2_col=from2_col-1, to2_col=to2_col-1
             )
+
+@aggregate.command()
+@click.argument(
+        'filepath',
+        metavar='FILEPATH'
+        )
+@click.option(
+        '--output-file',
+        '-o',
+        default=None,
+        help="The default output file name to use. If this isn't"
+             "specified, clodius will replace the current extension"
+             "with .hitile"
+        )
+@click.option(
+        '--assembly',
+        '-a',
+        help='The genome assembly that this file was created against',
+        type=click.Choice(nc.available_chromsizes()),
+        default='hg19')
+@click.option(
+        '--tile-size',
+        '-t',
+        default=256,
+        help="The number of data points in each tile."
+             "Used to determine the number of zoom levels"
+             "to create.")
+@click.option(
+        '--chromsizes-filename',
+        help="A file containing chromosome sizes and order",
+        default=None)
+@click.option(
+        '--starting-resolution',
+        '-s',
+        default=256,
+        help="The resolution that the starting data is at (e.g. 1, 10, 20)")
+def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution):
+    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution)
