@@ -95,10 +95,11 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
     '''
     f_in = h5py.File(filepath, 'r')
 
-    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromosizes(chromsizes_filename, assembly)
+    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
 
     cmv.create_multivec_multires(f_in, 
             chromsizes = zip(chrom_names, chrom_sizes),
+            agg=lambda x: x.T.reshape((x.shape[1],-1,2)).sum(axis=2).T,
             starting_resolution=starting_resolution,
             tile_size=tile_size,
             output_file=output_file)

@@ -1,3 +1,9 @@
+import h5py
+import math
+import numpy as np
+import os
+import os.path as op
+
 def create_multivec_multires(array_data, chromsizes, 
                     agg, starting_resolution=1,
                     tile_size=1024, output_file='/tmp/my_file.multires'):
@@ -46,22 +52,21 @@ def create_multivec_multires(array_data, chromsizes,
     # dataset
     f['resolutions'].create_group(str(curr_resolution))
 
-    chroms = [c[0] for c in chromsizes]
-    lengths = np.array([c[1] for c in chromsizes])
+    chroms, lengths = zip(*chromsizes)
     chrom_array = np.array(chroms, dtype='S')
-    
+
     # add the chromosome information
     f['resolutions'][str(curr_resolution)].create_group('chroms')
     f['resolutions'][str(curr_resolution)].create_group('values')
-    f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('name', shape=(len(chroms),), dtype=chrom_array.dtype, data=chrom_array)
-    f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('length', shape=(len(chroms),), data=lengths)
+    f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('name', shape=(len(chroms),), dtype=chrom_array.dtype, data=chrom_array, compression='gzip')
+    f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('length', shape=(len(chroms),), data=lengths, compression='gzip')
 
-    f['chroms'].create_dataset('name', shape=(len(chroms),), dtype=chrom_array.dtype, data=chrom_array)
-    f['chroms'].create_dataset('length', shape=(len(chroms),), data=lengths)
+    f['chroms'].create_dataset('name', shape=(len(chroms),), dtype=chrom_array.dtype, data=chrom_array, compression='gzip')
+    f['chroms'].create_dataset('length', shape=(len(chroms),), data=lengths, compression='gzip')
 
     # add the data
-    for chrom,length in chromsizes:
-        f['resolutions'][str(curr_resolution)]['values'].create_dataset(str(chrom), array_data[chrom].shape)
+    for chrom,length in zip(chroms, lengths):
+        f['resolutions'][str(curr_resolution)]['values'].create_dataset(str(chrom), array_data[chrom].shape, compression='gzip')
         print("array_data.shape", array_data[chrom].shape)
         f['resolutions'][str(curr_resolution)]['values'][chrom][:] = array_data[chrom]    # see above section
         
@@ -69,7 +74,8 @@ def create_multivec_multires(array_data, chromsizes,
     # the maximum zoom level corresponds to the number of aggregations
     # that need to be performed so that the entire extent of
     # the dataset fits into one tile
-    total_length = sum([c[1] for c in chromsizes])
+    total_length = sum(lengths)
+    print("total_length:", total_length, "tile_size:", tile_size, "starting_resolution:", starting_resolution)
     max_zoom = math.ceil(math.log(total_length / (tile_size * starting_resolution) ) / math.log(2))
     print("max_zoom:", max_zoom)
     
@@ -84,11 +90,11 @@ def create_multivec_multires(array_data, chromsizes,
         f['resolutions'].create_group(str(curr_resolution))
         f['resolutions'][str(curr_resolution)].create_group('chroms')
         f['resolutions'][str(curr_resolution)].create_group('values')
-        f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('name', shape=(len(chroms),), dtype=chrom_array.dtype, data=chrom_array)
-        f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('length', shape=(len(chroms),), data=lengths)
+        f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('name', shape=(len(chroms),), dtype=chrom_array.dtype, data=chrom_array, compression='gzip')
+        f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('length', shape=(len(chroms),), data=lengths, compression='gzip')
 
 
-        for chrom,length in chromsizes:
+        for chrom,length in zip(chroms, lengths):
             next_level_length = math.ceil(
                 len(f['resolutions'][str(prev_resolution)]['values'][chrom]) / 2)
 
@@ -105,7 +111,7 @@ def create_multivec_multires(array_data, chromsizes,
             new_shape = tuple(new_shape)
 
             f['resolutions'][str(curr_resolution)]['values'].create_dataset(chrom, 
-                                            new_shape)
+                                            new_shape, compression='gzip')
 
             #print("11 old_data.shape", old_data.shape)
             if len(old_data) % 2 != 0:

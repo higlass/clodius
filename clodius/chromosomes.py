@@ -1,3 +1,5 @@
+import negspy.coordinates as nc
+
 def load_chromsizes(chromsizes_filename, assembly=None):
     '''
     Load a set of chromosomes from a file or using an assembly
