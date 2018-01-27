@@ -18,6 +18,7 @@ import slugid
 import sqlite3
 import sys
 import time
+import gzip
 
 
 @cli.group()
@@ -122,7 +123,6 @@ def _bedpe(
     if filepath == '-':
         f = sys.stdin
     elif filepath.endswith('.gz'):
-        print("gzip")
         f = gzip.open(filepath, 'rt')
     else:
         print("plain")
@@ -1298,8 +1298,8 @@ def bigwig(
 @click.option(
         '--tile-size',
         default=1024,
-        help="The number of nucleotides that the highest resolution tiles should span."
-             "This determines the maximum zoom level"
+        help="The number of nucleotides that the highest resolution tiles "
+             "should span. This determines the maximum zoom level"
         )
 @click.option(
         '--delimiter',
