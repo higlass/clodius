@@ -907,8 +907,22 @@ def _bedgraph(
 
     while assembly_size / 2 ** z > tile_size:
         dset_length = math.ceil(assembly_size / 2 ** z)
-        dsets += [f.create_dataset('values_' + str(z), (dset_length,), dtype='f', compression='gzip')]
-        nan_dsets += [f.create_dataset('nan_values_' + str(z), (dset_length,), dtype='f', compression='gzip')]
+        dsets += [
+            f.create_dataset(
+                'values_' + str(z),
+                (dset_length,),
+                dtype='f',
+                compression='gzip'
+            )
+        ]
+        nan_dsets += [
+            f.create_dataset(
+                'nan_values_' + str(z),
+                (dset_length,),
+                dtype='f',
+                compression='gzip'
+            )
+        ]
 
         data_buffers += [[]]
         nan_data_buffers += [[]]
@@ -928,7 +942,9 @@ def _bedgraph(
     d.attrs['chrom-sizes'] = chrom_sizes
     d.attrs['chrom-order'] = chrom_order
     d.attrs['tile-size'] = tile_size
-    d.attrs['max-zoom'] = max_zoom = math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
+    d.attrs['max-zoom'] = max_zoom = math.ceil(
+        math.log(d.attrs['max-length'] / tile_size) / math.log(2)
+    )
     d.attrs['max-width'] = tile_size * 2 ** max_zoom
     d.attrs['max-position'] = 0
 
@@ -962,7 +978,8 @@ def _bedgraph(
         curr_time = time.time() - t1
         percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
         print(
-            "position: {} progress: {:.2f} elapsed: {:.2f} remaining: {:.2f}".format(
+            "position: {} progress: {:.2f} elapsed: {:.2f} "
+            "remaining: {:.2f}".format(
                 positions[curr_zoom] + 1,
                 percent_progress,
                 curr_time, curr_time / (percent_progress) - curr_time
@@ -982,15 +999,22 @@ def _bedgraph(
             '''
             print("positions[curr_zoom]:", positions[curr_zoom])
 
-            dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
-            nan_dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = nan_curr_chunk
+            curr_pos = positions[curr_zoom]
+            dsets[curr_zoom][curr_pos:curr_pos+chunk_size] = curr_chunk
+            nan_dsets[curr_zoom][curr_pos:curr_pos+chunk_size] = nan_curr_chunk
 
-            # aggregate and store aggregated values in the next zoom_level's data
-            data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** zoom_step))
-            nan_data_buffers[curr_zoom+1] += list(ct.aggregate(nan_curr_chunk, 2 ** zoom_step))
+            # aggregate and store aggregated values in the next zoom_level's
+            # data
+            data_buffers[curr_zoom+1] += list(
+                ct.aggregate(curr_chunk, 2 ** zoom_step)
+            )
+            nan_data_buffers[curr_zoom+1] += list(
+                ct.aggregate(nan_curr_chunk, 2 ** zoom_step)
+            )
 
             data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
-            nan_data_buffers[curr_zoom] = nan_data_buffers[curr_zoom][chunk_size:]
+            nan_data_buffers[curr_zoom] =\
+                nan_data_buffers[curr_zoom][chunk_size:]
 
             # data = data_buffers[curr_zoom+1]
             # nan_data = nan_data_buffers[curr_zoom+1]
@@ -1021,7 +1045,10 @@ def _bedgraph(
         # position
         parts = line.strip().split()
 
-        start_genome_pos = chrom_info.cum_chrom_lengths[parts[chrom_col-1]] + int(parts[from_pos_col-1])
+        start_genome_pos = (
+            chrom_info.cum_chrom_lengths[parts[chrom_col-1]] +
+            int(parts[from_pos_col-1])
+        )
 
         if start_genome_pos - curr_genome_pos > 1:
             values += [np.nan] * (start_genome_pos - curr_genome_pos - 1)
@@ -1035,13 +1062,26 @@ def _bedgraph(
         # if the provided values are log2 transformed, we have to un-transform
         # them
         if transform == 'exp2':
-            value = 2 ** float(parts[value_col-1]) if not parts[value_col-1] == nan_value else np.nan
+            value = (
+                2 ** float(parts[value_col-1])
+                if not parts[value_col-1] == nan_value
+                else np.nan
+            )
         else:
-            value = float(parts[value_col-1]) if not parts[value_col-1] == nan_value else np.nan
+            value = (
+                float(parts[value_col-1])
+                if not parts[value_col-1] == nan_value
+                else np.nan
+            )
 
-        # we're going to add as many values are as specified in the bedfile line
-        values_to_add = [value] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
-        nan_counts_to_add = [nan_count] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
+        # we're going to add as many values are as specified in the bedfile
+        # line
+        values_to_add = [value] * (
+            int(parts[to_pos_col-1]) - int(parts[from_pos_col-1])
+        )
+        nan_counts_to_add = [nan_count] * (
+            int(parts[to_pos_col-1]) - int(parts[from_pos_col-1])
+        )
 
         values += values_to_add
         nan_values += nan_counts_to_add
@@ -1053,7 +1093,9 @@ def _bedgraph(
         while len(values) > chunk_size:
             print("len(values):", len(values), chunk_size)
             print("line:", line)
-            add_values_to_data_buffers(values[:chunk_size], nan_values[:chunk_size])
+            add_values_to_data_buffers(
+                values[:chunk_size], nan_values[:chunk_size]
+            )
             values = values[chunk_size:]
             nan_values = nan_values[chunk_size:]
 
@@ -1072,12 +1114,17 @@ def _bedgraph(
         print("2db", data_buffers[curr_zoom][:100])
         '''
 
-        dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
-        nan_dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = nan_curr_chunk
+        curr_pos = positions[curr_zoom]
+        dsets[curr_zoom][curr_pos:curr_pos+chunk_size] = curr_chunk
+        nan_dsets[curr_zoom][curr_pos:curr_pos+chunk_size] = nan_curr_chunk
 
         # aggregate and store aggregated values in the next zoom_level's data
-        data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** zoom_step))
-        nan_data_buffers[curr_zoom+1] += list(ct.aggregate(nan_curr_chunk, 2 ** zoom_step))
+        data_buffers[curr_zoom+1] += list(
+            ct.aggregate(curr_chunk, 2 ** zoom_step)
+        )
+        nan_data_buffers[curr_zoom+1] += list(
+            ct.aggregate(nan_curr_chunk, 2 ** zoom_step)
+        )
 
         data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
         nan_data_buffers[curr_zoom] = nan_data_buffers[curr_zoom][chunk_size:]
@@ -1097,95 +1144,110 @@ def _bedgraph(
 
 @aggregate.command()
 @click.argument(
-        'filepath',
-        metavar='FILEPATH'
-        )
+    'filepath',
+    metavar='FILEPATH'
+)
 @click.option(
-        '--output-file',
-        '-o',
-        default=None,
-        help="The default output file name to use. If this isn't"
-             "specified, clodius will replace the current extension"
-             "with .hitile"
-        )
+    '--output-file',
+    '-o',
+    default=None,
+    help="The default output file name to use. If this isn't"
+         "specified, clodius will replace the current extension"
+         "with .hitile"
+)
 @click.option(
-        '--assembly',
-        '-a',
-        help='The genome assembly that this file was created against',
-        type=click.Choice(nc.available_chromsizes()),
-        default='hg19')
+    '--assembly',
+    '-a',
+    help='The genome assembly that this file was created against',
+    type=click.Choice(nc.available_chromsizes()),
+    default='hg19'
+)
 @click.option(
-        '--chromosome',
-        default=None,
-        help="Only extract values for a particular chromosome."
-             "Use all chromosomes if not set.")
+    '--chromosome',
+    default=None,
+    help="Only extract values for a particular chromosome."
+         "Use all chromosomes if not set."
+)
 @click.option(
-        '--tile-size',
-        '-t',
-        default=1024,
-        help="The number of data points in each tile."
-             "Used to determine the number of zoom levels"
-             "to create.")
+    '--tile-size',
+    '-t',
+    default=1024,
+    help="The number of data points in each tile."
+         "Used to determine the number of zoom levels"
+         "to create."
+)
 @click.option(
-        '--chunk-size',
-        '-c',
-        help='How many values to aggregate at once.'
-             'Specified as a power of two multiplier of the tile'
-             'size',
-        default=14)
+    '--chunk-size',
+    '-c',
+    help='How many values to aggregate at once.'
+         'Specified as a power of two multiplier of the tile'
+         'size',
+    default=14
+)
 @click.option(
-        '--chromosome-col',
-        help="The column number (1-based) which contains the chromosome "
-             "name",
-        default=1)
+    '--chromosome-col',
+    help="The column number (1-based) which contains the chromosome "
+         "name",
+    default=1
+)
 @click.option(
-        '--from-pos-col',
-        help="The column number (1-based) which contains the starting "
-             "position",
-        default=2)
+    '--from-pos-col',
+    help="The column number (1-based) which contains the starting "
+         "position",
+    default=2
+)
 @click.option(
-        '--to-pos-col',
-        help="The column number (1-based) which contains the ending"
-             "position",
-        default=3)
+    '--to-pos-col',
+    help="The column number (1-based) which contains the ending"
+         "position",
+    default=3
+)
 @click.option(
-        '--value-col',
-        help="The column number (1-based) which contains the actual value"
-             "position",
-        default=4)
+    '--value-col',
+    help="The column number (1-based) which contains the actual value"
+         "position",
+    default=4
+)
 @click.option(
-        '--has-header/--no-header',
-        help="Does this file have a header that we should ignore",
-        default=False)
+    '--has-header/--no-header',
+    help="Does this file have a header that we should ignore",
+    default=False
+)
 @click.option(
-        '--method',
-        help='The method used to aggregate values (e.g. sum, average...)',
-        type=click.Choice(['sum', 'average']),
-        default='sum')
+    '--method',
+    help='The method used to aggregate values (e.g. sum, average...)',
+    type=click.Choice(['sum', 'average']),
+    default='sum'
+)
 @click.option(
-        '--nan-value',
-        help='The string to use as a NaN value',
-        type=str,
-        default=None)
+    '--nan-value',
+    help='The string to use as a NaN value',
+    type=str,
+    default=None
+)
 @click.option(
-        '--transform',
-        help='The method used to aggregate values (e.g. sum, average...)',
-        type=click.Choice(['none', 'exp2']),
-        default='none')
+    '--transform',
+    help='The method used to aggregate values (e.g. sum, average...)',
+    type=click.Choice(['none', 'exp2']),
+    default='none'
+)
 @click.option(
-        '--count-nan',
-        help="Simply count the number of nan values in the file",
-        is_flag=True)
+    '--count-nan',
+    help="Simply count the number of nan values in the file",
+    is_flag=True
+)
 @click.option(
-        '--chromsizes-filename',
-        help="A file containing chromosome sizes and order",
-        default=None)
+    '--chromsizes-filename',
+    help="A file containing chromosome sizes and order",
+    default=None
+)
 @click.option(
-        '--zoom-step',
-        '-z',
-        help="The number of intermediate aggregation levels to"
-             "omit",
-        default=8)
+    '--zoom-step',
+    '-z',
+    help="The number of intermediate aggregation levels to"
+         "omit",
+    default=8
+)
 def bedgraph(
     filepath, output_file, assembly, chromosome_col,
     from_pos_col, to_pos_col, value_col, has_header,
@@ -1206,47 +1268,53 @@ def bedgraph(
         metavar='FILEPATH'
         )
 @click.option(
-        '--output-file',
-        '-o',
-        default=None,
-        help="The default output file name to use. If this isn't"
-             "specified, clodius will replace the current extension"
-             "with .hitile"
-        )
+    '--output-file',
+    '-o',
+    default=None,
+    help="The default output file name to use. If this isn't"
+         "specified, clodius will replace the current extension"
+         "with .hitile"
+)
 @click.option(
-        '--assembly',
-        '-a',
-        help='The genome assembly that this file was created against',
-        default='hg19')
+    '--assembly',
+    '-a',
+    help='The genome assembly that this file was created against',
+    default='hg19'
+)
 @click.option(
-        '--chromosome',
-        default=None,
-        help="Only extract values for a particular chromosome."
-             "Use all chromosomes if not set.")
+    '--chromosome',
+    default=None,
+    help="Only extract values for a particular chromosome."
+         "Use all chromosomes if not set."
+)
 @click.option(
-        '--tile-size',
-        '-t',
-        default=1024,
-        help="The number of data points in each tile."
-             "Used to determine the number of zoom levels"
-             "to create.")
+    '--tile-size',
+    '-t',
+    default=1024,
+    help="The number of data points in each tile."
+         "Used to determine the number of zoom levels"
+         "to create."
+)
 @click.option(
-        '--chunk-size',
-        '-c',
-        help='How many values to aggregate at once.'
-             'Specified as a power of two multiplier of the tile'
-             'size',
-        default=14)
+    '--chunk-size',
+    '-c',
+    help='How many values to aggregate at once.'
+         'Specified as a power of two multiplier of the tile'
+         'size',
+    default=14
+)
 @click.option(
-        '--chromsizes-filename',
-        help="A file containing chromosome sizes and order",
-        default=None)
+    '--chromsizes-filename',
+    help="A file containing chromosome sizes and order",
+    default=None
+)
 @click.option(
-        '--zoom-step',
-        '-z',
-        help="The number of intermediate aggregation levels to"
-             "omit",
-        default=8)
+    '--zoom-step',
+    '-z',
+    help="The number of intermediate aggregation levels to"
+         "omit",
+    default=8
+)
 def bigwig(
     filepath, output_file, assembly, chromosome, tile_size, chunk_size,
     chromsizes_filename, zoom_step
@@ -1259,61 +1327,67 @@ def bigwig(
 
 @aggregate.command()
 @click.argument(
-        'filepath',
-        metavar='FILEPATH')
+    'filepath',
+    metavar='FILEPATH'
+)
 @click.option(
-        '--output-file',
-        '-o',
-        default=None,
-        help="The default output file name to use. If this isn't"
-             "specified, clodius will replace the current extension"
-             "with .multires.bed"
-        )
+    '--output-file',
+    '-o',
+    default=None,
+    help="The default output file name to use. If this isn't"
+         "specified, clodius will replace the current extension"
+         "with .multires.bed"
+)
 @click.option(
-        '--assembly',
-        '-a',
-        help='The genome assembly that this file was created against',
-        default='hg19')
+    '--assembly',
+    '-a',
+    help='The genome assembly that this file was created against',
+    default='hg19'
+)
 @click.option(
-        '--importance-column',
-        help='The column (1-based) containing information about how important'
-        "that row is. If it's absent, then use the length of the region."
-        "If the value is equal to `random`, then a random value will be"
-        "used for the importance (effectively leading to random sampling)"
-        )
+    '--importance-column',
+    help='The column (1-based) containing information about how important'
+    "that row is. If it's absent, then use the length of the region."
+    "If the value is equal to `random`, then a random value will be"
+    "used for the importance (effectively leading to random sampling)"
+)
 @click.option(
-        '--has-header/--no-header',
-        help="Does this file have a header that we should ignore",
-        default=False)
+    '--has-header/--no-header',
+    help="Does this file have a header that we should ignore",
+    default=False
+)
 @click.option(
-        '--chromosome',
-        default=None,
-        help="Only extract values for a particular chromosome."
-             "Use all chromosomes if not set."
-             )
+    '--chromosome',
+    default=None,
+    help="Only extract values for a particular chromosome."
+         "Use all chromosomes if not set."
+)
 @click.option(
         '--max-per-tile',
         default=100,
         type=int)
 @click.option(
-        '--tile-size',
-        default=1024,
-        help="The number of nucleotides that the highest resolution tiles "
-             "should span. This determines the maximum zoom level"
-        )
+    '--tile-size',
+    default=1024,
+    help="The number of nucleotides that the highest resolution tiles "
+         "should span. This determines the maximum zoom level"
+)
 @click.option(
-        '--delimiter',
-        default=None,
-        type=str)
+    '--delimiter',
+    default=None,
+    type=str
+)
 @click.option(
-        '--chromsizes-filename',
-        help="A file containing chromosome sizes and order",
-        default=None)
+    '--chromsizes-filename',
+    help="A file containing chromosome sizes and order",
+    default=None
+)
 @click.option(
-        '--offset',
-        help="Apply an offset to all the coordinates in this file",
-        type=int,
-        default=0)
+    '--offset',
+    help="Apply an offset to all the coordinates in this file",
+    type=int,
+    default=0
+)
 def bedfile(
     filepath, output_file, assembly, importance_column, has_header,
     chromosome, max_per_tile, tile_size, delimiter, chromsizes_filename,
@@ -1328,79 +1402,83 @@ def bedfile(
 
 @aggregate.command()
 @click.argument(
-        'filepath',
-        metavar='FILEPATH')
+    'filepath',
+    metavar='FILEPATH'
+)
 @click.option(
-        '--output-file',
-        '-o',
-        default=None,
-        help="The default output file name to use. If this isn't"
-             "specified, clodius will replace the current extension"
-             "with .bed2db"
-        )
+    '--output-file',
+    '-o',
+    default=None,
+    help="The default output file name to use. If this isn't"
+         "specified, clodius will replace the current extension"
+         "with .bed2db"
+)
 @click.option(
-        '--assembly',
-        '-a',
-        help='The genome assembly that this file was created against',
-        default='hg19')
+    '--assembly',
+    '-a',
+    help='The genome assembly that this file was created against',
+    default='hg19'
+)
 @click.option(
-        '--importance-column',
-        help='The column (1-based) containing information about how important'
-        "that row is. If it's absent, then use the length of the region."
-        "If the value is equal to `random`, then a random value will be"
-        "used for the importance (effectively leading to random sampling)",
-        default='random'
-        )
+    '--importance-column',
+    help='The column (1-based) containing information about how important'
+    "that row is. If it's absent, then use the length of the region."
+    "If the value is equal to `random`, then a random value will be"
+    "used for the importance (effectively leading to random sampling)",
+    default='random'
+)
 @click.option(
-        '--has-header/--no-header',
-        help="Does this file have a header that we should ignore",
-        default=False)
+    '--has-header/--no-header',
+    help="Does this file have a header that we should ignore",
+    default=False
+)
 @click.option(
-        '--max-per-tile',
-        default=100,
-        type=int)
+    '--max-per-tile',
+    default=100,
+    type=int
+)
 @click.option(
-        '--tile-size',
-        default=1024,
-        help="The number of nucleotides that the highest resolution tiles "
-             "should span. This determines the maximum zoom level"
-        )
+    '--tile-size',
+    default=1024,
+    help="The number of nucleotides that the highest resolution tiles "
+         "should span. This determines the maximum zoom level"
+)
 @click.option(
-        '--chromosome',
-        default=None,
-        help="Only extract values for a particular chromosome."
-             "Use all chromosomes if not set."
-             )
+    '--chromosome',
+    default=None,
+    help="Only extract values for a particular chromosome."
+         "Use all chromosomes if not set."
+)
 @click.option(
-        '--chr1-col',
-        default=1,
-        help="The column containing the first chromosome"
-             )
+    '--chr1-col',
+    default=1,
+    help="The column containing the first chromosome"
+)
 @click.option(
-        '--chr2-col',
-        default=4,
-        help="The column containing the second chromosome"
-             )
+    '--chr2-col',
+    default=4,
+    help="The column containing the second chromosome"
+)
 @click.option(
-        '--from1-col',
-        default=2,
-        help="The column containing the first start position"
-             )
+    '--from1-col',
+    default=2,
+    help="The column containing the first start position"
+)
 @click.option(
-        '--from2-col',
-        default=5,
-        help="The column containing the second start position"
-             )
+    '--from2-col',
+    default=5,
+    help="The column containing the second start position"
+)
 @click.option(
-        '--to1-col',
-        default=3,
-        help="The column containing the first end position"
-             )
+    '--to1-col',
+    default=3,
+    help="The column containing the first end position"
+)
 @click.option(
-        '--to2-col',
-        default=6,
-        help="The column containing the second end position"
-             )
+    '--to2-col',
+    default=6,
+    help="The column containing the second end position"
+)
 def bedpe(
     filepath, output_file, assembly, importance_column,
     has_header, max_per_tile, tile_size, chromosome,
