@@ -1,6 +1,6 @@
 Cython==0.25.2
 negspy==0.2.19
-numpy==1.12.0
+numpy==1.14.0
 
 # Pinning necessary here to avoid compilation errors in 0.9.1.4
 pysam==0.9.1.4
