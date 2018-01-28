@@ -19,6 +19,7 @@ import sqlite3
 import sys
 import time
 import gzip
+import json
 
 
 @cli.group()
@@ -41,8 +42,6 @@ def store_meta_data(
     max_zoom,
     max_width
 ):
-    print("chrom_names:", chrom_names)
-
     cursor.execute('''
         CREATE TABLE tileset_info
         (
@@ -1142,6 +1141,203 @@ def _bedgraph(
     # still need to take care of the last chunk
 
 
+def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
+    if filepath == '-':
+        f = sys.stdin
+    elif filepath.endswith('.gz'):
+        f = gzip.open(filepath, 'rt')
+    else:
+        f = open(filepath, 'r')
+
+    if output_file is None:
+        output_file = filepath + ".geodb"
+    else:
+        output_file = output_file
+
+    if op.exists(output_file):
+        os.remove(output_file)
+
+    geojson = json.load(f)
+
+    entries = []
+
+    def getRect(coords, no_area_comp):
+        minX = math.inf
+        maxX = -math.inf
+        minY = math.inf
+        maxY = -math.inf
+        area = 0.0  # Calculated with the shoelace formula
+        n = len(coords)
+
+        for coord_group in coords:
+            for i, coord in enumerate(coord_group):
+                minX = min(minX, coord[0])
+                maxX = max(maxX, coord[0])
+                minY = min(minX, coord[1])
+                maxY = max(maxX, coord[1])
+                if not no_area_comp:
+                    j = (i + 1) % n
+                    area += coord_group[i][0] * coord_group[j][1]
+                    area -= coord_group[j][0] * coord_group[i][1]
+
+            area = abs(area) / 2.0
+
+        return minX, maxX, minY, maxY, abs(area) / 2.0
+
+    for feature in geojson['features']:
+        try:
+            area = feature['properties']['area']
+        except:
+            area = None
+            pass
+
+        try:
+            uid = feature['properties']['uid']
+        except:
+            uid = None
+            pass
+
+        try:
+            minX, maxX, minY, maxY, _area = getRect(
+                feature['geometry']['coordinates'], area
+            )
+            entries.append({
+                'minX': minX,
+                'maxX': maxX,
+                'minY': minY,
+                'maxY': maxY,
+                'importance': area or _area,
+                'chrOffset': 0,
+                'uid': uid or slugid.nice().decode('utf-8'),
+                'fields': '',
+            })
+        except Exception as e:
+            raise
+
+    # this script stores data in a sqlite database
+    sqlite3.register_adapter(np.int64, lambda val: int(val))
+    conn = sqlite3.connect(output_file)
+
+    # store some meta data
+    store_meta_data(
+        conn,
+        1,
+        max_length=tile_size * 2 ** max_zoom,
+        assembly='',
+        chrom_names=[],
+        chrom_sizes=[],
+        tile_size=tile_size,
+        max_zoom=19,
+        max_width=tile_size * 2 ** max_zoom
+    )
+
+    # max_width = tile_size * 2 ** max_zoom
+    # uid_to_entry = {}
+
+    c = conn.cursor()
+    c.execute(
+        '''
+        CREATE TABLE intervals
+        (
+            id int PRIMARY KEY,
+            zoomLevel int,
+            importance real,
+            fromX int,
+            toX int,
+            fromY int,
+            toY int,
+            chrOffset int,
+            uid text,
+            fields text
+        )
+        '''
+    )
+
+    c.execute('''
+        CREATE VIRTUAL TABLE position_index USING rtree(
+            id,
+            rFromX, rToX,
+            rFromY, rToY
+        )
+        ''')
+
+    curr_zoom = 0
+    counter = 0
+
+    tile_counts = col.defaultdict(
+        lambda: col.defaultdict(lambda: col.defaultdict(int))
+    )
+    entries = sorted(entries, key=lambda x: -x['importance'])
+
+    counter = 0
+    for d in entries:
+        curr_zoom = 0
+
+        while curr_zoom <= max_zoom:
+            tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
+            tile_from = list(
+                map(lambda x: x / tile_width, [d['minX'], d['minY']])
+            )
+            tile_to = list(
+                map(lambda x: x / tile_width, [d['maxX'], d['maxY']])
+            )
+
+            empty_tiles = True
+
+            # go through and check if any of the tiles at this zoom level are
+            # full
+            for i in range(int(tile_from[0]), int(tile_to[0])+1):
+                if not empty_tiles:
+                    break
+
+                for j in range(int(tile_from[1]), int(tile_to[1])+1):
+                    if tile_counts[curr_zoom][i][j] > max_per_tile:
+
+                        empty_tiles = False
+                        break
+
+            if empty_tiles:
+                # they're all empty so add this interval to this zoom level
+                for i in range(int(tile_from[0]), int(tile_to[0])+1):
+                    for j in range(int(tile_from[1]), int(tile_to[1])+1):
+                        tile_counts[curr_zoom][i][j] += 1
+
+                c.execute(
+                    'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?,?)',
+                    (
+                        counter,
+                        curr_zoom,
+                        d['importance'],
+                        d['minX'], d['maxX'],
+                        d['minY'], d['maxY'],
+                        d['chrOffset'],
+                        d['uid'],
+                        d['fields']
+                    )
+                )
+                conn.commit()
+
+                c.execute(
+                    'INSERT INTO position_index VALUES (?,?,?,?,?)',
+                    (
+                        # add counter as a primary key
+                        counter,
+                        d['minX'],
+                        d['maxX'],
+                        d['minY'],
+                        d['maxY']
+                    )
+                )
+                conn.commit()
+
+                counter += 1
+                break
+
+            curr_zoom += 1
+
+    f.close()
+
+
 @aggregate.command()
 @click.argument(
     'filepath',
@@ -1490,4 +1686,42 @@ def bedpe(
         max_per_tile, tile_size, chromosome,
         chr1_col=chr1_col-1, from1_col=from1_col-1, to1_col=to1_col-1,
         chr2_col=chr2_col-1, from2_col=from2_col-1, to2_col=to2_col-1
+    )
+
+
+@aggregate.command()
+@click.argument(
+    'filepath',
+    metavar='FILEPATH'
+)
+@click.option(
+    '--output-file',
+    '-o',
+    default=None,
+    help="The default output file name to use. If this isn't"
+         "specified, clodius will replace the current extension"
+         "with .geodb"
+)
+@click.option(
+    '--max-per-tile',
+    default=20,
+    type=int
+)
+@click.option(
+    '--tile-size',
+    default=256,
+    help="The number of nucleotides that the highest resolution tiles "
+         "should span. This determines the maximum zoom level"
+)
+@click.option(
+    '--max-zoom',
+    default=19,
+    help="The number of nucleotides that the highest resolution tiles "
+         "should span. This determines the maximum zoom level"
+)
+def geojson(
+    filepath, output_file, max_per_tile, tile_size, max_zoom
+):
+    _geojson(
+        filepath, output_file, max_per_tile, tile_size, max_zoom
     )
