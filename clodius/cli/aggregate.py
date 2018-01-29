@@ -95,6 +95,9 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
     '''
     f_in = h5py.File(filepath, 'r')
 
+    if output_file is None:
+        output_file = op.splitext(filepath)[0] + ".multires.mv5"
+
     (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
 
     cmv.create_multivec_multires(f_in, 

@@ -93,7 +93,6 @@ def create_multivec_multires(array_data, chromsizes,
         f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('name', shape=(len(chroms),), dtype=chrom_array.dtype, data=chrom_array, compression='gzip')
         f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('length', shape=(len(chroms),), data=lengths, compression='gzip')
 
-
         for chrom,length in zip(chroms, lengths):
             next_level_length = math.ceil(
                 len(f['resolutions'][str(prev_resolution)]['values'][chrom]) / 2)
