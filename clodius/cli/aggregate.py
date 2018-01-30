@@ -325,7 +325,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
 
     bed_file = open(filepath, 'r')
 
-    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromosizes(chromsizes_filename, assembly)
+    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
 
     def line_to_np_array(line):
         '''
