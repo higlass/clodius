@@ -1150,7 +1150,7 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
         f = open(filepath, 'r')
 
     if output_file is None:
-        output_file = filepath + ".geodb"
+        output_file = filepath + ".gjdb"
     else:
         output_file = output_file
 
@@ -1173,8 +1173,8 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
             for i, coord in enumerate(coord_group):
                 minX = min(minX, coord[0])
                 maxX = max(maxX, coord[0])
-                minY = min(minX, coord[1])
-                maxY = max(maxX, coord[1])
+                minY = min(minY, coord[1])
+                maxY = max(maxY, coord[1])
                 if not no_area_comp:
                     j = (i + 1) % n
                     area += coord_group[i][0] * coord_group[j][1]
@@ -1198,18 +1198,18 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
             pass
 
         try:
-            minX, maxX, minY, maxY, _area = getRect(
+            minLng, maxLng, minLat, maxLat, _area = getRect(
                 feature['geometry']['coordinates'], area
             )
             entries.append({
-                'minX': minX,
-                'maxX': maxX,
-                'minY': minY,
-                'maxY': maxY,
+                'minLng': minLng,
+                'maxLng': maxLng,
+                'minLat': minLat,
+                'maxLat': maxLat,
                 'importance': area or _area,
-                'chrOffset': 0,
                 'uid': uid or slugid.nice().decode('utf-8'),
-                'fields': '',
+                'geometry': json.dumps(feature['geometry']),
+                'properties': json.dumps(feature['properties']),
             })
         except Exception as e:
             raise
@@ -1219,17 +1219,31 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
     conn = sqlite3.connect(output_file)
 
     # store some meta data
-    store_meta_data(
-        conn,
-        1,
-        max_length=tile_size * 2 ** max_zoom,
-        assembly='',
-        chrom_names=[],
-        chrom_sizes=[],
-        tile_size=tile_size,
-        max_zoom=19,
-        max_width=tile_size * 2 ** max_zoom
+    conn.execute('''
+        CREATE TABLE tileset_info
+        (
+            zoom_step INT,
+            tile_size INT,
+            max_zoom INT,
+            min_x INT,
+            max_x INT,
+            min_y INT,
+            max_y INT
+        )
+        ''')
+
+    conn.execute(
+        'INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?)', (
+            1,
+            tile_size,
+            19,
+            -180,
+            180,
+            90,
+            -90
+        )
     )
+    conn.commit()
 
     # max_width = tile_size * 2 ** max_zoom
     # uid_to_entry = {}
@@ -1242,13 +1256,13 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
             id int PRIMARY KEY,
             zoomLevel int,
             importance real,
-            fromX int,
-            toX int,
-            fromY int,
-            toY int,
-            chrOffset int,
+            fromLng int,
+            toLng int,
+            fromLat int,
+            toLat int,
             uid text,
-            fields text
+            geometry text,
+            properties text
         )
         '''
     )
@@ -1256,8 +1270,8 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
     c.execute('''
         CREATE VIRTUAL TABLE position_index USING rtree(
             id,
-            rFromX, rToX,
-            rFromY, rToY
+            rFromLng, rToLng,
+            rFromLat, rToLat
         )
         ''')
 
@@ -1276,10 +1290,10 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
         while curr_zoom <= max_zoom:
             tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
             tile_from = list(
-                map(lambda x: x / tile_width, [d['minX'], d['minY']])
+                map(lambda x: x / tile_width, [d['minLng'], d['minLat']])
             )
             tile_to = list(
-                map(lambda x: x / tile_width, [d['maxX'], d['maxY']])
+                map(lambda x: x / tile_width, [d['maxLng'], d['maxLat']])
             )
 
             empty_tiles = True
@@ -1308,11 +1322,11 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
                         counter,
                         curr_zoom,
                         d['importance'],
-                        d['minX'], d['maxX'],
-                        d['minY'], d['maxY'],
-                        d['chrOffset'],
+                        d['minLng'], d['maxLng'],
+                        d['minLat'], d['maxLat'],
                         d['uid'],
-                        d['fields']
+                        d['geometry'],
+                        d['properties'],
                     )
                 )
                 conn.commit()
@@ -1322,10 +1336,8 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
                     (
                         # add counter as a primary key
                         counter,
-                        d['minX'],
-                        d['maxX'],
-                        d['minY'],
-                        d['maxY']
+                        d['minLng'], d['maxLng'],
+                        d['minLat'], d['maxLat'],
                     )
                 )
                 conn.commit()
@@ -1695,25 +1707,28 @@ def bedpe(
     metavar='FILEPATH'
 )
 @click.option(
-    '--output-file',
     '-o',
+    '--output-file',
     default=None,
     help="The default output file name to use. If this isn't"
          "specified, clodius will replace the current extension"
-         "with .geodb"
+         "with .gjdb"
 )
 @click.option(
+    '-m',
     '--max-per-tile',
     default=20,
     type=int
 )
 @click.option(
+    '-s',
     '--tile-size',
     default=256,
     help="The number of nucleotides that the highest resolution tiles "
          "should span. This determines the maximum zoom level"
 )
 @click.option(
+    '-z',
     '--max-zoom',
     default=19,
     help="The number of nucleotides that the highest resolution tiles "
