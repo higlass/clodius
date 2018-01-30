@@ -21,6 +21,8 @@ import time
 import gzip
 import json
 
+from .utils import get_tile_pos_from_lng_lat
+
 
 @cli.group()
 def aggregate():
@@ -1288,12 +1290,12 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
         curr_zoom = 0
 
         while curr_zoom <= max_zoom:
-            tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
-            tile_from = list(
-                map(lambda x: x / tile_width, [d['minLng'], d['minLat']])
+            tile_from = get_tile_pos_from_lng_lat(
+                d['minLng'], d['maxLat'], curr_zoom
             )
-            tile_to = list(
-                map(lambda x: x / tile_width, [d['maxLng'], d['maxLat']])
+
+            tile_to = get_tile_pos_from_lng_lat(
+                d['maxLng'], d['minLat'], curr_zoom
             )
 
             empty_tiles = True
