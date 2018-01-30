@@ -1256,10 +1256,10 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
             id int PRIMARY KEY,
             zoomLevel int,
             importance real,
-            fromLng int,
-            toLng int,
-            fromLat int,
-            toLat int,
+            minLng int,
+            maxLng int,
+            minLat int,
+            maxLat int,
             uid text,
             geometry text,
             properties text
@@ -1270,8 +1270,8 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
     c.execute('''
         CREATE VIRTUAL TABLE position_index USING rtree(
             id,
-            rFromLng, rToLng,
-            rFromLat, rToLat
+            rMinLng, rMaxLng,
+            rMinLat, rMaxLat
         )
         ''')
 
