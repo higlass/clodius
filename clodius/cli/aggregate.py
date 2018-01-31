@@ -321,6 +321,9 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
         chrom = line[0]
 
         if importance_column is None:
+            # assume a random importance when no aggregation strategy is given
+            importance = random.random()
+        elif importance_column == 'size':
             importance = stop - start
         elif importance_column == 'random':
             importance = random.random()
