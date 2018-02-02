@@ -3,10 +3,12 @@ import math
 import numpy as np
 import os
 import os.path as op
+import sys
 
 def create_multivec_multires(array_data, chromsizes, 
                     agg, starting_resolution=1,
-                    tile_size=1024, output_file='/tmp/my_file.multires'):
+                    tile_size=1024, output_file='/tmp/my_file.multires',
+                    row_infos=None):
     '''
     Create a multires file containing the array data
     aggregated at multiple resolutions.
@@ -55,7 +57,17 @@ def create_multivec_multires(array_data, chromsizes,
     chroms, lengths = zip(*chromsizes)
     chrom_array = np.array(chroms, dtype='S')
 
+    row_infos = None
+    print('array_data.attrs', list(array_data.attrs.keys()))
+    if 'row_infos' in array_data.attrs:
+        row_infos = array_data.attrs['row_infos']
+        print("adding row_infos")
+
     # add the chromosome information
+    if row_infos is not None:
+        print("adding row_infos1")
+        f['resolutions'][str(curr_resolution)].attrs.create('row_infos', row_infos)
+
     f['resolutions'][str(curr_resolution)].create_group('chroms')
     f['resolutions'][str(curr_resolution)].create_group('values')
     f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('name', shape=(len(chroms),), dtype=chrom_array.dtype, data=chrom_array, compression='gzip')
@@ -66,6 +78,10 @@ def create_multivec_multires(array_data, chromsizes,
 
     # add the data
     for chrom,length in zip(chroms, lengths):
+        if not chrom in array_data:
+            print("Missing chrom {} in input file".format(chrom), file=sys.stderr)
+            continue
+
         f['resolutions'][str(curr_resolution)]['values'].create_dataset(str(chrom), array_data[chrom].shape, compression='gzip')
         print("array_data.shape", array_data[chrom].shape)
         f['resolutions'][str(curr_resolution)]['values'][chrom][:] = array_data[chrom]    # see above section
@@ -88,12 +104,21 @@ def create_multivec_multires(array_data, chromsizes,
         # as the previous
         curr_resolution = prev_resolution * 2
         f['resolutions'].create_group(str(curr_resolution))
+
+        # add information about each of the rows
+        if row_infos is not None:
+            print("adding row_infos2")
+            f['resolutions'][str(curr_resolution)].attrs.create('row_infos', row_infos)
+
         f['resolutions'][str(curr_resolution)].create_group('chroms')
         f['resolutions'][str(curr_resolution)].create_group('values')
         f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('name', shape=(len(chroms),), dtype=chrom_array.dtype, data=chrom_array, compression='gzip')
         f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('length', shape=(len(chroms),), data=lengths, compression='gzip')
 
         for chrom,length in zip(chroms, lengths):
+            if chrom not in f['resolutions'][str(prev_resolution)]['values']:
+                continue
+
             next_level_length = math.ceil(
                 len(f['resolutions'][str(prev_resolution)]['values'][chrom]) / 2)
 
