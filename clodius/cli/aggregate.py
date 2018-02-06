@@ -28,7 +28,7 @@ def aggregate():
     pass
 
 def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names, 
-        chrom_sizes, tile_size, max_zoom, max_width):
+        chrom_sizes, tile_size, max_zoom, max_width, header=[]):
     print("chrom_names:", chrom_names)
 
     cursor.execute('''
@@ -41,14 +41,15 @@ def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names,
             chrom_sizes text,
             tile_size REAL,
             max_zoom INT,
-            max_width REAL
+            max_width REAL,
+            header text
         )
         ''')
 
-    cursor.execute('INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?)',
+    cursor.execute('INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?,?)',
             (zoom_step, max_length, assembly, 
                 "\t".join(chrom_names), "\t".join(map(str,chrom_sizes)),
-                tile_size, max_zoom, max_width))
+                tile_size, max_zoom, max_width, "\t".join(header)))
     cursor.commit()
 
     pass
@@ -320,6 +321,9 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
         chrom = line[0]
 
         if importance_column is None:
+            # assume a random importance when no aggregation strategy is given
+            importance = random.random()
+        elif importance_column == 'size':
             importance = stop - start
         elif importance_column == 'random':
             importance = random.random()
@@ -330,7 +334,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
 
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
         #nc.chr_pos_to_genome_pos(str(chrom), start, assembly)
-        genome_end = chrom_info.cum_chrom_lengths[chrom] + start + offset
+        genome_end = chrom_info.cum_chrom_lengths[chrom] + stop + offset
         #nc.chr_pos_to_genome_pos(chrom, stop, assembly)
 
         pos_offset = genome_start - start
@@ -349,10 +353,13 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     dset = []
 
     if has_header:
-        bed_file.readline()
+        line = bed_file.readline()
+        header = line.strip().split(delimiter)
     else:
         line = bed_file.readline().strip()
         dset += [line_to_np_array(line.strip().split(delimiter))]
+        header = map(str, list(range(1,len(line.strip().split(delimiter))+1)))
+    print("header:", header)
 
     for line in bed_file:
         dset += [line_to_np_array(line.strip().split(delimiter))]
@@ -385,6 +392,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     # this script stores data in a sqlite database
     import sqlite3
     sqlite3.register_adapter(np.int64, lambda val: int(val))
+    print("output_file:", output_file)
     conn = sqlite3.connect(output_file)
 
     # store some meta data
@@ -395,7 +403,8 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
             chrom_sizes = chrom_sizes,
             tile_size = tile_size,
             max_zoom = max_zoom,
-            max_width = tile_size * 2 ** max_zoom)
+            max_width = tile_size * 2 ** max_zoom,
+            header=header)
 
     max_width = tile_size * 2 ** max_zoom
     uid_to_entry = {}
@@ -712,7 +721,7 @@ def _bigwig(filepath, chunk_size=14, zoom_step=8, tile_size=1024, output_file=No
 def _bedgraph(filepath, output_file, assembly, chrom_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value,
-        transform, count_nan, chromsizes_filename, zoom_step):
+        transform, count_nan, closed_interval, chromsizes_filename, zoom_step):
     last_end = 0
     data = []
 
@@ -896,6 +905,12 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         # we're going to add as many values are as specified in the bedfile line
         values_to_add = [value] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
         nan_counts_to_add = [nan_count] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
+
+        if closed_interval:
+            values_to_add += [value]
+            nan_counts_to_add += [nan_count]
+
+        # print("values_to_add", values_to_add)
         
         values += values_to_add
         nan_values += nan_counts_to_add
@@ -1035,6 +1050,10 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         help="Simply count the number of nan values in the file",
         is_flag=True)
 @click.option(
+        '--closed-interval',
+        help="Treat the to column as a closed interval",
+        is_flag=True)
+@click.option(
         '--chromsizes-filename',
         help="A file containing chromosome sizes and order",
         default=None)
@@ -1047,11 +1066,13 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
 def bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value, 
-        transform, count_nan, chromsizes_filename, zoom_step):
+        transform, count_nan, closed_interval,
+        chromsizes_filename, zoom_step):
     _bedgraph(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chromosome, tile_size, chunk_size, method, nan_value, 
-        transform, count_nan, chromsizes_filename, zoom_step)
+        transform, count_nan, closed_interval,
+        chromsizes_filename, zoom_step)
 
 @aggregate.command()
 @click.argument(
