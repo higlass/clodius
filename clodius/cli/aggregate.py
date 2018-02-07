@@ -16,6 +16,7 @@ import os
 import os.path as op
 import pyBigWig as pbw
 import random
+import scipy.misc as sm
 import slugid
 import sqlite3
 import sys
@@ -78,7 +79,7 @@ def reduce_values_by_importance(entry1, entry2, max_entries_per_tile=100, revers
 
     return combined_entries[:max_entries_per_tile]
 
-def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution):
+def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method):
     '''
     Aggregate a multivec file.
 
@@ -100,9 +101,20 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
 
     (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
 
+    if method == 'maxtotal':
+        def agg(x):
+    if method=='logsumexp':
+        def agg(x):
+            a = x.T.reshape((x.shape[1],-1,2))
+            return sm.logsumexp(a, axis=2).T
+    else:
+        agg=lambda x: x.T.reshape((x.shape[1],-1,2)).sum(axis=2).T
+
+    print("agg:", agg) 
+
     cmv.create_multivec_multires(f_in, 
             chromsizes = zip(chrom_names, chrom_sizes),
-            agg=lambda x: x.T.reshape((x.shape[1],-1,2)).sum(axis=2).T,
+            agg=agg,
             starting_resolution=starting_resolution,
             tile_size=tile_size,
             output_file=output_file)
@@ -1062,7 +1074,7 @@ def _bedgraph(filepath, output_file, assembly, chrom_col,
         default=None)
 @click.option(
         '--transform',
-        help='The method used to aggregate values (e.g. sum, average...)',
+        help='Transform the data before aggregating',
         type=click.Choice(['none', 'exp2']),
         default='none')
 @click.option(
@@ -1333,5 +1345,10 @@ def bedpe(filepath, output_file, assembly, importance_column,
         '-s',
         default=256,
         help="The resolution that the starting data is at (e.g. 1, 10, 20)")
-def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution):
-    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution)
+@click.option(
+        '--method',
+        help='The method used to aggregate values (e.g. sum, average...)',
+        type=click.Choice(['sum', 'logsumexp']),
+        default='sum')
+def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method):
+    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method)
