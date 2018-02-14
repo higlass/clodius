@@ -111,20 +111,29 @@ def test_random_importance():
     rows = list(cdt.get_tiles(f.name, 1, 0).values()) + list(cdt.get_tiles(f.name, 1,1).values())
     #print('rows:', rows)
 
-    found = False
+    # check to make sure that tiles in the higher zoom levels are all present in lower zoom levels
+    found = {}
+    for row in cdt.get_tiles(f.name, 5, 15).values():
+        for rect in row:
+            found[rect['xStart']] = False
+
+
+    for row in cdt.get_tiles(f.name, 6, 30).values():
+        for rect in row:
+            if rect['xStart'] in found:
+                found[rect['xStart']] = True
+
     for row in cdt.get_tiles(f.name, 6, 31).values():
         for rect in row:
-            if rect['xEnd'] == 2195875458:
-                found = True
+            if rect['xStart'] in found:
+                found[rect['xStart']] = True
 
+    for key,value in found.items():
+        assert(value == True)
 
-    found = False
-    for row in cdt.get_tiles(f.name, 6, 32).values():
-        for rect in row:
-            if rect['xEnd'] == 2195875458:
-                found = True
-
-    assert(found == True)
+    # check the number of tiles returned
+    for row in cdt.get_tiles(f.name, 1, 0).values():
+        assert(len(row) <= 2)
 
     pass
 

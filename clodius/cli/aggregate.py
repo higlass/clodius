@@ -326,6 +326,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     bed_file = open(filepath, 'r')
 
     (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
+    rand = random.Random(3)
 
     def line_to_np_array(line):
         '''
@@ -342,11 +343,11 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
 
         if importance_column is None:
             # assume a random importance when no aggregation strategy is given
-            importance = random.random()
+            importance = rand.random()
         elif importance_column == 'size':
             importance = stop - start
         elif importance_column == 'random':
-            importance = random.random()
+            importance = rand.random()
         else:
             importance = int(line[int(importance_column)-1])
 
@@ -506,6 +507,17 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
                     tile_id = '{}.{}'.format(curr_zoom, curr_tile)
                     
                     tile_counts[tile_id] += 1
+
+                    # increment tile counts for lower level tiles
+                    higher_zoom = curr_zoom + 1
+                    higher_tile = math.floor(higher_zoom / 2)
+
+                    while higher_zoom <= max_viewable_zoom:
+                        new_tile_id = '{}.{}'.format(higher_zoom, higher_tile)
+                        higher_zoom += 1
+                        higher_tile = math.floor(higher_tile / 2)
+                        tile_counts[new_tile_id] += 1
+
 
                     curr_pos += tile_width
 
