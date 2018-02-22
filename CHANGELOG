@@ -1,3 +1,15 @@
+v0.7.3 (2018-01-31)
+
+- Use random importance by default
+
+v0.7.2 (2017-12-04)
+
+- Populate the xEnd field
+
+v0.7.1 (2017-12-04)
+
+- Added the 'header' field to beddb tiles
+
 v0.7.0 (2017-10-04)
 
 - Replaced get_2d_tile with get_2d_tiles

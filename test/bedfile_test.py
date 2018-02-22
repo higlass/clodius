@@ -54,6 +54,89 @@ def test_get_tiles():
 
     fields = tiles[0]['fields']
 
+def test_gene_annotations():
+    runner = clt.CliRunner()
+    input_file = op.join(testdir, 'sample_data', 'exon_unions_mm10.bed')
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    result = runner.invoke(
+            cca.bedfile,
+            [input_file,
+                '--max-per-tile', '20', '--importance-column', '5',
+                '--delimiter', '\t',
+                '--assembly', 'mm10', '--has-header', '--output-file', f.name])
+
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+
+
+    rows = cdt.get_tiles(f.name, 11, 113)
+    assert(rows[113][0]['fields'][3] == 'Lrp1b')
+    rows = cdt.get_tiles(f.name, 11, 112)
+    assert(rows[112][0]['fields'][3] == 'Lrp1b')
+
+def test_random_importance():
+    # check that when aggregating using random importance, all values that
+    # are in a higher resolution tile are also in the lower resolution
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    runner = clt.CliRunner()
+    input_file = op.join(testdir, 'sample_data', '25435_PM15-000877_SM-7QK6O.seg')
+
+    result = runner.invoke(
+            cca.bedfile,
+            [input_file,
+                '--max-per-tile', '2', '--importance-column', 'random',
+                '--assembly', 'b37', '--has-header', '--output-file', f.name])
+
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+
+    tileset_info = cdt.get_tileset_info(f.name)
+    # print("tileset_info:", tileset_info)
+
+    rows = cdt.get_tiles(f.name, 0, 0)
+    #print("rows:", rows)
+
+    rows = list(cdt.get_tiles(f.name, 1, 0).values()) + list(cdt.get_tiles(f.name, 1,1).values())
+    #print('rows:', rows)
+
+    # check to make sure that tiles in the higher zoom levels are all present in lower zoom levels
+    found = {}
+    for row in cdt.get_tiles(f.name, 5, 15).values():
+        for rect in row:
+            found[rect['xStart']] = False
+
+
+    for row in cdt.get_tiles(f.name, 6, 30).values():
+        for rect in row:
+            if rect['xStart'] in found:
+                found[rect['xStart']] = True
+
+    for row in cdt.get_tiles(f.name, 6, 31).values():
+        for rect in row:
+            if rect['xStart'] in found:
+                found[rect['xStart']] = True
+
+    for key,value in found.items():
+        assert(value == True)
+
+    # check the number of tiles returned
+    for row in cdt.get_tiles(f.name, 1, 0).values():
+        assert(len(row) <= 2)
+
+    pass
+
 def test_no_chromosome_limit():
     f = tempfile.NamedTemporaryFile(delete=False)
 
@@ -67,7 +150,14 @@ def test_no_chromosome_limit():
                 '--assembly', 'hg19',
                 '--output-file', f.name])
 
-    print("output:", result.output)
+    import traceback
+    print("exc_info:", result.exc_info)
+    a,b,tb = result.exc_info
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+
     rows = cdt.get_tiles(f.name, 0, 0)[0]
     foundOther = False
     

@@ -4,6 +4,8 @@ from __future__ import division, print_function
 from . import cli
 
 import click
+import clodius.chromosomes as cch
+import clodius.multivec as cmv
 import clodius.tiles as ct
 import collections as col
 import h5py
@@ -33,6 +35,10 @@ def aggregate():
     pass
 
 
+def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names, 
+        chrom_sizes, tile_size, max_zoom, max_width, header=[]):
+    print("chrom_names:", chrom_names)
+
 def store_meta_data(
     cursor,
     zoom_step,
@@ -54,7 +60,8 @@ def store_meta_data(
             chrom_sizes text,
             tile_size REAL,
             max_zoom INT,
-            max_width REAL
+            max_width REAL,
+            header text
         )
         ''')
 
@@ -70,6 +77,7 @@ def store_meta_data(
             max_width
         )
     )
+
     cursor.commit()
 
     pass
@@ -102,23 +110,39 @@ def reduce_values_by_importance(
     return combined_entries[:max_entries_per_tile]
 
 
-def _bedpe(
-    filepath,
-    output_file,
-    assembly,
-    importance_column,
-    has_header,
-    max_per_tile,
-    tile_size,
-    max_zoom=None,
-    chromosome=None,
-    chr1_col=0,
-    from1_col=1,
-    to1_col=2,
-    chr2_col=3,
-    from2_col=4,
-    to2_col=5
-):
+def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution):
+    '''
+    Aggregate a multivec file.
+
+    This is a file containing nxn data that is aggregated along only one axis. 
+    This data should be in an HDF5 file where each dataset is named for a chromosome.
+
+    Example: f['chr1'] = [[1,2,3],[4,5,6]]
+
+    The resulting data will be organized by resolution and chromosome.
+
+    Example: f_out['1000']['chr1']=[[1000,2000,3000],[4000,5000,6000]]
+
+    Aggregation is currently done by summing adjacent values.
+    '''
+    f_in = h5py.File(filepath, 'r')
+
+    if output_file is None:
+        output_file = op.splitext(filepath)[0] + ".multires.mv5"
+
+    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
+
+    cmv.create_multivec_multires(f_in, 
+            chromsizes = zip(chrom_names, chrom_sizes),
+            agg=lambda x: x.T.reshape((x.shape[1],-1,2)).sum(axis=2).T,
+            starting_resolution=starting_resolution,
+            tile_size=tile_size,
+            output_file=output_file)
+
+def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile, 
+        tile_size, max_zoom=None, chromosome=None, 
+        chr1_col=0, from1_col=1, to1_col=2,
+        chr2_col=3, from2_col=4, to2_col=5):
     print('output_file:', output_file)
 
     if filepath == '-':
@@ -374,19 +398,8 @@ def _bedfile(
 
     bed_file = open(filepath, 'r')
 
-    if chromsizes_filename is not None:
-        chrom_info = nc.get_chrominfo_from_file(chromsizes_filename)
-        chrom_names = chrom_info.chrom_order
-        chrom_sizes = [
-            chrom_info.chrom_lengths[c] for c in chrom_info.chrom_order
-        ]
-    else:
-        chrom_info = nc.get_chrominfo(assembly)
-        chrom_names = nc.get_chromorder(assembly)
-        chrom_sizes = nc.get_chromsizes(assembly)
-
-    print("chrom_names:", chrom_info.chrom_order)
-    print("chrom_sizes:", chrom_sizes)
+    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
+    rand = random.Random(3)
 
     def line_to_np_array(line):
         '''
@@ -404,15 +417,19 @@ def _bedfile(
         chrom = line[0]
 
         if importance_column is None:
+            # assume a random importance when no aggregation strategy is given
+            importance = rand.random()
+        elif importance_column == 'size':
             importance = stop - start
         elif importance_column == 'random':
-            importance = random.random()
+            importance = rand.random()
         else:
             importance = int(line[int(importance_column)-1])
 
         # convert chromosome coordinates to genome coordinates
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
         genome_end = chrom_info.cum_chrom_lengths[chrom] + start + offset
+
 
         pos_offset = genome_start - start
         parts = {
@@ -430,10 +447,13 @@ def _bedfile(
     dset = []
 
     if has_header:
-        bed_file.readline()
+        line = bed_file.readline()
+        header = line.strip().split(delimiter)
     else:
         line = bed_file.readline().strip()
         dset += [line_to_np_array(line.strip().split(delimiter))]
+        header = map(str, list(range(1,len(line.strip().split(delimiter))+1)))
+    print("header:", header)
 
     for line in bed_file:
         dset += [line_to_np_array(line.strip().split(delimiter))]
@@ -471,6 +491,7 @@ def _bedfile(
     # this script stores data in a sqlite database
     import sqlite3
     sqlite3.register_adapter(np.int64, lambda val: int(val))
+    print("output_file:", output_file)
     conn = sqlite3.connect(output_file)
 
     # store some meta data
@@ -485,6 +506,7 @@ def _bedfile(
         max_zoom=max_zoom,
         max_width=tile_size * 2 ** max_zoom
     )
+
 
     max_width = tile_size * 2 ** max_zoom
     uid_to_entry = {}
@@ -533,23 +555,113 @@ def _bedfile(
     if max_zoom is not None and max_zoom < max_zoom:
         max_viewable_zoom = max_zoom
 
-    while curr_zoom <= max_viewable_zoom and len(intervals) > 0:
+    sorted_intervals = sorted(intervals, 
+                    key=lambda x: -uid_to_entry[x[-1]]['importance'])
+    print('si:', sorted_intervals[:10])
+
+    tile_counts = col.defaultdict(int)
+
+    for interval in sorted_intervals:
+        # go through each interval from most important to least
+        while curr_zoom <= max_viewable_zoom:
+            # try to place it in the highest zoom level and go down from there
+            tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
+
+            curr_pos = interval[0]
+            space_available = True
+
+            # check if there's space at this zoom level
+            while curr_pos < interval[1]:
+                curr_tile = math.floor(curr_pos / tile_width)
+                tile_id = '{}.{}'.format(curr_zoom, curr_tile)
+                
+                if tile_counts[tile_id] >= max_per_tile:
+                    space_available = False
+                    break
+
+                curr_pos += tile_width
+
+            # if there is, then fill it up
+            if space_available:
+                curr_pos = interval[0]
+                while curr_pos < interval[1]:
+                    curr_tile = math.floor(curr_pos / tile_width)
+                    tile_id = '{}.{}'.format(curr_zoom, curr_tile)
+                    
+                    tile_counts[tile_id] += 1
+
+                    # increment tile counts for lower level tiles
+                    higher_zoom = curr_zoom + 1
+                    higher_tile = math.floor(higher_zoom / 2)
+
+                    while higher_zoom <= max_viewable_zoom:
+                        new_tile_id = '{}.{}'.format(higher_zoom, higher_tile)
+                        higher_zoom += 1
+                        higher_tile = math.floor(higher_tile / 2)
+                        tile_counts[new_tile_id] += 1
+
+
+                    curr_pos += tile_width
+
+            if space_available:
+                # there's available space
+                value = uid_to_entry[interval[-1]]
+
+                # one extra question mark for the primary key
+                exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
+                #print("value:", value['startPos'])
+
+                ret = c.execute(
+                        exec_statement,
+                        # primary key, zoomLevel, startPos, endPos, chrOffset, line
+                        (counter, curr_zoom,
+                            value['importance'],
+                            value['startPos'], value['endPos'],
+                            value['chrOffset'],
+                            value['uid'],
+                            value['fields'])
+                        )
+
+                exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
+                ret = c.execute(
+                        exec_statement,
+                        (counter, value['startPos'], value['endPos'])  #add counter as a primary key
+                        )
+
+                counter += 1
+                break
+
+            curr_zoom += 1
+
+        curr_zoom = 0
+    conn.commit()
+    return
+
+
+    while curr_zoom <= max_viewable_zoom and len(sorted_intervals) > 0:
         # at each zoom level, add the top genes
         tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
 
         for tile_num in range(max_width // tile_width):
+            print("curr_zoom", curr_zoom, tile_num, len(sorted_intervals))
             # go over each tile and distribute the remaining values
             from_value = tile_num * tile_width
             to_value = (tile_num + 1) * tile_width
-            entries = [
-                i for i in intervals if (i[0] < to_value and i[1] > from_value)
-            ]
-            values_in_tile = sorted(
-                entries,
-                key=lambda x: -uid_to_entry[x[-1]]['importance']
-            )[:max_per_tile]   # the importance is always the last column
-            # take the negative because we want to prioritize
-            # higher values
+
+            values_in_tile = []
+            curr_index = 0
+            while len(values_in_tile) < max_per_tile and curr_index < len(sorted_intervals):
+                if sorted_intervals[curr_index][0] < to_value and sorted_intervals[curr_index][1] > from_value:
+                    values_in_tile += [sorted_intervals[curr_index]]
+                curr_index += 1
+
+            '''
+            entries = [i for i in intervals if (i[0] < to_value and i[1] > from_value)]
+            values_in_tile = sorted(entries,
+                    key=lambda x: -uid_to_entry[x[-1]]['importance'])[:max_per_tile]   # the importance is always the last column
+                                                            # take the negative because we want to prioritize
+                                                            # higher values
+            '''
 
             if len(values_in_tile) > 0:
                 for v in values_in_tile:
@@ -577,7 +689,9 @@ def _bedfile(
                         (counter, value['startPos'], value['endPos'])
                     )
                     conn.commit()
-                    intervals.remove(v)
+
+                    sorted_intervals.remove(v)
+        #print ("curr_zoom:", curr_zoom, file=sys.stderr)
 
         curr_zoom += 1
 
@@ -844,7 +958,6 @@ def _bigwig(
     t1 = time.time()
     pass
 
-
 ###############################################################################
 def _bedgraph(
     filepath,
@@ -1075,15 +1188,17 @@ def _bedgraph(
                 else np.nan
             )
 
-        # we're going to add as many values are as specified in the bedfile
-        # line
-        values_to_add = [value] * (
-            int(parts[to_pos_col-1]) - int(parts[from_pos_col-1])
-        )
-        nan_counts_to_add = [nan_count] * (
-            int(parts[to_pos_col-1]) - int(parts[from_pos_col-1])
-        )
 
+        # we're going to add as many values are as specified in the bedfile line
+        values_to_add = [value] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
+        nan_counts_to_add = [nan_count] * (int(parts[to_pos_col-1]) - int(parts[from_pos_col-1]))
+
+        if closed_interval:
+            values_to_add += [value]
+            nan_counts_to_add += [nan_count]
+
+        # print("values_to_add", values_to_add)
+        
         values += values_to_add
         nan_values += nan_counts_to_add
 
@@ -1447,31 +1562,30 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
     is_flag=True
 )
 @click.option(
-    '--chromsizes-filename',
-    help="A file containing chromosome sizes and order",
-    default=None
-)
+        '--closed-interval',
+        help="Treat the to column as a closed interval",
+        is_flag=True)
 @click.option(
-    '--zoom-step',
-    '-z',
-    help="The number of intermediate aggregation levels to"
-         "omit",
-    default=8
-)
-def bedgraph(
-    filepath, output_file, assembly, chromosome_col,
-    from_pos_col, to_pos_col, value_col, has_header,
-    chromosome, tile_size, chunk_size, method, nan_value,
-    transform, count_nan, chromsizes_filename, zoom_step
-):
-    _bedgraph(
-        filepath, output_file, assembly, chromosome_col,
-        from_pos_col, to_pos_col, value_col, has_header,
-        chromosome, tile_size, chunk_size, method, nan_value,
-        transform, count_nan, chromsizes_filename, zoom_step
-    )
-
-
+        '--chromsizes-filename',
+        help="A file containing chromosome sizes and order",
+        default=None)
+@click.option(
+        '--zoom-step',
+        '-z',
+        help="The number of intermediate aggregation levels to"
+             "omit",
+        default=8)
+def bedgraph(filepath, output_file, assembly, chromosome_col, 
+        from_pos_col, to_pos_col, value_col, has_header, 
+        chromosome, tile_size, chunk_size, method, nan_value, 
+        transform, count_nan, closed_interval,
+        chromsizes_filename, zoom_step):
+    _bedgraph(filepath, output_file, assembly, chromosome_col, 
+        from_pos_col, to_pos_col, value_col, has_header, 
+        chromosome, tile_size, chunk_size, method, nan_value, 
+        transform, count_nan, closed_interval,
+        chromsizes_filename, zoom_step)
+    
 @aggregate.command()
 @click.argument(
         'filepath',
