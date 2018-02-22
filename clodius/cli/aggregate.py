@@ -338,6 +338,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     bed_file = open(filepath, 'r')
 
     (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
+    rand = random.Random(3)
 
     def line_to_np_array(line):
         '''
@@ -354,11 +355,11 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
 
         if importance_column is None:
             # assume a random importance when no aggregation strategy is given
-            importance = random.random()
+            importance = rand.random()
         elif importance_column == 'size':
             importance = stop - start
         elif importance_column == 'random':
-            importance = random.random()
+            importance = rand.random()
         else:
             importance = int(line[int(importance_column)-1])
 
@@ -484,20 +485,114 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
     if max_zoom is not None and max_zoom < max_zoom:
         max_viewable_zoom = max_zoom
 
-    while curr_zoom <= max_viewable_zoom and len(intervals) > 0:
+    sorted_intervals = sorted(intervals, 
+                    key=lambda x: -uid_to_entry[x[-1]]['importance'])
+    print('si:', sorted_intervals[:10])
+
+    tile_counts = col.defaultdict(int)
+
+    for interval in sorted_intervals:
+        # go through each interval from most important to least
+        while curr_zoom <= max_viewable_zoom:
+            # try to place it in the highest zoom level and go down from there
+            tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
+
+            curr_pos = interval[0]
+            space_available = True
+
+            # check if there's space at this zoom level
+            while curr_pos < interval[1]:
+                curr_tile = math.floor(curr_pos / tile_width)
+                tile_id = '{}.{}'.format(curr_zoom, curr_tile)
+                
+                if tile_counts[tile_id] >= max_per_tile:
+                    space_available = False
+                    break
+
+                curr_pos += tile_width
+
+            # if there is, then fill it up
+            if space_available:
+                curr_pos = interval[0]
+                while curr_pos < interval[1]:
+                    curr_tile = math.floor(curr_pos / tile_width)
+                    tile_id = '{}.{}'.format(curr_zoom, curr_tile)
+                    
+                    tile_counts[tile_id] += 1
+
+                    # increment tile counts for lower level tiles
+                    higher_zoom = curr_zoom + 1
+                    higher_tile = math.floor(higher_zoom / 2)
+
+                    while higher_zoom <= max_viewable_zoom:
+                        new_tile_id = '{}.{}'.format(higher_zoom, higher_tile)
+                        higher_zoom += 1
+                        higher_tile = math.floor(higher_tile / 2)
+                        tile_counts[new_tile_id] += 1
+
+
+                    curr_pos += tile_width
+
+            if space_available:
+                # there's available space
+                value = uid_to_entry[interval[-1]]
+
+                # one extra question mark for the primary key
+                exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
+                #print("value:", value['startPos'])
+
+                ret = c.execute(
+                        exec_statement,
+                        # primary key, zoomLevel, startPos, endPos, chrOffset, line
+                        (counter, curr_zoom,
+                            value['importance'],
+                            value['startPos'], value['endPos'],
+                            value['chrOffset'],
+                            value['uid'],
+                            value['fields'])
+                        )
+
+                exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
+                ret = c.execute(
+                        exec_statement,
+                        (counter, value['startPos'], value['endPos'])  #add counter as a primary key
+                        )
+
+                counter += 1
+                break
+
+            curr_zoom += 1
+
+        curr_zoom = 0
+    conn.commit()
+    return
+
+
+    while curr_zoom <= max_viewable_zoom and len(sorted_intervals) > 0:
         # at each zoom level, add the top genes
         tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
 
         for tile_num in range(max_width // tile_width):
+            print("curr_zoom", curr_zoom, tile_num, len(sorted_intervals))
             # go over each tile and distribute the remaining values
             #values = interval_tree[tile_num * tile_width: (tile_num+1) * tile_width]
             from_value = tile_num * tile_width
             to_value = (tile_num + 1) * tile_width
+
+            values_in_tile = []
+            curr_index = 0
+            while len(values_in_tile) < max_per_tile and curr_index < len(sorted_intervals):
+                if sorted_intervals[curr_index][0] < to_value and sorted_intervals[curr_index][1] > from_value:
+                    values_in_tile += [sorted_intervals[curr_index]]
+                curr_index += 1
+
+            '''
             entries = [i for i in intervals if (i[0] < to_value and i[1] > from_value)]
             values_in_tile = sorted(entries,
                     key=lambda x: -uid_to_entry[x[-1]]['importance'])[:max_per_tile]   # the importance is always the last column
                                                             # take the negative because we want to prioritize
                                                             # higher values
+            '''
 
             if len(values_in_tile) > 0:
                 for v in values_in_tile:
@@ -527,7 +622,7 @@ def _bedfile(filepath, output_file, assembly, importance_column, has_header,
                             (counter, value['startPos'], value['endPos'])  #add counter as a primary key
                             )
                     conn.commit()
-                    intervals.remove(v)
+                    sorted_intervals.remove(v)
         #print ("curr_zoom:", curr_zoom, file=sys.stderr)
         curr_zoom += 1
 
