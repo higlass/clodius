@@ -13,6 +13,8 @@ def get_tileset_info(db_file):
     else:
         header = ""
 
+    print("row:", row)
+
     tileset_info = {
             'zoom_step': row[0],
             'max_length': row[1],

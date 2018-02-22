@@ -1367,8 +1367,8 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
             19,
             -180,
             180,
-            90,
-            -90
+            -90,
+            90
         )
     )
     conn.commit()
