@@ -114,14 +114,16 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
     '''
     Aggregate a multivec file.
 
-    This is a file containing nxn data that is aggregated along only one axis. 
-    This data should be in an HDF5 file where each dataset is named for a chromosome.
+    This is a file containing nxn data that is aggregated along only one axis.
+    This data should be in an HDF5 file where each dataset is named for a
+    chromosome and contains a 'resolutions' group containing values for the
+    base level resolution.
 
-    Example: f['chr1'] = [[1,2,3],[4,5,6]]
+    Example: f['chr1']['reslutions']['1000'] = [[1,2,3],[4,5,6]]
 
     The resulting data will be organized by resolution and chromosome.
 
-    Example: f_out['1000']['chr1']=[[1000,2000,3000],[4000,5000,6000]]
+    Example: f_out['chr1']['resolutions']['5000']=[[1000,2000,3000],[4000,5000,6000]]
 
     Aggregation is currently done by summing adjacent values.
     '''
