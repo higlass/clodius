@@ -17,5 +17,6 @@ def cli():
     pass
 
 from . import (
-    aggregate
+    aggregate,
+    convert,
 )

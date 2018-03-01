@@ -1,3 +1,8 @@
+### Converting bedfile to multivec
+
+clodius convert bedfile_to_multivec test/sample_data/sample.bed.gz  --has-header --assembly hg38 --base-resolution 10
+clodius aggregate multivec test/sample_data/sample.bed.multivec --assembly hg38 --base-resolution 10
+
 ### Getting gene summaries
 
 cat ~/data/genbank-data/mm9/gene_summaries_*.tsv > ~/data/genbank-data/mm9/all_gene_summaries.tsv

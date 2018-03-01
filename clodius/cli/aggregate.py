@@ -136,7 +136,7 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
 
     cmv.create_multivec_multires(f_in, 
             chromsizes = zip(chrom_names, chrom_sizes),
-            agg=lambda x: x.T.reshape((x.shape[1],-1,2)).sum(axis=2).T,
+            agg=lambda x: np.nansum(x.T.reshape((x.shape[1],-1,2)),axis=2).T,
             starting_resolution=starting_resolution,
             tile_size=tile_size,
             output_file=output_file)
@@ -1858,3 +1858,43 @@ def geojson(
     _geojson(
         filepath, output_file, max_per_tile, tile_size, max_zoom
     )
+
+
+@aggregate.command()
+@click.argument(
+        'filepath',
+        metavar='FILEPATH'
+        )
+@click.option(
+        '--output-file',
+        '-o',
+        default=None,
+        help="The default output file name to use. If this isn't"
+             "specified, clodius will replace the current extension"
+             "with .hitile"
+        )
+@click.option(
+        '--assembly',
+        '-a',
+        help='The genome assembly that this file was created against',
+        type=click.Choice(nc.available_chromsizes()),
+        default='hg19')
+@click.option(
+        '--tile-size',
+        '-t',
+        default=256,
+        help="The number of data points in each tile."
+             "Used to determine the number of zoom levels"
+             "to create.")
+@click.option(
+        '--chromsizes-filename',
+        help="A file containing chromosome sizes and order",
+        default=None)
+@click.option(
+        '--base-resolution',
+        '-s',
+        default=256,
+        help="The resolution that the starting data is at (e.g. 1, 10, 20)")
+def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution):
+    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution)
+
