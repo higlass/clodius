@@ -1,11 +1,86 @@
 from __future__ import print_function
 
+import gzip
 import h5py
 import math
 import numpy as np
 import os
 import os.path as op
 import sys
+
+def bedfile_to_multivec(input_filename, f_out, 
+        bedline_to_chrom_start_end_vector, base_resolution,
+        has_header):
+    '''
+    Convert an epilogos bedfile to multivec format.
+    '''
+    if op.splitext(input_filename)[1] == '.gz':
+        f = gzip.open(input_filename, 'r')
+    else:
+        f = open(input_filename, 'r')
+        
+    FILL_VALUE = np.nan
+
+    # batch regions because h5py is really bad at writing
+    batch_length = 1e5
+    batch = []
+
+    # the current index in the dataset
+    curr_index = 0
+    # the start of the batch in the dataset
+    batch_start_index = 0
+    
+    if has_header:
+        f.readline()
+
+    prev_chrom = None
+    for line in f:
+        chrom,start,end,vector = bedline_to_chrom_start_end_vector(line)
+
+        if prev_chrom is not None and chrom != prev_chrom:
+            # we've reached a new chromosome so we'll dump all
+            # the previous values
+            f_out[prev_chrom][batch_start_index:batch_start_index+len(batch)] = np.array(batch)
+            
+            print("new_chrom", prev_chrom, chrom)
+            # we're starting a new chromosome so we start from the beginning
+            curr_index = 0
+            batch_start_index = 0
+            batch = []
+        prev_chrom = chrom
+
+        #print('parts', parts)
+        #print('chrom:', chrom, start)
+
+        data_start_index = start // base_resolution
+
+        # if the bedfile skips over a region, we have to add it as empty values
+        # to preserve our batch writing
+        while curr_index < data_start_index:
+            batch += [[FILL_VALUE] * len(vector)]
+            curr_index += 1
+
+        if curr_index != data_start_index:
+            print("curr_index:", curr_index, data_start_index)
+            print("line:", line)
+
+        assert(curr_index == data_start_index)
+        #print('vector', vector)
+        batch += [vector]
+        curr_index += 1
+
+        # fill in empty
+
+        if len(batch) >= batch_length:
+            # dump batch
+            f_out[chrom][batch_start_index:batch_start_index+len(batch)] = np.array(batch)
+            batch = []
+            batch_start_index = curr_index
+            print("dumping batch:", chrom, batch_start_index)
+
+    print("batch:", np.array(batch), batch_start_index)
+    #print('chrom', chrom)
+    f_out[chrom][batch_start_index:batch_start_index+len(batch)] = np.array(batch)
 
 def create_multivec_multires(array_data, chromsizes, 
                     agg, starting_resolution=1,

@@ -114,14 +114,16 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
     '''
     Aggregate a multivec file.
 
-    This is a file containing nxn data that is aggregated along only one axis. 
-    This data should be in an HDF5 file where each dataset is named for a chromosome.
+    This is a file containing nxn data that is aggregated along only one axis.
+    This data should be in an HDF5 file where each dataset is named for a
+    chromosome and contains a 'resolutions' group containing values for the
+    base level resolution.
 
-    Example: f['chr1'] = [[1,2,3],[4,5,6]]
+    Example: f['chr1']['reslutions']['1000'] = [[1,2,3],[4,5,6]]
 
     The resulting data will be organized by resolution and chromosome.
 
-    Example: f_out['1000']['chr1']=[[1000,2000,3000],[4000,5000,6000]]
+    Example: f_out['chr1']['resolutions']['5000']=[[1000,2000,3000],[4000,5000,6000]]
 
     Aggregation is currently done by summing adjacent values.
     '''
@@ -145,7 +147,7 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
 
     cmv.create_multivec_multires(f_in, 
             chromsizes = zip(chrom_names, chrom_sizes),
-            agg=agg,
+            agg=lambda x: np.nansum(x.T.reshape((x.shape[1],-1,2)),axis=2).T,
             starting_resolution=starting_resolution,
             tile_size=tile_size,
             output_file=output_file)
@@ -1906,3 +1908,43 @@ def geojson(
     _geojson(
         filepath, output_file, max_per_tile, tile_size, max_zoom
     )
+
+
+@aggregate.command()
+@click.argument(
+        'filepath',
+        metavar='FILEPATH'
+        )
+@click.option(
+        '--output-file',
+        '-o',
+        default=None,
+        help="The default output file name to use. If this isn't"
+             "specified, clodius will replace the current extension"
+             "with .hitile"
+        )
+@click.option(
+        '--assembly',
+        '-a',
+        help='The genome assembly that this file was created against',
+        type=click.Choice(nc.available_chromsizes()),
+        default='hg19')
+@click.option(
+        '--tile-size',
+        '-t',
+        default=256,
+        help="The number of data points in each tile."
+             "Used to determine the number of zoom levels"
+             "to create.")
+@click.option(
+        '--chromsizes-filename',
+        help="A file containing chromosome sizes and order",
+        default=None)
+@click.option(
+        '--base-resolution',
+        '-s',
+        default=256,
+        help="The resolution that the starting data is at (e.g. 1, 10, 20)")
+def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution):
+    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution)
+
