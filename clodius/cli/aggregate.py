@@ -48,7 +48,8 @@ def store_meta_data(
     chrom_sizes,
     tile_size,
     max_zoom,
-    max_width
+    max_width,
+    header=[]
 ):
     cursor.execute('''
         CREATE TABLE tileset_info
@@ -66,7 +67,7 @@ def store_meta_data(
         ''')
 
     cursor.execute(
-        'INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?)', (
+        'INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?,?)', (
             zoom_step,
             max_length,
             assembly,
@@ -74,7 +75,8 @@ def store_meta_data(
             "\t".join(map(str, chrom_sizes)),
             tile_size,
             max_zoom,
-            max_width
+            max_width,
+            "\t".join(header)
         )
     )
 
