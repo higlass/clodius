@@ -73,7 +73,13 @@ def bedfile_to_multivec(input_filename, f_out,
 
         if len(batch) >= batch_length:
             # dump batch
-            f_out[chrom][batch_start_index:batch_start_index+len(batch)] = np.array(batch)
+            try:
+                f_out[chrom][batch_start_index:batch_start_index+len(batch)] = np.array(batch)
+            except TypeError as ex:
+                print("Error:", ex, file=sys.stderr)
+                print("Probably need to set the --num-rows parameter", file=sys.stderr)
+                return
+
             batch = []
             batch_start_index = curr_index
             print("dumping batch:", chrom, batch_start_index)
