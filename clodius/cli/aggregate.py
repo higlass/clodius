@@ -112,7 +112,7 @@ def reduce_values_by_importance(
     return combined_entries[:max_entries_per_tile]
 
 
-def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution):
+def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, row_infos_filename=None):
     '''
     Aggregate a multivec file.
 
@@ -136,12 +136,20 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
 
     (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
 
+    if row_infos_filename is not None:
+        with open(row_infos_filename, 'r') as fr:
+            row_infos = [l.strip().encode('utf8') for l in fr]
+    else:
+        row_infos = None
+    print("row_infos:", row_infos)
+
     cmv.create_multivec_multires(f_in, 
             chromsizes = zip(chrom_names, chrom_sizes),
             agg=lambda x: np.nansum(x.T.reshape((x.shape[1],-1,2)),axis=2).T,
             starting_resolution=starting_resolution,
             tile_size=tile_size,
-            output_file=output_file)
+            output_file=output_file,
+            row_infos=row_infos)
 
 def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile, 
         tile_size, max_zoom=None, chromosome=None, 
@@ -1893,10 +1901,14 @@ def geojson(
         help="A file containing chromosome sizes and order",
         default=None)
 @click.option(
-        '--base-resolution',
+        '--starting-resolution',
         '-s',
         default=256,
         help="The resolution that the starting data is at (e.g. 1, 10, 20)")
-def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution):
-    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution)
+@click.option(
+        '--row-infos-filename',
+        help="A file containing the names of the rows in the multivec file",
+        default=None)
+def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution, row_infos_filename):
+    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution, row_infos_filename)
 

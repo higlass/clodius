@@ -134,7 +134,7 @@ def create_multivec_multires(array_data, chromsizes,
     chroms, lengths = zip(*chromsizes)
     chrom_array = np.array(chroms, dtype='S')
 
-    row_infos = None
+    # row_infos = None
     print('array_data.attrs', list(array_data.attrs.keys()))
     if 'row_infos' in array_data.attrs:
         row_infos = array_data.attrs['row_infos']
