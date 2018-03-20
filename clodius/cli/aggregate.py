@@ -408,7 +408,11 @@ def _bedfile(
     if op.exists(output_file):
         os.remove(output_file)
 
-    bed_file = open(filepath, 'r')
+    if filepath.endswith('.gz'):
+        import gzip
+        bed_file = gzip.open(filepath, 'rt')
+    else:
+        bed_file = open(filepath, 'r')
 
     (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
     rand = random.Random(3)
