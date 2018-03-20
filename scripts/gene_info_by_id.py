@@ -59,6 +59,7 @@ def main():
         try:
             gene_id = int(gene_id)
         except Exception as ex:
+            print("Gene id not a number as expected", file=sys.stderr)
             continue
 
         if gene_id in exclude_ids:
@@ -78,7 +79,7 @@ def main():
             print("{}\t{}".format(gene_id, gene_summary))
         except Exception as ex:
             print(ex, "gene_id:", gene_id, "ret_status:", ret.status_code, file=sys.stderr )
-            print("{}\tNo description found".format(gene_id))
+            print("{}\t".format(gene_id))
          
 
 if __name__ == '__main__':

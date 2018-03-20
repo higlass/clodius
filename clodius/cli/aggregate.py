@@ -16,6 +16,7 @@ import os
 import os.path as op
 import pyBigWig as pbw
 import random
+import scipy.misc as sm
 import slugid
 import sqlite3
 import sys
@@ -111,7 +112,6 @@ def reduce_values_by_importance(
 
     return combined_entries[:max_entries_per_tile]
 
-
 def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, row_infos_filename=None):
     '''
     Aggregate a multivec file.
@@ -136,6 +136,16 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
 
     (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
 
+    if method == 'maxtotal':
+        pass
+    if method=='logsumexp':
+        def agg(x):
+            a = x.T.reshape((x.shape[1],-1,2))
+            return sm.logsumexp(a, axis=2).T
+    else:
+        agg=lambda x: x.T.reshape((x.shape[1],-1,2)).sum(axis=2).T
+
+    print("agg:", agg) 
     if row_infos_filename is not None:
         with open(row_infos_filename, 'r') as fr:
             row_infos = [l.strip().encode('utf8') for l in fr]
@@ -1372,8 +1382,8 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
             19,
             -180,
             180,
-            90,
-            -90
+            -90,
+            90
         )
     )
     conn.commit()
@@ -1832,6 +1842,45 @@ def bedpe(
         chr2_col=chr2_col-1, from2_col=from2_col-1, to2_col=to2_col-1
     )
 
+
+@aggregate.command()
+@click.argument(
+    'filepath',
+    metavar='FILEPATH'
+)
+@click.option(
+    '-o',
+    '--output-file',
+    default=None,
+    help="The default output file name to use. If this isn't"
+         "specified, clodius will replace the current extension"
+         "with .gjdb"
+)
+@click.option(
+    '-m',
+    '--max-per-tile',
+    default=20,
+    type=int
+)
+@click.option(
+    '-s',
+    '--tile-size',
+    default=256,
+    help="The number of nucleotides that the highest resolution tiles "
+         "should span. This determines the maximum zoom level"
+)
+@click.option(
+        '--starting-resolution',
+        '-s',
+        default=256,
+        help="The resolution that the starting data is at (e.g. 1, 10, 20)")
+@click.option(
+        '--method',
+        help='The method used to aggregate values (e.g. sum, average...)',
+        type=click.Choice(['sum', 'logsumexp']),
+        default='sum')
+def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method):
+    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method)
 
 @aggregate.command()
 @click.argument(

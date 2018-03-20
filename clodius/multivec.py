@@ -42,7 +42,6 @@ def bedfile_to_multivec(input_filename, f_out,
             # the previous values
             f_out[prev_chrom][batch_start_index:batch_start_index+len(batch)] = np.array(batch)
             
-            print("new_chrom", prev_chrom, chrom)
             # we're starting a new chromosome so we start from the beginning
             curr_index = 0
             batch_start_index = 0
@@ -60,9 +59,11 @@ def bedfile_to_multivec(input_filename, f_out,
             batch += [[FILL_VALUE] * len(vector)]
             curr_index += 1
 
+        '''
         if curr_index != data_start_index:
             print("curr_index:", curr_index, data_start_index)
             print("line:", line)
+        '''
 
         assert(curr_index == data_start_index)
         #print('vector', vector)
@@ -84,7 +85,6 @@ def bedfile_to_multivec(input_filename, f_out,
             batch_start_index = curr_index
             print("dumping batch:", chrom, batch_start_index)
 
-    print("batch:", np.array(batch), batch_start_index)
     #print('chrom', chrom)
     f_out[chrom][batch_start_index:batch_start_index+len(batch)] = np.array(batch)
 
@@ -141,14 +141,11 @@ def create_multivec_multires(array_data, chromsizes,
     chrom_array = np.array(chroms, dtype='S')
 
     # row_infos = None
-    print('array_data.attrs', list(array_data.attrs.keys()))
     if 'row_infos' in array_data.attrs:
         row_infos = array_data.attrs['row_infos']
-        print("adding row_infos")
 
     # add the chromosome information
     if row_infos is not None:
-        print("adding row_infos1")
         f['resolutions'][str(curr_resolution)].attrs.create('row_infos', row_infos)
 
     f['resolutions'][str(curr_resolution)].create_group('chroms')
@@ -166,7 +163,6 @@ def create_multivec_multires(array_data, chromsizes,
             continue
 
         f['resolutions'][str(curr_resolution)]['values'].create_dataset(str(chrom), array_data[chrom].shape, compression='gzip')
-        print("array_data.shape", array_data[chrom].shape)
         f['resolutions'][str(curr_resolution)]['values'][chrom][:] = array_data[chrom]    # see above section
         
 
@@ -174,9 +170,8 @@ def create_multivec_multires(array_data, chromsizes,
     # that need to be performed so that the entire extent of
     # the dataset fits into one tile
     total_length = sum(lengths)
-    print("total_length:", total_length, "tile_size:", tile_size, "starting_resolution:", starting_resolution)
+    # print("total_length:", total_length, "tile_size:", tile_size, "starting_resolution:", starting_resolution)
     max_zoom = math.ceil(math.log(total_length / (tile_size * starting_resolution) ) / math.log(2))
-    print("max_zoom:", max_zoom)
     
     # we're going to go through and create the data for the different
     # zoom levels by summing adjacent data points
@@ -190,7 +185,6 @@ def create_multivec_multires(array_data, chromsizes,
 
         # add information about each of the rows
         if row_infos is not None:
-            print("adding row_infos2")
             f['resolutions'][str(curr_resolution)].attrs.create('row_infos', row_infos)
 
         f['resolutions'][str(curr_resolution)].create_group('chroms')
