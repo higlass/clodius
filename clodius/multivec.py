@@ -10,7 +10,7 @@ import sys
 
 def bedfile_to_multivec(input_filename, f_out, 
         bedline_to_chrom_start_end_vector, base_resolution,
-        has_header):
+        has_header, chunk_size):
     '''
     Convert an epilogos bedfile to multivec format.
     '''
@@ -22,7 +22,7 @@ def bedfile_to_multivec(input_filename, f_out,
     FILL_VALUE = np.nan
 
     # batch regions because h5py is really bad at writing
-    batch_length = 1e5
+    batch_length = chunk_size
     batch = []
 
     # the current index in the dataset
@@ -165,9 +165,19 @@ def create_multivec_multires(array_data, chromsizes,
             print("Missing chrom {} in input file".format(chrom), file=sys.stderr)
             continue
 
+        print("creating new dataset")
         f['resolutions'][str(curr_resolution)]['values'].create_dataset(str(chrom), array_data[chrom].shape, compression='gzip')
+        standard_chunk_size = 1e5
+        start = 0
+        chrom_data = f['resolutions'][str(curr_resolution)]['values'][chrom]
+
+        chunk_size = int(min(standard_chunk_size, len(chrom_data)))
         print("array_data.shape", array_data[chrom].shape)
-        f['resolutions'][str(curr_resolution)]['values'][chrom][:] = array_data[chrom]    # see above section
+
+        while start < len(chrom_data):
+            print("copy start:", start, chunk_size)
+            chrom_data[start:start + chunk_size] = array_data[chrom][start:start+chunk_size]    # see above section
+            start += int(min(standard_chunk_size, len(array_data[chrom]) - start))
         
 
     # the maximum zoom level corresponds to the number of aggregations
@@ -205,40 +215,52 @@ def create_multivec_multires(array_data, chromsizes,
             next_level_length = math.ceil(
                 len(f['resolutions'][str(prev_resolution)]['values'][chrom]) / 2)
 
-            old_data = f['resolutions'][str(prev_resolution)]['values'][chrom][:]
-            #print("prev_resolution:", prev_resolution)
-            #print("old_data.shape", old_data.shape)
+            start = 0
 
-            # this is a sort of roundabout way of calculating the 
-            # shape of the aggregated array, but all its doing is
-            # just halving the first dimension of the previous shape
-            # without taking into account the other dimensions
-            new_shape = list(old_data.shape)
+            chrom_data = f['resolutions'][str(prev_resolution)]['values'][chrom]
+
+            standard_chunk_size = 1e5
+            chunk_size = int(min(standard_chunk_size, len(chrom_data)))
+
+            new_shape = list(chrom_data.shape)
             new_shape[0] = math.ceil(new_shape[0] / 2)
             new_shape = tuple(new_shape)
 
             f['resolutions'][str(curr_resolution)]['values'].create_dataset(chrom, 
                                             new_shape, compression='gzip')
 
-            #print("11 old_data.shape", old_data.shape)
-            if len(old_data) % 2 != 0:
-                # we need our array to have an even number of elements
-                # so we just add the last element again
-                old_data = np.concatenate((old_data, [old_data[-1]]))
-            #print("22 old_data.shape", old_data.shape)
 
-            #print('old_data:', old_data)
-            #print("shape:", old_data.shape)
-            # actually sum the adjacent elements
-            #print("old_data.shape", old_data.shape)
-            new_data = agg(old_data)
+            while start < len(chrom_data):
+                print('start:', start)
+                old_data = f['resolutions'][str(prev_resolution)]['values'][chrom][start:start+chunk_size]
+                #print("prev_resolution:", prev_resolution)
+                #print("old_data.shape", old_data.shape)
 
-            '''
-            print("zoom_level:", max_zoom - 1 - i, 
-                  "resolution:", curr_resolution, 
-                  "new_data length", len(new_data))
-            '''
-            f['resolutions'][str(curr_resolution)]['values'][chrom][:] = new_data
+                # this is a sort of roundabout way of calculating the 
+                # shape of the aggregated array, but all its doing is
+                # just halving the first dimension of the previous shape
+                # without taking into account the other dimensions
+                #print("11 old_data.shape", old_data.shape)
+                if len(old_data) % 2 != 0:
+                    # we need our array to have an even number of elements
+                    # so we just add the last element again
+                    old_data = np.concatenate((old_data, [old_data[-1]]))
+                    chunk_size += 1
+                #print("22 old_data.shape", old_data.shape)
+
+                #print('old_data:', old_data)
+                #print("shape:", old_data.shape)
+                # actually sum the adjacent elements
+                #print("old_data.shape", old_data.shape)
+                new_data = agg(old_data)
+
+                '''
+                print("zoom_level:", max_zoom - 1 - i, 
+                      "resolution:", curr_resolution, 
+                      "new_data length", len(new_data))
+                '''
+                f['resolutions'][str(curr_resolution)]['values'][chrom][start/2:start/2+chunk_size/2] = new_data
+                start += int(min(standard_chunk_size, len(chrom_data) - start))
 
         prev_resolution = curr_resolution
     return f
