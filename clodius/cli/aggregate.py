@@ -226,7 +226,8 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         elif importance_column == 'random':
             d['importance'] = random.random()
         else:
-            d['importance'] = float(d[importance_column])
+            # We seem to use one-based numbering for columns...
+            d['importance'] = float(parts[int(importance_column) - 1])
 
         d['fields'] = line
 
