@@ -98,10 +98,10 @@ def _bedgraph_to_multivec(
 
         if format == 'epilogos':
             cmv.bedfile_to_multivec(filepath, f_out, epilogos_bedline_to_vector, 
-                    starting_resolution, has_header);
+                    starting_resolution, has_header, chunk_size);
         else:
             cmv.bedfile_to_multivec(filepath, f_out, bedline_to_chrom_start_end_vector, 
-                    starting_resolution, has_header);
+                    starting_resolution, has_header, chunk_size);
 
         f_out.close()
         tf = temp_file

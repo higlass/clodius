@@ -1879,8 +1879,12 @@ def bedpe(
         help='The method used to aggregate values (e.g. sum, average...)',
         type=click.Choice(['sum', 'logsumexp']),
         default='sum')
-def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method):
-    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method)
+@click.option(
+        '--row-infos-filename',
+        help="A file containing the names of the rows in the multivec file",
+        default=None)
+def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method, row_infos_filename):
+    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method, row_infos_filename)
 
 @aggregate.command()
 @click.argument(
