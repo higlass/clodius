@@ -1,3 +1,7 @@
+### Gene descriptions
+
+python scripts/gene_info_by_id.py -f ~/data/genbank-data/hg19/gene_ids.txt | tee output/gene_descriptions_hg19.txt
+
 ### Converting bedfile to multivec
 
 clodius convert bedfile_to_multivec test/sample_data/sample.bed.gz  --has-header --assembly hg38 --base-resolution 10
