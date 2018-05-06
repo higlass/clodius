@@ -933,6 +933,7 @@ def _bedgraph(
     nan_value,
     transform,
     count_nan,
+    closed_interval,
     chromsizes_filename,
     zoom_step
 ):

@@ -18,4 +18,4 @@ def test_get_tiles():
 
     tiles = cdt.get_2d_tiles(filename, 0,0,0, numx=1, numy=1)
 
-    print("tiles:", tiles)
+    #print("tiles:", tiles)

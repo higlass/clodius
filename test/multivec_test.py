@@ -16,7 +16,7 @@ def test_bedfile_to_multivec():
     runner = clt.CliRunner()
     input_file = op.join(testdir, 'sample_data', 'sample.bed.gz')
     f = tempfile.NamedTemporaryFile(delete=False)
-    print("input_file", input_file)
+    # print("input_file", input_file)
 
     result = runner.invoke(
             ccc.bedfile_to_multivec,
@@ -26,12 +26,14 @@ def test_bedfile_to_multivec():
                 '--base-resolution' , '10'])
 
     import traceback
-    print("exc_info:", result.exc_info)
     a,b,tb = result.exc_info
+    '''
+    print("exc_info:", result.exc_info)
     print("result:", result)
     print("result.output", result.output)
     print("result.error", traceback.print_tb(tb))
     print("Exception:", a,b)
+    '''
 
 def test_load_multivec_tiles():
     input_file = op.join(testdir, 'sample_data', 'sample.bed.multires.mv5')

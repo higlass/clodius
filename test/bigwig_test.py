@@ -49,7 +49,7 @@ def check_tileset_info(filename):
 def test_clodius_aggregate_bigwig():
     runner = clt.CliRunner()
     input_file = op.join(testdir, 'sample_data', 'test1.bw')
-    print("input_file:", input_file)
+    # print("input_file:", input_file)
 
     result = runner.invoke(
             cca.bigwig,
@@ -58,11 +58,13 @@ def test_clodius_aggregate_bigwig():
             '--output-file', '/tmp/test.mr.bw'])
 
     import traceback
-    print("exc_info:", result.exc_info)
     a,b,tb = result.exc_info
+    '''
+    print("exc_info:", result.exc_info)
     print("result:", result)
     print("result.output", result.output)
     print("result.error", traceback.print_tb(tb))
     print("Exception:", a,b)
+    '''
 
     assert(result.exit_code == 0)
