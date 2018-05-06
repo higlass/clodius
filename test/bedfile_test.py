@@ -64,7 +64,7 @@ def test_gene_annotations():
             [input_file,
                 '--max-per-tile', '20', '--importance-column', '5',
                 '--delimiter', '\t',
-                '--assembly', 'mm10', '--has-header', '--output-file', f.name])
+                '--assembly', 'mm10', '--output-file', f.name])
 
     import traceback
     a,b,tb = result.exc_info
@@ -78,12 +78,11 @@ def test_gene_annotations():
 
 
     rows = cdt.get_tiles(f.name, 0, 0)
-    print('rows:', rows[0])
-    return
+    assert(len(rows[0]) == 2)
 
     rows = cdt.get_tiles(f.name, 11, 113)
-    print("rows:", len(rows))
     assert(rows[113][0]['fields'][3] == 'Lrp1b')
+
     rows = cdt.get_tiles(f.name, 11, 112)
     assert(rows[112][0]['fields'][3] == 'Lrp1b')
 
@@ -156,12 +155,14 @@ def test_no_chromosome_limit():
                 '--output-file', f.name])
 
     import traceback
+    '''
     print("exc_info:", result.exc_info)
-    a,b,tb = result.exc_info
     print("result:", result)
     print("result.output", result.output)
     print("result.error", traceback.print_tb(tb))
     print("Exception:", a,b)
+    '''
+    a,b,tb = result.exc_info
 
     rows = cdt.get_tiles(f.name, 0, 0)[0]
     foundOther = False

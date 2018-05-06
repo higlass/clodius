@@ -453,8 +453,7 @@ def _bedfile(
 
         # convert chromosome coordinates to genome coordinates
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
-        genome_end = chrom_info.cum_chrom_lengths[chrom] + start + offset
-
+        genome_end = chrom_info.cum_chrom_lengths[chrom] + stop + offset
 
         pos_offset = genome_start - start
         parts = {
@@ -634,7 +633,6 @@ def _bedfile(
 
                 # one extra question mark for the primary key
                 exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
-                #print("value:", value['startPos'])
 
                 ret = c.execute(
                         exec_statement,
@@ -660,71 +658,6 @@ def _bedfile(
 
         curr_zoom = 0
     conn.commit()
-    return
-
-
-    while curr_zoom <= max_viewable_zoom and len(sorted_intervals) > 0:
-        # at each zoom level, add the top genes
-        tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
-
-        for tile_num in range(max_width // tile_width):
-            print("curr_zoom", curr_zoom, tile_num, len(sorted_intervals))
-            # go over each tile and distribute the remaining values
-            from_value = tile_num * tile_width
-            to_value = (tile_num + 1) * tile_width
-
-            values_in_tile = []
-            curr_index = 0
-            while len(values_in_tile) < max_per_tile and curr_index < len(sorted_intervals):
-                if sorted_intervals[curr_index][0] < to_value and sorted_intervals[curr_index][1] > from_value:
-                    values_in_tile += [sorted_intervals[curr_index]]
-                curr_index += 1
-
-            '''
-            entries = [i for i in intervals if (i[0] < to_value and i[1] > from_value)]
-            values_in_tile = sorted(entries,
-                    key=lambda x: -uid_to_entry[x[-1]]['importance'])[:max_per_tile]   # the importance is always the last column
-                                                            # take the negative because we want to prioritize
-                                                            # higher values
-            '''
-
-            if len(values_in_tile) > 0:
-                for v in values_in_tile:
-                    counter += 1
-
-                    value = uid_to_entry[v[-1]]
-
-                    # one extra question mark for the primary key
-                    c.execute(
-                        'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)',
-                        # primary key, zoomLevel, startPos, endPos,
-                        # chrOffset, line
-                        (counter, curr_zoom,
-                            value['importance'],
-                            value['startPos'], value['endPos'],
-                            value['chrOffset'],
-                            value['uid'],
-                            value['fields'])
-                    )
-                    conn.commit()
-
-                    # add counter as a primary key
-                    c.execute(
-                        'INSERT INTO position_index VALUES (?,?,?)',
-                        (counter, value['startPos'], value['endPos'])
-                    )
-                    conn.commit()
-
-                    sorted_intervals.remove(v)
-        #print ("curr_zoom:", curr_zoom, file=sys.stderr)
-
-        curr_zoom += 1
-
-    conn.commit()
-    conn.close()
-
-    return
-
 
 def _bigwig(
     filepath,
