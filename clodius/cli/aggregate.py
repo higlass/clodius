@@ -163,6 +163,7 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
 
 def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile, 
         tile_size, max_zoom=None, chromosome=None, 
+        chromsizes_filename=None,
         chr1_col=0, from1_col=1, to1_col=2,
         chr2_col=3, from2_col=4, to2_col=5):
     print('output_file:', output_file)
@@ -183,25 +184,23 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
     if op.exists(output_file):
         os.remove(output_file)
 
+    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
+
     def line_to_dict(line):
         parts = line.split()
         d = {}
         try:
             d['xs'] = [
-                nc.chr_pos_to_genome_pos(
-                    parts[chr1_col], int(parts[from1_col]), assembly
-                ),
-                nc.chr_pos_to_genome_pos(
-                    parts[chr1_col], int(parts[to1_col]), assembly
-                )
+                chrom_info.cum_chrom_lengths[
+                    parts[chr1_col]] + int(parts[from1_col]),
+                chrom_info.cum_chrom_lengths[
+                    parts[chr1_col]] + int(parts[to1_col])
             ]
             d['ys'] = [
-                nc.chr_pos_to_genome_pos(
-                    parts[chr2_col], int(parts[from2_col]), assembly
-                ),
-                nc.chr_pos_to_genome_pos(
-                    parts[chr2_col], int(parts[to2_col]), assembly
-                )
+                chrom_info.cum_chrom_lengths[
+                    parts[chr2_col]] + int(parts[from2_col]),
+                chrom_info.cum_chrom_lengths[
+                    parts[chr2_col]] + int(parts[to2_col])
             ]
         except KeyError:
             error_str = (
@@ -267,7 +266,6 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
     tile_size = tile_size
-    chrom_info = nc.get_chrominfo(assembly)
     assembly_size = chrom_info.total_length + 1
     max_zoom = int(
         math.ceil(math.log(assembly_size / tile_size) / math.log(2))
@@ -286,8 +284,8 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         conn, 1,
         max_length=assembly_size,
         assembly=assembly,
-        chrom_names=nc.get_chromorder(assembly),
-        chrom_sizes=nc.get_chromsizes(assembly),
+        chrom_names=chrom_names,
+        chrom_sizes=chrom_sizes,
         tile_size=tile_size,
         max_zoom=max_zoom,
         max_width=tile_size * 2 ** max_zoom
@@ -1801,6 +1799,11 @@ def bedfile(
          "Use all chromosomes if not set."
 )
 @click.option(
+    '--chromsizes-filename',
+    help="A file containing chromosome sizes and order",
+    default=None
+)
+@click.option(
     '--chr1-col',
     default=1,
     help="The column containing the first chromosome"
@@ -1833,12 +1836,14 @@ def bedfile(
 def bedpe(
     filepath, output_file, assembly, importance_column,
     has_header, max_per_tile, tile_size, chromosome,
+    chromsizes_filename,
     chr1_col, from1_col, to1_col,
     chr2_col, from2_col, to2_col
 ):
     _bedpe(
         filepath, output_file, assembly, importance_column, has_header,
         max_per_tile, tile_size, chromosome,
+        chromsizes_filename,
         chr1_col=chr1_col-1, from1_col=from1_col-1, to1_col=to1_col-1,
         chr2_col=chr2_col-1, from2_col=from2_col-1, to2_col=to2_col-1
     )
