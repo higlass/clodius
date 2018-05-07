@@ -12,7 +12,6 @@ print("packages:", find_packages())
 setup_requires = [
         'cython',
         'numpy',
-        'pyBigWig'
         ]
 
 install_requires = [
@@ -26,7 +25,6 @@ install_requires = [
         'slugid',
         'sortedcontainers',
         'nose',
-        'pyBigWig',
         'Click']
 
 def extensions():
