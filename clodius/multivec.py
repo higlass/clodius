@@ -254,7 +254,7 @@ def create_multivec_multires(array_data, chromsizes,
                       "resolution:", curr_resolution, 
                       "new_data length", len(new_data))
                 '''
-                f['resolutions'][str(curr_resolution)]['values'][chrom][start/2:start/2+chunk_size/2] = new_data
+                f['resolutions'][str(curr_resolution)]['values'][chrom][int(start/2):int(start/2+chunk_size/2)] = new_data
                 start += int(min(standard_chunk_size, len(chrom_data) - start))
 
         prev_resolution = curr_resolution
