@@ -169,10 +169,9 @@ def create_multivec_multires(array_data, chromsizes,
         chrom_data = f['resolutions'][str(curr_resolution)]['values'][chrom]
 
         chunk_size = int(min(standard_chunk_size, len(chrom_data)))
-        print("array_data.shape", array_data[chrom].shape)
+        #print("array_data.shape", array_data[chrom].shape)
 
         while start < len(chrom_data):
-            print("copy start:", start, chunk_size)
             chrom_data[start:start + chunk_size] = array_data[chrom][start:start+chunk_size]    # see above section
             start += int(min(standard_chunk_size, len(array_data[chrom]) - start))
         
