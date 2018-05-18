@@ -66,6 +66,7 @@ def _bedgraph_to_multivec(
     row_infos_filename,
     tile_size
 ):
+    print('chrom_col:', chrom_col)
 
     with tempfile.TemporaryDirectory() as td:
         print('temporary dir:', td)
@@ -89,7 +90,7 @@ def _bedgraph_to_multivec(
 
         def bedline_to_chrom_start_end_vector(bedline):
             parts = bedline.strip().split()
-            chrom = parts[chrom_col-1].decode('utf8')
+            chrom = parts[chrom_col-1]
             start = int(parts[from_pos_col-1])
             end = int(parts[to_pos_col-1])
             vector = [float(parts[value_col-1])]
@@ -147,25 +148,29 @@ def _bedgraph_to_multivec(
     '--chromosome-col',
     help="The column number (1-based) which contains the chromosome "
          "name",
-    default=1
+    default=1,
+    type=int
 )
 @click.option(
     '--from-pos-col',
     help="The column number (1-based) which contains the starting "
          "position",
-    default=2
+    default=2,
+    type=int
 )
 @click.option(
     '--to-pos-col',
     help="The column number (1-based) which contains the ending"
          "position",
-    default=3
+    default=3,
+    type=int
 )
 @click.option(
     '--value-col',
     help="The column number (1-based) which contains the actual value"
          "position",
-    default=4
+    default=4,
+    type=int
 )
 @click.option(
     '--has-header/--no-header',
