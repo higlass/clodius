@@ -8,6 +8,7 @@ import negspy.coordinates as nc
 import numpy as np
 import os
 import os.path as op
+import scipy.misc as sm
 import tempfile
 
 import ast
@@ -64,7 +65,8 @@ def _bedgraph_to_multivec(
     num_rows,
     format,
     row_infos_filename,
-    tile_size
+    tile_size,
+    method
 ):
     print('chrom_col:', chrom_col)
 
@@ -116,9 +118,43 @@ def _bedgraph_to_multivec(
         if op.exists(output_file):
             os.remove(output_file)
 
+        if method =='logsumexp':
+            def agg(x):
+                # newshape = (x.shape[2], -1, 2)
+                # b = x.T.reshape((-1,))
+
+                
+                a = x.T.reshape((x.shape[1],-1,2))
+
+                # this is going to be an odd way to get rid of nan
+                # values
+                orig_shape = a.shape
+                na = a.reshape((-1,))
+
+                SMALL_NUM = -1e8
+                NAN_THRESHOLD_NUM = SMALL_NUM / 100
+
+                if np.nanmin(na) < NAN_THRESHOLD_NUM:
+                    raise ValueError("Error removing nan's when running logsumexp aggregation")
+
+                na[np.isnan(na)] = SMALL_NUM;
+                na = na.reshape(orig_shape)
+                res = sm.logsumexp(a, axis=2).T
+
+                nres = res.reshape((-1,))
+                # print("nres:", np.nansum(nres < NAN_THRESHOLD_NUM))
+                nres[nres < NAN_THRESHOLD_NUM] = np.nan
+                res = nres.reshape(res.shape)
+
+                # print("res:", np.nansum(res.reshape((-1,))))
+
+                return res
+        else:
+            agg=lambda x: x.T.reshape((x.shape[1],-1,2)).sum(axis=2).T
+
         cmv.create_multivec_multires(f_in, 
                 chromsizes = zip(chrom_names, chrom_sizes),
-                agg=lambda x: np.nansum(x.T.reshape((x.shape[1],-1,2)),axis=2).T,
+                agg=agg,
                 starting_resolution=starting_resolution,
                 tile_size=tile_size,
                 output_file=output_file,
@@ -219,15 +255,21 @@ def _bedgraph_to_multivec(
         help="The number of data points in each tile."
              "Used to determine the number of zoom levels"
              "to create.")
+@click.option(
+    '--method',
+    help='The method used to aggregate values (e.g. sum, average...)',
+    type=click.Choice(['sum', 'logsumexp']),
+    default='sum'
+)
 def bedfile_to_multivec(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chunk_size, nan_value,
         chromsizes_filename,
         starting_resolution, num_rows, 
-        format, row_infos_filename, tile_size):
+        format, row_infos_filename, tile_size, method):
     _bedgraph_to_multivec(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chunk_size, nan_value, 
         chromsizes_filename, starting_resolution, num_rows, 
-        format, row_infos_filename, tile_size)
+        format, row_infos_filename, tile_size, method)
 
