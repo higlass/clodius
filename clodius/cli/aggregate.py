@@ -450,6 +450,10 @@ def _bedfile(
         else:
             importance = int(line[int(importance_column)-1])
 
+        if stop < start:
+            print("WARNING: stop < start:", line, file=sys.stderr)
+            return
+
         # convert chromosome coordinates to genome coordinates
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
         genome_end = chrom_info.cum_chrom_lengths[chrom] + stop + offset
@@ -643,6 +647,8 @@ def _bedfile(
                             value['uid'],
                             value['fields'])
                         )
+
+                print('counter:', counter, value['endPos'] - value['startPos'])
 
                 exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
                 ret = c.execute(
