@@ -473,17 +473,25 @@ def _bedfile(
 
     dset = []
 
+    print("delimiter:", delimiter)
     if has_header:
         line = bed_file.readline()
         header = line.strip().split(delimiter)
     else:
         line = bed_file.readline().strip()
-        dset += [line_to_np_array(line.strip().split(delimiter))]
+        line_parts = line.strip().split(delimiter)
+        try:
+            dset += [line_to_np_array(line_parts)]
+        except IndexError as ie:
+            print("Invalid line:", line)
         header = map(str, list(range(1,len(line.strip().split(delimiter))+1)))
-    print("header:", header)
 
     for line in bed_file:
-        dset += [line_to_np_array(line.strip().split(delimiter))]
+        line_parts = line.strip().split(delimiter)
+        try:
+            dset += [line_to_np_array(line_parts)]
+        except IndexError as ie:
+            print("Invalid line:", line)
 
     if chromosome is not None:
         dset = [d for d in dset if d['chromosome'] == chromosome]
