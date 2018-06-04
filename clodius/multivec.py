@@ -40,12 +40,14 @@ def bedfile_to_multivec(input_filename, f_out,
         if prev_chrom is not None and chrom != prev_chrom:
             # we've reached a new chromosome so we'll dump all
             # the previous values
+            print("len(batch:", len(batch))
             f_out[prev_chrom][batch_start_index:batch_start_index+len(batch)] = np.array(batch)
             
             # we're starting a new chromosome so we start from the beginning
             curr_index = 0
             batch_start_index = 0
             batch = []
+
         prev_chrom = chrom
 
         #print('parts', parts)

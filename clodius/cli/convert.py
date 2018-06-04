@@ -4,6 +4,7 @@ import clodius.chromosomes as cch
 import clodius.multivec as cmv
 import gzip
 import h5py
+import math
 import negspy.coordinates as nc
 import numpy as np
 import os
@@ -85,7 +86,7 @@ def _bedgraph_to_multivec(
             row_infos = None
 
         for chrom in chrom_info.chrom_order:
-            f_out.create_dataset(chrom, (chrom_info.chrom_lengths[chrom] // starting_resolution,
+            f_out.create_dataset(chrom, (math.ceil(chrom_info.chrom_lengths[chrom] / starting_resolution),
                                             num_rows),
                                             fillvalue=np.nan,
                                             compression='gzip')
