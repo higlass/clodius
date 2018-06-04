@@ -409,7 +409,7 @@ def _bedfile(
     offset
 ):
     if output_file is None:
-        output_file = filepath + ".multires"
+        output_file = filepath + ".beddb"
     else:
         output_file = output_file
 
