@@ -656,7 +656,8 @@ def _bedfile(
                             value['fields'])
                         )
 
-                print('counter:', counter, value['endPos'] - value['startPos'])
+                if counter % 1000 == 0:
+                    print('counter:', counter, value['endPos'] - value['startPos'])
 
                 exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
                 ret = c.execute(

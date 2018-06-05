@@ -96,7 +96,7 @@ def _bedgraph_to_multivec(
             chrom = parts[chrom_col-1]
             start = int(parts[from_pos_col-1])
             end = int(parts[to_pos_col-1])
-            vector = [float(parts[value_col-1])]
+            vector = [float(f) for f in parts[value_col-1:value_col-1+num_rows]]
 
             return (chrom, start, end, vector)
 
