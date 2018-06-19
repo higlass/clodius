@@ -539,7 +539,8 @@ def _bedfile(
         chrom_sizes=chrom_sizes,
         tile_size=tile_size,
         max_zoom=max_zoom,
-        max_width=tile_size * 2 ** max_zoom
+        max_width=tile_size * 2 ** max_zoom,
+        header=header,
     )
 
 
@@ -609,6 +610,11 @@ def _bedfile(
             while curr_pos < interval[1]:
                 curr_tile = math.floor(curr_pos / tile_width)
                 tile_id = '{}.{}'.format(curr_zoom, curr_tile)
+
+                '''
+                if interval[0] < 1000000:
+                    print('tile_id:', tile_id, tile_counts[tile_id], curr_zoom, 'interval:', interval)
+                '''
                 
                 if tile_counts[tile_id] >= max_per_tile:
                     space_available = False
@@ -625,6 +631,7 @@ def _bedfile(
                     
                     tile_counts[tile_id] += 1
 
+                    '''
                     # increment tile counts for lower level tiles
                     higher_zoom = curr_zoom + 1
                     higher_tile = math.floor(higher_zoom / 2)
@@ -634,7 +641,7 @@ def _bedfile(
                         higher_zoom += 1
                         higher_tile = math.floor(higher_tile / 2)
                         tile_counts[new_tile_id] += 1
-
+                    '''
 
                     curr_pos += tile_width
 
