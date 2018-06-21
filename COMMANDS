@@ -1,3 +1,16 @@
+### Calculating gene coverage
+
+bedtools makewindows -g ~/projects/negspy/negspy/data/hg19/chromInfo.txt -w 1000 > ~/data/genbank-data/hg19/bins_hg19_1000.bed
+
+awk '{ if ($6 == "-") print }' ~/data/genbank-data/hg19/geneAnnotationsExonUnions.bed > ~/data/genbank-data/hg19/geneAnnotationsExonUnions.-.bed
+awk '{ if ($6 == "+") print }' ~/data/genbank-data/hg19/geneAnnotationsExonUnions.bed > ~/data/genbank-data/hg19/geneAnnotationsExonUnions.+.bed
+
+bedtools coverage -b ~/data/genbank-data/hg19/geneAnnotationsExonUnions.+.bed -a ~/data/genbank-data/hg19/bins_hg19_1000.bed > ~/data/genbank-data/hg19/annotationsCoverage.+.bed
+bedtools coverage -b ~/data/genbank-data/hg19/geneAnnotationsExonUnions.-.bed -a ~/data/genbank-data/hg19/bins_hg19_1000.bed > ~/data/genbank-data/hg19/annotationsCoverage.-.bed
+
+clodius convert bedfile_to_multivec ~/data/genbank-data/hg19/annotationsCoverage.+.bed --assembly hg19 --starting-resolution 1000
+clodius convert bedfile_to_multivec ~/data/genbank-data/hg19/annotationsCoverage.-.bed --assembly hg19 --starting-resolution 1000
+
 ### Converting bedfile to multivec
 
 clodius convert bedfile_to_multivec test/sample_data/sample.bed.gz  --has-header --assembly hg38 --base-resolution 10

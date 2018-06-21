@@ -593,7 +593,8 @@ def _bedfile(
 
     sorted_intervals = sorted(intervals, 
                     key=lambda x: -uid_to_entry[x[-1]]['importance'])
-    print('si:', sorted_intervals[:10])
+    # print('si:', sorted_intervals[:10])
+    print("max_per_tile:", max_per_tile)
 
     tile_counts = col.defaultdict(int)
 
@@ -616,6 +617,7 @@ def _bedfile(
                     print('tile_id:', tile_id, tile_counts[tile_id], curr_zoom, 'interval:', interval)
                 '''
                 
+                # print(tile_id, "tile_counts[tile_id]", tile_counts[tile_id])
                 if tile_counts[tile_id] >= max_per_tile:
                     space_available = False
                     break
