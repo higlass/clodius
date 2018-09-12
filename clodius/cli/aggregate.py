@@ -14,7 +14,6 @@ import negspy.coordinates as nc
 import numpy as np
 import os
 import os.path as op
-import pyBigWig as pbw
 import random
 import scipy.misc as sm
 import slugid
@@ -410,7 +409,7 @@ def _bedfile(
     offset
 ):
     if output_file is None:
-        output_file = filepath + ".multires"
+        output_file = filepath + ".beddb"
     else:
         output_file = output_file
 
@@ -451,6 +450,10 @@ def _bedfile(
         else:
             importance = int(line[int(importance_column)-1])
 
+        if stop < start:
+            print("WARNING: stop < start:", line, file=sys.stderr)
+            return
+
         # convert chromosome coordinates to genome coordinates
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
         genome_end = chrom_info.cum_chrom_lengths[chrom] + stop + offset
@@ -470,17 +473,25 @@ def _bedfile(
 
     dset = []
 
+    print("delimiter:", delimiter)
     if has_header:
         line = bed_file.readline()
         header = line.strip().split(delimiter)
     else:
         line = bed_file.readline().strip()
-        dset += [line_to_np_array(line.strip().split(delimiter))]
+        line_parts = line.strip().split(delimiter)
+        try:
+            dset += [line_to_np_array(line_parts)]
+        except IndexError as ie:
+            print("Invalid line:", line)
         header = map(str, list(range(1,len(line.strip().split(delimiter))+1)))
-    print("header:", header)
 
     for line in bed_file:
-        dset += [line_to_np_array(line.strip().split(delimiter))]
+        line_parts = line.strip().split(delimiter)
+        try:
+            dset += [line_to_np_array(line_parts)]
+        except IndexError as ie:
+            print("Invalid line:", line)
 
     if chromosome is not None:
         dset = [d for d in dset if d['chromosome'] == chromosome]
@@ -528,7 +539,8 @@ def _bedfile(
         chrom_sizes=chrom_sizes,
         tile_size=tile_size,
         max_zoom=max_zoom,
-        max_width=tile_size * 2 ** max_zoom
+        max_width=tile_size * 2 ** max_zoom,
+        header=header,
     )
 
 
@@ -598,6 +610,11 @@ def _bedfile(
             while curr_pos < interval[1]:
                 curr_tile = math.floor(curr_pos / tile_width)
                 tile_id = '{}.{}'.format(curr_zoom, curr_tile)
+
+                '''
+                if interval[0] < 1000000:
+                    print('tile_id:', tile_id, tile_counts[tile_id], curr_zoom, 'interval:', interval)
+                '''
                 
                 if tile_counts[tile_id] >= max_per_tile:
                     space_available = False
@@ -614,6 +631,7 @@ def _bedfile(
                     
                     tile_counts[tile_id] += 1
 
+                    '''
                     # increment tile counts for lower level tiles
                     higher_zoom = curr_zoom + 1
                     higher_tile = math.floor(higher_zoom / 2)
@@ -623,7 +641,7 @@ def _bedfile(
                         higher_zoom += 1
                         higher_tile = math.floor(higher_tile / 2)
                         tile_counts[new_tile_id] += 1
-
+                    '''
 
                     curr_pos += tile_width
 
@@ -645,6 +663,9 @@ def _bedfile(
                             value['fields'])
                         )
 
+                if counter % 1000 == 0:
+                    print('counter:', counter, value['endPos'] - value['startPos'])
+
                 exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
                 ret = c.execute(
                         exec_statement,
@@ -658,263 +679,6 @@ def _bedfile(
 
         curr_zoom = 0
     conn.commit()
-
-def _bigwig(
-    filepath,
-    chunk_size=14,
-    zoom_step=8,
-    tile_size=1024,
-    output_file=None,
-    assembly='hg19',
-    chromsizes_filename=None,
-    chromosome=None
-):
-    data = []
-
-    if output_file is None:
-        if chromosome is None:
-            output_file = op.splitext(filepath)[0] + '.hitile'
-        else:
-            output_file = (
-                op.splitext(filepath)[0] + '.' + chromosome + '.hitile'
-            )
-
-    # Override the output file if it existts
-    if op.exists(output_file):
-        os.remove(output_file)
-    f = h5py.File(output_file, 'w')
-
-    if chromsizes_filename is not None:
-        chrom_info = nc.get_chrominfo_from_file(chromsizes_filename)
-        chrom_order = [
-            a for a in nc.get_chromorder_from_file(chromsizes_filename)
-        ]
-        chrom_sizes = nc.get_chromsizes_from_file(chromsizes_filename)
-    else:
-        print("there")
-        chrom_info = nc.get_chrominfo(assembly)
-        chrom_order = [a for a in nc.get_chromorder(assembly)]
-        chrom_sizes = nc.get_chromsizes(assembly)
-
-    print("chrom_order:", chrom_order)
-    assembly_size = chrom_info.total_length
-
-    tile_size = tile_size
-    # how many values to read in at once while tiling
-    chunk_size = tile_size * 2 ** chunk_size
-
-    dsets = []  # data sets at each zoom level
-    nan_dsets = []
-
-    # initialize the arrays which will store the values at each stored zoom
-    # level
-    z = 0
-    positions = []   # store where we are at the current dataset
-    data_buffers = [[]]
-    nan_data_buffers = [[]]
-
-    while assembly_size / 2 ** z > tile_size:
-        dset_length = math.ceil(assembly_size / 2 ** z)
-        dsets += [
-            f.create_dataset(
-                'values_' + str(z),
-                (dset_length,),
-                dtype='f',
-                compression='gzip'
-            )
-        ]
-        nan_dsets += [
-            f.create_dataset(
-                'nan_values_' + str(z),
-                (dset_length,),
-                dtype='f',
-                compression='gzip'
-            )
-        ]
-
-        data_buffers += [[]]
-        nan_data_buffers += [[]]
-
-        positions += [0]
-        z += zoom_step
-
-    # load the bigWig file
-    bwf = pbw.open(filepath)
-
-    # store some meta data
-    d = f.create_dataset('meta', (1,), dtype='f')
-
-    if chromosome is not None:
-        d.attrs['min-pos'] = chrom_info.cum_chrom_lengths[chromosome]
-        d.attrs['max-pos'] = (
-            chrom_info.cum_chrom_lengths[chromosome] + bwf.chroms()[chromosome]
-        )
-    else:
-        d.attrs['min-pos'] = 0
-        d.attrs['max-pos'] = assembly_size
-
-    '''
-    print("chroms.keys:", bwf.chroms().keys())
-    print("chroms.values:", bwf.chroms().values())
-    '''
-
-    d.attrs['zoom-step'] = zoom_step
-    d.attrs['max-length'] = assembly_size
-    d.attrs['assembly'] = assembly
-    d.attrs['chrom-names'] = [a.encode('utf-8') for a in chrom_order]
-    d.attrs['chrom-sizes'] = chrom_sizes
-    d.attrs['chrom-order'] = [a.encode('utf-8') for a in chrom_order]
-    d.attrs['tile-size'] = tile_size
-    d.attrs['max-zoom'] = max_zoom = math.ceil(
-        math.log(d.attrs['max-length'] / tile_size) / math.log(2)
-    )
-    d.attrs['max-width'] = tile_size * 2 ** max_zoom
-    d.attrs['max-position'] = 0
-
-    print("assembly size (max-length)", d.attrs['max-length'])
-    print("max-width", d.attrs['max-width'])
-    print("max_zoom:", d.attrs['max-zoom'])
-    print("chunk-size:", chunk_size)
-    print("chrom-order", d.attrs['chrom-order'])
-
-    t1 = time.time()
-
-    curr_zoom = 0
-
-    def add_values_to_data_buffers(buffers_to_add, nan_buffers_to_add):
-        curr_zoom = 0
-
-        data_buffers[0] += buffers_to_add
-        nan_data_buffers[0] += nan_buffers_to_add
-
-        curr_time = time.time() - t1
-        percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
-        print(
-            "position: {} progress: {:.2f} elapsed: {:.2f} "
-            "remaining: {:.2f}".format(
-                positions[curr_zoom] + 1,
-                percent_progress,
-                curr_time,
-                curr_time / (percent_progress) - curr_time
-            )
-        )
-
-        while len(data_buffers[curr_zoom]) >= chunk_size:
-            # get the current chunk and store it, converting nans to 0
-            print("len(data_buffers[curr_zoom])", len(data_buffers[curr_zoom]))
-            curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
-            nan_curr_chunk = np.array(nan_data_buffers[curr_zoom][:chunk_size])
-
-            '''
-            print("1cc:", sum(curr_chunk))
-            print("1db:", data_buffers[curr_zoom][:chunk_size])
-            print("1curr_chunk:", nan_curr_chunk)
-            '''
-            print("positions[curr_zoom]:", positions[curr_zoom])
-
-            curr_pos = positions[curr_zoom]
-            dsets[curr_zoom][curr_pos:curr_pos+chunk_size] = curr_chunk
-            nan_dsets[curr_zoom][curr_pos:curr_pos+chunk_size] = nan_curr_chunk
-
-            # aggregate and store aggregated values in the next zoom_level's
-            # data
-            data_buffers[curr_zoom+1] += list(
-                ct.aggregate(curr_chunk, 2 ** zoom_step)
-            )
-            nan_data_buffers[curr_zoom+1] += list(
-                ct.aggregate(nan_curr_chunk, 2 ** zoom_step)
-            )
-
-            data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
-            nan_data_buffers[curr_zoom] =\
-                nan_data_buffers[curr_zoom][chunk_size:]
-
-            # data = data_buffers[curr_zoom+1]
-            # nan_data = nan_data_buffers[curr_zoom+1]
-
-            # do the same for the nan values buffers
-
-            positions[curr_zoom] += chunk_size
-            curr_zoom += 1
-
-            if curr_zoom * zoom_step >= max_zoom:
-                break
-
-    # Do we only want values from a single chromosome?
-    if chromosome is not None:
-        chroms_to_use = [chromosome]
-    else:
-        chroms_to_use = chrom_order
-
-    for chrom in chroms_to_use:
-        print("chrom:", chrom)
-        '''
-        if chrom not in bwf.chroms():
-            print("skipping chrom (not in bigWig file):",
-            chrom, chrom_info.chrom_lengths[chrom])
-            continue
-        '''
-
-        counter = 0
-        # chrom_size = bwf.chroms()[chrom]
-        chrom_size = chrom_info.chrom_lengths[chrom]
-
-        # print("chrom_size:", chrom_size, bwf.chroms()[chrom])
-        d.attrs['max-position'] += chrom_size
-
-        while counter < chrom_size:
-            remaining = min(chunk_size, chrom_size - counter)
-
-            if chrom not in bwf.chroms():
-                values = [np.nan] * remaining
-                nan_values = [1] * remaining
-            else:
-                values = bwf.values(chrom, counter, counter + remaining)
-                nan_values = np.isnan(values).astype('i4')
-
-            # print("counter:", counter, "remaining:", remaining,
-            # "counter + remaining:", counter + remaining)
-            counter += remaining
-            curr_zoom = 0
-
-            add_values_to_data_buffers(list(values), list(nan_values))
-
-    while True:
-        # get the current chunk and store it
-        chunk_size = len(data_buffers[curr_zoom])
-        curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
-        nan_curr_chunk = np.array(nan_data_buffers[curr_zoom][:chunk_size])
-
-        curr_pos = positions[curr_zoom]
-        dsets[curr_zoom][curr_pos:curr_pos+chunk_size] = curr_chunk
-        nan_dsets[curr_zoom][curr_pos:curr_pos+chunk_size] = nan_curr_chunk
-
-        # aggregate and store aggregated values in the next zoom_level's data
-        data_buffers[curr_zoom+1] += list(
-            ct.aggregate(curr_chunk, 2 ** zoom_step)
-        )
-        nan_data_buffers[curr_zoom+1] += list(
-            ct.aggregate(nan_curr_chunk, 2 ** zoom_step)
-        )
-
-        data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
-        nan_data_buffers[curr_zoom] = nan_data_buffers[curr_zoom][chunk_size:]
-
-        data = data_buffers[curr_zoom+1]
-        # nan_data = nan_data_buffers[curr_zoom+1]
-
-        positions[curr_zoom] += chunk_size
-        curr_zoom += 1
-
-        # we've created enough tile levels to cover the entire maximum width
-        if curr_zoom * zoom_step >= max_zoom:
-            break
-
-    # still need to take care of the last chunk
-
-    data = np.array(data)
-    t1 = time.time()
-    pass
 
 ###############################################################################
 def _bedgraph(
@@ -933,6 +697,7 @@ def _bedgraph(
     nan_value,
     transform,
     count_nan,
+    closed_interval,
     chromsizes_filename,
     zoom_step
 ):

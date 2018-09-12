@@ -66,20 +66,25 @@ def main():
 
         gene_info = GeneInfo()
 
-        gene_info.chrName = words[0]
-        gene_info.txStart = words[1]
-        gene_info.txEnd = words[2]
-        gene_info.geneName = words[3]
-        gene_info.score = words[4]
-        gene_info.strand = words[5]
-        gene_info.refseqId = words[6]
-        gene_info.geneId = words[7]
-        gene_info.geneType = words[8]
-        gene_info.geneDesc = words[9]
-        gene_info.cdsStart = words[10]
-        gene_info.cdsEnd = words[11]
-        gene_info.exonStarts = words[12]
-        gene_info.exonEnds = words[13]
+        try:
+            gene_info.chrName = words[0]
+            gene_info.txStart = words[1]
+            gene_info.txEnd = words[2]
+            gene_info.geneName = words[3]
+            gene_info.score = words[4]
+            gene_info.strand = words[5]
+            gene_info.refseqId = words[6]
+            gene_info.geneId = words[7]
+            gene_info.geneType = words[8]
+            gene_info.geneDesc = words[9]
+            gene_info.cdsStart = words[10]
+            gene_info.cdsEnd = words[11]
+            gene_info.exonStarts = words[12]
+            gene_info.exonEnds = words[13]
+        except:
+            print("ERROR: line:", line, file=sys.stderr)
+            continue
+
 
         # for some reason, exon starts and ends have trailing commas
         gene_info.exonStartParts = gene_info.exonStarts.strip(",").split(',')

@@ -28,16 +28,18 @@ def test_clodius_aggregate_bedfile():
                 '--output-file', output_file,
                 '--delimiter', '\t'])
 
-    print("exc_info:", result.exc_info)
     a,b,tb = result.exc_info
+    '''
+    print("exc_info:", result.exc_info)
     print("result:", result)
     print("result.output", result.output)
     print("result.error", traceback.print_tb(tb))
     print("Exception:", a,b)
+    '''
     assert(result.exit_code == 0)
 
     results = cdt.get_tiles(output_file, 6, 3, num_tiles=1 )
-    print("results:", results)
+    #print("results:", results)
 
     assert(len(results[3][0]['fields']) == 14)
 
@@ -93,12 +95,14 @@ def test_clodius_aggregate_bedgraph():
             '--nan-value', 'NA'])
 
     import traceback
-    print("exc_info:", result.exc_info)
     a,b,tb = result.exc_info
+    '''
+    print("exc_info:", result.exc_info)
     print("result:", result)
     print("result.output", result.output)
     print("result.error", traceback.print_tb(tb))
     print("Exception:", a,b)
+    '''
 
     assert(result.exit_code == 0)
     f = h5py.File(output_file)
@@ -112,7 +116,7 @@ def test_clodius_aggregate_bedgraph():
     assert(np.isnan(d[-1]))
     prev_tile_3_0 = cht.get_data(f,3,0)
 
-    print("prev_tile_3_0:", prev_tile_3_0)
+    #print("prev_tile_3_0:", prev_tile_3_0)
 
     assert(result.exit_code == 0)
     return
@@ -163,13 +167,16 @@ def test_clodius_aggregate_bedpe():
             '--chr2-col', '1',
             '--from2-col', '2',
             '--to2-col', '3'])
+
+    '''
     print("result:", result)
     print("result.output", result.output)
+    '''
 
     assert(result.exit_code == 0)
 
     tiles = cdt.get_2d_tiles(output_file, 0,0,0, numx=1,numy=1)
-    print("tiles:", tiles)
+    # print("tiles:", tiles)
 
     assert('\n' not in tiles[(0,0)][0]['fields'][2])
 
@@ -188,14 +195,14 @@ def test_clodius_aggregate_bedgraph1():
             '--output-file', output_file,
             '--assembly', 'dm3'])
 
-    print("result.output", result.output)
+    # print("result.output", result.output)
 
     f = h5py.File('/tmp/dm3_values.hitile')
     max_zoom = f['meta'].attrs['max-zoom']
     values = f['values_0']
     
     import numpy as np
-    print("values:", values[8])
+    # print("values:", values[8])
     # genome positions are 0 based as stored in hitile files
     assert(np.isnan(values[8]))
     assert(values[9] == 1)
@@ -205,7 +212,7 @@ def test_clodius_aggregate_bedgraph1():
     assert(np.isnan(values[15]))
 
     chr_2r_pos = nc.chr_pos_to_genome_pos('chr2R', 0, 'dm3')
-    print('chr_2r_pos:', chr_2r_pos)
+    # print('chr_2r_pos:', chr_2r_pos)
 
     assert(np.isnan(values[chr_2r_pos + 28]))
     assert(values[chr_2r_pos + 29] == 77)
@@ -215,8 +222,8 @@ def test_clodius_aggregate_bedgraph1():
     assert(result.exit_code == 0)
 
     d = cht.get_data(f, 0, 0)
-    print("d[:10]", d[:10])
-    print("sum(d):", sum([x for x in d if not np.isnan(x)]))
+    # print("d[:10]", d[:10])
+    # print("sum(d):", sum([x for x in d if not np.isnan(x)]))
     assert(np.nansum(d) > 1.0 and np.nansum(d) < 10.0)
 
     return
@@ -231,17 +238,17 @@ def test_clodius_aggregate_bedgraph1():
             '--output-file', output_file,
             '--assembly', 'test3chroms'])
 
-    print('output:', result.output, result)
+    # print('output:', result.output, result)
 
     f = h5py.File('/tmp/test3chroms_values.hitile')
     max_zoom = f['meta'].attrs['max-zoom']
 
-    print('max_zoom:', max_zoom)
-    print("len", len(f['values_0']))
+    # print('max_zoom:', max_zoom)
+    # print("len", len(f['values_0']))
 
     values = f['values_0']
     
-    print('values', values[:100])
+    # print('values', values[:100])
 
     # genome positions are 0 based as stored in hitile files
     assert(values[8] == 0)
@@ -263,59 +270,6 @@ def test_clodius_aggregate_bedgraph1():
 
     d = cht.get_data(f, 0, 0)
     assert(sum(d) == 770 + 880 + 5)
-    #print("d:", d)
+    # print("d:", d)
 
 testdir = op.realpath(op.dirname(__file__))
-def test_clodius_aggregate_bigwig():
-    runner = clt.CliRunner()
-    input_file = op.join(testdir, 'sample_data', 'test.tile_generation.bw')
-    print("input_file:", input_file)
-
-    with open('/tmp/test_chrs.tsv', 'w') as f:
-        f.write('{}\t{}'.format('test', 100000))
-
-    result = runner.invoke(
-            cca.bigwig,
-            [input_file,
-            '--chromsizes-filename', '/tmp/test_chrs.tsv',
-            '--output-file', '/tmp/test.mr.bw'])
-
-    import traceback
-    print("exc_info:", result.exc_info)
-    a,b,tb = result.exc_info
-    print("result:", result)
-    print("result.output", result.output)
-    print("result.error", traceback.print_tb(tb))
-    print("Exception:", a,b)
-
-    import clodius.hdf_tiles as ch
-
-    filename = '/tmp/test.mr.bw'
-    f = h5py.File(filename)
-
-    max_zoom = f['meta'].attrs['max-zoom']
-    tile_size = int(f['meta'].attrs['tile-size'])
-
-    d = ch.get_data(f, max_zoom, 0)
-    print("d:", d)
-
-    # lowest zoom should have values of 1
-    for i in range(tile_size):
-        assert(d[i] == 1)
-
-    d = ch.get_data(f, max_zoom-1, 0)
-    print("d:", d)
-
-    for i in range(tile_size):
-        # because we're taking averages
-        assert(d[i] == 1)
-
-    d = ch.get_data(f, max_zoom-2, 0)
-
-    for i in range(tile_size // 2):
-        assert(d[i] == 1)
-
-    print("hey")
-    assert(d[513] == 1)
-
-    assert(result.exit_code == 0)

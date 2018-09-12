@@ -49,7 +49,7 @@ def test_get_tiles():
 
     tiles = cdt.get_tiles(filename, 18, 169283)[169283]
 
-    print("tiles:", tiles)
+    # print("tiles:", tiles)
     x = int(tiles[0]['xStart'])
 
     fields = tiles[0]['fields']
@@ -75,7 +75,6 @@ def test_gene_annotations():
     print("result.error", traceback.print_tb(tb))
     print("Exception:", a,b)
     '''
-
 
     rows = cdt.get_tiles(f.name, 0, 0)
     assert(len(rows[0]) == 2)
@@ -169,7 +168,7 @@ def test_no_chromosome_limit():
     
     for row in rows:
         if row['fields'][0] != 'chr1':
-            print("row", row)
+            # print("row", row)
             assert(row['xStart'] > 200000000)
         if row['fields'][0] != 'chr14':
             foundOther = True
@@ -193,9 +192,7 @@ def test_chromosome_limit():
                 '--assembly', 'hg19', '--chromosome', 'chr14', 
                 '--output-file', f.name])
 
-    print('output:', result.output, result)
-
-
+    # print('output:', result.output, result)
     rows = cdt.get_tiles(f.name, 0, 0)[0]
     foundOther = False
     

@@ -4,10 +4,12 @@ import clodius.chromosomes as cch
 import clodius.multivec as cmv
 import gzip
 import h5py
+import math
 import negspy.coordinates as nc
 import numpy as np
 import os
 import os.path as op
+import scipy.misc as sm
 import tempfile
 
 import ast
@@ -64,8 +66,10 @@ def _bedgraph_to_multivec(
     num_rows,
     format,
     row_infos_filename,
-    tile_size
+    tile_size,
+    method
 ):
+    print('chrom_col:', chrom_col)
 
     with tempfile.TemporaryDirectory() as td:
         print('temporary dir:', td)
@@ -82,17 +86,17 @@ def _bedgraph_to_multivec(
             row_infos = None
 
         for chrom in chrom_info.chrom_order:
-            f_out.create_dataset(chrom, (chrom_info.chrom_lengths[chrom] // starting_resolution,
+            f_out.create_dataset(chrom, (math.ceil(chrom_info.chrom_lengths[chrom] / starting_resolution),
                                             num_rows),
                                             fillvalue=np.nan,
                                             compression='gzip')
 
         def bedline_to_chrom_start_end_vector(bedline):
             parts = bedline.strip().split()
-            chrom = parts[chrom_col-1].decode('utf8')
+            chrom = parts[chrom_col-1]
             start = int(parts[from_pos_col-1])
             end = int(parts[to_pos_col-1])
-            vector = [float(parts[value_col-1])]
+            vector = [float(f) for f in parts[value_col-1:value_col-1+num_rows]]
 
             return (chrom, start, end, vector)
 
@@ -115,9 +119,43 @@ def _bedgraph_to_multivec(
         if op.exists(output_file):
             os.remove(output_file)
 
+        if method =='logsumexp':
+            def agg(x):
+                # newshape = (x.shape[2], -1, 2)
+                # b = x.T.reshape((-1,))
+
+                
+                a = x.T.reshape((x.shape[1],-1,2))
+
+                # this is going to be an odd way to get rid of nan
+                # values
+                orig_shape = a.shape
+                na = a.reshape((-1,))
+
+                SMALL_NUM = -1e8
+                NAN_THRESHOLD_NUM = SMALL_NUM / 100
+
+                if np.nanmin(na) < NAN_THRESHOLD_NUM:
+                    raise ValueError("Error removing nan's when running logsumexp aggregation")
+
+                na[np.isnan(na)] = SMALL_NUM;
+                na = na.reshape(orig_shape)
+                res = sm.logsumexp(a, axis=2).T
+
+                nres = res.reshape((-1,))
+                # print("nres:", np.nansum(nres < NAN_THRESHOLD_NUM))
+                nres[nres < NAN_THRESHOLD_NUM] = np.nan
+                res = nres.reshape(res.shape)
+
+                # print("res:", np.nansum(res.reshape((-1,))))
+
+                return res
+        else:
+            agg=lambda x: x.T.reshape((x.shape[1],-1,2)).sum(axis=2).T
+
         cmv.create_multivec_multires(f_in, 
                 chromsizes = zip(chrom_names, chrom_sizes),
-                agg=lambda x: np.nansum(x.T.reshape((x.shape[1],-1,2)),axis=2).T,
+                agg=agg,
                 starting_resolution=starting_resolution,
                 tile_size=tile_size,
                 output_file=output_file,
@@ -147,25 +185,29 @@ def _bedgraph_to_multivec(
     '--chromosome-col',
     help="The column number (1-based) which contains the chromosome "
          "name",
-    default=1
+    default=1,
+    type=int
 )
 @click.option(
     '--from-pos-col',
     help="The column number (1-based) which contains the starting "
          "position",
-    default=2
+    default=2,
+    type=int
 )
 @click.option(
     '--to-pos-col',
     help="The column number (1-based) which contains the ending"
          "position",
-    default=3
+    default=3,
+    type=int
 )
 @click.option(
     '--value-col',
     help="The column number (1-based) which contains the actual value"
          "position",
-    default=4
+    default=4,
+    type=int
 )
 @click.option(
     '--has-header/--no-header',
@@ -214,15 +256,21 @@ def _bedgraph_to_multivec(
         help="The number of data points in each tile."
              "Used to determine the number of zoom levels"
              "to create.")
+@click.option(
+    '--method',
+    help='The method used to aggregate values (e.g. sum, average...)',
+    type=click.Choice(['sum', 'logsumexp']),
+    default='sum'
+)
 def bedfile_to_multivec(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chunk_size, nan_value,
         chromsizes_filename,
         starting_resolution, num_rows, 
-        format, row_infos_filename, tile_size):
+        format, row_infos_filename, tile_size, method):
     _bedgraph_to_multivec(filepath, output_file, assembly, chromosome_col, 
         from_pos_col, to_pos_col, value_col, has_header, 
         chunk_size, nan_value, 
         chromsizes_filename, starting_resolution, num_rows, 
-        format, row_infos_filename, tile_size)
+        format, row_infos_filename, tile_size, method)
 

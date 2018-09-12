@@ -40,12 +40,14 @@ def bedfile_to_multivec(input_filename, f_out,
         if prev_chrom is not None and chrom != prev_chrom:
             # we've reached a new chromosome so we'll dump all
             # the previous values
+            print("len(batch:", len(batch))
             f_out[prev_chrom][batch_start_index:batch_start_index+len(batch)] = np.array(batch)
             
             # we're starting a new chromosome so we start from the beginning
             curr_index = 0
             batch_start_index = 0
             batch = []
+
         prev_chrom = chrom
 
         #print('parts', parts)
@@ -169,10 +171,9 @@ def create_multivec_multires(array_data, chromsizes,
         chrom_data = f['resolutions'][str(curr_resolution)]['values'][chrom]
 
         chunk_size = int(min(standard_chunk_size, len(chrom_data)))
-        print("array_data.shape", array_data[chrom].shape)
+        #print("array_data.shape", array_data[chrom].shape)
 
         while start < len(chrom_data):
-            print("copy start:", start, chunk_size)
             chrom_data[start:start + chunk_size] = array_data[chrom][start:start+chunk_size]    # see above section
             start += int(min(standard_chunk_size, len(array_data[chrom]) - start))
         
@@ -254,7 +255,7 @@ def create_multivec_multires(array_data, chromsizes,
                       "resolution:", curr_resolution, 
                       "new_data length", len(new_data))
                 '''
-                f['resolutions'][str(curr_resolution)]['values'][chrom][start/2:start/2+chunk_size/2] = new_data
+                f['resolutions'][str(curr_resolution)]['values'][chrom][int(start/2):int(start/2+chunk_size/2)] = new_data
                 start += int(min(standard_chunk_size, len(chrom_data) - start))
 
         prev_resolution = curr_resolution

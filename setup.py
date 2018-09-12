@@ -12,7 +12,6 @@ print("packages:", find_packages())
 setup_requires = [
         'cython',
         'numpy',
-        'pyBigWig'
         ]
 
 install_requires = [
@@ -26,7 +25,6 @@ install_requires = [
         'slugid',
         'sortedcontainers',
         'nose',
-        'pyBigWig',
         'Click']
 
 def extensions():
@@ -73,7 +71,7 @@ setup(
     name='clodius',
     include_dirs= lazy_cythonize(numpy_include),
     ext_modules = lazy_cythonize(extensions),
-    version='0.7.4',
+    version='0.9.1',
     description='Tile generation for big data',
     author='Peter Kerpedjiev',
     author_email='pkerpedjiev@gmail.com',
