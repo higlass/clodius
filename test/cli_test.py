@@ -94,9 +94,9 @@ def test_clodius_aggregate_bedgraph():
             '--has-header',
             '--nan-value', 'NA'])
 
+    '''
     import traceback
     a,b,tb = result.exc_info
-    '''
     print("exc_info:", result.exc_info)
     print("result:", result)
     print("result.output", result.output)
@@ -194,6 +194,16 @@ def test_clodius_aggregate_bedgraph1():
             [input_file,
             '--output-file', output_file,
             '--assembly', 'dm3'])
+
+    a,b,tb = result.exc_info
+
+    """
+    print("exc_info:", result.exc_info)
+    print("result:", result)
+    print("result.output", result.output)
+    print("result.error", traceback.print_tb(tb))
+    print("Exception:", a,b)
+    """
 
     # print("result.output", result.output)
 
