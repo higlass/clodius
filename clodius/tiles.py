@@ -6,29 +6,23 @@ import numpy as np
 import sys
 import time
 
-def aggregate(in_array, num_to_agg):
-    if len(in_array) % num_to_agg != 0:
-        new_array = np.concatenate(in_array, [np.nan] * (num_to_agg - len(in_array) % num_to_agg))
-    else:
-        new_array = in_array
+def aggregate(x, k):
+    x  = np.asarray(x)
 
-    return np.nansum(np.reshape(new_array, (int(len(new_array) / num_to_agg), num_to_agg)), axis=1)
+    if len(x) % k != 0:
+        extend = (k - len(x) % k)
+        x = np.r_[x, [np.nan] * extend]
 
-def aggregate(in_array, num_to_agg):
-    if len(in_array) % num_to_agg != 0:
-        new_array = np.array(list(in_array) + [np.nan] * (num_to_agg - len(in_array) % num_to_agg))
-    else:
-        new_array = in_array
-
-    x = new_array
-    k = num_to_agg  
     xr = x.reshape((-1, k))
     is_allnan = np.all(np.isnan(xr), axis=1)
-    xs = np.nansum(xr, axis=1)
+    agg = np.nansum(xr, axis=1)
+    
     if np.any(is_allnan):
-        xs = xs.astype(float)
-        xs[is_allnan] = np.nan
-    return xs
+        if not issubclass(agg.dtype.type, np.floating):
+            agg = agg.astype(np.float64)
+        agg[is_allnan] = np.nan
+    
+    return agg
 
 def load_entries_from_file(sc, filename, column_names=None, delimiter=None, 
         elasticsearch_path=None):
