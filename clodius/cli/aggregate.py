@@ -448,7 +448,7 @@ def _bedfile(
         elif importance_column == 'random':
             importance = rand.random()
         else:
-            importance = int(line[int(importance_column)-1])
+            importance = float(line[int(importance_column)-1])
 
         if stop < start:
             print("WARNING: stop < start:", line, file=sys.stderr)
