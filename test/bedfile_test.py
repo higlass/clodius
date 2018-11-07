@@ -201,6 +201,19 @@ def test_chromosome_limit():
 
     os.remove(f.name)
     pass
+
+def test_float_importance():
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    runner = clt.CliRunner()
+    input_file = op.join(testdir, 'sample_data', 'test_float_importance.bed')
+
+    result = runner.invoke(
+            cca.bedfile,
+            [input_file,
+                '--max-per-tile', '2', '--importance-column', '4',
+                '--assembly', 'hg38', '--no-header', '--output-file', f.name])
+
 """
 def test_get_tiles():
     f = h5py.File('test/sample_data/cnv.hibed')
