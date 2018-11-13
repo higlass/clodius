@@ -167,8 +167,10 @@ def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
     tile_y_end_pos = tile_y_start_pos + (numy * tile_width)
 
     query = '''
-    SELECT fromX, toX, fromY, toY, chrOffset, importance, fields, uid
-    FROM intervals,position_index
+    SELECT
+        fromX, toX, fromY, toY, chrOffset, importance, fields, uid, intervals.id
+    FROM
+        intervals, position_index
     WHERE
         intervals.id=position_index.id AND
         zoomLevel <= {} AND
@@ -222,6 +224,7 @@ def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
                          'chrOffset': r[4],
                          'importance': r[5],
                          'uid': uid,
+                         'id': r[8],
                          'fields': r[6].split('\t')}]
     conn.close()
 
