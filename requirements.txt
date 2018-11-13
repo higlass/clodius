@@ -1,4 +1,3 @@
-Cython==0.25.2
 negspy==0.2.19
 numpy==1.14.0
 

@@ -34,8 +34,16 @@ def bedfile_to_multivec(input_filename, f_out,
         f.readline()
 
     prev_chrom = None
+    print('base_resolution:', base_resolution)
+    warned = False
+
     for line in f:
         chrom,start,end,vector = bedline_to_chrom_start_end_vector(line)
+
+        if end - start != base_resolution and not warned:
+            print("WARNING: interval length ({}) doesn't match base resolution ({}): {}".
+                    format(end - start, base_resolution, line))
+            warned = True
 
         if prev_chrom is not None and chrom != prev_chrom:
             # we've reached a new chromosome so we'll dump all
@@ -131,6 +139,7 @@ def create_multivec_multires(array_data, chromsizes,
     f.create_group('resolutions')
     f.create_group('chroms')
 
+    print("array_data:", array_data['segment1'][-20:])
     # start with a resolution of 1 element per pixel
     curr_resolution = starting_resolution
 
@@ -224,7 +233,6 @@ def create_multivec_multires(array_data, chromsizes,
 
             f['resolutions'][str(curr_resolution)]['values'].create_dataset(chrom, 
                                             new_shape, compression='gzip')
-
 
             while start < len(chrom_data):
                 print('start:', start)

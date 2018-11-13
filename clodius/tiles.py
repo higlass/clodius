@@ -5,10 +5,24 @@ import math
 import numpy as np
 import sys
 import time
-import clodius.fast as cf
 
-def aggregate(in_array, num_to_agg):
-    return cf.aggregate(in_array.astype(np.float32), num_to_agg)
+def aggregate(x, k):
+    x  = np.asarray(x)
+
+    if len(x) % k != 0:
+        extend = (k - len(x) % k)
+        x = np.r_[x, [np.nan] * extend]
+
+    xr = x.reshape((-1, k))
+    is_allnan = np.all(np.isnan(xr), axis=1)
+    agg = np.nansum(xr, axis=1)
+    
+    if np.any(is_allnan):
+        if not issubclass(agg.dtype.type, np.floating):
+            agg = agg.astype(np.float64)
+        agg[is_allnan] = np.nan
+    
+    return agg
 
 def load_entries_from_file(sc, filename, column_names=None, delimiter=None, 
         elasticsearch_path=None):

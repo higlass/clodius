@@ -452,7 +452,8 @@ def _bedfile(
 
         if stop < start:
             print("WARNING: stop < start:", line, file=sys.stderr)
-            return
+            
+            start, stop = stop, start
 
         # convert chromosome coordinates to genome coordinates
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
@@ -593,7 +594,8 @@ def _bedfile(
 
     sorted_intervals = sorted(intervals, 
                     key=lambda x: -uid_to_entry[x[-1]]['importance'])
-    print('si:', sorted_intervals[:10])
+    # print('si:', sorted_intervals[:10])
+    print("max_per_tile:", max_per_tile)
 
     tile_counts = col.defaultdict(int)
 
@@ -616,6 +618,7 @@ def _bedfile(
                     print('tile_id:', tile_id, tile_counts[tile_id], curr_zoom, 'interval:', interval)
                 '''
                 
+                # print(tile_id, "tile_counts[tile_id]", tile_counts[tile_id])
                 if tile_counts[tile_id] >= max_per_tile:
                     space_available = False
                     break
