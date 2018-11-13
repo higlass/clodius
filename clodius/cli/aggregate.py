@@ -451,10 +451,9 @@ def _bedfile(
             importance = int(line[int(importance_column)-1])
 
         if stop < start:
-            # print("WARNING: stop < start:", line, file=sys.stderr)
-            temp = start
-            start = stop
-            stop = temp
+            print("WARNING: stop < start:", line, file=sys.stderr)
+            
+            start, stop = stop, start
 
         # convert chromosome coordinates to genome coordinates
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
