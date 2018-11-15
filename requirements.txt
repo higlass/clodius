@@ -16,8 +16,5 @@ pybbi==0.2.0
 cooler==0.7.11
 dask
 
-# Cooler
-# TODO: Does this need to be a fork? Can we pin a release? Can we get a tarball rather than using git?
--e git://github.com/scottx611x/cooler@develop#egg=cooler
 # Multiprocess
 -e git://github.com/uqfoundation/multiprocess@02c1480e3e0a8d6740a2234f1f757d8d90dc7705#egg=multiprocess
