@@ -1,7 +1,7 @@
 import bbi
 import cooler
 import functools as ft
-import hgtiles.format as hgfo
+import clodius.tiles.format as hgfo
 import logging
 import numpy as np
 import pandas as pd

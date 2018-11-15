@@ -1,4 +1,4 @@
-import hgtiles.utils as hgut
+import clodius.tiles.utils as hgut
 import json
 
 def tileset_info(df, x_column, y_column):

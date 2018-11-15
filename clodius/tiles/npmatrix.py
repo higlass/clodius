@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import hgtiles.format as hgfo
+import clodius.tiles.format as hgfo
 
 def tiles_wrapper(grid, tile_ids):
     tile_values = []

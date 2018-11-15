@@ -1,4 +1,4 @@
-import hgtiles.format as hgfo
+import clodius.tiles.format as hgfo
 import pandas as pd
 
 import numpy as np

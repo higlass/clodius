@@ -1,8 +1,8 @@
 import base64
 import collections as col
 import cooler
-import hgtiles.format as hgfo
-import hgtiles.utils as hgut
+import clodius.tiles.format as hgfo
+import clodius.tiles.utils as hgut
 import h5py
 import itertools as it
 import numpy as np

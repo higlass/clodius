@@ -24,6 +24,8 @@ install_requires = [
         'slugid',
         'sortedcontainers',
         'nose',
+        'cooler==0.7.11',
+        'pybbi==0.2.0',
         'Click']
 
 setup(
