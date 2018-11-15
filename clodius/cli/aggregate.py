@@ -6,7 +6,7 @@ from . import cli
 import click
 import clodius.chromosomes as cch
 import clodius.multivec as cmv
-import clodius.tiles as ct
+import clodius.array as ct
 import collections as col
 import h5py
 import math
@@ -312,7 +312,6 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         '''
     )
 
-    print("creating rtree")
     c.execute('''
         CREATE VIRTUAL TABLE position_index USING rtree(
             id,

@@ -10,7 +10,6 @@ from distutils import sysconfig
 print("packages:", find_packages())
  
 setup_requires = [
-        'cython',
         'numpy',
         ]
 
@@ -18,6 +17,7 @@ install_requires = [
         'numpy',
         'negspy',
         'pysam',
+        'dask',
         'requests',
         'h5py',
         'pandas',

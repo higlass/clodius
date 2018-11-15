@@ -1,4 +1,4 @@
-import clodius.tiles as ct
+import clodius.array as ct
 import math
 import numpy as np
 

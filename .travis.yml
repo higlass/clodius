@@ -2,36 +2,29 @@ sudo: required
 language: python
 python:
       - "3.6"
-      - "2.7"
+
+cache: apt
+addons:
+  apt:
+    packages: # Since we've turned on sudo, apt-get is available, but this works, too.
+    - libatlas-dev
+    - libatlas-base-dev
+    - liblapack-dev
+    - gfortran
+
+before_install:
+  - wget http://repo.continuum.io/miniconda/Miniconda3-4.3.21-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  # Prefer stability to having the latest
+  #- conda update --yes conda
+
+install:
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy=1.13.1
+  - pip install nose
+  - pip install -r requirements.txt
+  - ./get_test_data.sh
 
 script:
-  - set -e
-  - REPO=gehlenborglab/clodius
-  - sudo docker pull $REPO:latest
-  - sudo docker build --cache-from $REPO:latest --tag clodius-image .
-  - sudo docker run clodius-image nosetests
-
-after_success:
-  - tag_push() { echo "Tagging into $2"; sudo docker tag $1 $2; sudo docker push $2; }
-
-  - sudo docker login -u $DOCKER_USER -p $DOCKER_PASS
-  # Always update "latest": the cache will be used for the next build.
-  - tag_push clodius-image $REPO
-  - >
-      if [ "$TRAVIS_EVENT_TYPE" == "pull_request" ]; then
-        echo "PR!";
-
-        BRANCH=`echo ${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH} | perl -pne 'chomp;s{.*/}{};s/\W/-/g'`;
-        tag_push clodius-image $REPO:$BRANCH;
-
-        HASH=`git rev-parse HEAD`;
-        tag_push clodius-image $REPO:git-$HASH;
-
-        tag_push clodius-image $REPO:travis-$TRAVIS_JOB_NUMBER;
-      fi
-  - >
-      if [ ! -z "$TRAVIS_TAG" ]; then
-        echo "Git tag!";
-        tag_push clodius-image $REPO:$TRAVIS_TAG;
-      fi
+  - nosetests test 
 
