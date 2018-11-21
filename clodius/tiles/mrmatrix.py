@@ -1,6 +1,6 @@
 import numpy as np
 
-def tileset_info(f, bounds=None):
+def tileset_info(f, bounds=None):    
     return {
         'min_pos': [int(i) for i in f.attrs['min-pos']],
         'max_pos': [int(i) for i in f.attrs['max-pos']],
@@ -26,7 +26,6 @@ def tiles(f, z,x,y):
         The tile's y position
     '''
     resolutions = sorted(map(int, f['resolutions'].keys()))[::-1]
-    print("attrs:", list(f.attrs.keys()))
     tsinfo = tileset_info(f)
     n_bins = tsinfo['bins_per_dimension']
 
@@ -45,7 +44,7 @@ def tiles(f, z,x,y):
 
     mat = f['resolutions'][str(resolutions[z])]
     data = mat[tile_y_start:tile_y_end,
-        tile_y_start:tile_y_end]
+        tile_x_start:tile_x_end]
 
     x_pad = n_bins - data.shape[0]
     y_pad = n_bins - data.shape[1]

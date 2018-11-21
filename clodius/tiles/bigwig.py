@@ -1,14 +1,18 @@
 import bbi
+import clodius.tiles.format as hgfo
 import cooler
 import functools as ft
-import clodius.tiles.format as hgfo
 import logging
+import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import re
 import time
 
+MAX_THREADS = 16
 TILE_SIZE = 1024
+POOL = mp.Pool(MAX_THREADS)
+
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +137,35 @@ def tileset_info(bwpath, chromsizes=None):
     }
     return tileset_info
 
+def fetch_data(a):
+    (bwpath, binsize, chromsizes, cid, start, end) = a
+    n_bins = int(np.ceil((end - start) / binsize))
+    try:
+        chrom = chromsizes.index[cid]
+        clen = chromsizes.values[cid]
+
+        t1 = time.time()
+        #print("fetching:", chrom, start, end, n_bins);
+        x = bbi.fetch(bwpath, chrom, start, end,
+                      bins=n_bins, missing=np.nan)
+        t2 = time.time()
+
+        # drop the very last bin if it is smaller than the binsize
+        if end == clen and clen % binsize != 0:
+            x = x[:-1]
+    except IndexError:
+        # beyond the range of the available chromosomes
+        # probably means we've requested a range of absolute
+        # coordinates that stretch beyond the end of the genome
+        x = np.zeros(n_bins)
+        x[:] = np.nan
+    except KeyError:
+        # probably requested a chromosome that doesn't exist (e.g. chrM)
+        x = np.zeros(n_bins)
+        x[:] = np.nan
+
+    return x
+
 def get_bigwig_tile(bwpath, zoom_level, start_pos, end_pos, chromsizes=None):
     t1 = time.time()
     if chromsizes is None:
@@ -142,35 +175,12 @@ def get_bigwig_tile(bwpath, zoom_level, start_pos, end_pos, chromsizes=None):
     # print("chromosomes time:", t2 - t1)
     resolutions = get_zoom_resolutions(chromsizes)
     binsize = resolutions[zoom_level]
-   
-    arrays = []
-    for cid, start, end in abs2genomic(chromsizes, start_pos, end_pos):
-        n_bins = int(np.ceil((end - start) / binsize))
-        try:
-            chrom = chromsizes.index[cid]
-            clen = chromsizes.values[cid]
 
-            t1 = time.time()
-            #print("fetching:", chrom, start, end, n_bins);
-            x = bbi.fetch(bwpath, chrom, start, end,
-                          bins=n_bins, missing=np.nan)
-            t2 = time.time()
-
-            # drop the very last bin if it is smaller than the binsize
-            if end == clen and clen % binsize != 0:
-                x = x[:-1]
-        except IndexError:
-            # beyond the range of the available chromosomes
-            # probably means we've requested a range of absolute
-            # coordinates that stretch beyond the end of the genome
-            x = np.zeros(n_bins)
-            x[:] = np.nan
-        except KeyError:
-            # probably requested a chromosome that doesn't exist (e.g. chrM)
-            x = np.zeros(n_bins)
-            x[:] = np.nan
-
-        arrays.append(x)
+    cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
+    print("cids_starts_ends", cids_starts_ends)
+    arrays = pool.map(fetch_data, [
+        tuple([bwpath, binsize, chromsizes] + list(c)) for c in cids_starts_ends
+        ])
 
     return np.concatenate(arrays)
 
