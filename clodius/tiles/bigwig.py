@@ -9,7 +9,9 @@ import pandas as pd
 import re
 import time
 
-MAX_THREADS = 16
+from concurrent.futures import ThreadPoolExecutor
+
+MAX_THREADS = 4
 TILE_SIZE = 1024
 POOL = mp.Pool(MAX_THREADS)
 
@@ -177,10 +179,10 @@ def get_bigwig_tile(bwpath, zoom_level, start_pos, end_pos, chromsizes=None):
     binsize = resolutions[zoom_level]
 
     cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
-    print("cids_starts_ends", cids_starts_ends)
-    arrays = pool.map(fetch_data, [
-        tuple([bwpath, binsize, chromsizes] + list(c)) for c in cids_starts_ends
-        ])
+    with ThreadPoolExecutor(max_workers=16) as e:
+        arrays = list(e.map(fetch_data, [
+            tuple([bwpath, binsize, chromsizes] + list(c)) for c in cids_starts_ends
+            ]))
 
     return np.concatenate(arrays)
 
