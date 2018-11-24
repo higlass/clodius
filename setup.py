@@ -35,7 +35,7 @@ setup(
     author='Peter Kerpedjiev',
     author_email='pkerpedjiev@gmail.com',
     url='',
-    packages=['clodius', 'clodius.cli'],
+    packages=['clodius', 'clodius.cli', 'clodius.tiles'],
     setup_requires=setup_requires,
     install_requires=install_requires,
     entry_points={
