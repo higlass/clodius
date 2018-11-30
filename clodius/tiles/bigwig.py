@@ -59,12 +59,15 @@ def natcmp(x, y):
     if y == 'chrM':
         return -1
 
-    if x_parts < y_parts:
-        return -1
-    elif y_parts > x_parts:
+    try:
+        if x_parts < y_parts:
+            return -1
+        elif y_parts > x_parts:
+            return 1
+        else:
+            return 0
+    except TypeError:
         return 1
-    else:
-        return 0
 
 def natsorted(iterable):
     return sorted(iterable, key=ft.cmp_to_key(natcmp))
