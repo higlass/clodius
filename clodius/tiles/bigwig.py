@@ -3,7 +3,6 @@ import clodius.tiles.format as hgfo
 import cooler
 import functools as ft
 import logging
-import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import re
@@ -13,8 +12,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 MAX_THREADS = 4
 TILE_SIZE = 1024
-POOL = mp.Pool(MAX_THREADS)
-
 
 logger = logging.getLogger(__name__)
 
