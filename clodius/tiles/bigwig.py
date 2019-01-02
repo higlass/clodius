@@ -72,9 +72,9 @@ def natsorted(iterable):
 def get_chromsizes(bwpath):
     """
     TODO: replace this with negspy
-    
+
     Also, return NaNs from any missing chromosomes in bbi.fetch
-    
+
     """
     chromsizes = bbi.chromsizes(bwpath)
     chromosomes = natsorted(chromsizes.keys())
@@ -104,14 +104,14 @@ def tileset_info(bwpath, chromsizes=None):
         The path to the bigwig file from which to retrieve data
     chromsizes: [[chrom, size],...]
         A list of chromosome sizes associated with this tileset.
-        Typically passed in to specify in what order data from 
+        Typically passed in to specify in what order data from
         the bigwig should be returned.
 
     Returns
     -------
-    tileset_info: {'min_pos': [], 
-                    'max_pos': [], 
-                    'tile_size': 1024, 
+    tileset_info: {'min_pos': [],
+                    'max_pos': [],
+                    'tile_size': 1024,
                     'max_zoom': 7
                     }
     '''
@@ -125,7 +125,7 @@ def tileset_info(bwpath, chromsizes=None):
             chromsizes_list += [[chrom, int(size)]]
     else:
         chromsizes_list = chromsizes
-    
+
     min_tile_cover = np.ceil(sum([int(c[1]) for c in chromsizes_list]) / TILE_SIZE)
     max_zoom = int(np.ceil(np.log2(min_tile_cover)))
 
@@ -140,7 +140,7 @@ def tileset_info(bwpath, chromsizes=None):
     return tileset_info
 
 def fetch_data(a):
-    (bwpath, binsize, chromsizes, cid, start, end) = a
+    (bwpath, binsize, chromsizes, summary, cid, start, end) = a
     n_bins = int(np.ceil((end - start) / binsize))
     try:
         chrom = chromsizes.index[cid]
@@ -149,7 +149,7 @@ def fetch_data(a):
         t1 = time.time()
         #print("fetching:", chrom, start, end, n_bins);
         x = bbi.fetch(bwpath, chrom, start, end,
-                      bins=n_bins, missing=np.nan)
+                      bins=n_bins, missing=np.nan, summary=summary)
         t2 = time.time()
 
         # drop the very last bin if it is smaller than the binsize
@@ -168,7 +168,7 @@ def fetch_data(a):
 
     return x
 
-def get_bigwig_tile(bwpath, zoom_level, start_pos, end_pos, chromsizes=None):
+def get_bigwig_tile(bwpath, zoom_level, start_pos, end_pos, chromsizes=None, summary='mean'):
     t1 = time.time()
     if chromsizes is None:
         chromsizes = get_chromsizes(bwpath)
@@ -181,7 +181,7 @@ def get_bigwig_tile(bwpath, zoom_level, start_pos, end_pos, chromsizes=None):
     cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
     with ThreadPoolExecutor(max_workers=16) as e:
         arrays = list(e.map(fetch_data, [
-            tuple([bwpath, binsize, chromsizes] + list(c)) for c in cids_starts_ends
+            tuple([bwpath, binsize, chromsizes, summary] + list(c)) for c in cids_starts_ends
             ]))
 
     return np.concatenate(arrays)
@@ -199,11 +199,11 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
         A list of tile_ids (e.g. xyx.0.0) identifying the tiles
         to be retrieved
     chromsizes_map: {uid: []}
-        A set of chromsizes listings corresponding to the parameters of the 
-        tile_ids. To be used if a chromsizes id is passed in with the tile id 
+        A set of chromsizes listings corresponding to the parameters of the
+        tile_ids. To be used if a chromsizes id is passed in with the tile id
         with the `|cos:id` tag in the tile id
     chromsizes: [[chrom, size],...]
-        A 2d array containing chromosome names and sizes. Overrides the 
+        A 2d array containing chromosome names and sizes. Overrides the
         chromsizes in chromsizes_map
 
     Returns
@@ -219,6 +219,7 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
         tile_no_options = tile_id.split('|')[0]
         tile_id_parts = tile_no_options.split('.')
         tile_position = list(map(int, tile_id_parts[1:3]))
+        tile_summary = tile_id_parts[3] if len(tile_id_parts) > 3 else 'mean'
 
         tile_options = dict([o.split(':') for o in tile_option_parts])
 
@@ -238,7 +239,7 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
 
         zoom_level = tile_position[0]
         tile_pos = tile_position[1]
-        
+
         # this doesn't combine multiple consequetive ids, which
         # would speed things up
         if chromsizes_to_use is None:
@@ -248,7 +249,7 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
         tile_size = TILE_SIZE * 2 ** (max_depth - zoom_level)
         start_pos = tile_pos * tile_size
         end_pos = start_pos + tile_size
-        dense = get_bigwig_tile(bwpath, zoom_level, start_pos, end_pos, chromsizes_to_use)
+        dense = get_bigwig_tile(bwpath, zoom_level, start_pos, end_pos, chromsizes_to_use, summary=tile_summary)
 
         tile_value = hgfo.format_dense_tile(dense)
 
