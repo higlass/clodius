@@ -72,9 +72,9 @@ def natsorted(iterable):
 def get_chromsizes(bwpath):
     """
     TODO: replace this with negspy
-    
+
     Also, return NaNs from any missing chromosomes in bbi.fetch
-    
+
     """
     chromsizes = bbi.chromsizes(bwpath)
     chromosomes = natsorted(chromsizes.keys())
@@ -104,14 +104,14 @@ def tileset_info(bwpath, chromsizes=None):
         The path to the bigwig file from which to retrieve data
     chromsizes: [[chrom, size],...]
         A list of chromosome sizes associated with this tileset.
-        Typically passed in to specify in what order data from 
+        Typically passed in to specify in what order data from
         the bigwig should be returned.
 
     Returns
     -------
-    tileset_info: {'min_pos': [], 
-                    'max_pos': [], 
-                    'tile_size': 1024, 
+    tileset_info: {'min_pos': [],
+                    'max_pos': [],
+                    'tile_size': 1024,
                     'max_zoom': 7
                     }
     '''
@@ -125,7 +125,7 @@ def tileset_info(bwpath, chromsizes=None):
             chromsizes_list += [[chrom, int(size)]]
     else:
         chromsizes_list = chromsizes
-    
+
     min_tile_cover = np.ceil(sum([int(c[1]) for c in chromsizes_list]) / TILE_SIZE)
     max_zoom = int(np.ceil(np.log2(min_tile_cover)))
 
@@ -199,11 +199,11 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
         A list of tile_ids (e.g. xyx.0.0) identifying the tiles
         to be retrieved
     chromsizes_map: {uid: []}
-        A set of chromsizes listings corresponding to the parameters of the 
-        tile_ids. To be used if a chromsizes id is passed in with the tile id 
+        A set of chromsizes listings corresponding to the parameters of the
+        tile_ids. To be used if a chromsizes id is passed in with the tile id
         with the `|cos:id` tag in the tile id
     chromsizes: [[chrom, size],...]
-        A 2d array containing chromosome names and sizes. Overrides the 
+        A 2d array containing chromosome names and sizes. Overrides the
         chromsizes in chromsizes_map
 
     Returns
@@ -238,7 +238,7 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
 
         zoom_level = tile_position[0]
         tile_pos = tile_position[1]
-        
+
         # this doesn't combine multiple consequetive ids, which
         # would speed things up
         if chromsizes_to_use is None:
