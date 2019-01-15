@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 summary_descriptions = {}
 summary_descriptions['mean'] = {'name': 'Mean', 'value': 'mean'}
-summary_descriptions['min'] = {'name': 'Min', 'value': 'KR'}
-summary_descriptions['max'] = {'name': 'Max', 'value': 'VC'}
+summary_descriptions['min'] = {'name': 'Min', 'value': 'min'}
+summary_descriptions['max'] = {'name': 'Max', 'value': 'max'}
 summary_descriptions['std'] = {'name': 'Standard Deviation', 'value': 'std'}
 summary_descriptions['cov'] = {'name': 'Coverage', 'value': 'cov'}
 
