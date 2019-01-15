@@ -16,12 +16,11 @@ POOL = mp.Pool(MAX_THREADS)
 
 logger = logging.getLogger(__name__)
 
-summary_descriptions = {}
-summary_descriptions['mean'] = {'name': 'Mean', 'value': 'mean'}
-summary_descriptions['min'] = {'name': 'Min', 'value': 'min'}
-summary_descriptions['max'] = {'name': 'Max', 'value': 'max'}
-summary_descriptions['std'] = {'name': 'Standard Deviation', 'value': 'std'}
-summary_descriptions['cov'] = {'name': 'Coverage', 'value': 'cov'}
+aggregation_modes = {}
+aggregation_modes['mean'] = {'name': 'Mean', 'value': 'mean'}
+aggregation_modes['min'] = {'name': 'Min', 'value': 'min'}
+aggregation_modes['max'] = {'name': 'Max', 'value': 'max'}
+aggregation_modes['std'] = {'name': 'Standard Deviation', 'value': 'std'}
 
 
 def get_quadtree_depth(chromsizes):
@@ -154,7 +153,7 @@ def tileset_info(bwpath, chromsizes=None):
         'tile_size': TILE_SIZE,
         'max_zoom': max_zoom,
         'chromsizes': chromsizes_list,
-        'summaries': summary_descriptions
+        'aggregation_modes': aggregation_modes
     }
     return tileset_info
 
