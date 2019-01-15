@@ -1,8 +1,12 @@
 import clodius.tiles.bigwig as hgbi
 import os.path as op
 
+
 def test_bigwig_tiles():
-    filename = op.join('data', 'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig')
+    filename = op.join(
+      'data',
+      'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig'
+    )
 
     meanval = hgbi.tiles(filename, ['x.0.0'])
     minval = hgbi.tiles(filename, ['x.0.0.min'])
@@ -12,7 +16,15 @@ def test_bigwig_tiles():
 
 
 def test_tileset_info():
-    filename = op.join('data', 'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig')
+    filename = op.join(
+      'data',
+      'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig'
+    )
 
     tileset_info = hgbi.tileset_info(filename)
-    # print('tileset_info', tileset_info)
+
+    assert len(tileset_info['aggregation_modes']) == 4
+    assert tileset_info['aggregation_modes']['mean']
+    assert tileset_info['aggregation_modes']['min']
+    assert tileset_info['aggregation_modes']['max']
+    assert tileset_info['aggregation_modes']['std']
