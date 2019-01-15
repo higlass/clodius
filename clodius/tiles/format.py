@@ -1,10 +1,11 @@
 import base64
 import numpy as np
 
+
 def format_dense_tile(data):
     '''
     Format raw vector data into a more structured tile
-    containing either float16 or float32 data along with a 
+    containing either float16 or float32 data along with a
     dtype to differentiate between the two.
 
     Parameters
@@ -22,7 +23,9 @@ def format_dense_tile(data):
 
     if len(data):
         with np.warnings.catch_warnings():
-            np.warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+            np.warnings.filterwarnings(
+                'ignore', r'All-NaN (slice|axis) encountered'
+            )
 
             max_dense = float(np.nanmax(data))
             min_dense = float(np.nanmin(data))
@@ -36,7 +39,6 @@ def format_dense_tile(data):
     min_f16 = np.finfo('float16').min
     max_f16 = np.finfo('float16').max
 
-    #has_nan = len([d for d in data if np.isnan(d)]) > 0
     has_nan = np.sum(np.isnan(data)) > 0
 
     if (
