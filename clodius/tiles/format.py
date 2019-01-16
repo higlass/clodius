@@ -40,6 +40,13 @@ def format_dense_tile(data):
     max_f16 = np.finfo('float16').max
 
     has_nan = np.sum(np.isnan(data)) > 0
+    n_dim = len(data.shape)
+    size = data.shape[1] if n_dim == 2 else 1
+
+    # Flatten data array
+    fdata = data
+    if n_dim > 0:
+        fdata = data.flatten()
 
     if (
         not has_nan and
@@ -47,14 +54,15 @@ def format_dense_tile(data):
         min_dense > min_f16 and min_dense < max_f16
     ):
         tile_data.update({
-            'dense': base64.b64encode(data.astype('float16')).decode('utf-8'),
+            'dense': base64.b64encode(fdata.astype('float16')).decode('utf-8'),
+            'size': size,
             'dtype': 'float16'
         })
     else:
         tile_data.update({
-            'dense': base64.b64encode(data.astype('float32')).decode('utf-8'),
+            'dense': base64.b64encode(fdata.astype('float32')).decode('utf-8'),
+            'size': size,
             'dtype': 'float32'
         })
 
     return tile_data
-
