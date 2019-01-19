@@ -16,3 +16,19 @@ def test_tileset_info():
 
     tileset_info = hgbi.tileset_info(filename)
     # print('tileset_info', tileset_info)
+
+def test_natsorted():
+    chromname_tests = [
+        {
+            'input': ['2', '3', '4', 'm', 'x', '1', 'y'],
+            'expected': ['1', '2', '3', '4', 'x', 'y', 'm']
+        },
+        {
+            'input': ['chr1', 'chr4', 'chr5', 'chr2', 'chr3', 'chrMT', 'chrY', 'chrX'],
+            'expected': ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chrX', 'chrY', 'chrMT']
+        }
+    ]
+
+    for test in chromname_tests:
+        sorted_output = hgbi.natsorted(test['input'])
+        assert sorted_output == test['expected'], 'Sorted output was %s\nExpected: %s' % (sorted_output, test['expected'])
