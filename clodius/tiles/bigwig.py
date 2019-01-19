@@ -64,11 +64,11 @@ def natcmp(x, y):
         [int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a]
     )
 
-    if x == 'chrM':
-        # chrM goes at the end of the non alternate contigs
-        return 1
-    if y == 'chrM':
-        return -1
+    for key in ['m', 'y', 'x']: # order of these parameters is purposefully reverse how they should be ordered
+        if key in y.lower():
+            return -1
+        if key in x.lower():
+            return 1
 
     if x_parts < y_parts:
         return -1
