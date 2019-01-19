@@ -229,6 +229,7 @@ def get_bigwig_tile(
     chromsizes=None,
     aggregation_mode='mean',
     range_mode=None
+    ):
 
     if chromsizes is None:
         chromsizes = get_chromsizes(bwpath)
