@@ -26,7 +26,6 @@ range_modes = {}
 range_modes['minMax'] = {'name': 'Min-Max', 'value': 'minMax'}
 range_modes['whisker'] = {'name': 'Whisker', 'value': 'whisker'}
 
-
 def get_quadtree_depth(chromsizes):
     tile_size_bp = TILE_SIZE
     min_tile_cover = np.ceil(sum(chromsizes) / tile_size_bp)
@@ -41,6 +40,7 @@ def natsort_key(s, _NS_REGEX=re.compile(r'(\d+)', re.U)):
     return tuple(
         [int(x) if x.isdigit() else x for x in _NS_REGEX.split(s) if x]
     )
+
 
 
 def natcmp(x, y):
@@ -68,11 +68,12 @@ def natcmp(x, y):
         [int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a]
     )
 
-    if x == 'chrM':
-        # chrM goes at the end of the non alternate contigs
-        return 1
-    if y == 'chrM':
-        return -1
+
+    for key in ['m', 'y', 'x']: # order of these parameters is purposefully reverse how they should be ordered
+        if key in y.lower():
+            return -1
+        if key in x.lower():
+            return 1
 
     if x_parts < y_parts:
         return -1
@@ -228,7 +229,7 @@ def get_bigwig_tile(
     chromsizes=None,
     aggregation_mode='mean',
     range_mode=None
-):
+
     if chromsizes is None:
         chromsizes = get_chromsizes(bwpath)
 
@@ -250,6 +251,7 @@ def get_bigwig_tile(
                 ]
             )
         )
+
 
     return np.concatenate(arrays)
 
