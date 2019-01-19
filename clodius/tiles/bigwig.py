@@ -22,6 +22,9 @@ aggregation_modes['min'] = {'name': 'Min', 'value': 'min'}
 aggregation_modes['max'] = {'name': 'Max', 'value': 'max'}
 aggregation_modes['std'] = {'name': 'Standard Deviation', 'value': 'std'}
 
+range_modes = {}
+range_modes['minMax'] = {'name': 'Min-Max', 'value': 'minMax'}
+range_modes['whisker'] = {'name': 'Whisker', 'value': 'whisker'}
 
 def get_quadtree_depth(chromsizes):
     tile_size_bp = TILE_SIZE
@@ -34,9 +37,10 @@ def get_zoom_resolutions(chromsizes):
 
 
 def natsort_key(s, _NS_REGEX=re.compile(r'(\d+)', re.U)):
-        return tuple(
-            [int(x) if x.isdigit() else x for x in _NS_REGEX.split(s) if x]
-        )
+    return tuple(
+        [int(x) if x.isdigit() else x for x in _NS_REGEX.split(s) if x]
+    )
+
 
 
 def natcmp(x, y):
@@ -63,6 +67,7 @@ def natcmp(x, y):
     y_parts = tuple(
         [int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a]
     )
+
 
     for key in ['m', 'y', 'x']: # order of these parameters is purposefully reverse how they should be ordered
         if key in y.lower():
@@ -153,27 +158,53 @@ def tileset_info(bwpath, chromsizes=None):
         'tile_size': TILE_SIZE,
         'max_zoom': max_zoom,
         'chromsizes': chromsizes_list,
-        'aggregation_modes': aggregation_modes
+        'aggregation_modes': aggregation_modes,
+        'range_modes': range_modes
     }
     return tileset_info
 
 
 def fetch_data(a):
-    (bwpath, binsize, chromsizes, summary, cid, start, end) = a
+    (
+        bwpath,
+        binsize,
+        chromsizes,
+        aggregation_mode,
+        range_mode,
+        cid,
+        start,
+        end
+    ) = a
     n_bins = int(np.ceil((end - start) / binsize))
+    n_dim = 1
+
+    if range_mode == 'minMax':
+        n_dim = 2
+
+    if range_mode == 'whisker':
+        n_dim = 4
+
+    x = np.zeros((n_bins, n_dim)) if n_dim > 1 else np.zeros(n_bins)
+
     try:
         chrom = chromsizes.index[cid]
         clen = chromsizes.values[cid]
 
-        x = bbi.fetch(
-            bwpath,
-            chrom,
-            start,
-            end,
-            bins=n_bins,
-            missing=np.nan,
-            summary=summary
-        )
+        args = [bwpath, chrom, start, end]
+        kwargs = {"bins": n_bins, "missing": np.nan}
+
+        if range_mode == 'minMax':
+            x[:, 0] = bbi.fetch(*args, **dict(kwargs, summary='min'))
+            x[:, 1] = bbi.fetch(*args, **dict(kwargs, summary='max'))
+
+        elif range_mode == 'whisker':
+            x[:, 0] = bbi.fetch(*args, **dict(kwargs, summary='min'))
+            x[:, 1] = bbi.fetch(*args, **dict(kwargs, summary='max'))
+            x[:, 2] = bbi.fetch(*args, **dict(kwargs, summary='mean'))
+            x[:, 3] = bbi.fetch(*args, **dict(kwargs, summary='std'))
+
+        else:
+            x[:] = bbi.fetch(*args, **dict(kwargs, summary=aggregation_mode))
 
         # drop the very last bin if it is smaller than the binsize
         if end == clen and clen % binsize != 0:
@@ -182,19 +213,23 @@ def fetch_data(a):
         # beyond the range of the available chromosomes
         # probably means we've requested a range of absolute
         # coordinates that stretch beyond the end of the genome
-        x = np.zeros(n_bins)
         x[:] = np.nan
     except KeyError:
         # probably requested a chromosome that doesn't exist (e.g. chrM)
-        x = np.zeros(n_bins)
         x[:] = np.nan
 
     return x
 
 
 def get_bigwig_tile(
-    bwpath, zoom_level, start_pos, end_pos, chromsizes=None, summary='mean'
-):
+    bwpath,
+    zoom_level,
+    start_pos,
+    end_pos,
+    chromsizes=None,
+    aggregation_mode='mean',
+    range_mode=None
+
     if chromsizes is None:
         chromsizes = get_chromsizes(bwpath)
 
@@ -203,11 +238,20 @@ def get_bigwig_tile(
 
     cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
     with ThreadPoolExecutor(max_workers=16) as e:
-        arrays = list(e.map(fetch_data, [
-            tuple(
-                [bwpath, binsize, chromsizes, summary] + list(c)
-            ) for c in cids_starts_ends
-        ]))
+        arrays = list(
+            e.map(
+                fetch_data, [
+                    tuple([
+                        bwpath,
+                        binsize,
+                        chromsizes,
+                        aggregation_mode,
+                        range_mode
+                    ] + list(c)) for c in cids_starts_ends
+                ]
+            )
+        )
+
 
     return np.concatenate(arrays)
 
@@ -243,7 +287,12 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
         tile_no_options = tile_id.split('|')[0]
         tile_id_parts = tile_no_options.split('.')
         tile_position = list(map(int, tile_id_parts[1:3]))
-        tile_summary = tile_id_parts[3] if len(tile_id_parts) > 3 else 'mean'
+        return_value = tile_id_parts[3] if len(tile_id_parts) > 3 else 'mean'
+
+        aggregation_mode = (
+            return_value if return_value in aggregation_modes else 'mean'
+        )
+        range_mode = return_value if return_value in range_modes else None
 
         tile_options = dict([o.split(':') for o in tile_option_parts])
 
@@ -278,7 +327,8 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
             start_pos,
             end_pos,
             chromsizes_to_use,
-            summary=tile_summary
+            aggregation_mode=aggregation_mode,
+            range_mode=range_mode,
         )
 
         tile_value = hgfo.format_dense_tile(dense)
