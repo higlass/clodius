@@ -17,7 +17,7 @@ def tiles(array, z, x, importances, tile_size=16):
     tile_array = array[x_start:x_end]
     tile_importances = importances[x_start:x_end]
 
-    indeces = np.argsort(tile_importances)[:tile_size]
+    indeces = np.argsort(tile_importances)[::-1][:tile_size]
     
     return [{'x': x, 'label': label, 'importance': importance} for x, label, importance 
         in zip([int(i) for i in x_start + indeces], tile_array[indeces], tile_importances[indeces] )]
