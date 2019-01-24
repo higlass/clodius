@@ -222,7 +222,7 @@ def create_multivec_multires(array_data, chromsizes,
     f.create_group('resolutions')
     f.create_group('chroms')
 
-    print("array_data:", array_data['segment1'][-20:])
+
     # start with a resolution of 1 element per pixel
     curr_resolution = starting_resolution
 
