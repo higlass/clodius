@@ -1,3 +1,7 @@
+v0.10.1 (2019-01-22)
+
+- Removed a buggy print statement from the conversion script
+
 v0.9.5 (2018-11-11)
 
 - If the start position is greater than the end position, switch them around
