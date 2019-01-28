@@ -142,7 +142,7 @@ def _bedgraph_to_multivec(
                     starting_resolution, has_header, chunk_size);
         elif format == 'states':
             cmv.bedfile_to_multivec(filepath, f_out, states_bedline_to_vector,
-                    starting_resolution, has_header, chunk_size);
+                    starting_resolution, has_header, chunk_size, row_infos);
         else:
             cmv.bedfile_to_multivec(filepath, f_out, bedline_to_chrom_start_end_vector,
                     starting_resolution, has_header, chunk_size);
