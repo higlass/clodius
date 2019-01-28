@@ -70,7 +70,7 @@ def states_bedline_to_vector(bedline,row_infos):
     end=int(parts[2])
     state=parts[3]
 
-    states_dic = {row_infos[x]:x for x in range(len(info_rows))
+    states_dic = {row_infos[x]:x for x in range(len(row_infos))}
 
     states_vector = [0] * len(states_dic)
     for key,value in states_dic.items():
