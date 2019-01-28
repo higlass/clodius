@@ -10,7 +10,7 @@ import sys
 
 def bedfile_to_multivec(input_filename, f_out,
         bedline_to_chrom_start_end_vector, base_resolution,
-        has_header, chunk_size):
+        has_header, chunk_size, row_infos):
     '''
     Convert an epilogos bedfile to multivec format.
     '''
@@ -38,7 +38,7 @@ def bedfile_to_multivec(input_filename, f_out,
     warned = False
 
     for line in f:
-        chrom,start,end,vector = bedline_to_chrom_start_end_vector(line)
+        chrom,start,end,vector = bedline_to_chrom_start_end_vector(line, row_infos)
 
         if end % base_resolution != 0 and not warned:
             print("WARNING: interval length ({}) it is not a multiple of the base resolution ({}): {}".
