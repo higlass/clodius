@@ -138,6 +138,7 @@ def _bedgraph_to_multivec(
         elif format == 'states':
             assert(row_infos != None), "A row_infos file must be provided for --format = 'states' "
             states_dic = {row_infos[x]:x for x in range(len(row_infos))}
+            print(row_infos)
             print(states_dic)
             cmv.bedfile_to_multivec(filepath, f_out, states_bedline_to_vector,
                     starting_resolution, has_header, chunk_size, states_dic);
