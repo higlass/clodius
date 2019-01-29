@@ -114,6 +114,7 @@ def _bedgraph_to_multivec(
         if row_infos_filename is not None:
             with open(row_infos_filename, 'r') as fr:
                 row_infos = [l.strip().encode('utf8') for l in fr]
+            print("This is how the row_infos file looks like", row_infos)
         else:
             row_infos = None
 
