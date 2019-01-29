@@ -42,7 +42,7 @@ def epilogos_bedline_to_vector(bedline):
 
     return (chrom, start, end, states)
 
-def states_bedline_to_vector(bedline,row_infos):
+def states_bedline_to_vector(bedline,states_dic):
     '''
     Convert a line from a bedfile containing states in categorical data to vector format.
 
@@ -54,8 +54,8 @@ def states_bedline_to_vector(bedline,row_infos):
         (e.g. ["chr1", "1000", "2000", "state"]))
 
 
-    row_infos:
-        A file containing the names of the rows in the multivec file
+    states_dic:
+        A dictionary containing the states in the file with a corresponding value
 
     Returns
     -------
@@ -68,14 +68,9 @@ def states_bedline_to_vector(bedline,row_infos):
     chrom=parts[0]
     start=int(parts[1])
     end=int(parts[2])
-    state=parts[3]
+    state= states_dic[parts[3]]
 
-    states_dic = {row_infos[x]:x for x in range(len(row_infos))}
-
-    states_vector = [0] * len(states_dic)
-    for key,value in states_dic.items():
-        if state == key:
-            states_vector[value] = 1
+    states_vector = [ 1 if index == state else 0 for index in range(len(states_dic))]
 
     return (chrom, start, end, states_vector)
 
@@ -141,8 +136,10 @@ def _bedgraph_to_multivec(
             cmv.bedfile_to_multivec(filepath, f_out, epilogos_bedline_to_vector,
                     starting_resolution, has_header, chunk_size);
         elif format == 'states':
+            assert(row_infos != None), "A row_infos file must be provided for format= 'states' "
+            states_dic = {row_infos[x]:x for x in range(len(row_infos))}
             cmv.bedfile_to_multivec(filepath, f_out, states_bedline_to_vector,
-                    starting_resolution, has_header, chunk_size, row_infos);
+                    starting_resolution, has_header, chunk_size, states_dic);
         else:
             cmv.bedfile_to_multivec(filepath, f_out, bedline_to_chrom_start_end_vector,
                     starting_resolution, has_header, chunk_size);
