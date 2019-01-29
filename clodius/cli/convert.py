@@ -64,7 +64,8 @@ def states_bedline_to_vector(bedline,states_dic):
 
     '''
 
-    parts = [i.strip().decode('utf8') for i in bedline.split('\t')]
+    #parts = [i.strip().decode('utf8') for i in bedline.split('\t')]
+    parts = bedline.decode('utf8').strip().split('\t')
     chrom=parts[0]
     start=int(parts[1])
     end=int(parts[2])
