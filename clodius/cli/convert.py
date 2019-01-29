@@ -72,7 +72,7 @@ def states_bedline_to_vector(bedline,states_dic):
     end=int(parts[2])
     #state= states_dic[parts[3]]
     state = parts[3]
-    state_val = states_dic[state].decode('utf8')
+    state_val = states_dic[state.decode('utf8')]
 
     states_vector = [ 1 if index == state else 0 for index in range(len(states_dic))]
 
