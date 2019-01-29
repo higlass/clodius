@@ -64,15 +64,15 @@ def states_bedline_to_vector(bedline,states_dic):
 
     '''
 
-    #parts = [i.strip().decode('utf8') for i in bedline.split('\t')]
-    #parts = bedline.decode('utf8').strip().split('\t')
-    parts = [i.strip() for i in bedline.split('\t')]
+    #parts = [i.strip().decode('utf8') for i in bedline.split('\t')] #Peter's
+    #parts = bedline.decode('utf8').strip().split('\t') #Mine modified
+    parts = [i.strip() for i in bedline.split('\t')] #Mine
     chrom=parts[0]
     start=int(parts[1])
     end=int(parts[2])
     #state= states_dic[parts[3]]
     state = parts[3]
-    state_val = states_dic[state]
+    state_val = states_dic[state].decode('utf8')
 
     states_vector = [ 1 if index == state else 0 for index in range(len(states_dic))]
 
