@@ -64,15 +64,11 @@ def states_bedline_to_vector(bedline,states_dic):
 
     '''
 
-    #parts = [i.strip().decode('utf8') for i in bedline.split('\t')] #Peter's
-    #parts = bedline.decode('utf8').strip().split('\t') #Mine modified
-    parts = [i.strip() for i in bedline.split('\t')] #Mine
+    parts = [i.strip().encode('utf8') for i in bedline.split('\t')]
     chrom=parts[0]
     start=int(parts[1])
     end=int(parts[2])
-    #state= states_dic[parts[3]]
-    state = parts[3]
-    state_val = states_dic[state.decode('utf8')]
+    state= states_dic[parts[3]]
 
     states_vector = [ 1 if index == state else 0 for index in range(len(states_dic))]
 
@@ -118,7 +114,7 @@ def _bedgraph_to_multivec(
         if row_infos_filename is not None:
             with open(row_infos_filename, 'r') as fr:
                 row_infos = [l.strip().encode('utf8') for l in fr]
-            print("This is how the row_infos file looks like", row_infos)
+
         else:
             row_infos = None
 
@@ -142,9 +138,7 @@ def _bedgraph_to_multivec(
                     starting_resolution, has_header, chunk_size);
         elif format == 'states':
             assert(row_infos != None), "A row_infos file must be provided for --format = 'states' "
-            states_dic = {row_infos[x]:x for x in range(len(row_infos))}
-            print(row_infos)
-            print(states_dic)
+
             cmv.bedfile_to_multivec(filepath, f_out, states_bedline_to_vector,
                     starting_resolution, has_header, chunk_size, states_dic);
         else:
