@@ -40,9 +40,9 @@ def bedfile_to_multivec(input_filename, f_out,
     for line in f:
         chrom,start,end,vector = bedline_to_chrom_start_end_vector(line, row_infos)
 
-        if end % base_resolution != 0 and not warned:
-            print("WARNING: interval length ({}) it is not a multiple of the base resolution ({}): {}".
-                    format(end - start, base_resolution, line))
+        if end % base_resolution != 0 or start % base_resolution != 0 and not warned:
+            print("WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".
+                    format(base_resolution, line))
             warned = True
 
         if prev_chrom is not None and chrom != prev_chrom:
