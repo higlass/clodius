@@ -1,3 +1,8 @@
+v0.10.2 (2019-01-30)
+
+- allow user to input bedfiles describing the state of each segment using categorical data
+- if the binsizes do not match the base_resolution, break them into fragments matching the base_resolution
+
 v0.10.1 (2019-01-22)
 
 - Removed a buggy print statement from the conversion script
