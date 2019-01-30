@@ -63,12 +63,11 @@ def states_bedline_to_vector(bedline,states_dic):
     An array containing values associated the state
 
     '''
-
-    parts = [i.strip().encode('utf8') for i in bedline.split('\t')]
+    parts = bedline.decode('utf8').strip().split('\t')
     chrom=parts[0]
     start=int(parts[1])
     end=int(parts[2])
-    state= states_dic[parts[3]]
+    state= states_dic[parts[3].encode('utf8')]
 
     states_vector = [ 1 if index == state else 0 for index in range(len(states_dic))]
 
@@ -139,7 +138,7 @@ def _bedgraph_to_multivec(
         elif format == 'states':
             assert(row_infos != None), "A row_infos file must be provided for --format = 'states' "
             states_dic = {row_infos[x]:x for x in range(len(row_infos))}
-            
+
             cmv.bedfile_to_multivec(filepath, f_out, states_bedline_to_vector,
                     starting_resolution, has_header, chunk_size, states_dic);
         else:
@@ -282,6 +281,9 @@ def _bedgraph_to_multivec(
 @click.option(
     '--format',
     type=click.Choice(['default', 'epilogos', 'states']),
+    help= "'default':chr start end state1_value state2_value, etc;"
+     "'epilogos': chr start end [[state1_value, state1_num],[state2_value, state2_num],[etc]];"
+     "'states': chr start end state_name",
     default='default'
     )
 @click.option(
