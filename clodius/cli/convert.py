@@ -17,13 +17,13 @@ import ast
 def epilogos_bedline_to_vector(bedline):
     '''
     Convert a line from an epilogos bedfile to vector format.
-    
+
     Parameters
     -----------
     parts: [string,....]
         A line from a bedfile broken up into its constituent parts
         (e.g. ["chr1", "1000", "2000", "[1,2,34,5]"])
-    
+
     Returns
     -------
     An array containing the values associated with that line
@@ -39,8 +39,40 @@ def epilogos_bedline_to_vector(bedline):
     chrom=parts[0]
     start=int(parts[1])
     end=int(parts[2])
-    
+
     return (chrom, start, end, states)
+
+def states_bedline_to_vector(bedline,states_dic):
+    '''
+    Convert a line from a bedfile containing states in categorical data to vector format.
+
+    Parameters
+    ----------
+
+    parts: [string,...]
+        A line form a bedfile broken up into its contituent parts
+        (e.g. ["chr1", "1000", "2000", "state"]))
+
+
+    states_dic:
+        A dictionary containing the states in the file with a corresponding value
+
+    Returns
+    -------
+
+    An array containing values associated the state
+
+    '''
+
+    parts = [i.strip().encode('utf8') for i in bedline.split('\t')]
+    chrom=parts[0]
+    start=int(parts[1])
+    end=int(parts[2])
+    state= states_dic[parts[3]]
+
+    states_vector = [ 1 if index == state else 0 for index in range(len(states_dic))]
+
+    return (chrom, start, end, states_vector)
 
 @cli.group()
 def convert():
@@ -82,6 +114,7 @@ def _bedgraph_to_multivec(
         if row_infos_filename is not None:
             with open(row_infos_filename, 'r') as fr:
                 row_infos = [l.strip().encode('utf8') for l in fr]
+
         else:
             row_infos = None
 
@@ -101,10 +134,16 @@ def _bedgraph_to_multivec(
             return (chrom, start, end, vector)
 
         if format == 'epilogos':
-            cmv.bedfile_to_multivec(filepath, f_out, epilogos_bedline_to_vector, 
+            cmv.bedfile_to_multivec(filepath, f_out, epilogos_bedline_to_vector,
                     starting_resolution, has_header, chunk_size);
+        elif format == 'states':
+            assert(row_infos != None), "A row_infos file must be provided for --format = 'states' "
+            states_dic = {row_infos[x]:x for x in range(len(row_infos))}
+            
+            cmv.bedfile_to_multivec(filepath, f_out, states_bedline_to_vector,
+                    starting_resolution, has_header, chunk_size, states_dic);
         else:
-            cmv.bedfile_to_multivec(filepath, f_out, bedline_to_chrom_start_end_vector, 
+            cmv.bedfile_to_multivec(filepath, f_out, bedline_to_chrom_start_end_vector,
                     starting_resolution, has_header, chunk_size);
 
         f_out.close()
@@ -124,7 +163,7 @@ def _bedgraph_to_multivec(
                 # newshape = (x.shape[2], -1, 2)
                 # b = x.T.reshape((-1,))
 
-                
+
                 a = x.T.reshape((x.shape[1],-1,2))
 
                 # this is going to be an odd way to get rid of nan
@@ -153,7 +192,7 @@ def _bedgraph_to_multivec(
         else:
             agg=lambda x: x.T.reshape((x.shape[1],-1,2)).sum(axis=2).T
 
-        cmv.create_multivec_multires(f_in, 
+        cmv.create_multivec_multires(f_in,
                 chromsizes = zip(chrom_names, chrom_sizes),
                 agg=agg,
                 starting_resolution=starting_resolution,
@@ -242,7 +281,7 @@ def _bedgraph_to_multivec(
 )
 @click.option(
     '--format',
-    type=click.Choice(['default', 'epilogos']),
+    type=click.Choice(['default', 'epilogos', 'states']),
     default='default'
     )
 @click.option(
@@ -262,15 +301,14 @@ def _bedgraph_to_multivec(
     type=click.Choice(['sum', 'logsumexp']),
     default='sum'
 )
-def bedfile_to_multivec(filepath, output_file, assembly, chromosome_col, 
-        from_pos_col, to_pos_col, value_col, has_header, 
+def bedfile_to_multivec(filepath, output_file, assembly, chromosome_col,
+        from_pos_col, to_pos_col, value_col, has_header,
         chunk_size, nan_value,
         chromsizes_filename,
-        starting_resolution, num_rows, 
+        starting_resolution, num_rows,
         format, row_infos_filename, tile_size, method):
-    _bedgraph_to_multivec(filepath, output_file, assembly, chromosome_col, 
-        from_pos_col, to_pos_col, value_col, has_header, 
-        chunk_size, nan_value, 
-        chromsizes_filename, starting_resolution, num_rows, 
+    _bedgraph_to_multivec(filepath, output_file, assembly, chromosome_col,
+        from_pos_col, to_pos_col, value_col, has_header,
+        chunk_size, nan_value,
+        chromsizes_filename, starting_resolution, num_rows,
         format, row_infos_filename, tile_size, method)
-

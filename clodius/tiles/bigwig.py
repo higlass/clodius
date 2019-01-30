@@ -2,7 +2,6 @@ import bbi
 import clodius.tiles.format as hgfo
 import functools as ft
 import logging
-import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import re
@@ -11,8 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 MAX_THREADS = 4
 TILE_SIZE = 1024
-POOL = mp.Pool(MAX_THREADS)
-
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +72,15 @@ def natcmp(x, y):
         if key in x.lower():
             return 1
 
-    if x_parts < y_parts:
-        return -1
-    elif y_parts > x_parts:
+    try:
+        if x_parts < y_parts:
+            return -1
+        elif y_parts > x_parts:
+            return 1
+        else:
+            return 0
+    except TypeError:
         return 1
-    else:
-        return 0
 
 
 def natsorted(iterable):
