@@ -139,7 +139,7 @@ def _bedgraph_to_multivec(
         elif format == 'states':
             assert(row_infos != None), "A row_infos file must be provided for --format = 'states' "
             states_dic = {row_infos[x]:x for x in range(len(row_infos))}
-            
+
             cmv.bedfile_to_multivec(filepath, f_out, states_bedline_to_vector,
                     starting_resolution, has_header, chunk_size, states_dic);
         else:
@@ -282,6 +282,9 @@ def _bedgraph_to_multivec(
 @click.option(
     '--format',
     type=click.Choice(['default', 'epilogos', 'states']),
+    help= "'default':chr start end state1_value state2_value, etc;"
+     "'epilogos': chr start end [[state1_value, state1_num],[state2_value, state2_num],[etc]];"
+     "'states': chr start end state_name",
     default='default'
     )
 @click.option(
