@@ -63,12 +63,11 @@ def states_bedline_to_vector(bedline,states_dic):
     An array containing values associated the state
 
     '''
-
-    parts = [i.strip().encode('utf8') for i in bedline.split('\t')]
+    parts = bedline.decode('utf8').strip().split('\t')
     chrom=parts[0]
     start=int(parts[1])
     end=int(parts[2])
-    state= states_dic[parts[3]]
+    state= states_dic[parts[3].encode('utf8')]
 
     states_vector = [ 1 if index == state else 0 for index in range(len(states_dic))]
 
