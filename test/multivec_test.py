@@ -49,7 +49,7 @@ def test_states_format_befile_to_multivec():
             ccc.bedfile_to_multivec,
             [input_file,
                 '--format', 'states'
-                '--row-infos-filename', rows_info_file
+                '--row-infos-filename', rows_info_file,
                 '--assembly', 'hg38',
                 '--starting-resolution' , '200',
                 '--num-rows', '10'])
