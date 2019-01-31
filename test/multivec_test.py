@@ -48,7 +48,7 @@ def test_states_format_befile_to_multivec():
     result = runner.invoke(
             ccc.bedfile_to_multivec,
             [input_file,
-                '--format', 'states'
+                '--format', 'states',
                 '--row-infos-filename', rows_info_file,
                 '--assembly', 'hg38',
                 '--starting-resolution' , '200',
