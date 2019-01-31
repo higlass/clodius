@@ -20,7 +20,7 @@ def epilogos_bedline_to_vector(bedline):
 
     Parameters
     -----------
-    parts: [string,....]
+    bedline: [string,....]
         A line from a bedfile broken up into its constituent parts
         (e.g. ["chr1", "1000", "2000", "[1,2,34,5]"])
 
@@ -49,18 +49,20 @@ def states_bedline_to_vector(bedline,states_dic):
     Parameters
     ----------
 
-    parts: [string,...]
+    bedline: [string,...]
         A line form a bedfile broken up into its contituent parts
         (e.g. ["chr1", "1000", "2000", "state"]))
 
 
-    states_dic:
+    states_dic: {'key':val,...}
         A dictionary containing the states in the file with a corresponding value
+        (e.g. {'state1_name': 1, 'state2_name': 2,...})
 
     Returns
     -------
 
-    An array containing values associated the state
+    Four variables containing the values associated with that line: chrom, start, end, states_vector
+    (e.g. chrom = "chr1", start = 1000, end = 2000, states_vector = [1,0,0,0])
 
     '''
     parts = bedline.decode('utf8').strip().split('\t')
