@@ -63,7 +63,6 @@ def states_bedline_to_vector(bedline,states_dic):
 
     Four variables containing the values associated with that line: chrom, start, end, states_vector
     (e.g. chrom = "chr1", start = 1000, end = 2000, states_vector = [1,0,0,0])
-
     '''
     parts = bedline.decode('utf8').strip().split('\t')
     chrom=parts[0]
