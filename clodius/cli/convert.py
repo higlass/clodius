@@ -14,7 +14,7 @@ import tempfile
 
 import ast
 
-def epilogos_bedline_to_vector(bedline):
+def epilogos_bedline_to_vector(bedlines):
     '''
     Convert a line from an epilogos bedfile to vector format.
 
@@ -83,7 +83,7 @@ def convert():
     pass
 
 def _bedgraph_to_multivec(
-    filepath,
+    filepaths,
     output_file,
     assembly,
     chrom_col,
@@ -124,26 +124,47 @@ def _bedgraph_to_multivec(
                                             fillvalue=np.nan,
                                             compression='gzip')
 
-        def bedline_to_chrom_start_end_vector(bedline):
-            parts = bedline.strip().split()
-            chrom = parts[chrom_col-1]
-            start = int(parts[from_pos_col-1])
-            end = int(parts[to_pos_col-1])
-            vector = [float(f) if not f == 'NA' else np.nan for f in parts[value_col-1:value_col-1+num_rows]]
+        def bedline_to_chrom_start_end_vector(bedlines):
+            chrom_set = set()
+            start_set = set()
+            end_set = set()
+            all_vector = []
+ 
+            for bedline in bedlines:
+                parts = bedline.strip().split()
+                chrom = parts[chrom_col-1]
+                start = int(parts[from_pos_col-1])
+                end = int(parts[to_pos_col-1])
+                vector = [float(f) if not f == 'NA' else np.nan 
+                        for f in parts[value_col-1:value_col-1+num_rows]]
+                chrom_set.add(chrom)
+                start_set.add(start)
+                end_set.add(end)
 
-            return (chrom, start, end, vector)
+                if len(chrom_set) > 1:
+                    raise ValueError("Chromosomes don't match in these lines:", bedlines)
+                if len(start_set) > 1:
+                    raise ValueError("Start positions don't match in these lines:", bedlines)
+                if len(end_set) > 1:
+                    raise ValueError("End positions don't match in these lines:", bedlines)
+                all_vector += vector
+
+            return (list(chrom_set)[0],
+                    list(start_set)[0],
+                    list(end_set)[0],
+                    all_vector)
 
         if format == 'epilogos':
-            cmv.bedfile_to_multivec(filepath, f_out, epilogos_bedline_to_vector,
+            cmv.bedfile_to_multivec(filepaths, f_out, epilogos_bedline_to_vector,
                     starting_resolution, has_header, chunk_size);
         elif format == 'states':
             assert(row_infos != None), "A row_infos file must be provided for --format = 'states' "
             states_dic = {row_infos[x]:x for x in range(len(row_infos))}
 
-            cmv.bedfile_to_multivec(filepath, f_out, states_bedline_to_vector,
+            cmv.bedfile_to_multivec(filepaths, f_out, states_bedline_to_vector,
                     starting_resolution, has_header, chunk_size, states_dic);
         else:
-            cmv.bedfile_to_multivec(filepath, f_out, bedline_to_chrom_start_end_vector,
+            cmv.bedfile_to_multivec(filepaths, f_out, bedline_to_chrom_start_end_vector,
                     starting_resolution, has_header, chunk_size);
 
         f_out.close()
@@ -202,8 +223,9 @@ def _bedgraph_to_multivec(
 
 @convert.command()
 @click.argument(
-    'filepath',
-    metavar='FILEPATH'
+    'filepaths',
+    metavar='FILEPATHS',
+    nargs=-1
 )
 @click.option(
     '--output-file',
@@ -304,13 +326,13 @@ def _bedgraph_to_multivec(
     type=click.Choice(['sum', 'logsumexp']),
     default='sum'
 )
-def bedfile_to_multivec(filepath, output_file, assembly, chromosome_col,
+def bedfile_to_multivec(filepaths, output_file, assembly, chromosome_col,
         from_pos_col, to_pos_col, value_col, has_header,
         chunk_size, nan_value,
         chromsizes_filename,
         starting_resolution, num_rows,
         format, row_infos_filename, tile_size, method):
-    _bedgraph_to_multivec(filepath, output_file, assembly, chromosome_col,
+    _bedgraph_to_multivec(filepaths, output_file, assembly, chromosome_col,
         from_pos_col, to_pos_col, value_col, has_header,
         chunk_size, nan_value,
         chromsizes_filename, starting_resolution, num_rows,

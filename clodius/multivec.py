@@ -8,16 +8,18 @@ import os
 import os.path as op
 import sys
 
-def bedfile_to_multivec(input_filename, f_out,
+def bedfile_to_multivec(input_filenames, f_out,
         bedline_to_chrom_start_end_vector, base_resolution,
-        has_header, chunk_size, row_infos):
+        has_header, chunk_size, row_infos=None):
     '''
     Convert an epilogos bedfile to multivec format.
     '''
-    if op.splitext(input_filename)[1] == '.gz':
-        f = gzip.open(input_filename, 'r')
-    else:
-        f = open(input_filename, 'r')
+    files = []
+    for input_filename in input_filenames:
+        if op.splitext(input_filename)[1] == '.gz':
+            files += [gzip.open(input_filename, 'r')]
+        else:
+            files += [open(input_filename, 'r')]
 
     FILL_VALUE = np.nan
 
@@ -31,18 +33,18 @@ def bedfile_to_multivec(input_filename, f_out,
     batch_start_index = 0
 
     if has_header:
-        f.readline()
+        files[0].readline()
 
     prev_chrom = None
     print('base_resolution:', base_resolution)
     warned = False
 
-    for line in f:
-        chrom,start,end,vector = bedline_to_chrom_start_end_vector(line, row_infos)
+    for lines in zip(*files):
+        chrom,start,end,vector = bedline_to_chrom_start_end_vector(lines, row_infos)
 
         if end % base_resolution != 0 or start % base_resolution != 0 and not warned:
             print("WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".
-                    format(base_resolution, line))
+                    format(base_resolution, lines))
             warned = True
 
         if prev_chrom is not None and chrom != prev_chrom:
