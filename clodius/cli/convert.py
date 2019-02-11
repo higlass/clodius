@@ -14,7 +14,7 @@ import tempfile
 
 import ast
 
-def epilogos_bedline_to_vector(bedlines):
+def epilogos_bedline_to_vector(bedlines, row_infos=None):
     '''
     Convert a line from an epilogos bedfile to vector format.
 
@@ -28,6 +28,7 @@ def epilogos_bedline_to_vector(bedlines):
     -------
     An array containing the values associated with that line
     '''
+    bedline = bedlines[0]
     parts = bedline.decode('utf8').strip().split('\t')
     # extract the state values e.g. [...,[0,14],[0.56,15]]
     array_str = parts[3].split(':')[-1]
@@ -42,7 +43,7 @@ def epilogos_bedline_to_vector(bedlines):
 
     return (chrom, start, end, states)
 
-def states_bedline_to_vector(bedline,states_dic):
+def states_bedline_to_vector(bedlines,states_dic):
     '''
     Convert a line from a bedfile containing states in categorical data to vector format.
 
@@ -64,6 +65,11 @@ def states_bedline_to_vector(bedline,states_dic):
     Four variables containing the values associated with that line: chrom, start, end, states_vector
     (e.g. chrom = "chr1", start = 1000, end = 2000, states_vector = [1,0,0,0])
     '''
+    # we support passing in multiple bed files for multivec creation from
+    # # other file types, but this one only supports a single file so just
+    # # assume that a single file is passed in
+    bedline = bedlines[0]
+
     parts = bedline.decode('utf8').strip().split('\t')
     chrom=parts[0]
     start=int(parts[1])
@@ -83,23 +89,23 @@ def convert():
     pass
 
 def _bedgraph_to_multivec(
-    filepaths,
-    output_file,
-    assembly,
-    chrom_col,
-    from_pos_col,
-    to_pos_col,
-    value_col,
-    has_header,
-    chunk_size,
-    nan_value,
-    chromsizes_filename,
-    starting_resolution,
-    num_rows,
-    format,
-    row_infos_filename,
-    tile_size,
-    method
+        filepaths,
+        output_file,
+        assembly,
+        chrom_col,
+        from_pos_col,
+        to_pos_col,
+        value_col,
+        has_header,
+        chunk_size,
+        nan_value,
+        chromsizes_filename,
+        starting_resolution,
+        num_rows,
+        format,
+        row_infos_filename,
+        tile_size,
+        method
 ):
     print('chrom_col:', chrom_col)
 
@@ -120,11 +126,11 @@ def _bedgraph_to_multivec(
 
         for chrom in chrom_info.chrom_order:
             f_out.create_dataset(chrom, (math.ceil(chrom_info.chrom_lengths[chrom] / starting_resolution),
-                                            num_rows),
+                                            num_rows * len(filepaths)),
                                             fillvalue=np.nan,
                                             compression='gzip')
 
-        def bedline_to_chrom_start_end_vector(bedlines):
+        def bedline_to_chrom_start_end_vector(bedlines, row_infos=None):
             chrom_set = set()
             start_set = set()
             end_set = set()
@@ -156,23 +162,23 @@ def _bedgraph_to_multivec(
 
         if format == 'epilogos':
             cmv.bedfile_to_multivec(filepaths, f_out, epilogos_bedline_to_vector,
-                    starting_resolution, has_header, chunk_size);
+                    starting_resolution, has_header, chunk_size)
         elif format == 'states':
             assert(row_infos != None), "A row_infos file must be provided for --format = 'states' "
             states_dic = {row_infos[x]:x for x in range(len(row_infos))}
 
             cmv.bedfile_to_multivec(filepaths, f_out, states_bedline_to_vector,
-                    starting_resolution, has_header, chunk_size, states_dic);
+                    starting_resolution, has_header, chunk_size, states_dic)
         else:
             cmv.bedfile_to_multivec(filepaths, f_out, bedline_to_chrom_start_end_vector,
-                    starting_resolution, has_header, chunk_size);
+                    starting_resolution, has_header, chunk_size)
 
         f_out.close()
         tf = temp_file
         f_in = h5py.File(tf, 'r')
 
         if output_file is None:
-            output_file = op.splitext(filepath)[0] + '.multires.mv5'
+            output_file = op.splitext(filepaths[0])[0] + '.multires.mv5'
         print('output_file:', output_file)
 
         # Override the output file if it existts
