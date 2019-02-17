@@ -22,17 +22,16 @@ def tiles_wrapper(array, tile_ids, not_nan_array=None):
 
     return tile_values
 
-def tileset_info(array, bounds=None):
+def tileset_info(array, bounds=None, bins_per_dimension=128):
     '''
     Get the tileset info for the array
     '''
-    bin_size = 1024
     max_dim = max(array.shape)
 
-    max_zoom = math.ceil(math.log(max_dim / bin_size) / math.log(2))
+    max_zoom = math.ceil(math.log(max_dim / bins_per_dimension) / math.log(2))
     max_zoom = 0 if max_zoom < 0 else max_zoom
 
-    max_width = 2 ** max_zoom * bin_size
+    max_width = 2 ** max_zoom * bins_per_dimension
     # print('max_zoom:', max_zoom)
 
     scale_up = max_width / max_dim
@@ -56,8 +55,40 @@ def tileset_info(array, bounds=None):
         "min_pos": min_pos,
         "max_pos": max_pos,
         "max_zoom": max_zoom,
-        "bins_per_dimension": bin_size
+        "bins_per_dimension": bins_per_dimension
     }
+
+
+def max_zoom_and_data_bounds(array, z, x, bin_size):
+    '''
+    Return the maximum zoom level and data corresponding to the 
+    zoom level and position of the array.
+
+    Parameters
+    ----------
+    array: np.array
+        The array containing the raw numpy data
+    z: int
+        The zoom level
+    x: int
+        The x position
+    '''
+    max_dim = array.shape[0]
+
+    max_zoom = math.ceil(math.log(max_dim / bin_size) / math.log(2))
+    max_zoom = 0 if max_zoom < 0 else max_zoom
+    max_width = 2 ** max_zoom * bin_size
+    
+    # print("max_width:", max_width, 'bin_size:', bin_size, 'max_zoom', max_zoom)
+    
+    tile_width = 2 ** (max_zoom - z) * bin_size
+
+    x_start = x * tile_width
+    x_end = min(array.shape[0], x_start + tile_width)
+
+    # print("x_start:", x_start, x_end)
+
+    return max_zoom, x_start, x_end
 
 def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     '''
@@ -77,28 +108,14 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     bin_size: int
         The number of values per bin
     '''
-    max_dim = array.shape[0]
     #print("max_dim", max_dim)
-    
-    max_zoom = math.ceil(math.log(max_dim / bin_size) / math.log(2))
-    max_zoom = 0 if max_zoom < 0 else max_zoom
-    max_width = 2 ** max_zoom * bin_size
-    
-    # print("max_width:", max_width, 'bin_size:', bin_size, 'max_zoom', max_zoom)
-    
-    tile_width = 2 ** (max_zoom - z) * bin_size
+    max_zoom, x_start, x_end = max_zoom_and_data_bounds(array, z, x, bin_size)
+    data = array[x_start:x_end]
 
-    x_start = x * tile_width
-    x_end = min(array.shape[0], x_start + tile_width)
-
-    # print("tile_width", tile_width)
-    print("x_start:", x_start, x_end)
-    
+    # print("tile_width", tile_width)    
     num_to_sum = 2 ** (max_zoom - z)
     # print("num_to_sum", num_to_sum)
-    
-    data = array[x_start:x_end]
-    #print("data:", data)
+    # print("data:", data)
     
     # add some data so that the data can be divided into squares
     divisible_x_width = num_to_sum * math.ceil(data.shape[0] / num_to_sum)
