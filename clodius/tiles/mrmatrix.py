@@ -36,7 +36,6 @@ def tiles(f, z,x,y):
     '''
     resolutions = sorted(map(int, f['resolutions'].keys()))[::-1]
     tsinfo = tileset_info(f)
-    print('tsinfo:', tsinfo)
     n_bins = tsinfo['bins_per_dimension']
 
     if z >= len(resolutions):
