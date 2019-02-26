@@ -462,7 +462,7 @@ def _bedfile(
         parts = {
             'startPos': genome_start,
             'endPos': genome_end,
-            'uid': slugid.nice()
+            'uid': slugid.nice(),
             'chrOffset': pos_offset,
             'fields': '\t'.join(line),
             'importance': importance,
