@@ -353,7 +353,7 @@ def save_to_elasticsearch(url, data, print_status=False):
     saved = False
     to_sleep = 1
 
-    uid = slugid.nice().decode('utf-8')
+    uid = slugid.nice()
     #print("print_status:", print_status)
     while not saved:
         try:

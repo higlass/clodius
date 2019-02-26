@@ -1,3 +1,7 @@
+v0.10.5
+
+- Removed slugid decode
+
 v0.10.2 (2019-02-06)
 
 - new option to import a "states" file format, a bed file with categorical data, e.g. from chromHMM to multivec format.
