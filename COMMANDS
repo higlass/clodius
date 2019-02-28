@@ -1,3 +1,8 @@
+### Converting tsv files to mrmatrix
+
+python scripts/tsv-to-mrmatrix.py
+python scripts/tsv-to-mrmatrix.py data/dense.tsv data/dense.mrmatrix
+
 ### Calculating gene coverage
 
 bedtools makewindows -g ~/projects/negspy/negspy/data/hg19/chromInfo.txt -w 1000 > ~/data/genbank-data/hg19/bins_hg19_1000.bed
