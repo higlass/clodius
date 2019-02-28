@@ -63,11 +63,11 @@ def main():
     top_n = args.first_n
 
     if args.input_file == '-':
-        f = sys.stdin
+        f_in = sys.stdin
     else:
-        f = open(args.input_file, 'r')
+        f_in = open(args.input_file, 'r')
 
-    first_line = next(f)
+    first_line = next(f_in)
     parts = first_line.split('\t')
 
     if top_n is None:
@@ -82,7 +82,7 @@ def main():
     if op.exists(filepath):
         os.remove(filepath)
     
-    f = h5py.File('blah.h5', 'w')
+    f = h5py.File(args.output_file, 'w')
     labels_dset = f.create_dataset('labels', data=np.array(labels, dtype=h5py.special_dtype(vlen=str)), 
             compression='lzf')
 
@@ -95,7 +95,7 @@ def main():
 
     start_time = time.time()
     counter = 0
-    for line in f:
+    for line in f_in:
         parts = line.strip().split('\t')[1:top_n+1]
         x = np.array([float(p) for p in parts])
         ds[counter,:len(x)] = x
@@ -114,7 +114,7 @@ def main():
 
     f.close()
     
-    f = h5py.File('blah.h5', 'r')
+    f = h5py.File(args.output_file, 'r')
     print("sum1:", np.nansum(f['resolutions']['1']['values'][0]))
 
 if __name__ == '__main__':
