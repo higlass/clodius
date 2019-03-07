@@ -30,7 +30,7 @@ install_requires = [
 
 setup(
     name='clodius',
-    version='0.10.4',
+    version='0.10.5',
     description='Tile generation for big data',
     author='Peter Kerpedjiev',
     author_email='pkerpedjiev@gmail.com',
