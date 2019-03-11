@@ -1,12 +1,21 @@
 import numpy as np
 
 def tileset_info(f, bounds=None):    
+    if 'min-pos' in f.attrs:
+        min_pos = f.attrs['min-pos']
+    else:
+        min_pos = [0,0]
+
+    if 'max-pos' in f.attrs:
+        max_pos = f.attrs['max-pos']
+    else:
+        max_pos = f['resolutions']['1']['values'].shape
+
     return {
-        'min_pos': [int(i) for i in f.attrs['min-pos']],
-        'max_pos': [int(i) for i in f.attrs['max-pos']],
-        'max_zoom': int(f.attrs['max-zoom']),
+        'min_pos': min_pos,
+        'max_pos': max_pos,
+        'resolutions': [int(r) for r in f['resolutions']],
         'mirror_tiles': 'false',
-        'max_width': 360,
         'bins_per_dimension': 256,
     }
 
@@ -42,7 +51,7 @@ def tiles(f, z,x,y):
     tile_x_end = tile_x_start + n_bins
     tile_y_end = tile_y_start + n_bins
 
-    mat = f['resolutions'][str(resolutions[z])]
+    mat = f['resolutions'][str(resolutions[z])]['values']
     data = mat[tile_y_start:tile_y_end,
         tile_x_start:tile_x_end]
 

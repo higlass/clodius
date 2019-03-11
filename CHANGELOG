@@ -1,4 +1,4 @@
-v0.10.2 (2019-01-30)
+v0.10.2 (2019-02-06)
 
 - new option to import a "states" file format, a bed file with categorical data, e.g. from chromHMM to multivec format.
 - while converting a bed file to multivec, each segment can now be a multiple of base_resolution,

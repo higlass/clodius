@@ -28,6 +28,52 @@ def abs2genomic(chromsizes, start_pos, end_pos):
       start = 0
     yield cid_hi, start, rel_pos_hi
 
+def get_single_tile(filename, tile_pos):
+    '''
+    Retrieve a single multivec tile from a multires file
+    Parameters
+    ----------
+    filename: string
+        The multires file containing the multivec data
+    tile_pos: (z, x)
+        The zoom level and position of this tile
+    '''
+    t1 = time.time()
+    tsinfo = tileset_info(filename)
+
+    t15 = time.time()
+
+    f = h5py.File(filename, 'r')
+    
+    # print('tileset_info', tileset_info)
+    t2 = time.time()
+    # which resolution does this zoom level correspond to?
+    resolution = tsinfo['resolutions'][tile_pos[0]]
+    tile_size = tsinfo['tile_size']
+    
+    # where in the data does the tile start and end
+    tile_start = tile_pos[1] * tile_size * resolution
+    tile_end = tile_start + tile_size * resolution
+
+    chromsizes = list(zip(f['chroms']['name'], f['chroms']['length']))
+
+    #dense = f['resolutions'][str(resolution)][tile_start:tile_end]
+    dense = get_tile(f, chromsizes, resolution,
+        tile_start, tile_end, tsinfo['shape'])
+    #print("dense.shape", dense.shape)
+
+    if len(dense) < tsinfo['tile_size']:
+        # if there aren't enough rows to fill this tile, add some zeros
+        dense = np.vstack([dense, np.zeros((tsinfo['tile_size'] - len(dense), 
+            tsinfo['shape'][1]))])
+
+    f.close()
+    t3 = time.time()
+
+    # print("single time time: {:.2f} (tileset info: {:.2f}, open time: {:.2f})".format(t3 - t1, t15 - t1, t2 - t15))
+
+    return dense.T
+
 def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
     '''
     Get the tile value given the start and end positions and
