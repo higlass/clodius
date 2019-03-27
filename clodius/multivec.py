@@ -14,6 +14,7 @@ def bedfile_to_multivec(input_filenames, f_out,
     '''
     Convert an epilogos bedfile to multivec format.
     '''
+
     files = []
     for input_filename in input_filenames:
         if op.splitext(input_filename)[1] == '.gz':
@@ -34,6 +35,13 @@ def bedfile_to_multivec(input_filenames, f_out,
 
     if has_header:
         files[0].readline()
+
+    # Identifies bedfiles headers and ignore them
+    for lne in range(len(files)):
+        if 'browser ' or 'track ' in files[lne]:
+            files[lne].readline()
+        else:
+            break
 
     prev_chrom = None
     print('base_resolution:', base_resolution)
