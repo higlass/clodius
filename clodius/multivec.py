@@ -33,18 +33,15 @@ def bedfile_to_multivec(input_filenames, f_out,
     # the start of the batch in the dataset
     batch_start_index = 0
 
-    # Identifies bedfiles headers and ignore them
-    for lne in range(len(files)):
-        if 'browser ' or 'track ' in files[lne]:
-            files[lne].readline()
-        else:
-            break
-
     prev_chrom = None
     print('base_resolution:', base_resolution)
     warned = False
 
     for lines in zip(*files):
+        # Identifies bedfile headers and ignore them
+        if "browser" == lines[0].decode('utf8')[0:7] or "track" in lines[0].decode('utf8')[0:6]:
+            continue
+
         chrom, start, end, vector = bedline_to_chrom_start_end_vector(lines, row_infos)
         # if vector[0] > 0 or vector[1] > 0:
         #     print("c,s,e,v", chrom, start, end, vector)
