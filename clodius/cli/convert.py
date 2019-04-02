@@ -96,6 +96,7 @@ def _bedgraph_to_multivec(
         from_pos_col,
         to_pos_col,
         value_col,
+        has_header,
         chunk_size,
         nan_value,
         chromsizes_filename,
@@ -161,17 +162,17 @@ def _bedgraph_to_multivec(
 
         if format == 'epilogos':
             cmv.bedfile_to_multivec(filepaths, f_out, epilogos_bedline_to_vector,
-                    starting_resolution, chunk_size)
+                    starting_resolution, has_header, chunk_size)
         elif format == 'states':
             assert(row_infos != None), "A row_infos file must be provided for --format = 'states' "
             states_names = [lne.decode('utf8').split('\t')[0] for lne in row_infos]
             states_dic = {states_names[x]:x for x in range(len(row_infos))}
 
             cmv.bedfile_to_multivec(filepaths, f_out, states_bedline_to_vector,
-                    starting_resolution, chunk_size, states_dic)
+                    starting_resolution, has_header, chunk_size, states_dic)
         else:
             cmv.bedfile_to_multivec(filepaths, f_out, bedline_to_chrom_start_end_vector,
-                    starting_resolution, chunk_size)
+                    starting_resolution, has_header, chunk_size)
 
         f_out.close()
         tf = temp_file
@@ -277,6 +278,11 @@ def _bedgraph_to_multivec(
     type=int
 )
 @click.option(
+    '--has-header/--no-header',
+    help="Does this file have a header that we should ignore",
+    default=False
+)
+@click.option(
     '--chunk-size',
     help="The size of the chunks to read in at once",
     default=1e5
@@ -328,13 +334,13 @@ def _bedgraph_to_multivec(
     default='sum'
 )
 def bedfile_to_multivec(filepaths, output_file, assembly, chromosome_col,
-        from_pos_col, to_pos_col, value_col,
+        from_pos_col, to_pos_col, value_col, has_header,
         chunk_size, nan_value,
         chromsizes_filename,
         starting_resolution, num_rows,
         format, row_infos_filename, tile_size, method):
     _bedgraph_to_multivec(filepaths, output_file, assembly, chromosome_col,
-        from_pos_col, to_pos_col, value_col,
+        from_pos_col, to_pos_col, value_col, has_header,
         chunk_size, nan_value,
         chromsizes_filename, starting_resolution, num_rows,
         format, row_infos_filename, tile_size, method)

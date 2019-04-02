@@ -10,7 +10,7 @@ import sys
 
 def bedfile_to_multivec(input_filenames, f_out,
         bedline_to_chrom_start_end_vector, base_resolution,
-        chunk_size, row_infos=None):
+        has_header, chunk_size, row_infos=None):
     '''
     Convert an epilogos bedfile to multivec format.
     '''
@@ -32,6 +32,9 @@ def bedfile_to_multivec(input_filenames, f_out,
     curr_index = 0
     # the start of the batch in the dataset
     batch_start_index = 0
+
+    if has_header:
+        files[0].readline()
 
     prev_chrom = None
     print('base_resolution:', base_resolution)
