@@ -1,0 +1,15 @@
+15_Quies
+1_TssA
+14_ReprPCWk
+9_Het
+7_Enh
+5_TxWk
+2_TssAFlnk
+10_TssBiv
+4_Tx
+13_ReprPC
+12_EnhBiv
+11_BivFlnk
+8_ZNF/Rpts
+6_EnhG
+3_TxFlnk
