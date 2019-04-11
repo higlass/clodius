@@ -22,7 +22,7 @@ def tiles_wrapper(array, tile_ids, not_nan_array=None):
 
     return tile_values
 
-def tileset_info(array, bounds=None, bins_per_dimension=128):
+def tileset_info(array, bounds=None, bins_per_dimension=1024):
     '''
     Get the tileset info for the array
     '''
