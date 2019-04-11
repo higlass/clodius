@@ -1,3 +1,8 @@
+v0.10.7
+
+- Changed bins_per_dimension in npvector.tileset_info to match the value in
+in npvector.tiles (1024)
+
 v0.10.5
 
 - Removed slugid decode
