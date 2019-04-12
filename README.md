@@ -38,7 +38,9 @@ python setup.py build_ext --inplace
 
 The unit tests for clodius can be run using [nosetests](http://nose.readthedocs.io/en/latest/):
 
-    nosetests tests
+```shell
+nosetests test
+```
 
 Individual unit tests can be specified by indicating the file and function
 they are defined in:
