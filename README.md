@@ -65,11 +65,11 @@ docker rm clodius;
 
 docker pull gehlenborglab/clodius # Ensure that you have the latest.
 
-docker run -v /tmp/clodius/input:/tmp/ \
+docker run -v /tmp/clodius/:/tmp/ \
            gehlenborglab/clodius \
-           clodius aggregate bigwig /tmp/file.bigwig
+           clodius aggregate bigwig /tmp/input/file.bigwig
 
-ls /tmp/clodius/input # Should contain the output file
+ls /tmp/clodius/output # Should contain the output file
 ```
 
 If you already have a good location for your input and output files,
