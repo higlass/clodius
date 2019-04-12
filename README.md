@@ -16,6 +16,8 @@ clodius aggregate bigwig ~/Downloads/E116-DNase.fc.signal.bigwig
 
 The output files can then be displayed using the [higlass-docker container](https://github.com/hms-dbmi/higlass-docker). For more information about viewing these types of files take a look at the [higlass wiki](https://github.com/hms-dbmi/higlass/wiki#bigwig-files).
 
+[More examples](COMMANDS.md) are available.
+
 ## Development
 
 
