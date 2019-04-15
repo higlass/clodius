@@ -107,10 +107,11 @@ class TilesTest(unittest.TestCase):
     def test_zoom(self):
         tileset = AttrDict({
             'resolutions': {
+                # TODO: It's not actually enforced that zoom levels be sequential integers?
+                # TODO: Should we check that the sizes are reasonable during initialization?
                 '1': {
                     'values': np.array([[1,2],[3,4]])
                 },
-                # TODO: It's not actually enforced that zoom levels be sequential integers?
                 '5': {
                     'values': np.array([[3,4],[5,6]])
                 },
