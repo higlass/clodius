@@ -44,8 +44,8 @@ def coarsen(f, tile_size=256):
 
 
 def parse(input_handle, output_hdf5, top_n=None):
-    f_in = input_handle
-    first_line = next(f_in)
+    input_handle
+    first_line = next(input_handle)
     parts = first_line.split('\t')
 
     if top_n is None:
@@ -60,11 +60,10 @@ def parse(input_handle, output_hdf5, top_n=None):
     if op.exists(filepath):
         os.remove(filepath)
 
-    f = output_hdf5
-    labels_dset = f.create_dataset('labels', data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
+    labels_dset = output_hdf5.create_dataset('labels', data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
             compression='lzf')
 
-    g = f.create_group('resolutions')
+    g = output_hdf5.create_group('resolutions')
     g1 = g.create_group('1')
     ds = g1.create_dataset('values', (max_width, max_width),
             dtype='f4', compression='lzf', fillvalue=np.nan)
@@ -73,7 +72,7 @@ def parse(input_handle, output_hdf5, top_n=None):
 
     start_time = time.time()
     counter = 0
-    for line in f_in:
+    for line in input_handle:
         parts = line.strip().split('\t')[1:top_n+1]
         x = np.array([float(p) for p in parts])
         ds[counter,:len(x)] = x
@@ -88,8 +87,8 @@ def parse(input_handle, output_hdf5, top_n=None):
         time_remaining = time_per_entry * (top_n - counter)
         print("counter:", counter, "sum(x):", sum(x), "time remaining: {:d} seconds".format(int(time_remaining)))
 
-    coarsen(f)
-    f.close()
+    coarsen(output_hdf5)
+    output_hdf5.close()
 
 
 def main():
