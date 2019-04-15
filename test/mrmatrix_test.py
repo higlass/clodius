@@ -4,10 +4,12 @@ import numpy as np
 
 from clodius.tiles.mrmatrix import tileset_info, tiles
 
+class AttrDict(dict):
+    pass
+
 class TilesetInfoTest(unittest.TestCase):
 
     def setUp(self):
-        # Fake tilesets:
         tileset_stub = {
             'resolutions': {
                 '1': {
@@ -15,9 +17,6 @@ class TilesetInfoTest(unittest.TestCase):
                 }
             }
         }
-
-        class AttrDict(dict):
-            pass
 
         self.tileset = AttrDict(tileset_stub)
         self.tileset.attrs = {}
@@ -52,5 +51,15 @@ class TilesetInfoTest(unittest.TestCase):
 
 
 class TilesTest(unittest.TestCase):
-    def test_tiles(self):
-        pass
+    def test_zoom_out_of_bounds(self):
+        def should_fail():
+            tileset_stub = AttrDict({
+                'resolutions': {
+                    '1': {
+                        'values': np.array([[1,2],[3,4]])
+                    }
+                }
+            })
+            tileset_stub.attrs = {}
+            tiles(tileset_stub, 2, 0, 0)
+        self.assertRaisesRegex(ValueError, r'Zoom level out of bounds', should_fail)
