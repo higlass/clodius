@@ -28,38 +28,27 @@ class TilesetInfoTest(unittest.TestCase):
         self.tileset_max = AttrDict(tileset_stub)
         self.tileset_max.attrs = {'max-pos': (9, 9)}
 
-    def test_default(self):
-        default = {
+        self.info = {
             'bins_per_dimension': 256,
             'max_pos': (2, 2),
             'min_pos': [0, 0],
             'mirror_tiles': 'false',
             'resolutions': [1]
         }
-        self.assertEqual(tileset_info(self.tileset), default)
-        self.assertEqual(tileset_info(self.tileset, bounds='???'), default)
+
+    def test_default(self):
+        self.assertEqual(tileset_info(self.tileset), self.info)
+        self.assertEqual(tileset_info(self.tileset, bounds='???'), self.info)
 
     def test_with_min(self):
-        with_min = {
-            'bins_per_dimension': 256,
-            'max_pos': (2, 2),
-            'min_pos': (1, 1),
-            'mirror_tiles': 'false',
-            'resolutions': [1]
-        }
-        self.assertEqual(tileset_info(self.tileset_min), with_min)
-        self.assertEqual(tileset_info(self.tileset_min, bounds='???'), with_min)
+        self.info['min_pos'] = (1, 1)
+        self.assertEqual(tileset_info(self.tileset_min), self.info)
+        self.assertEqual(tileset_info(self.tileset_min, bounds='???'), self.info)
 
     def test_with_max(self):
-        with_max = {
-            'bins_per_dimension': 256,
-            'max_pos': (9, 9),
-            'min_pos': [0, 0],
-            'mirror_tiles': 'false',
-            'resolutions': [1]
-        }
-        self.assertEqual(tileset_info(self.tileset_max), with_max)
-        self.assertEqual(tileset_info(self.tileset_max, bounds='???'), with_max)
+        self.info['max_pos'] = (9, 9)
+        self.assertEqual(tileset_info(self.tileset_max), self.info)
+        self.assertEqual(tileset_info(self.tileset_max, bounds='???'), self.info)
 
 
 class TilesTest(unittest.TestCase):
