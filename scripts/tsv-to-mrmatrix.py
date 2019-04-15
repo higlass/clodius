@@ -10,13 +10,13 @@ import sys
 import argparse
 import time
 
-def coarsen(f):
+
+def coarsen(f, tile_size=256):
     '''
     Create data pyramid.
     '''
     grid = f['resolutions']['1']['values']
     top_n = grid.shape[0]
-    tile_size = 256
 
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
@@ -42,7 +42,8 @@ def coarsen(f):
         dask_dset = da.coarsen(np.nansum, dask_dset, {0: 2, 1: 2})
         da.store(dask_dset, values)
 
-def parse(input_handle, output_hdf5, top_n):
+
+def parse(input_handle, output_hdf5, top_n=None):
     f_in = input_handle
     first_line = next(f_in)
     parts = first_line.split('\t')
