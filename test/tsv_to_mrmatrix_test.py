@@ -26,6 +26,10 @@ class CoarsenTest(unittest.TestCase):
         self.assertEqual(list(hdf5['resolutions'].keys()), ['1'])
         self.assertEqual(list(hdf5['resolutions']['1'].keys()), ['values'])
         self.assertEqual(list(hdf5['resolutions']['1']['values'].shape), [64, 64])
+        self.assertEqual(
+            hdf5['resolutions']['1']['values'][:].tolist()[0],
+            [float(x) for x in range(64)]
+        )
 
         coarsen(hdf5, tile_size=tile_size)
 
@@ -41,4 +45,9 @@ class CoarsenTest(unittest.TestCase):
             '16': 4
         }
         for (k, v) in shapes.items():
-            self.assertEqual(list(hdf5['resolutions'][k]['values'].shape), [v, v])
+            self.assertEqual(hdf5['resolutions'][k]['values'].shape, (v, v))
+        row = [1920,  6016, 10112, 14208]
+        self.assertEqual(
+            hdf5['resolutions']['16']['values'][:].tolist(),
+            [row, row, row, row])
+        # TODO: Check the math
