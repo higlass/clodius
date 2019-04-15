@@ -69,6 +69,7 @@ def parse(input_handle, output_hdf5, top_n=None):
             dtype='f4', compression='lzf', fillvalue=np.nan)
     ds1 = g1.create_dataset('nan_values', (max_width, max_width),
             dtype='f4', compression='lzf', fillvalue=0)
+            # TODO: We don't write to this... Is it necessary?
 
     start_time = time.time()
     counter = 0
