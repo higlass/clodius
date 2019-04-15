@@ -42,7 +42,7 @@ def coarsen(f):
         dask_dset = da.coarsen(np.nansum, dask_dset, {0: 2, 1: 2})
         da.store(dask_dset, values)
 
-def parse(input_handle, output_hdf5):
+def parse(input_handle, output_hdf5, top_n):
     f_in = input_handle
     first_line = next(f_in)
     parts = first_line.split('\t')
@@ -116,7 +116,7 @@ def main():
     else:
         f_in = open(args.input_file, 'r')
 
-    parse(f_in, h5py.File(args.output_file, 'w'))
+    parse(f_in, h5py.File(args.output_file, 'w'), top_n)
 
     f = h5py.File(args.output_file, 'r')
     print("sum1:", np.nansum(f['resolutions']['1']['values'][0]))
