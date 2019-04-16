@@ -46,7 +46,7 @@ def coarsen(f, tile_size=256):
 def parse(input_handle, output_hdf5, top_n=None):
     input_handle
     first_line = next(input_handle)
-    parts = first_line.split('\t')
+    parts = first_line.strip().split('\t')
 
     if top_n is None:
         top_n = len(parts) - 1
@@ -55,10 +55,6 @@ def parse(input_handle, output_hdf5, top_n=None):
     tile_size = 256
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
-
-    filepath = args.output_file
-    if op.exists(filepath):
-        os.remove(filepath)
 
     labels_dset = output_hdf5.create_dataset('labels', data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
             compression='lzf')

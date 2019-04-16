@@ -1,5 +1,6 @@
 import unittest
 from tempfile import TemporaryDirectory
+import csv
 
 import numpy as np
 import h5py
@@ -87,7 +88,6 @@ class CoarsenTest(unittest.TestCase):
                 hdf5['resolutions']['1']['values'][:].tolist(),
                 [row8 for _ in range(8)])
 
-            # TODO: I'll look at the code, but these don't feel right to me.
             row4 = [8 * x + 2 for x in range(4)]
             self.assertEqual(
                 hdf5['resolutions']['2']['values'][:].tolist(),
@@ -97,3 +97,30 @@ class CoarsenTest(unittest.TestCase):
             self.assertEqual(
                 hdf5['resolutions']['4']['values'][:].tolist(),
                 [row2 for _ in range(2)])
+
+class ParseTest(unittest.TestCase):
+    def test_parse(self):
+        with TemporaryDirectory() as tmp_dir:
+            csv_path = tmp_dir + '/tmp.csv'
+            with open(csv_path, 'w', newline='') as csv_file:
+                writer = csv.writer(csv_file, delimiter='\t')
+                # header:
+                labels = ['col-{}'.format(x) for x in range(513)]
+                writer.writerow(labels)
+                # body:
+                for _ in range(3):
+                    writer.writerow([0] * 512)
+                for _ in range(3):
+                    writer.writerow([1] * 512)
+                for _ in range(3):
+                    writer.writerow([1, -1] * 256)
+            csv_handle = open(csv_path, 'r')
+
+            hdf5_path = tmp_dir + 'tmp.hdf5'
+            hdf5_write_handle = h5py.File(hdf5_path, 'w')
+
+            parse(csv_handle, hdf5_write_handle)
+
+            hdf5 = h5py.File(hdf5_path, 'r')
+            self.assertEqual(list(hdf5.keys()), ['labels', 'resolutions'])
+            self.assertEqual(list(hdf5['labels']), labels[1:])
