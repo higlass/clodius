@@ -1,6 +1,7 @@
 import unittest
 from tempfile import TemporaryDirectory
 import csv
+from math import nan
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -85,8 +86,8 @@ class CoarsenTest(unittest.TestCase):
                 self.assertEqual(hdf5['resolutions'][k]['values'].shape, (v, v))
 
             row8 = list(range(8))
-            self.assertEqual(
-                hdf5['resolutions']['1']['values'][:].tolist(),
+            assert_array_equal(
+                hdf5['resolutions']['1']['values'],
                 [row8 for _ in range(8)])
 
             row4 = [8 * x + 2 for x in range(4)]
@@ -95,8 +96,8 @@ class CoarsenTest(unittest.TestCase):
                 [row4 for _ in range(4)])
 
             row2 = [24, 88]
-            self.assertEqual(
-                hdf5['resolutions']['4']['values'][:].tolist(),
+            assert_array_equal(
+                hdf5['resolutions']['4']['values'],
                 [row2 for _ in range(2)])
 
 class ParseTest(unittest.TestCase):
@@ -109,12 +110,12 @@ class ParseTest(unittest.TestCase):
                 labels = ['col-{}'.format(x) for x in range(513)]
                 writer.writerow(labels)
                 # body:
-                for _ in range(3):
-                    writer.writerow([0] * 512)
-                for _ in range(3):
-                    writer.writerow([1] * 512)
-                for _ in range(3):
-                    writer.writerow([1, -1] * 256)
+                for y in range(0, 3):
+                    writer.writerow(['row-{}'.format(y)] + [0] * 512)
+                for y in range(3, 6):
+                    writer.writerow(['row-{}'.format(y)] + [1] * 512)
+                for y in range(6, 9):
+                    writer.writerow(['row-{}'.format(y)] + [1, -1] * 256)
             csv_handle = open(csv_path, 'r')
 
             hdf5_path = tmp_dir + 'tmp.hdf5'
@@ -129,6 +130,14 @@ class ParseTest(unittest.TestCase):
             self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2'])
             self.assertEqual(list(hdf5['resolutions']['1'].keys()), ['nan_values', 'values'])
             assert_array_equal(
-                list(hdf5['resolutions']['1']['nan_values']),
-                [[0 for x in range(512)] for y in range(512)]
+                hdf5['resolutions']['1']['nan_values'], [[0] * 512] * 512
+            )
+            assert_array_equal(
+                hdf5['resolutions']['1']['values'][0], [0] * 512
+            )
+            assert_array_equal(
+                hdf5['resolutions']['1']['values'][3], [1] * 512
+            )
+            assert_array_equal(
+                hdf5['resolutions']['1']['values'][6], [1, -1] * 256
             )
