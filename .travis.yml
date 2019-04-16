@@ -26,6 +26,4 @@ install:
   - ./get_test_data.sh
 
 script:
-  - which python
-  - python --version
   - nosetests test
