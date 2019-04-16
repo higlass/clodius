@@ -3,6 +3,7 @@ from tempfile import TemporaryDirectory
 import csv
 
 import numpy as np
+from numpy.testing import assert_array_equal
 import h5py
 
 from scripts.tsv_to_mrmatrix import coarsen, parse
@@ -89,8 +90,8 @@ class CoarsenTest(unittest.TestCase):
                 [row8 for _ in range(8)])
 
             row4 = [8 * x + 2 for x in range(4)]
-            self.assertEqual(
-                hdf5['resolutions']['2']['values'][:].tolist(),
+            assert_array_equal(
+                hdf5['resolutions']['2']['values'],
                 [row4 for _ in range(4)])
 
             row2 = [24, 88]
@@ -124,3 +125,10 @@ class ParseTest(unittest.TestCase):
             hdf5 = h5py.File(hdf5_path, 'r')
             self.assertEqual(list(hdf5.keys()), ['labels', 'resolutions'])
             self.assertEqual(list(hdf5['labels']), labels[1:])
+
+            self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2'])
+            self.assertEqual(list(hdf5['resolutions']['1'].keys()), ['nan_values', 'values'])
+            assert_array_equal(
+                list(hdf5['resolutions']['1']['nan_values']),
+                [[0 for x in range(512)] for y in range(512)]
+            )

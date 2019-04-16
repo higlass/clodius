@@ -47,9 +47,12 @@ def parse(input_handle, output_hdf5, top_n=None):
     input_handle
     first_line = next(input_handle)
     parts = first_line.strip().split('\t')
+    # TODO: Use the python built-in csv module, instead of parsing by hand?
 
     if top_n is None:
         top_n = len(parts) - 1
+        # TODO: So if it's taller than it is wide, it will be truncated to a square,
+        # unless an explicit top_n is provided? That doesn't seem right.
 
     labels = parts[1:top_n+1]
     tile_size = 256
