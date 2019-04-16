@@ -128,16 +128,25 @@ class ParseTest(unittest.TestCase):
             self.assertEqual(list(hdf5['labels']), labels[1:])
 
             self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2'])
+
             self.assertEqual(list(hdf5['resolutions']['1'].keys()), ['nan_values', 'values'])
             assert_array_equal(
                 hdf5['resolutions']['1']['nan_values'], [[0] * 512] * 512
             )
-            assert_array_equal(
-                hdf5['resolutions']['1']['values'][0], [0] * 512
-            )
-            assert_array_equal(
-                hdf5['resolutions']['1']['values'][3], [1] * 512
-            )
-            assert_array_equal(
-                hdf5['resolutions']['1']['values'][6], [1, -1] * 256
-            )
+            res_1 = hdf5['resolutions']['1']['values']
+            assert_array_equal(res_1[0], [0] * 512)
+            assert_array_equal(res_1[3], [1] * 512)
+            assert_array_equal(res_1[6], [1, -1] * 256)
+            assert_array_equal(res_1[9], [nan] * 512)
+
+            self.assertEqual(list(hdf5['resolutions']['2'].keys()), ['values'])
+            res_2 = hdf5['resolutions']['2']['values']
+            assert_array_equal(res_2[0], [0] * 256)
+            assert_array_equal(res_2[1], [2] * 256) # Stradles the 0 and 1 rows
+            assert_array_equal(res_2[2], [4] * 256)
+            assert_array_equal(res_2[3], [0] * 256) # -1 and +1 cancel out
+            assert_array_equal(res_2[4], [0] * 256)
+            assert_array_equal(res_2[5], [0] * 256)
+            assert_array_equal(res_2[6], [0] * 256)
+            # TODO: We lose nan at higher aggregations:
+            # Maybe regular mean/sum instead of treating missing values as 0?
