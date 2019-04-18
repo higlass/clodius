@@ -26,6 +26,4 @@ install:
   - pip install -r requirements-dev.txt
 
 script:
-  - flake8
-  - ./get_test_data.sh
-  - nosetests test
+  - ./travis_test.sh

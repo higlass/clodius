@@ -1,4 +1,8 @@
 [flake8]
+excludes =
+  src/multiprocess
+  # I don't actually know what creates this directory on travis.
+
 ignore =
   E111 # indentation is not a multiple of four
   E117 # over-indented
