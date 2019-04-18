@@ -24,8 +24,8 @@ install:
   - pip install nose
   - pip install -r requirements.txt
   - pip install -r requirements-dev.txt
-  - ./get_test_data.sh
 
 script:
   - flake8
+  - ./get_test_data.sh
   - nosetests test
