@@ -1,6 +1,5 @@
 [flake8]
-excludes =
-  src/multiprocess
+exclude = src/multiprocess
   # I don't actually know what creates this directory on travis.
 
 ignore =
