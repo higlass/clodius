@@ -1,42 +1,94 @@
 [flake8]
-exclude = .eggs, src/multiprocess
-  # src/multiprocess is on Travis, but not in my local checkout.
+exclude =
+  .eggs
+  src/multiprocess # on Travis, but not in my local checkout.
+  clodius/array.py
+  clodius/chromosomes.py
+  clodius/cli/__init__.py
+  clodius/cli/aggregate.py
+  clodius/cli/convert.py
+  clodius/cli/utils.py
+  clodius/db_tiles.py
+  clodius/describe_dataset.py
+  clodius/fpark.py
+  clodius/hdf_tiles.py
+  clodius/higlass_getter.py
+  clodius/multivec.py
+  clodius/save_tiles.py
+  clodius/tiles/bed2ddb.py
+  clodius/tiles/bedarcsdb.py
+  clodius/tiles/beddb.py
+  clodius/tiles/bedfile.py
+  clodius/tiles/bigwig.py
+  clodius/tiles/chromsizes.py
+  clodius/tiles/cooler.py
+  clodius/tiles/density.py
+  clodius/tiles/files.py
+  clodius/tiles/format.py
+  clodius/tiles/geo.py
+  clodius/tiles/hitile.py
+  clodius/tiles/imtiles.py
+  clodius/tiles/mrmatrix.py
+  clodius/tiles/multivec.py
+  clodius/tiles/nplabels.py
+  clodius/tiles/npmatrix.py
+  clodius/tiles/npvector.py
+  clodius/tiles/points.py
+  clodius/tiles/time_interval.py
+  clodius/tiles/utils.py
+  notebooks/Aggregating an array.ipynb
+  notebooks/ENSEMBL annotations and RNAseq.ipynb
+  notebooks/h37rv gene annotations.ipynb
+  pyprof.sh
+  scripts/big_spark.py
+  scripts/check_sorted.py
+  scripts/conversion_wrapper.py
+  scripts/cooler_to_tiles.py
+  scripts/create_chrominfo.py
+  scripts/exonU.py
+  scripts/get_hitile.py
+  scripts/gff_to_chromsizes.py
+  scripts/gff_to_genepred.py
+  scripts/make_autocomplete_list.py
+  scripts/make_big_file.py
+  scripts/make_single_threaded_tiles.py
+  scripts/make_streaming_tiles.py
+  scripts/make_tiles.py
+  scripts/process_file.py
+  scripts/pyprof.sh
+  scripts/replace_importances.py
+  scripts/temp.py
+  scripts/test_1d.py
+  scripts/tile_1d.py
+  scripts/tsv_to_mrmatrix.py
+  setup.py
+  test/bedfile_test.py
+  test/bedpe_test.py
+  test/cli_test.py
+  test/fpark_test.py
+  test/mrmatrix_test.py
+  test/multivec_test.py
+  test/tile_2d_bedfile_test.py
+  test/tiles/bed2ddb_test.py
+  test/tiles/bedarcsdb.py
+  test/tiles/beddb_test.py
+  test/tiles/bigwig_test.py
+  test/tiles/cooler_test.py
+  test/tiles/density_test.py
+  test/tiles/files_test.py
+  test/tiles/hitile_test.py
+  test/tiles/multivec_test.py
+  test/tiles/npmatrix_test.py
+  test/tiles/npvector_test.py
+  test/tiles/time_interval_test.py
+  test/tsv_to_mrmatrix_test.py
+  test/utils.py
+  test.py
 
 ignore =
-  E111 # indentation is not a multiple of four
-  E116 # unexpected indentation (comment)
-  E117 # over-indented
-  E121 # continuation line under-indented for hanging indent
-  E123 # closing bracket does not match indentation of opening bracket's line
-  E124 # closing bracket does not match visual indentation
-  E125 # continuation line with same indent as next logical line
-  E126 # continuation line over-indented for hanging indent
-  E127 # continuation line over-indented for visual indent
-  E128 # continuation line under-indented for visual indent
-  E131 # continuation line unaligned for hanging indent
-  E201 # whitespace after
-  E202 # whitespace before
   E203 # whitespace before
-  E221 # multiple spaces before operator
-  E222 # multiple spaces after operator
-  E225 # missing whitespace around operator
-  E226 # missing whitespace around arithmetic operator
-  E231 # missing whitespace after
-  E241 # multiple spaces after
-  E251 # unexpected spaces around keyword / parameter equals
-  E261 # at least two spaces before inline comment
-  E262 # inline comment should start with '# '
   E265 # block comment should start with '# '
-  E271 # multiple spaces after keyword
-  E302 # expected 2 blank lines
-  E303 # too many blank lines
-  E305 # expected 2 blank lines after class or function definition
-  E306 # expected 1 blank line before a nested definition
-  E401 # multiple imports on one line
-  E402 # module level import not at top of
   E501 # line too long
-  E701 # multiple statements on one line (colon)
-  E703 # statement ends with a semicolon
   E711 # comparison to None should be 'if cond is not None:'
   E712 # comparison to True should be 'if cond is True:' or 'if cond:'
   E713 # test for membership should be 'not in'
