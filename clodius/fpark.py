@@ -4,6 +4,7 @@ import glob
 import itertools as it
 import os.path as op
 
+
 class ParallelData:
     def __init__(self, data):
         self.data = data
@@ -103,10 +104,12 @@ class ParallelData:
     def take(self, n):
         return self.data[:n]
 
+
 class FakeSparkContext:
     '''
     Emulate a SparkContext for local processing.
     '''
+
     def __init__(self):
         pass
 

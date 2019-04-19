@@ -1,5 +1,6 @@
 import os.path as op
 
+
 def partition_by_adjacent_tiles(tile_ids, dimension=2):
     '''
     Partition a set of tile ids into sets of adjacent tiles. For example,
@@ -23,7 +24,7 @@ def partition_by_adjacent_tiles(tile_ids, dimension=2):
     '''
     tile_id_lists = []
 
-    for tile_id in sorted(tile_ids, key=lambda x: [int(p) for p in x.split('.')[2:2+dimension]]):
+    for tile_id in sorted(tile_ids, key=lambda x: [int(p) for p in x.split('.')[2:2 + dimension]]):
         tile_id_parts = tile_id.split('.')
 
         # exclude the zoom level in the position
@@ -39,11 +40,12 @@ def partition_by_adjacent_tiles(tile_ids, dimension=2):
 
             for ct_tile_id in tile_id_list:
                 ct_tile_id_parts = ct_tile_id.split('.')
-                ct_tile_position = list(map(int, ct_tile_id_parts[2:2+dimension]))
+                ct_tile_position = list(
+                    map(int, ct_tile_id_parts[2:2 + dimension]))
                 far_apart = False
 
                 # iterate over each dimension and see if this tile is close
-                for p1,p2 in zip(tile_position, ct_tile_position):
+                for p1, p2 in zip(tile_position, ct_tile_position):
                     if abs(int(p1) - int(p2)) > 1:
                         # too far apart can't be part of the same group
                         far_apart = True
@@ -61,8 +63,9 @@ def partition_by_adjacent_tiles(tile_ids, dimension=2):
 
     return tile_id_lists
 
+
 def infer_filetype(filename):
-    _,ext = op.splitext(filename)
+    _, ext = op.splitext(filename)
 
     if ext.lower() == '.bw' or ext.lower() == '.bigwig':
         return 'bigwig'
@@ -79,6 +82,7 @@ def infer_filetype(filename):
 
     return None
 
+
 def infer_datatype(filetype):
     if filetype == 'cooler':
         return 'matrix'
@@ -91,6 +95,7 @@ def infer_datatype(filetype):
     if filetype == 'beddb':
         return 'bedlike'
 
+
 def tiles_wrapper_2d(tile_ids, tiles_function):
     tile_values = []
 
@@ -101,12 +106,13 @@ def tiles_wrapper_2d(tile_ids, tiles_function):
             raise IndexError("Not enough tile info present")
 
         uid = parts[0]
-        z,x,y = map(int, [parts[1], parts[2], parts[3]])
+        z, x, y = map(int, [parts[1], parts[2], parts[3]])
 
-        tile_values +=  [(tile_id, 
-                          tiles_function(z, x, y))]
+        tile_values += [(tile_id,
+                         tiles_function(z, x, y))]
 
     return tile_values
+
 
 def bundled_tiles_wrapper_2d(tile_ids, tiles_function):
     '''
@@ -123,11 +129,12 @@ def bundled_tiles_wrapper_2d(tile_ids, tiles_function):
 
     for tile_group in partitioned_tile_lists:
         print("tile_group:", tile_group)
-        
+
         zoom_level = int(tile_group[0].split('.')[1])
         tileset_id = tile_group[0].split('.')[0]
 
-        tile_positions = [[int(x) for x in t.split('.')[2:4]] for t in tile_group]
+        tile_positions = [[int(x) for x in t.split('.')[2:4]]
+                          for t in tile_group]
 
         minx = min([t[0] for t in tile_positions])
         maxx = max([t[0] for t in tile_positions])
@@ -135,20 +142,22 @@ def bundled_tiles_wrapper_2d(tile_ids, tiles_function):
         miny = min([t[1] for t in tile_positions])
         maxy = max([t[1] for t in tile_positions])
 
-        tf = tiles_function(zoom_level, minx, miny, 
-                width=maxx - minx + 1, height=maxy - miny + 1)
+        tf = tiles_function(zoom_level, minx, miny,
+                            width=maxx - minx + 1, height=maxy - miny + 1)
 
         tile_values += [("{}.{}".format(tileset_id, ".".join(map(str, tile_position))), data)
-                for (tile_position, data) in tf]
+                        for (tile_position, data) in tf]
 
     return tile_values
 
+
 def random_tile(function):
-        zoom_level = random.randint(0,10)
-        x_pos = random.randint(0, 2 ** zoom_level)
-        y_pos = random.randint(0, 2 ** zoom_level)
-            
-        function(hg_points, zoom_level, x_pos, y_pos)
+    zoom_level = random.randint(0, 10)
+    x_pos = random.randint(0, 2 ** zoom_level)
+    y_pos = random.randint(0, 2 ** zoom_level)
+
+    function(hg_points, zoom_level, x_pos, y_pos)
+
 
 def tile_bounds(tsinfo, z, x, y, width=1, height=1):
     '''
@@ -173,12 +182,12 @@ def tile_bounds(tsinfo, z, x, y, width=1, height=1):
     max_pos = tsinfo['max_pos']
 
     max_width = max(max_pos[0] - min_pos[0], max_pos[1] - min_pos[1])
-    
+
     tile_width = max_width / 2 ** z
     from_x = min_pos[0] + x * tile_width
-    to_x = min_pos[0] + (x+width) * tile_width
-    
+    to_x = min_pos[0] + (x + width) * tile_width
+
     from_y = min_pos[1] + y * tile_width
-    to_y = min_pos[1] + (y+height) * tile_width    
-    
+    to_y = min_pos[1] + (y + height) * tile_width
+
     return [from_x, from_y, to_x, to_y]
