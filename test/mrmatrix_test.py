@@ -5,7 +5,8 @@ from numpy.testing import assert_array_equal
 
 from clodius.tiles.mrmatrix import tileset_info, tiles
 
-class AttrDict(dict):
+class MockHdf5(dict):
+    # By wrapping a dict in our own class, we can add arbitrary attributes.
     pass
 
 class TilesetInfoTest(unittest.TestCase):
@@ -30,9 +31,9 @@ class TilesetInfoTest(unittest.TestCase):
 
         self.info = {
             'bins_per_dimension': 256,
-            'max_pos': (2, 2),       # TODO: Nothing uses these...
-            'min_pos': [0, 0],       # ...
-            'mirror_tiles': 'false', # Can we remove them?
+            'max_pos': (2, 2),
+            'min_pos': [0, 0],
+            'mirror_tiles': 'false',
             'resolutions': [1]
         }
 
@@ -107,8 +108,6 @@ class TilesTest(unittest.TestCase):
     def test_zoom(self):
         tileset = AttrDict({
             'resolutions': {
-                # TODO: It's not actually enforced that zoom levels be sequential integers?
-                # TODO: Should we check that the sizes are reasonable during initialization?
                 '1': {
                     'values': np.array([[1,2],[3,4]])
                 },
