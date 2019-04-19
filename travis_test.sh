@@ -8,7 +8,7 @@ die() { set +v; echo "$*" 1>&2 ; sleep 1; exit 1; }
 # https://github.com/travis-ci/travis-ci/issues/6018
 
 start flake8
-flake8
+flake8 || die 'flake8 failed: Try "autopep8 --in-place --recursive ."'
 end flake8
 
 start download
