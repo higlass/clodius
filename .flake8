@@ -40,26 +40,10 @@ exclude =
   notebooks/ENSEMBL annotations and RNAseq.ipynb
   notebooks/h37rv gene annotations.ipynb
   pyprof.sh
-  scripts/big_spark.py
-  scripts/check_sorted.py
-  scripts/conversion_wrapper.py
-  scripts/cooler_to_tiles.py
-  scripts/create_chrominfo.py
   scripts/exonU.py
-  scripts/get_hitile.py
   scripts/gff_to_chromsizes.py
   scripts/gff_to_genepred.py
-  scripts/make_autocomplete_list.py
-  scripts/make_big_file.py
-  scripts/make_single_threaded_tiles.py
-  scripts/make_streaming_tiles.py
-  scripts/make_tiles.py
-  scripts/process_file.py
-  scripts/pyprof.sh
   scripts/replace_importances.py
-  scripts/temp.py
-  scripts/test_1d.py
-  scripts/tile_1d.py
   scripts/tsv_to_mrmatrix.py
   setup.py
   test/bedfile_test.py
