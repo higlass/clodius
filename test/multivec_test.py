@@ -72,18 +72,20 @@ def test_states_format_befile_to_multivec():
 
 def test_ignore_bedfile_headers():
     runner = clt.CliRunner()
-    input_file = op.join(testdir, 'sample_data', '3_header_100_testfile.bed.gz')
-    rows_info_file = op.join(testdir, 'sample_data', '3_header_100_row_infos.txt')
+    input_file = op.join(testdir, 'sample_data',
+                         '3_header_100_testfile.bed.gz')
+    rows_info_file = op.join(testdir, 'sample_data',
+                             '3_header_100_row_infos.txt')
     f = tempfile.NamedTemporaryFile(delete=False)
 
     result = runner.invoke(
-            ccc.bedfile_to_multivec,
-            [input_file,
-                '--format', 'states',
-                '--row-infos-filename', rows_info_file,
-                '--assembly', 'hg19',
-                '--starting-resolution', '200',
-                '--num-rows', '15'])
+        ccc.bedfile_to_multivec,
+        [input_file,
+         '--format', 'states',
+         '--row-infos-filename', rows_info_file,
+         '--assembly', 'hg19',
+         '--starting-resolution', '200',
+         '--num-rows', '15'])
 
     import traceback
-    a,b,tb = result.exc_info
+    a, b, tb = result.exc_info

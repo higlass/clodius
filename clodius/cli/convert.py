@@ -73,10 +73,10 @@ def states_bedline_to_vector(bedlines, states_dic):
     bedline = bedlines[0]
 
     parts = bedline.decode('utf8').strip().split('\t')
-    chrom=parts[0]
-    start=int(parts[1])
-    end=int(parts[2])
-    state= states_dic[parts[3]]
+    chrom = parts[0]
+    start = int(parts[1])
+    end = int(parts[2])
+    state = states_dic[parts[3]]
 
     states_vector = [1 if index ==
                      state else 0 for index in range(len(states_dic))]
@@ -144,11 +144,11 @@ def _bedgraph_to_multivec(
 
             for bedline in bedlines:
                 parts = bedline.strip().split()
-                chrom = parts[chrom_col-1]
-                start = int(parts[from_pos_col-1])
-                end = int(parts[to_pos_col-1])
+                chrom = parts[chrom_col - 1]
+                start = int(parts[from_pos_col - 1])
+                end = int(parts[to_pos_col - 1])
                 vector = [float(f) if not f == 'NA' else np.nan
-                        for f in parts[value_col-1:value_col-1+num_rows]]
+                          for f in parts[value_col - 1:value_col - 1 + num_rows]]
                 chrom_set.add(chrom)
                 start_set.add(start)
                 end_set.add(end)
@@ -173,9 +173,11 @@ def _bedgraph_to_multivec(
             cmv.bedfile_to_multivec(filepaths, f_out, epilogos_bedline_to_vector,
                                     starting_resolution, has_header, chunk_size)
         elif format == 'states':
-            assert(row_infos != None), "A row_infos file must be provided for --format = 'states' "
-            states_names = [lne.decode('utf8').split('\t')[0] for lne in row_infos]
-            states_dic = {states_names[x]:x for x in range(len(row_infos))}
+            assert(
+                row_infos != None), "A row_infos file must be provided for --format = 'states' "
+            states_names = [lne.decode('utf8').split('\t')[0]
+                            for lne in row_infos]
+            states_dic = {states_names[x]: x for x in range(len(row_infos))}
 
             cmv.bedfile_to_multivec(filepaths, f_out, states_bedline_to_vector,
                                     starting_resolution, has_header, chunk_size, states_dic)
