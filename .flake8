@@ -63,12 +63,9 @@ exclude =
   scripts/tsv_to_mrmatrix.py
   setup.py
   test/bedfile_test.py
-  test/bedpe_test.py
   test/cli_test.py
-  test/fpark_test.py
   test/mrmatrix_test.py
   test/multivec_test.py
-  test/tile_2d_bedfile_test.py
   test/tiles/bed2ddb_test.py
   test/tiles/bedarcsdb.py
   test/tiles/beddb_test.py
