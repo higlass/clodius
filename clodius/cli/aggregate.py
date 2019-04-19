@@ -213,7 +213,7 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
             )
             raise(KeyError(error_str))
 
-        d['uid'] = slugid.nice().decode('utf-8')
+        d['uid'] = slugid.nice()
 
         d['chrOffset'] = d['xs'][0] - int(parts[from1_col])
 
@@ -462,7 +462,7 @@ def _bedfile(
         parts = {
             'startPos': genome_start,
             'endPos': genome_end,
-            'uid': slugid.nice().decode('utf-8'),
+            'uid': slugid.nice(),
             'chrOffset': pos_offset,
             'fields': '\t'.join(line),
             'importance': importance,
@@ -1049,7 +1049,7 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
                 'minLat': minLat,
                 'maxLat': maxLat,
                 'importance': area or _area,
-                'uid': uid or slugid.nice().decode('utf-8'),
+                'uid': uid or slugid.nice(),
                 'geometry': json.dumps(feature['geometry']),
                 'properties': json.dumps(feature['properties']),
             })
