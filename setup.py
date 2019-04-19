@@ -24,13 +24,13 @@ install_requires = [
         'slugid',
         'sortedcontainers',
         'nose',
-        'cooler==0.7.11',
+        'cooler>=0.8.0',
         'pybbi==0.2.0',
         'Click']
 
 setup(
     name='clodius',
-    version='0.10.3',
+    version='0.10.6',
     description='Tile generation for big data',
     author='Peter Kerpedjiev',
     author_email='pkerpedjiev@gmail.com',
