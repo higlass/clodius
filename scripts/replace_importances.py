@@ -3,6 +3,7 @@
 import sys
 import argparse
 
+
 def main():
     parser = argparse.ArgumentParser(description="""
     
@@ -11,9 +12,9 @@ def main():
 
     parser.add_argument('dest')
     parser.add_argument('source')
-    #parser.add_argument('-o', '--options', default='yo',
+    # parser.add_argument('-o', '--options', default='yo',
     #					 help="Some option", type='str')
-    #parser.add_argument('-u', '--useless', action='store_true', 
+    # parser.add_argument('-u', '--useless', action='store_true',
     #					 help='Another useless option')
 
     args = parser.parse_args()
@@ -33,15 +34,10 @@ def main():
             if parts[3] in old_importances:
                 new_importance = old_importances[parts[3]]
 
-
             parts[4] = str(new_importance)
 
             print("\t".join(parts))
 
 
-    
-
 if __name__ == '__main__':
     main()
-
-

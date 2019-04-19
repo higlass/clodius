@@ -1,7 +1,8 @@
 import csv
-import logging 
+import logging
 
 logger = logging.getLogger(__name__)
+
 
 def get_tsv_chromsizes(filename):
     '''

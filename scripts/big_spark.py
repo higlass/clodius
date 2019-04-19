@@ -3,13 +3,14 @@
 import argparse
 from pyspark import SparkContext
 
+
 def main():
     usage = """
     python big_spark.py
 
     Parse a large input file, group its input by key and output it somewhere.
     """
-    num_args= 1
+    num_args = 1
     parser = argparse.ArgumentParser()
 
     parser.add_argument("input_file")
@@ -21,7 +22,8 @@ def main():
 
     print "entries.take(1):", entries.take(1)
 
-    #entries.reduceByKey(reduceByKeyFunc
+    # entries.reduceByKey(reduceByKeyFunc
+
 
 if __name__ == "__main__":
     main()
