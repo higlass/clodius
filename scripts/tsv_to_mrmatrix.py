@@ -18,7 +18,6 @@ def coarsen(f, tile_size=256):
     '''
     grid = f['resolutions']['1']['values']
     top_n = grid.shape[0]
-
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
 
@@ -103,13 +102,16 @@ def get_height(input_path, is_labelled=True):
     else:
         return i + 1
 
-def get_width(input_path, delimiter='\t'):
+def get_width(input_path, is_labelled, delimiter='\t'):
     '''
     Assume the number of elements in the first row is the total width.
     '''
     with open(input_path, 'r', newline='') as input_handle:
         reader = csv.reader(input_handle, delimiter=delimiter)
-        return len(next(reader))
+        len_row = len(next(reader))
+        if is_labelled:
+            return len_row - 1
+        return len_row
 
 
 def main():
@@ -131,12 +133,12 @@ def main():
     args = parser.parse_args()
 
     height = get_height(args.input_file, is_labelled=args.labelled)
-    width = get_width(args.input_file, delimiter=args.delimiter)
+    width = get_width(args.input_file, is_labelled=args.labelled, delimiter=args.delimiter)
     f_in = open(args.input_file, 'r', newline='')
 
     parse(f_in,
         h5py.File(args.output_file, 'w'),
-        height, width,
+        height=height, width=width,
         delimiter=args.delimiter,
         first_n=args.first_n,
         is_square=args.square,

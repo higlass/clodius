@@ -122,7 +122,7 @@ class ParseTest(unittest.TestCase):
             hdf5_write_handle = h5py.File(hdf5_path, 'w')
 
             height = get_height(csv_path)
-            width = get_width(csv_path)
+            width = get_width(csv_path, is_labelled=True)
             parse(csv_handle, hdf5_write_handle, height, width,
                 delimiter='\t', first_n=None, is_square=True, is_labelled=True)
 
