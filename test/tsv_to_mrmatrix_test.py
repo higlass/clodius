@@ -7,7 +7,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import h5py
 
-from scripts.tsv_to_mrmatrix import coarsen, parse, get_height
+from scripts.tsv_to_mrmatrix import coarsen, parse, get_height, get_width
 
 class CoarsenTest(unittest.TestCase):
     def test_5_layer_pyramid(self):
@@ -122,7 +122,8 @@ class ParseTest(unittest.TestCase):
             hdf5_write_handle = h5py.File(hdf5_path, 'w')
 
             height = get_height(csv_path)
-            parse(csv_handle, hdf5_write_handle, height,
+            width = get_width(csv_path)
+            parse(csv_handle, hdf5_write_handle, height, width,
                 delimiter='\t', first_n=None, is_square=True, is_labelled=True)
 
             hdf5 = h5py.File(hdf5_path, 'r')

@@ -44,7 +44,7 @@ def coarsen(f, tile_size=256):
         da.store(dask_dset, values)
 
 
-def parse(input_handle, output_hdf5, height, delimiter, first_n, is_square, is_labelled):
+def parse(input_handle, output_hdf5, height, width, delimiter, first_n, is_square, is_labelled):
     reader = csv.reader(input_handle, delimiter=delimiter)
     if is_labelled:
         first_row = next(reader)
@@ -54,14 +54,12 @@ def parse(input_handle, output_hdf5, height, delimiter, first_n, is_square, is_l
                 'labels',
                 data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
                 compression='lzf')
-    # TODO: Handle non-square labels
+        # TODO: Handle non-square labels
 
     tile_size = 256
-    limit = min(first_n, height) if first_n else height
+    limit = first_n if first_n else max(height, width)
     max_zoom = math.ceil(math.log(limit / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
-    logging.info('max_zoom: %s' % max_zoom)
-    logging.info('max_width: %s' % max_width)
 
     g = output_hdf5.create_group('resolutions')
     g1 = g.create_group('1')
@@ -84,14 +82,14 @@ def parse(input_handle, output_hdf5, height, delimiter, first_n, is_square, is_l
         time_elapsed = time.time() - start_time
         time_per_entry = time_elapsed / counter
 
-        time_remaining = time_per_entry * (top_n - counter)
+        time_remaining = time_per_entry * (height - counter)
         print("counter:", counter, "sum(x):", sum(x), "time remaining: {:d} seconds".format(int(time_remaining)))
 
     coarsen(output_hdf5)
     output_hdf5.close()
 
 
-def get_height(input_path, is_labelled=False):
+def get_height(input_path, is_labelled=True):
     '''
     We need to scan the file once just to see how many lines it contains.
     If it is tall and narrow, the first tile will need to be larger than just
@@ -104,6 +102,14 @@ def get_height(input_path, is_labelled=False):
         return i
     else:
         return i + 1
+
+def get_width(input_path, delimiter='\t'):
+    '''
+    Assume the number of elements in the first row is the total width.
+    '''
+    with open(input_path, 'r', newline='') as input_handle:
+        reader = csv.reader(input_handle, delimiter=delimiter)
+        return len(next(reader))
 
 
 def main():
@@ -125,11 +131,12 @@ def main():
     args = parser.parse_args()
 
     height = get_height(args.input_file, is_labelled=args.labelled)
+    width = get_width(args.input_file, delimiter=args.delimiter)
     f_in = open(args.input_file, 'r', newline='')
 
     parse(f_in,
         h5py.File(args.output_file, 'w'),
-        height,
+        height, width,
         delimiter=args.delimiter,
         first_n=args.first_n,
         is_square=args.square,
