@@ -5,12 +5,8 @@ import dask.array as da
 import h5py
 import math
 import numpy as np
-import os
-import os.path as op
-import sys
 import argparse
 import time
-import logging
 
 
 def coarsen(f, tile_size=256):
@@ -20,7 +16,6 @@ def coarsen(f, tile_size=256):
     grid = f['resolutions']['1']['values']
     top_n = grid.shape[0]
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
-    max_width = tile_size * 2 ** max_zoom
 
     chunk_size = tile_size * 16
     curr_size = grid.shape
@@ -44,7 +39,8 @@ def coarsen(f, tile_size=256):
         da.store(dask_dset, values)
 
 
-def parse(input_handle, output_hdf5, height, width, delimiter, first_n, is_square, is_labelled):
+def parse(input_handle, output_hdf5, height, width,
+          delimiter, first_n, is_square, is_labelled):
     reader = csv.reader(input_handle, delimiter=delimiter)
     if is_labelled:
         first_row = next(reader)
@@ -65,8 +61,8 @@ def parse(input_handle, output_hdf5, height, width, delimiter, first_n, is_squar
     g1 = g.create_group('1')
     ds = g1.create_dataset('values', (max_width, max_width),
                            dtype='f4', compression='lzf', fillvalue=np.nan)
-    ds1 = g1.create_dataset('nan_values', (max_width, max_width),
-                            dtype='f4', compression='lzf', fillvalue=0)
+    g1.create_dataset('nan_values', (max_width, max_width),
+                      dtype='f4', compression='lzf', fillvalue=0)
     # TODO: We don't write to this... Is it necessary?
 
     start_time = time.time()
@@ -119,16 +115,17 @@ def get_width(input_path, is_labelled, delimiter='\t'):
 
 def main():
     parser = argparse.ArgumentParser(description='''
-        Given a tab-delimited file, produces an HDF5 file with mrmatrix ("multi-resolution matrix")
-        structure: Under the "resolutions" group are datasets, named with successive powers of 2,
+        Given a tab-delimited file, produces an HDF5 file with mrmatrix
+        ("multi-resolution matrix") structure: Under the "resolutions"
+        group are datasets, named with successive powers of 2,
         which represent successively higher aggregations of the input.
     ''')
     parser.add_argument('input_file', help='TSV file path')
     parser.add_argument('output_file', help='HDF5 file')
-    parser.add_argument('-d', '--delimiter', type=str, default='\t', metavar='D',
-                        help='Delimiter; defaults to tab')
+    parser.add_argument('-d', '--delimiter', type=str, default='\t',
+                        metavar='D', help='Delimiter; defaults to tab')
     parser.add_argument('-n', '--first-n', type=int, default=None, metavar='N',
-                        help='Only read the first n columns from the first n rows')
+                        help='Only read first N columns from first N rows')
     parser.add_argument('-s', '--square', action='store_true',
                         help='Row labels are assumed to match column labels')
     parser.add_argument('-l', '--labelled', action='store_true',
