@@ -10,7 +10,7 @@ import os.path as op
 import sys
 import argparse
 import time
-
+import logging
 
 def coarsen(f, tile_size=256):
     '''
@@ -60,6 +60,8 @@ def parse(input_handle, output_hdf5, height, delimiter, first_n, is_square, is_l
     limit = min(first_n, height) if first_n else height
     max_zoom = math.ceil(math.log(limit / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
+    logging.info('max_zoom: %s' % max_zoom)
+    logging.info('max_width: %s' % max_width)
 
     g = output_hdf5.create_group('resolutions')
     g1 = g.create_group('1')
@@ -95,7 +97,7 @@ def get_height(input_path, is_labelled=False):
     If it is tall and narrow, the first tile will need to be larger than just
     looking at the width of the first row would suggest.
     '''
-    with open(fname) as f:
+    with open(input_path) as f:
         for i, l in enumerate(f):
             pass
     if is_labelled:
