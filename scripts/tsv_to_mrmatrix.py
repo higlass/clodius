@@ -97,11 +97,16 @@ def main():
         structure: Under the "resolutions" group are datasets, named with successive powers of 2,
         which represent successively higher aggregations of the input.
     ''')
-
-    parser.add_argument('input_file')
-    parser.add_argument('output_file')
-    parser.add_argument('-n', '--first-n', type=int, default=None,
-            help="Only use the first n entries in the matrix")
+    parser.add_argument('input_file', help='TSV file path, or "-" for STDIN')
+    parser.add_argument('output_file', help='HDF5 file')
+    parser.add_argument('-d', '--delimiter', type=str, default='\t', metavar='D',
+            help='Delimiter; defaults to tab')
+    parser.add_argument('-n', '--first-n', type=int, default=None, metavar='N',
+            help='Only read the first n columns from the first n rows')
+    parser.add_argument('-s', '--square', action='store_true',
+            help='Row labels are assumed to match column labels')
+    parser.add_argument('-u', '--unlabelled', action='store_true',
+            help='TSV Matrix contains only numbers: no column or row labels')
 
     args = parser.parse_args()
 
