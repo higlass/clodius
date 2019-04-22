@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import csv
 import dask.array as da
 import h5py
 import math
@@ -44,10 +45,8 @@ def coarsen(f, tile_size=256):
 
 
 def parse(input_handle, output_hdf5, top_n=None):
-    input_handle
-    first_line = next(input_handle)
-    parts = first_line.strip().split('\t')
-    # TODO: Use the python built-in csv module, instead of parsing by hand?
+    reader = csv.reader(input_handle, delimiter='\t')
+    parts = next(reader)
 
     if top_n is None:
         top_n = len(parts) - 1
@@ -59,8 +58,10 @@ def parse(input_handle, output_hdf5, top_n=None):
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
 
-    labels_dset = output_hdf5.create_dataset('labels', data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
-            compression='lzf')
+    labels_dset = output_hdf5.create_dataset(
+        'labels',
+        data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
+        compression='lzf')
 
     g = output_hdf5.create_group('resolutions')
     g1 = g.create_group('1')
@@ -72,9 +73,8 @@ def parse(input_handle, output_hdf5, top_n=None):
 
     start_time = time.time()
     counter = 0
-    for line in input_handle:
-        parts = line.strip().split('\t')[1:top_n+1]
-        x = np.array([float(p) for p in parts])
+    for row in reader:
+        x = np.array([float(p) for p in row[1:]])
         ds[counter,:len(x)] = x
 
         counter += 1
@@ -114,7 +114,7 @@ def main():
     if args.input_file == '-':
         f_in = sys.stdin
     else:
-        f_in = open(args.input_file, 'r')
+        f_in = open(args.input_file, 'r', newline='')
 
     parse(f_in, h5py.File(args.output_file, 'w'), top_n)
 
