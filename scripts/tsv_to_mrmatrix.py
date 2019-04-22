@@ -68,7 +68,7 @@ def parse(input_handle, output_hdf5, height, width,
     start_time = time.time()
     counter = 0
     for row in reader:
-        x = np.array([float(p) for p in row[1:]])
+        x = np.array([float(p) for p in row[1 if is_labelled else None:]])
         ds[counter, :len(x)] = x
 
         counter += 1

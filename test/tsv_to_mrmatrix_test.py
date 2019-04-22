@@ -111,7 +111,7 @@ class CoarsenTest(unittest.TestCase):
 
 
 class ParseTest(unittest.TestCase):
-    def test_labelled_square(self):
+    def test_wide_labelled_square(self):
         with TemporaryDirectory() as tmp_dir:
             csv_path = tmp_dir + '/tmp.csv'
             with open(csv_path, 'w', newline='') as csv_file:
@@ -168,7 +168,7 @@ class ParseTest(unittest.TestCase):
             # TODO: We lose nan at higher aggregations:
             # Maybe regular mean/sum instead of treating missing values as 0?
 
-    def test_unlabelled(self):
+    def _assert_unlabelled_4x4(self, is_square):
         with TemporaryDirectory() as tmp_dir:
             csv_path = tmp_dir + '/tmp.csv'
             with open(csv_path, 'w', newline='') as csv_file:
@@ -187,32 +187,28 @@ class ParseTest(unittest.TestCase):
             self.assertEqual([4, 4], [height, width])
             parse(csv_handle, hdf5_write_handle, height, width,
                   is_labelled=is_labelled,
-                  delimiter='\t', first_n=None, is_square=True)
+                  delimiter='\t', first_n=None, is_square=is_square)
 
             hdf5 = h5py.File(hdf5_path, 'r')
             self.assertEqual(list(hdf5.keys()), ['resolutions'])
             self.assertEqual(list(hdf5['resolutions'].keys()), ['1'])
             self.assertEqual(list(hdf5['resolutions']['1'].keys()),
                              ['nan_values', 'values'])
-            # assert_array_equal(
-            #     hdf5['resolutions']['1']['nan_values'], [[0] * 512] * 512
-            # )
-            # res_1 = hdf5['resolutions']['1']['values']
-            # assert_array_equal(res_1[0], [0] * 512)
-            # assert_array_equal(res_1[3], [1] * 512)
-            # assert_array_equal(res_1[6], [1, -1] * 256)
-            # assert_array_equal(res_1[9], [nan] * 512)
-            #
-            # self.assertEqual(list(hdf5['resolutions']['2'].keys()), ['values'])
-            # res_2 = hdf5['resolutions']['2']['values']
-            # assert_array_equal(res_2[0], [0] * 256)
-            # assert_array_equal(res_2[1], [2] * 256)
-            # # Stradles the 0 and 1 rows
-            # assert_array_equal(res_2[2], [4] * 256)
-            # assert_array_equal(res_2[3], [0] * 256)
-            # # -1 and +1 cancel out
-            # assert_array_equal(res_2[4], [0] * 256)
-            # assert_array_equal(res_2[5], [0] * 256)
-            # assert_array_equal(res_2[6], [0] * 256)
-            # # TODO: We lose nan at higher aggregations:
-            # # Maybe regular mean/sum instead of treating missing values as 0?
+            assert_array_equal(
+                hdf5['resolutions']['1']['nan_values'], [[0] * 4] * 4
+            )
+            assert_array_equal(
+                hdf5['resolutions']['1']['values'],
+                [
+                    [0, 1, 2, 3],
+                    [1, 2, 3, 4],
+                    [2, 3, 4, 5],
+                    [3, 4, 5, 6]
+                ]
+            )
+
+    def test_unlabelled_is_square_true(self):
+        self._assert_unlabelled_4x4(is_square=True)
+
+    def test_unlabelled_is_square_false(self):
+        self._assert_unlabelled_4x4(is_square=False)
