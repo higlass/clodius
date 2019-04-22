@@ -8,7 +8,7 @@ from distutils import sysconfig
 
 
 print("packages:", find_packages())
- 
+
 setup_requires = [
         'numpy',
         ]
@@ -40,7 +40,8 @@ setup(
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
-            'clodius = clodius.cli.aggregate:cli',
+                'clodius = clodius.cli.aggregate:cli',
+                'tsv_to_mrmatrix = scripts.tsv_to_mrmatrix:main'
             ]
         }
 )
