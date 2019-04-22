@@ -44,24 +44,22 @@ def coarsen(f, tile_size=256):
         da.store(dask_dset, values)
 
 
-def parse(input_handle, output_hdf5, top_n=None):
-    reader = csv.reader(input_handle, delimiter='\t')
-    parts = next(reader)
+def parse(input_handle, output_hdf5, height, delimiter, first_n, is_square, is_labelled):
+    reader = csv.reader(input_handle, delimiter=delimiter)
+    if is_labelled:
+        first_row = next(reader)
+        labels = first_row[1:(first_n + 1) if first_n else None]
+        if is_square:
+            output_hdf5.create_dataset(
+                'labels',
+                data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
+                compression='lzf')
+    # TODO: Handle non-square labels
 
-    if top_n is None:
-        top_n = len(parts) - 1
-        # TODO: So if it's taller than it is wide, it will be truncated to a square,
-        # unless an explicit top_n is provided? That doesn't seem right.
-
-    labels = parts[1:top_n+1]
     tile_size = 256
-    max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
+    limit = min(first_n, height) if first_n else height
+    max_zoom = math.ceil(math.log(limit / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
-
-    labels_dset = output_hdf5.create_dataset(
-        'labels',
-        data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
-        compression='lzf')
 
     g = output_hdf5.create_group('resolutions')
     g1 = g.create_group('1')
@@ -78,7 +76,7 @@ def parse(input_handle, output_hdf5, top_n=None):
         ds[counter,:len(x)] = x
 
         counter += 1
-        if counter == top_n:
+        if counter == first_n:
             break
 
         time_elapsed = time.time() - start_time
@@ -91,13 +89,28 @@ def parse(input_handle, output_hdf5, top_n=None):
     output_hdf5.close()
 
 
+def get_height(input_path, is_labelled=False):
+    '''
+    We need to scan the file once just to see how many lines it contains.
+    If it is tall and narrow, the first tile will need to be larger than just
+    looking at the width of the first row would suggest.
+    '''
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    if is_labelled:
+        return i
+    else:
+        return i + 1
+
+
 def main():
     parser = argparse.ArgumentParser(description='''
         Given a tab-delimited file, produces an HDF5 file with mrmatrix ("multi-resolution matrix")
         structure: Under the "resolutions" group are datasets, named with successive powers of 2,
         which represent successively higher aggregations of the input.
     ''')
-    parser.add_argument('input_file', help='TSV file path, or "-" for STDIN')
+    parser.add_argument('input_file', help='TSV file path')
     parser.add_argument('output_file', help='HDF5 file')
     parser.add_argument('-d', '--delimiter', type=str, default='\t', metavar='D',
             help='Delimiter; defaults to tab')
@@ -105,20 +118,20 @@ def main():
             help='Only read the first n columns from the first n rows')
     parser.add_argument('-s', '--square', action='store_true',
             help='Row labels are assumed to match column labels')
-    parser.add_argument('-u', '--unlabelled', action='store_true',
-            help='TSV Matrix contains only numbers: no column or row labels')
-
+    parser.add_argument('-l', '--labelled', action='store_true',
+            help='TSV Matrix has column and row labels')
     args = parser.parse_args()
 
-    count = 0
-    top_n = args.first_n
+    height = get_height(args.input_file, is_labelled=args.labelled)
+    f_in = open(args.input_file, 'r', newline='')
 
-    if args.input_file == '-':
-        f_in = sys.stdin
-    else:
-        f_in = open(args.input_file, 'r', newline='')
-
-    parse(f_in, h5py.File(args.output_file, 'w'), top_n)
+    parse(f_in,
+        h5py.File(args.output_file, 'w'),
+        height,
+        delimiter=args.delimiter,
+        first_n=args.first_n,
+        is_square=args.square,
+        is_labelled=args.labelled)
 
     f = h5py.File(args.output_file, 'r')
     print("sum1:", np.nansum(f['resolutions']['1']['values'][0]))
