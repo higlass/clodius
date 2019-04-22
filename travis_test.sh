@@ -12,8 +12,8 @@ start flake8
 # - Get more files to lint cleanly.
 # - Reduce the number of errors which are ignored everywhere else.
 flake8 --config=.flake8-ignore
-flake8 test/tsv_to_mrmatrix_test.py
-flake8 scripts/tsv_to_mrmatrix.py
+flake8 test/tsv_to_mrmatrix_test.py \
+       scripts/tsv_to_mrmatrix.py
 end flake8
 
 start download

@@ -12,6 +12,7 @@ import argparse
 import time
 import logging
 
+
 def coarsen(f, tile_size=256):
     '''
     Create data pyramid.
@@ -21,9 +22,9 @@ def coarsen(f, tile_size=256):
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
 
-    chunk_size=tile_size * 16
+    chunk_size = tile_size * 16
     curr_size = grid.shape
-    dask_dset = da.from_array(grid, chunks=(chunk_size,chunk_size))
+    dask_dset = da.from_array(grid, chunks=(chunk_size, chunk_size))
 
     r = f['resolutions']
     curr_resolution = 1
@@ -36,7 +37,7 @@ def coarsen(f, tile_size=256):
         print("curr_size:", curr_size)
         g = r.create_group(str(curr_resolution))
         values = g.require_dataset('values', curr_size, dtype='f4',
-            compression='lzf', fillvalue=np.nan)
+                                   compression='lzf', fillvalue=np.nan)
 
         dask_dset = dask_dset.rechunk((chunk_size, chunk_size))
         dask_dset = da.coarsen(np.nansum, dask_dset, {0: 2, 1: 2})
@@ -63,16 +64,16 @@ def parse(input_handle, output_hdf5, height, width, delimiter, first_n, is_squar
     g = output_hdf5.create_group('resolutions')
     g1 = g.create_group('1')
     ds = g1.create_dataset('values', (max_width, max_width),
-            dtype='f4', compression='lzf', fillvalue=np.nan)
+                           dtype='f4', compression='lzf', fillvalue=np.nan)
     ds1 = g1.create_dataset('nan_values', (max_width, max_width),
-            dtype='f4', compression='lzf', fillvalue=0)
-            # TODO: We don't write to this... Is it necessary?
+                            dtype='f4', compression='lzf', fillvalue=0)
+    # TODO: We don't write to this... Is it necessary?
 
     start_time = time.time()
     counter = 0
     for row in reader:
         x = np.array([float(p) for p in row[1:]])
-        ds[counter,:len(x)] = x
+        ds[counter, :len(x)] = x
 
         counter += 1
         if counter == first_n:
@@ -82,7 +83,8 @@ def parse(input_handle, output_hdf5, height, width, delimiter, first_n, is_squar
         time_per_entry = time_elapsed / counter
 
         time_remaining = time_per_entry * (height - counter)
-        print("counter:", counter, "sum(x):", sum(x), "time remaining: {:d} seconds".format(int(time_remaining)))
+        print("counter:", counter, "sum(x):", sum(x),
+              "time remaining: {:d} seconds".format(int(time_remaining)))
 
     coarsen(output_hdf5)
     output_hdf5.close()
@@ -101,6 +103,7 @@ def get_height(input_path, is_labelled=True):
         return i
     else:
         return i + 1
+
 
 def get_width(input_path, is_labelled, delimiter='\t'):
     '''
@@ -123,30 +126,30 @@ def main():
     parser.add_argument('input_file', help='TSV file path')
     parser.add_argument('output_file', help='HDF5 file')
     parser.add_argument('-d', '--delimiter', type=str, default='\t', metavar='D',
-            help='Delimiter; defaults to tab')
+                        help='Delimiter; defaults to tab')
     parser.add_argument('-n', '--first-n', type=int, default=None, metavar='N',
-            help='Only read the first n columns from the first n rows')
+                        help='Only read the first n columns from the first n rows')
     parser.add_argument('-s', '--square', action='store_true',
-            help='Row labels are assumed to match column labels')
+                        help='Row labels are assumed to match column labels')
     parser.add_argument('-l', '--labelled', action='store_true',
-            help='TSV Matrix has column and row labels')
+                        help='TSV Matrix has column and row labels')
     args = parser.parse_args()
 
     height = get_height(args.input_file, is_labelled=args.labelled)
-    width = get_width(args.input_file, is_labelled=args.labelled, delimiter=args.delimiter)
+    width = get_width(args.input_file, is_labelled=args.labelled,
+                      delimiter=args.delimiter)
     f_in = open(args.input_file, 'r', newline='')
 
     parse(f_in,
-        h5py.File(args.output_file, 'w'),
-        height=height, width=width,
-        delimiter=args.delimiter,
-        first_n=args.first_n,
-        is_square=args.square,
-        is_labelled=args.labelled)
+          h5py.File(args.output_file, 'w'),
+          height=height, width=width,
+          delimiter=args.delimiter,
+          first_n=args.first_n,
+          is_square=args.square,
+          is_labelled=args.labelled)
 
     f = h5py.File(args.output_file, 'r')
     print("sum1:", np.nansum(f['resolutions']['1']['values'][0]))
-
 
 
 if __name__ == '__main__':
