@@ -218,7 +218,7 @@ class ParseTest(unittest.TestCase):
         )
 
     def _assert_unlabelled_roundtrip_1024(
-            self, matrix, first_row=None, first_col=None):
+            self, matrix, first_row=None, first_col=None, first_n=None):
         delimiter = '\t'
         is_square = False
         with TemporaryDirectory() as tmp_dir:
@@ -237,7 +237,7 @@ class ParseTest(unittest.TestCase):
             height = get_height(csv_path, is_labelled=is_labelled)
             width = get_width(csv_path, is_labelled=is_labelled)
             parse(csv_handle, hdf5_write_handle, height, width,
-                  first_n=None, is_labelled=is_labelled,
+                  first_n=first_n, is_labelled=is_labelled,
                   delimiter=delimiter, is_square=is_square)
 
             hdf5 = h5py.File(hdf5_path, 'r')
@@ -258,11 +258,25 @@ class ParseTest(unittest.TestCase):
     def test_unlabelled_tsv_tall(self):
         self._assert_unlabelled_roundtrip_1024(
             matrix=[[1 for x in range(4)] for y in range(1000)],
-            first_col=[16]*250 + [0]*6
+            first_col=[16] * 250 + [0] * 6
         )
 
     def test_unlabelled_tsv_wide(self):
         self._assert_unlabelled_roundtrip_1024(
             matrix=[[1 for x in range(1000)] for y in range(4)],
-            first_row=[16]*250 + [0]*6
+            first_row=[16] * 250 + [0] * 6
+        )
+
+    def test_unlabelled_tsv_tall_first_n(self):
+        self._assert_unlabelled_roundtrip_1024(
+            matrix=[[1 for x in range(4)] for y in range(1000)],
+            first_col=[8] + [0] * 255,
+            first_n=2
+        )
+
+    def test_unlabelled_tsv_wide_first_n(self):
+        self._assert_unlabelled_roundtrip_1024(
+            matrix=[[1 for x in range(1000)] for y in range(4)],
+            first_row=[8] * 250 + [0] * 6,
+            first_n=2
         )

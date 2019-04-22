@@ -53,7 +53,7 @@ def parse(input_handle, output_hdf5, height, width,
         # TODO: Handle non-square labels
 
     tile_size = 256
-    limit = first_n if first_n else max(height, width)
+    limit = max(height, width)
     max_zoom = math.ceil(math.log(limit / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
 
