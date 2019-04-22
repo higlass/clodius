@@ -20,13 +20,13 @@ class TilesetInfoTest(unittest.TestCase):
             }
         }
 
-        self.tileset = AttrDict(tileset_stub)
+        self.tileset = MockHdf5(tileset_stub)
         self.tileset.attrs = {}
 
-        self.tileset_min = AttrDict(tileset_stub)
+        self.tileset_min = MockHdf5(tileset_stub)
         self.tileset_min.attrs = {'min-pos': (1, 1)}
 
-        self.tileset_max = AttrDict(tileset_stub)
+        self.tileset_max = MockHdf5(tileset_stub)
         self.tileset_max.attrs = {'max-pos': (9, 9)}
 
         self.info = {
@@ -55,7 +55,7 @@ class TilesetInfoTest(unittest.TestCase):
 class TilesTest(unittest.TestCase):
     def test_zoom_out_of_bounds(self):
         def should_fail():
-            tileset_stub = AttrDict({
+            tileset_stub = MockHdf5({
                 'resolutions': {
                     '1': {
                         'values': np.array([[1,2],[3,4]])
@@ -67,7 +67,7 @@ class TilesTest(unittest.TestCase):
         self.assertRaisesRegex(ValueError, r'Zoom level out of bounds', should_fail)
 
     def test_padding(self):
-        tileset = AttrDict({
+        tileset = MockHdf5({
             'resolutions': {
                 '1': {
                     'values': np.array([[1.0, 2], [3, 4]])
@@ -83,7 +83,7 @@ class TilesTest(unittest.TestCase):
         assert_array_equal(zoomed[2:256, 0], [np.nan for x in range(254)])
 
     def test_bins(self):
-        tileset = AttrDict({
+        tileset = MockHdf5({
             'resolutions': {
                 '1': {
                     'values': np.array([[float(x) for x in range(500)] for y in range(500)])
@@ -106,7 +106,7 @@ class TilesTest(unittest.TestCase):
         # Plain assertEqual gave: nan != nan
 
     def test_zoom(self):
-        tileset = AttrDict({
+        tileset = MockHdf5({
             'resolutions': {
                 '1': {
                     'values': np.array([[1,2],[3,4]])
