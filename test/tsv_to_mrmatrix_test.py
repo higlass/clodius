@@ -253,10 +253,12 @@ class ParseTest(unittest.TestCase):
 
     def test_unlabelled_tsv_tall(self):
         self._assert_unlabelled_roundtrip_1024(
-            matrix=[[x + y for x in range(4)] for y in range(1024)]
+            matrix=[[1 for x in range(4)] for y in range(1024)],
+            first_col=[16]*256
         )
 
     def test_unlabelled_tsv_wide(self):
         self._assert_unlabelled_roundtrip_1024(
-            matrix=[[x + y for x in range(1024)] for y in range(4)]
+            matrix=[[1 for x in range(1024)] for y in range(4)],
+            first_row=[16]*256
         )
