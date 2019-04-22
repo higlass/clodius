@@ -9,6 +9,7 @@ import h5py
 
 from scripts.tsv_to_mrmatrix import coarsen, parse, get_height, get_width
 
+
 class CoarsenTest(unittest.TestCase):
     def test_5_layer_pyramid(self):
         tile_size = 4
@@ -20,7 +21,8 @@ class CoarsenTest(unittest.TestCase):
             g = hdf5.create_group('resolutions')
             g1 = g.create_group('1')
             ds = g1.create_dataset('values', (max_width, max_width),
-                    dtype='f4', compression='lzf', fillvalue=np.nan)
+                                   dtype='f4', compression='lzf',
+                                   fillvalue=np.nan)
             for y in range(max_width):
                 a = np.array([float(x) for x in range(max_width)])
                 ds[y, :max_width] = a
@@ -28,8 +30,10 @@ class CoarsenTest(unittest.TestCase):
             # before coarsen()
             self.assertEqual(list(hdf5.keys()), ['resolutions'])
             self.assertEqual(list(hdf5['resolutions'].keys()), ['1'])
-            self.assertEqual(list(hdf5['resolutions']['1'].keys()), ['values'])
-            self.assertEqual(list(hdf5['resolutions']['1']['values'].shape), [64, 64])
+            self.assertEqual(list(hdf5['resolutions']['1'].keys()),
+                             ['values'])
+            self.assertEqual(list(hdf5['resolutions']['1']['values'].shape),
+                             [64, 64])
             self.assertEqual(
                 hdf5['resolutions']['1']['values'][:].tolist()[0],
                 [float(x) for x in range(64)]
@@ -39,8 +43,10 @@ class CoarsenTest(unittest.TestCase):
 
             # after coarsen()
             self.assertEqual(list(hdf5.keys()), ['resolutions'])
-            self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '16', '2', '4', '8'])
-            self.assertEqual(list(hdf5['resolutions']['16'].keys()), ['values'])
+            self.assertEqual(list(hdf5['resolutions'].keys()),
+                             ['1', '16', '2', '4', '8'])
+            self.assertEqual(list(hdf5['resolutions']['16'].keys()),
+                             ['values'])
             shapes = {
                 '1': 64,
                 '2': 32,
@@ -49,7 +55,8 @@ class CoarsenTest(unittest.TestCase):
                 '16': 4
             }
             for (k, v) in shapes.items():
-                self.assertEqual(hdf5['resolutions'][k]['values'].shape, (v, v))
+                self.assertEqual(hdf5['resolutions'][k]['values'].shape,
+                                 (v, v))
             row = [1920,  6016, 10112, 14208]
             self.assertEqual(
                 hdf5['resolutions']['16']['values'][:].tolist(),
@@ -66,7 +73,8 @@ class CoarsenTest(unittest.TestCase):
             g = hdf5.create_group('resolutions')
             g1 = g.create_group('1')
             ds = g1.create_dataset('values', (max_width, max_width),
-                    dtype='f4', compression='lzf', fillvalue=np.nan)
+                                   dtype='f4', compression='lzf',
+                                   fillvalue=np.nan)
             for y in range(max_width):
                 a = np.array([float(x) for x in range(max_width)])
                 ds[y, :max_width] = a
@@ -83,7 +91,8 @@ class CoarsenTest(unittest.TestCase):
                 '4': 2
             }
             for (k, v) in shapes.items():
-                self.assertEqual(hdf5['resolutions'][k]['values'].shape, (v, v))
+                self.assertEqual(hdf5['resolutions'][k]['values'].shape,
+                                 (v, v))
 
             row8 = list(range(8))
             assert_array_equal(
@@ -99,6 +108,7 @@ class CoarsenTest(unittest.TestCase):
             assert_array_equal(
                 hdf5['resolutions']['4']['values'],
                 [row2 for _ in range(2)])
+
 
 class ParseTest(unittest.TestCase):
     def test_parse(self):
@@ -124,7 +134,8 @@ class ParseTest(unittest.TestCase):
             height = get_height(csv_path)
             width = get_width(csv_path, is_labelled=True)
             parse(csv_handle, hdf5_write_handle, height, width,
-                delimiter='\t', first_n=None, is_square=True, is_labelled=True)
+                  delimiter='\t', first_n=None, is_square=True,
+                  is_labelled=True)
 
             hdf5 = h5py.File(hdf5_path, 'r')
             self.assertEqual(list(hdf5.keys()), ['labels', 'resolutions'])
@@ -132,7 +143,8 @@ class ParseTest(unittest.TestCase):
 
             self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2'])
 
-            self.assertEqual(list(hdf5['resolutions']['1'].keys()), ['nan_values', 'values'])
+            self.assertEqual(list(hdf5['resolutions']['1'].keys()),
+                             ['nan_values', 'values'])
             assert_array_equal(
                 hdf5['resolutions']['1']['nan_values'], [[0] * 512] * 512
             )
@@ -145,9 +157,11 @@ class ParseTest(unittest.TestCase):
             self.assertEqual(list(hdf5['resolutions']['2'].keys()), ['values'])
             res_2 = hdf5['resolutions']['2']['values']
             assert_array_equal(res_2[0], [0] * 256)
-            assert_array_equal(res_2[1], [2] * 256) # Stradles the 0 and 1 rows
+            assert_array_equal(res_2[1], [2] * 256)
+            # Stradles the 0 and 1 rows
             assert_array_equal(res_2[2], [4] * 256)
-            assert_array_equal(res_2[3], [0] * 256) # -1 and +1 cancel out
+            assert_array_equal(res_2[3], [0] * 256)
+            # -1 and +1 cancel out
             assert_array_equal(res_2[4], [0] * 256)
             assert_array_equal(res_2[5], [0] * 256)
             assert_array_equal(res_2[6], [0] * 256)
