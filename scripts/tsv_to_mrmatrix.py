@@ -3,7 +3,6 @@
 import csv
 import dask.array as da
 import h5py
-import click
 import math
 import numpy as np
 import argparse
@@ -114,7 +113,6 @@ def get_width(input_path, is_labelled, delimiter='\t'):
         return len_row
 
 
-@click.command()
 def main():
     parser = argparse.ArgumentParser(description='''
         Given a tab-delimited file, produces an HDF5 file with mrmatrix

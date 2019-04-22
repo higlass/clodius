@@ -38,10 +38,12 @@ setup(
     packages=['clodius', 'clodius.cli', 'clodius.tiles'],
     setup_requires=setup_requires,
     install_requires=install_requires,
+    scripts=[
+        'scripts/tsv_to_mrmatrix.py'
+    ],
     entry_points={
         'console_scripts': [
-                'clodius = clodius.cli.aggregate:cli',
-                'tsv_to_mrmatrix = scripts.tsv_to_mrmatrix:main'
+                'clodius = clodius.cli.aggregate:cli'
             ]
         }
 )
