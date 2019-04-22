@@ -168,7 +168,8 @@ class ParseTest(unittest.TestCase):
             # TODO: We lose nan at higher aggregations:
             # Maybe regular mean/sum instead of treating missing values as 0?
 
-    def _assert_unlabelled_roundtrip_lt_256(self, matrix, delimiter, is_square):
+    def _assert_unlabelled_roundtrip_lt_256(
+            self, matrix, delimiter, is_square):
         with TemporaryDirectory() as tmp_dir:
             csv_path = tmp_dir + '/tmp.csv'
             with open(csv_path, 'w', newline='') as csv_file:
@@ -216,7 +217,8 @@ class ParseTest(unittest.TestCase):
             is_square=False
         )
 
-    def _assert_unlabelled_roundtrip_1024(self, matrix, first_row=None, first_col=None):
+    def _assert_unlabelled_roundtrip_1024(
+            self, matrix, first_row=None, first_col=None):
         delimiter = '\t'
         is_square = False
         with TemporaryDirectory() as tmp_dir:
@@ -249,7 +251,9 @@ class ParseTest(unittest.TestCase):
             if first_row:
                 assert_array_equal(res_4[0], first_row)
             if first_col:
-                assert_array_equal([res_4[y][0] for y in range(len(first_col))], first_col)
+                assert_array_equal(
+                    [res_4[y][0] for y in range(len(first_col))],
+                    first_col)
 
     def test_unlabelled_tsv_tall(self):
         self._assert_unlabelled_roundtrip_1024(
