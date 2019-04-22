@@ -92,17 +92,14 @@ def parse(input_handle, output_hdf5, top_n=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="""
-
-    python tsv-dense-to-sparse
-""")
+    parser = argparse.ArgumentParser(description='''
+        Given a tab-delimited file, produces an HDF5 file with mrmatrix ("multi-resolution matrix")
+        structure: Under the "resolutions" group are datasets, named with successive powers of 2,
+        which represent successively higher aggregations of the input.
+    ''')
 
     parser.add_argument('input_file')
     parser.add_argument('output_file')
-    #parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
-    #parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
     parser.add_argument('-n', '--first-n', type=int, default=None,
             help="Only use the first n entries in the matrix")
 
