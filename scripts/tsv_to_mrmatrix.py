@@ -47,12 +47,15 @@ def parse(input_handle, output_hdf5, top_n=None):
     input_handle
     first_line = next(input_handle)
     parts = first_line.strip().split('\t')
-    # TODO: Use the python built-in csv module, instead of parsing by hand?
+    # TODO: Use the python built-in csv module, instead of parsing by handself.
+    # https://github.com/higlass/clodius/issues/63
 
     if top_n is None:
         top_n = len(parts) - 1
-        # TODO: So if it's taller than it is wide, it will be truncated to a square,
-        # unless an explicit top_n is provided? That doesn't seem right.
+        # TODO: If it's taller than it is wide, it will be truncated to a square,
+        # unless an explicit top_n is provided.
+        # https://github.com/higlass/clodius/issues/64
+
 
     labels = parts[1:top_n+1]
     tile_size = 256
@@ -68,7 +71,8 @@ def parse(input_handle, output_hdf5, top_n=None):
             dtype='f4', compression='lzf', fillvalue=np.nan)
     ds1 = g1.create_dataset('nan_values', (max_width, max_width),
             dtype='f4', compression='lzf', fillvalue=0)
-            # TODO: We don't write to this... Is it necessary?
+            # TODO: We don't write to this, and I think we want the nan_values for every resolution.
+            # https://github.com/higlass/clodius/issues/62
 
     start_time = time.time()
     counter = 0
