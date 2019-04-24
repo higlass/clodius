@@ -1,6 +1,11 @@
 # Clodius <img src="https://travis-ci.org/hms-dbmi/clodius.svg?branch=develop"/>
 
-## Quick start without docker
+Displaying large amounts of data often requires first turning it into
+not-so-large amounts of data. Clodius is a program and library designed
+to aggregate large datasets to make them easy to display at different
+resolutions.
+
+## Demo
 
 Install the clodius package:
 
@@ -17,6 +22,21 @@ clodius aggregate bigwig ~/Downloads/E116-DNase.fc.signal.bigwig
 The output files can then be displayed using the [higlass-docker container](https://github.com/hms-dbmi/higlass-docker). For more information about viewing these types of files take a look at the [higlass wiki](https://github.com/hms-dbmi/higlass/wiki#bigwig-files).
 
 [More examples](COMMANDS.md) are available.
+
+## File Types
+
+- Non-genomic Rasters
+  - [TSV Files](docs/raster/tsv.rst)
+- Genomic Data
+  - [Bed Files](docs/genomic/bed.rst)
+  - [BedGraph Files](docs/genomic/bedgraph.rst)
+  - [Bedpe-like Files](docs/genomic/bedpe.rst)
+  - [BigWig Files](docs/genomic/bigwig.rst)
+  - [Chromosome Sizes](docs/genomic/chromosome-sizes.rst)
+  - [Cooler Files](docs/genomic/cooler.rst)
+  - [Gene Annotation](docs/genomic/gene-annotation.rst)
+  - [HiTile Files](docs/genomic/hitile.rst)
+  - [Multivec Files](docs/genomic/multivec.rst)
 
 ## Development
 
