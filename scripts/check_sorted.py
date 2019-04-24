@@ -23,7 +23,7 @@ for line in sys.stdin:
         if (curr_val2 < prev_val2):
             print >>sys.stderr, "Not sorted, line:", counter
             sys.exit(1)
-    
+
     prev_val = curr_val
     prev_val2 = curr_val2
     counter += 1

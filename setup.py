@@ -23,7 +23,6 @@ install_requires = [
         'pandas',
         'slugid',
         'sortedcontainers',
-        'nose',
         'cooler>=0.8.0',
         'pybbi==0.2.0',
         'Click']

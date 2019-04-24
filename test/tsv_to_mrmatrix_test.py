@@ -61,7 +61,6 @@ class CoarsenTest(unittest.TestCase):
             self.assertEqual(
                 hdf5['resolutions']['16']['values'][:].tolist(),
                 [row, row, row, row])
-            # TODO: Check the math
 
     def test_math(self):
         tile_size = 2
@@ -155,6 +154,8 @@ class ParseTest(unittest.TestCase):
             assert_array_equal(res_1[9], [nan] * 512)
 
             self.assertEqual(list(hdf5['resolutions']['2'].keys()), ['values'])
+            # TODO: We are missing nan_values at higher aggregations: Bug?
+            # https://github.com/higlass/clodius/issues/62
             res_2 = hdf5['resolutions']['2']['values']
             assert_array_equal(res_2[0], [0] * 256)
             assert_array_equal(res_2[1], [2] * 256)

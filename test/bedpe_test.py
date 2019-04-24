@@ -12,16 +12,17 @@ sys.path.append("scripts")
 
 testdir = op.realpath(op.dirname(__file__))
 
+
 def test_clodius_aggregate_bedpe():
     input_file = op.join(testdir, 'sample_data', 'isidro.bedpe')
     output_file = '/tmp/isidro.bed2ddb'
 
     cca._bedpe(input_file, output_file, 'b37',
-            importance_column=None,
-            chromosome=None,
-            max_per_tile=100,
-            tile_size=1024,
-            has_header=True)
+               importance_column=None,
+               chromosome=None,
+               max_per_tile=100,
+               tile_size=1024,
+               has_header=True)
 
     """
     runner = clt.CliRunner()
