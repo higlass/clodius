@@ -6,6 +6,7 @@ import subprocess as sp
 import sys
 import tempfile as tf
 
+
 def main():
     usage = """
     python make_tiles.py input_file
@@ -31,32 +32,32 @@ def main():
         tempfile1 = tf.TemporaryFile()
 
         p05 = sp.Popen(['bigWigToBedGraph', args.filepath, '/dev/fd/1'],
-                        stdout = tempfile1)
+                       stdout=tempfile1)
         p05.wait()
         tempfile1.seek(0)
 
-        p0 = sp.Popen(['pv', '-f', '-'], 
-                        stdin=tempfile1,
-                        stdout=sp.PIPE, 
-                        stderr=sp.PIPE, 
-                        universal_newlines=True)
+        p0 = sp.Popen(['pv', '-f', '-'],
+                      stdin=tempfile1,
+                      stdout=sp.PIPE,
+                      stderr=sp.PIPE,
+                      universal_newlines=True)
         pn = p0
     elif args.type == 'bedgraph':
-        p0 = sp.Popen(['pv', '-f', args.filepath], 
-                        stdout=sp.PIPE, 
-                        stderr=sp.PIPE, 
-                        universal_newlines=True)
+        p0 = sp.Popen(['pv', '-f', args.filepath],
+                      stdout=sp.PIPE,
+                      stderr=sp.PIPE,
+                      universal_newlines=True)
         pn = p0
 
-    p1 = sp.Popen(["awk", "{print $1, $2, $1, $3, $4 }"],  
-                    stdin = pn.stdout,
-                   stdout=sp.PIPE)
+    p1 = sp.Popen(["awk", "{print $1, $2, $1, $3, $4 }"],
+                  stdin=pn.stdout,
+                  stdout=sp.PIPE)
     p2 = sp.Popen(['chr_pos_to_genome_pos.py', '-e 5', '-a', '{}'.format(args.assembly)],
-                    stdin = p1.stdout,
-                    stdout=sp.PIPE)
+                  stdin=p1.stdout,
+                  stdout=sp.PIPE)
     p3 = sp.Popen(['sort', '-k1,1n', '-k2,2n', '-'],
-                    stdin = p2.stdout, 
-                    stdout=tempfile)
+                  stdin=p2.stdout,
+                  stdout=tempfile)
 
     for line in iter(p0.stderr.readline, ""):
         print("line:", line.strip())
@@ -71,12 +72,12 @@ def main():
     tempfile.seek(0)
 
     p35 = sp.Popen(['pv', '-f', '-'],
-                    stdin = tempfile,
-                    stdout = sp.PIPE,
-                    stderr = sp.PIPE,
-                    universal_newlines=True)
+                   stdin=tempfile,
+                   stdout=sp.PIPE,
+                   stderr=sp.PIPE,
+                   universal_newlines=True)
     p4 = sp.Popen(['gzip'],
-                    stdin = p35.stdout, stdout=outfile)
+                  stdin=p35.stdout, stdout=outfile)
     for line in iter(p35.stderr.readline, ""):
         print("line:", line.strip())
 
@@ -84,6 +85,7 @@ def main():
     p4.wait()
 
     print("filedir:", filedir)
+
 
 if __name__ == '__main__':
     main()

@@ -13,7 +13,8 @@ import time
 
 import multiprocessing as mpr
 
-def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, max_zoom_to_generate, queue = None, max_queue_size=10000):
+
+def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, max_zoom_to_generate, queue=None, max_queue_size=10000):
     '''
     Recursively generate tiles from a cooler file.
 
@@ -43,9 +44,10 @@ def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, m
         end2 = (y_pos + 1) * info['max_width'] / divisor
 
         t1 = time.time()
-        print("st:", start1, end1-1, start2, end2-1)
+        print("st:", start1, end1 - 1, start2, end2 - 1)
         try:
-            data = chg.getData3(coolers_matrix[zoom_level], zoom_level, start1, end1-1, start2, end2-1)
+            data = chg.getData3(
+                coolers_matrix[zoom_level], zoom_level, start1, end1 - 1, start2, end2 - 1)
         except ValueError as ve:
             print("ERROR ve:", ve, file=sys.stderr)
 
@@ -61,22 +63,24 @@ def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, m
         j = (df['genome_end'].values - start2) // binsize
         v = np.nan_to_num(df['balanced'].values)
         m = (end1 - start1) // binsize
-        n =  (end2 - start2) // binsize
+        n = (end2 - start2) // binsize
 
-        zi = zip(zip(i,j),v)
+        zi = zip(zip(i, j), v)
         tile_bins = dict(zi)
 
         data_length = len(data)
 
         if queue is not None:
             total_put += 1
-            print("putting:", (tile_position[0], tile_position[1:]), 
-                  "total_put:", total_put, 
+            print("putting:", (tile_position[0], tile_position[1:]),
+                  "total_put:", total_put,
                   "total_time: {:d}".format(int(time.time() - start_time)),
-                  "time_per_put: {:.2f}".format((time.time() -  start_time) / total_put),
+                  "time_per_put: {:.2f}".format(
+                      (time.time() - start_time) / total_put),
                   "data_time: {:.2f}".format(data_time),
                   "tile_size:", data_length,
-                  "call: ({}, {}, {}, {}, {})".format(zoom_level, start1, end1-1, start2, end2-1),
+                  "call: ({}, {}, {}, {}, {})".format(
+                      zoom_level, start1, end1 - 1, start2, end2 - 1),
                   'qsize:', queue.qsize())
             queue.put((tile_position[0], tile_position[1:], tile_bins))
             while queue.qsize() > max_queue_size:
@@ -85,10 +89,11 @@ def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, m
         # Upload the tile to the server here
         ###
         if zoom_level < max_zoom_to_generate and data_length > 0:
-            tile_positions.append((zoom_level+1, 2 * x_pos, 2 * y_pos))
-            tile_positions.append((zoom_level+1, 2 * x_pos, 2 * y_pos + 1))
-            tile_positions.append((zoom_level+1, 2 * x_pos+1, 2 * y_pos + 1))
-            tile_positions.append((zoom_level+1, 2 * x_pos+1, 2 * y_pos))
+            tile_positions.append((zoom_level + 1, 2 * x_pos, 2 * y_pos))
+            tile_positions.append((zoom_level + 1, 2 * x_pos, 2 * y_pos + 1))
+            tile_positions.append(
+                (zoom_level + 1, 2 * x_pos + 1, 2 * y_pos + 1))
+            tile_positions.append((zoom_level + 1, 2 * x_pos + 1, 2 * y_pos))
 
         # need to recurse into higher zoom levels
         '''
@@ -102,6 +107,7 @@ def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, m
                 resolution, max_zoom_to_generate, queue = queue)
         '''
 
+
 def main():
     parser = argparse.ArgumentParser(description="""
     python cooler_to_tiles.py cooler_file 
@@ -110,9 +116,9 @@ def main():
 """)
 
     #parser.add_argument('argument', nargs=1)
-    #parser.add_argument('-o', '--options', default='yo',
+    # parser.add_argument('-o', '--options', default='yo',
     #					 help="Some option", type='str')
-    #parser.add_argument('-u', '--useless', action='store_true', 
+    # parser.add_argument('-u', '--useless', action='store_true',
     #					 help='Another useless option')
     parser.add_argument('filepath')
     parser.add_argument('-e', '--elasticsearch-url', default=None,
@@ -135,18 +141,18 @@ def main():
     bins_per_dimension = tileset_info['bins_per_dimension']
     max_data_in_sparse = bins_per_dimension ** num_dimensions / 10
 
-    if args.elasticsearch_url is not None:    
+    if args.elasticsearch_url is not None:
         tile_saver = cst.ElasticSearchTileSaver(max_data_in_sparse,
                                                 bins_per_dimension,
-                                                es_path = args.elasticsearch_url,
-                                                log_file = args.log_file,
+                                                es_path=args.elasticsearch_url,
+                                                log_file=args.log_file,
                                                 num_dimensions=num_dimensions)
     else:
         tile_saver = cst.ColumnFileTileSaver(max_data_in_sparse,
-                                                bins_per_dimension,
-                                                file_path = args.columnfile_path,
-                                                log_file = args.log_file,
-                                                num_dimensions=num_dimensions)
+                                             bins_per_dimension,
+                                             file_path=args.columnfile_path,
+                                             log_file=args.log_file,
+                                             num_dimensions=num_dimensions)
 
     ############################################################################
 
@@ -163,7 +169,8 @@ def main():
 
     print("num_threads:", args.num_threads)
     for i in range(args.num_threads):
-        p = mpr.Process(target=cst.tile_saver_worker, args=(queue, tile_saver, finished))
+        p = mpr.Process(target=cst.tile_saver_worker,
+                        args=(queue, tile_saver, finished))
 
         p.daemon = True
         p.start()
@@ -172,13 +179,13 @@ def main():
     tileset_info['max_value'] = 0
     tileset_info['min_value'] = 0
 
-    tile_saver.save_tile({'tile_id': 'tileset_info', 
+    tile_saver.save_tile({'tile_id': 'tileset_info',
                           'tile_value': tileset_info})
     tile_saver.flush()
 
     try:
         with h5py.File(args.filepath) as f:
-            for i in range(max_zoom_to_generate+1):
+            for i in range(max_zoom_to_generate + 1):
                 f = h5py.File(args.filepath, 'r')
 
                 c = cooler.Cooler(f[str(i)])
@@ -186,8 +193,8 @@ def main():
 
                 coolers_matrix[i] = {'cooler': c, 'matrix': matrix}
 
-            recursive_generate_tiles(col.deque([(0,0,0)]), coolers_matrix, tileset_info, 
-                    args.resolution, max_zoom_to_generate, queue)
+            recursive_generate_tiles(col.deque([(0, 0, 0)]), coolers_matrix, tileset_info,
+                                     args.resolution, max_zoom_to_generate, queue)
     except KeyboardInterrupt:
         print("kb interrupt:")
         for (ts, p) in tilesaver_processes:
@@ -202,12 +209,10 @@ def main():
         p.join()
 
     print("tileset_info:", tileset_info)
-    tile_saver.save_tile({'tile_id': 'tileset_info', 
+    tile_saver.save_tile({'tile_id': 'tileset_info',
                           'tile_value': tileset_info})
     tile_saver.flush()
 
 
 if __name__ == '__main__':
     main()
-
-

@@ -8,7 +8,7 @@ from distutils import sysconfig
 
 
 print("packages:", find_packages())
- 
+
 setup_requires = [
         'numpy',
         ]
@@ -23,7 +23,6 @@ install_requires = [
         'pandas',
         'slugid',
         'sortedcontainers',
-        'nose',
         'cooler>=0.8.0',
         'pybbi==0.2.0',
         'Click']

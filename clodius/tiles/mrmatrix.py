@@ -1,6 +1,6 @@
 import numpy as np
 
-def tileset_info(f, bounds=None):    
+def tileset_info(f, bounds=None):
     if 'min-pos' in f.attrs:
         min_pos = f.attrs['min-pos']
     else:
@@ -39,12 +39,12 @@ def tiles(f, z,x,y):
     n_bins = tsinfo['bins_per_dimension']
 
     if z >= len(resolutions):
-        raise ValueError('Zoom level out of bounds:', z, 
+        raise ValueError('Zoom level out of bounds:', z,
             "resolutions:", resolutions)
 
     tile_width = tsinfo['bins_per_dimension']
 
-    # where in the matrix the tile start
+    # Where in the matrix the tile starts
     tile_x_start = x * tile_width
     tile_y_start = y * tile_width
 
