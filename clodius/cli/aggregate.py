@@ -1011,18 +1011,28 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
         area = 0.0  # Calculated with the shoelace formula
         n = len(coords)
 
-        for coord_group in coords:
-            for i, coord in enumerate(coord_group):
-                minX = min(minX, coord[0])
-                maxX = max(maxX, coord[0])
-                minY = min(minY, coord[1])
-                maxY = max(maxY, coord[1])
-                if not no_area_comp:
-                    j = (i + 1) % n
-                    area += coord_group[i][0] * coord_group[j][1]
-                    area -= coord_group[j][0] * coord_group[i][1]
+        try:
+            for coord_group in coords:
+                for i, coord in enumerate(coord_group):
+                    minX = min(minX, coord[0])
+                    maxX = max(maxX, coord[0])
+                    minY = min(minY, coord[1])
+                    maxY = max(maxY, coord[1])
+                    if not no_area_comp:
+                        j = (i + 1) % n
+                        area += coord_group[i][0] * coord_group[j][1]
+                        area -= coord_group[j][0] * coord_group[i][1]
 
-            area = abs(area) / 2.0
+                area = abs(area) / 2.0
+        except TypeError:
+            # coords aren't iterable so this must be a point
+            minX = coords[0];
+            maxX = coords[0];
+            minY = coords[1];
+            maxY = coords[1];
+
+            # points don't have an area so let's just pick something
+            area = random.random()
 
         return minX, maxX, minY, maxY, abs(area) / 2.0
 
