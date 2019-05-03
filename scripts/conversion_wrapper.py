@@ -6,13 +6,18 @@ import os
 import os.path as op
 import sys
 
+
 def set_postmortem_hook():
-    import sys, traceback, ipdb
+    import sys
+    import traceback
+    import ipdb
+
     def _excepthook(exc_type, value, tb):
         traceback.print_exception(exc_type, value, tb)
         print()
         ipdb.pm()
     sys.excepthook = _excepthook
+
 
 set_postmortem_hook()
 
@@ -53,7 +58,6 @@ def main():
     n_cpus = args["n_cpus"]
     chunk_size = args["chunk_size"]
 
-
     if output_file is None:
         output_file = format_output_filename(input_file, filetype)
 
@@ -62,7 +66,8 @@ def main():
         sys.stdout.write("Output to stdout")
 
     if filetype in ["bigwig", "hitile"]:
-        cca._bigwig(filepath=input_file, output_file=output_file, assembly=assembly)
+        cca._bigwig(filepath=input_file,
+                    output_file=output_file, assembly=assembly)
 
     if filetype == "cooler":
         from cooler.contrib import recursive_agg_onefile
@@ -87,9 +92,9 @@ def format_output_filename(input_file, filetype):
     input_file_basename = os.path.basename(input_file)
 
     file_extentions = {
-        "gene_annotation" : "bed",
-        "hitile" : "hitile",
-        "cooler" : "cool",
+        "gene_annotation": "bed",
+        "hitile": "hitile",
+        "cooler": "cool",
         "bigwig": "bw"
     }
 
