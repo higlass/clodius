@@ -1,6 +1,7 @@
 import clodius.tiles.nplabels as ctn
 import h5py
 
+
 def test_tiles():
     filename = 'data/labels.h5'
     f = h5py.File(filename, 'r')
