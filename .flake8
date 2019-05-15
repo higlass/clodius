@@ -46,25 +46,6 @@ exclude =
   scripts/replace_importances.py
   scripts/tsv_to_mrmatrix.py
   setup.py
-  test/bedfile_test.py
-  test/cli_test.py
-  test/mrmatrix_test.py
-  test/multivec_test.py
-  test/tiles/bed2ddb_test.py
-  test/tiles/bedarcsdb.py
-  test/tiles/beddb_test.py
-  test/tiles/bigwig_test.py
-  test/tiles/cooler_test.py
-  test/tiles/density_test.py
-  test/tiles/files_test.py
-  test/tiles/hitile_test.py
-  test/tiles/multivec_test.py
-  test/tiles/npmatrix_test.py
-  test/tiles/npvector_test.py
-  test/tiles/time_interval_test.py
-  test/tsv_to_mrmatrix_test.py
-  test/utils.py
-  test.py
 
 ignore =
   E203 # whitespace before
