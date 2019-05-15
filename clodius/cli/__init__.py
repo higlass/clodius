@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
+from . import (
+    aggregate,
+    convert,
+)
 import click
 
 
@@ -15,8 +19,3 @@ CONTEXT_SETTINGS = {
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
     pass
-
-from . import (
-    aggregate,
-    convert,
-)

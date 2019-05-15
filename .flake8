@@ -4,10 +4,6 @@ exclude =
   src/multiprocess # on Travis, but not in my local checkout.
   clodius/array.py
   clodius/chromosomes.py
-  clodius/cli/__init__.py
-  clodius/cli/aggregate.py
-  clodius/cli/convert.py
-  clodius/cli/utils.py
   clodius/db_tiles.py
   clodius/describe_dataset.py
   clodius/fpark.py
