@@ -145,7 +145,8 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
             a = x.T.reshape((x.shape[1], -1, 2))
             return sm.logsumexp(a, axis=2).T
     else:
-        def agg(x): return x.T.reshape((x.shape[1], -1, 2)).sum(axis=2).T
+        def agg(x):
+            return x.T.reshape((x.shape[1], -1, 2)).sum(axis=2).T
 
     print("agg:", agg)
     if row_infos_filename is not None:

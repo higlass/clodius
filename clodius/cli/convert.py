@@ -229,7 +229,8 @@ def _bedgraph_to_multivec(
 
                 return res
         else:
-            def agg(x): return x.T.reshape((x.shape[1], -1, 2)).sum(axis=2).T
+            def agg(x):
+                return x.T.reshape((x.shape[1], -1, 2)).sum(axis=2).T
 
         cmv.create_multivec_multires(f_in,
                                      chromsizes=zip(chrom_names, chrom_sizes),
