@@ -15,27 +15,7 @@ exclude =
   clodius/higlass_getter.py
   clodius/multivec.py
   clodius/save_tiles.py
-  clodius/tiles/bed2ddb.py
-  clodius/tiles/bedarcsdb.py
-  clodius/tiles/beddb.py
-  clodius/tiles/bedfile.py
-  clodius/tiles/bigwig.py
-  clodius/tiles/chromsizes.py
-  clodius/tiles/cooler.py
-  clodius/tiles/density.py
-  clodius/tiles/files.py
-  clodius/tiles/format.py
-  clodius/tiles/geo.py
-  clodius/tiles/hitile.py
-  clodius/tiles/imtiles.py
   clodius/tiles/mrmatrix.py
-  clodius/tiles/multivec.py
-  clodius/tiles/nplabels.py
-  clodius/tiles/npmatrix.py
-  clodius/tiles/npvector.py
-  clodius/tiles/points.py
-  clodius/tiles/time_interval.py
-  clodius/tiles/utils.py
   notebooks/Aggregating an array.ipynb
   notebooks/ENSEMBL annotations and RNAseq.ipynb
   notebooks/h37rv gene annotations.ipynb

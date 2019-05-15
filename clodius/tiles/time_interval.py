@@ -1,5 +1,6 @@
 import json
 
+
 def tileset_info(filename):
     '''
     Return a tileset info for this time interval
