@@ -27,3 +27,4 @@ clodius/*.c
 docs/_templates
 docs/_static
 docs/_build
+test/sample_data
