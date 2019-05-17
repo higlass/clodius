@@ -8,9 +8,11 @@ import collections as col
 import sys
 import argparse
 
+
 class GeneInfo:
     def __init__(self):
         pass
+
 
 def merge_gene_info(gene_infos, gene_info):
     '''
@@ -20,7 +22,7 @@ def merge_gene_info(gene_infos, gene_info):
     merged = False
 
     for existing_gene_info in gene_infos[gene_info.geneId]:
-        if (existing_gene_info.chrName == gene_info.chrName and 
+        if (existing_gene_info.chrName == gene_info.chrName and
                 existing_gene_info.txEnd > gene_info.txStart and
                 gene_info.txEnd > existing_gene_info.txStart):
 
@@ -28,7 +30,7 @@ def merge_gene_info(gene_infos, gene_info):
             existing_gene_info.txStart = min(existing_gene_info.txStart,
                                              gene_info.txStart)
             existing_gene_info.txEnd = max(existing_gene_info.txEnd,
-                                             gene_info.txEnd)
+                                           gene_info.txEnd)
 
             for (exon_start, exon_end) in gene_info.exonUnions:
                 existing_gene_info.exonUnions.add((exon_start, exon_end))
@@ -51,9 +53,9 @@ def main():
 """)
 
     parser.add_argument('transcript_bed')
-    #parser.add_argument('-o', '--options', default='yo',
+    # parser.add_argument('-o', '--options', default='yo',
     #					 help="Some option", type='str')
-    #parser.add_argument('-u', '--useless', action='store_true', 
+    # parser.add_argument('-u', '--useless', action='store_true',
     #					 help='Another useless option')
     args = parser.parse_args()
 
@@ -85,11 +87,11 @@ def main():
             print("ERROR: line:", line, file=sys.stderr)
             continue
 
-
         # for some reason, exon starts and ends have trailing commas
         gene_info.exonStartParts = gene_info.exonStarts.strip(",").split(',')
         gene_info.exonEndParts = gene_info.exonEnds.strip(",").split(',')
-        gene_info.exonUnions = set([(int(s), int(e)) for (s,e) in zip(gene_info.exonStartParts, gene_info.exonEndParts)])
+        gene_info.exonUnions = set([(int(s), int(e)) for (s, e) in zip(
+            gene_info.exonStartParts, gene_info.exonEndParts)])
 
         # add this gene info by checking whether it overlaps with any existing ones
         gene_infos = merge_gene_info(gene_infos, gene_info)
@@ -97,17 +99,14 @@ def main():
     for gene_id in gene_infos:
         for contig in gene_infos[gene_id]:
             output = "\t".join(map(str, [contig.chrName, contig.txStart, contig.txEnd,
-                                contig.geneName, contig.score, contig.strand,
-                                'union_' + gene_id, gene_id, contig.geneType, contig.geneDesc,
-                                contig.cdsStart, contig.cdsEnd, 
-                                ",".join([str(e[0]) for e in sorted(contig.exonUnions)]),
-                                ",".join([str(e[1]) for e in sorted(contig.exonUnions)])]))
+                                         contig.geneName, contig.score, contig.strand,
+                                         'union_' + gene_id, gene_id, contig.geneType, contig.geneDesc,
+                                         contig.cdsStart, contig.cdsEnd,
+                                         ",".join(
+                                             [str(e[0]) for e in sorted(contig.exonUnions)]),
+                                         ",".join([str(e[1]) for e in sorted(contig.exonUnions)])]))
             print(output)
-
 
 
 if __name__ == '__main__':
     main()
-
-
-
