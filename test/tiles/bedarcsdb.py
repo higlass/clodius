@@ -2,22 +2,25 @@ import collections as col
 import clodius.tiles.bedarcsdb as hgbad
 import os.path as op
 
+
 def get_counts(filename, zoom, pos):
     data = hgbad.tiles(filename, ["b.{}.{}".format(zoom, pos)])
     # print('data:', len(data[0][1][pos]))
     counts = col.defaultdict(int)
 
-    for i,d in enumerate(data[0][1][pos]):
-        chr1,chr2 = sorted([d['fields'][0], d['fields'][3]])
+    for i, d in enumerate(data[0][1][pos]):
+        chr1, chr2 = sorted([d['fields'][0], d['fields'][3]])
         #print('d:', d)
 
-        counts[(chr1,chr2)] += 1
+        counts[(chr1, chr2)] += 1
     return counts
 
-def test_bedarcsdb_tiles1():
-    filename = op.join('data', '9ae0744a-9bc1-4cd7-b7cf-c6569ed9e4aa.pcawg_consensus_1.6.161022.somatic.sv.bedpe.multires.db')
 
-    tiles_to_get = [(2,2)]
+def test_bedarcsdb_tiles1():
+    filename = op.join(
+        'data', '9ae0744a-9bc1-4cd7-b7cf-c6569ed9e4aa.pcawg_consensus_1.6.161022.somatic.sv.bedpe.multires.db')
+
+    tiles_to_get = [(2, 2)]
 
     for ttg in tiles_to_get:
         counts = get_counts(filename, *ttg)
@@ -73,6 +76,7 @@ def test_bedarcsdb_tiles1():
         counts[(chr1,chr2)] += 1
     #print('counts:', counts)
     '''
+
 
 def test_bedarcsdb_tiles():
     '''
