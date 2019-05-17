@@ -1,6 +1,8 @@
 ### Converting tsv files to mrmatrix
 
+```
 python scripts/tsv-to-mrmatrix.py data/dense.tsv data/dense.mrmatrix
+```
 
 ### Calculating gene coverage
 
