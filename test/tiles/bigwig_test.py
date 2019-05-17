@@ -8,11 +8,10 @@ def arr_eq_nan(a, b):
     return ((a == b) | (np.isnan(a) & np.isnan(b))).all()
 
 
-
 def test_bigwig_tiles():
     filename = op.join(
-      'data',
-      'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig'
+        'data',
+        'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig'
     )
 
     mean_tile = hgbi.tiles(filename, ['x.0.0'])
@@ -24,39 +23,40 @@ def test_bigwig_tiles():
     assert mean_tile[0][1]['max_value'] == mean_mean_tile[0][1]['max_value']
     assert mean_tile[0][1]['max_value'] > min_tile[0][1]['max_value']
     assert max_tile[0][1]['max_value'] > mean_tile[0][1]['max_value']
-    assert max_tile[0][1]['max_value'] > mean_tile[0][1]['max_value'] + std_tile[0][1]['max_value']
+    assert max_tile[0][1]['max_value'] > mean_tile[0][1]['max_value'] + \
+        std_tile[0][1]['max_value']
 
     min_max_tile = hgbi.tiles(filename, ['x.0.0.minMax'])
     whisker_tile = hgbi.tiles(filename, ['x.0.0.whisker'])
 
     mean_val = np.frombuffer(
-      base64.b64decode(mean_tile[0][1]['dense']),
-      dtype=mean_tile[0][1]['dtype']
+        base64.b64decode(mean_tile[0][1]['dense']),
+        dtype=mean_tile[0][1]['dtype']
     )
 
     min_val = np.frombuffer(
-      base64.b64decode(min_tile[0][1]['dense']),
-      dtype=min_tile[0][1]['dtype']
+        base64.b64decode(min_tile[0][1]['dense']),
+        dtype=min_tile[0][1]['dtype']
     )
 
     max_val = np.frombuffer(
-      base64.b64decode(max_tile[0][1]['dense']),
-      dtype=max_tile[0][1]['dtype']
+        base64.b64decode(max_tile[0][1]['dense']),
+        dtype=max_tile[0][1]['dtype']
     )
 
     std_val = np.frombuffer(
-      base64.b64decode(std_tile[0][1]['dense']),
-      dtype=std_tile[0][1]['dtype']
+        base64.b64decode(std_tile[0][1]['dense']),
+        dtype=std_tile[0][1]['dtype']
     )
 
     min_max_val = np.frombuffer(
-      base64.b64decode(min_max_tile[0][1]['dense']),
-      dtype=min_max_tile[0][1]['dtype']
+        base64.b64decode(min_max_tile[0][1]['dense']),
+        dtype=min_max_tile[0][1]['dtype']
     )
 
     whisker_val = np.frombuffer(
-      base64.b64decode(whisker_tile[0][1]['dense']),
-      dtype=whisker_tile[0][1]['dtype']
+        base64.b64decode(whisker_tile[0][1]['dense']),
+        dtype=whisker_tile[0][1]['dtype']
     )
 
     assert min_max_val.shape[0] == 2 * mean_val.shape[0]
@@ -72,8 +72,8 @@ def test_bigwig_tiles():
 
 def test_tileset_info():
     filename = op.join(
-      'data',
-      'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig'
+        'data',
+        'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig'
     )
 
     tileset_info = hgbi.tileset_info(filename)
@@ -103,4 +103,5 @@ def test_natsorted():
 
     for test in chromname_tests:
         sorted_output = hgbi.natsorted(test['input'])
-        assert sorted_output == test['expected'], 'Sorted output was %s\nExpected: %s' % (sorted_output, test['expected'])
+        assert sorted_output == test['expected'], 'Sorted output was %s\nExpected: %s' % (
+            sorted_output, test['expected'])

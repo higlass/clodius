@@ -2,6 +2,7 @@ import base64
 import os
 import sqlite3
 
+
 def get_tileset_info(tileset):
     if not os.path.isfile(tileset):
         return {
@@ -30,6 +31,7 @@ def get_tileset_info(tileset):
         pass
 
     return o
+
 
 def get_tiles(filename, tile_ids, raw):
     '''
