@@ -8,12 +8,14 @@ die() { set +v; echo "$*" 1>&2 ; sleep 1; exit 1; }
 # https://github.com/travis-ci/travis-ci/issues/6018
 
 start flake8
-# TODO:
-# - Get more files to lint cleanly.
-# - Reduce the number of errors which are ignored everywhere else.
+# TODO: Remove the special cases from this file:
 flake8 --config=.flake8-ignore
+# TODO: Add more files to this list:
 flake8 test/tsv_to_mrmatrix_test.py \
        scripts/tsv_to_mrmatrix.py
+# TODO: When everything is covered,
+# just lint the whole directory once,
+# instead of listing special cases.
 end flake8
 
 start download
