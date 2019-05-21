@@ -10,7 +10,6 @@ import h5py
 from scripts.tsv_to_mrmatrix import coarsen, parse, get_height, get_width
 
 
-
 class CoarsenTest(unittest.TestCase):
     def test_5_layer_pyramid(self):
         tile_size = 4
@@ -22,7 +21,8 @@ class CoarsenTest(unittest.TestCase):
             g = hdf5.create_group('resolutions')
             g1 = g.create_group('1')
             ds = g1.create_dataset('values', (max_width, max_width),
-                                   dtype='f4', compression='lzf', fillvalue=np.nan)
+                                   dtype='f4', compression='lzf',
+                                   fillvalue=np.nan)
             for y in range(max_width):
                 a = np.array([float(x) for x in range(max_width)])
                 ds[y, :max_width] = a
@@ -71,7 +71,8 @@ class CoarsenTest(unittest.TestCase):
             g = hdf5.create_group('resolutions')
             g1 = g.create_group('1')
             ds = g1.create_dataset('values', (max_width, max_width),
-                                   dtype='f4', compression='lzf', fillvalue=np.nan)
+                                   dtype='f4', compression='lzf',
+                                   fillvalue=np.nan)
             for y in range(max_width):
                 a = np.array([float(x) for x in range(max_width)])
                 ds[y, :max_width] = a
