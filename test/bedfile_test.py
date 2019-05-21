@@ -6,7 +6,6 @@ import clodius.db_tiles as cdt
 import os
 import os.path as op
 import sqlite3
-import sys
 import tempfile
 
 testdir = op.realpath(op.dirname(__file__))
@@ -71,7 +70,7 @@ def test_gene_annotations():
          '--delimiter', '\t',
          '--assembly', 'mm10', '--output-file', f.name])
 
-    import traceback
+    # import traceback
     a, b, tb = result.exc_info
     '''
     print("exc_info:", result.exc_info)
@@ -106,7 +105,7 @@ def test_random_importance():
          '--max-per-tile', '2', '--importance-column', 'random',
          '--assembly', 'b37', '--has-header', '--output-file', f.name])
 
-    import traceback
+    # import traceback
     a, b, tb = result.exc_info
     '''
     print("exc_info:", result.exc_info)
@@ -162,7 +161,7 @@ def test_no_chromosome_limit():
          '--assembly', 'hg19',
          '--output-file', f.name])
 
-    import traceback
+    # import traceback
     '''
     print("exc_info:", result.exc_info)
     print("result:", result)

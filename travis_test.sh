@@ -12,7 +12,8 @@ start flake8
 flake8 --config=.flake8-ignore
 # TODO: Add more files to this list:
 flake8 test/tsv_to_mrmatrix_test.py \
-       scripts/tsv_to_mrmatrix.py
+       scripts/tsv_to_mrmatrix.py \
+       test/*.py
 # TODO: When everything is covered,
 # just lint the whole directory once,
 # instead of listing special cases.

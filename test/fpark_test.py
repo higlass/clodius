@@ -1,5 +1,3 @@
-import sys
-
 import clodius.fpark as fp
 
 

@@ -1,8 +1,6 @@
 from __future__ import print_function
 
 import clodius.db_tiles as cdt
-import h5py
-import sqlite3
 
 
 def test_get_tileset_info():

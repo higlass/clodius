@@ -9,7 +9,6 @@ import negspy.coordinates as nc
 import numpy as np
 import os.path as op
 import sys
-import traceback
 
 sys.path.append("scripts")
 
