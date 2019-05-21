@@ -115,8 +115,8 @@ class ParseTest(unittest.TestCase):
             with open(csv_path, 'w', newline='') as csv_file:
                 writer = csv.writer(csv_file, delimiter='\t')
                 # header:
-                labels = ['col-{}'.format(x) for x in range(513)]
-                writer.writerow(labels)
+                col_labels = ['col-{}'.format(x) for x in range(513)]
+                writer.writerow(col_labels)
                 # body:
                 for y in range(0, 3):
                     writer.writerow(['row-{}'.format(y)] + [0] * 512)
@@ -135,8 +135,9 @@ class ParseTest(unittest.TestCase):
                   delimiter='\t', first_n=None, is_labelled=True)
 
             hdf5 = h5py.File(hdf5_path, 'r')
-            self.assertEqual(list(hdf5.keys()), ['col_labels', 'resolutions'])
-            self.assertEqual(list(hdf5['col_labels']), labels[1:])
+            self.assertEqual(list(hdf5.keys()), ['col_labels', 'resolutions', 'row_labels'])
+            self.assertEqual(list(hdf5['col_labels']), col_labels[1:])
+            self.assertEqual(list(hdf5['row_labels']), ['row-{}'.format(r) for r in range(9)])
 
             self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2'])
 

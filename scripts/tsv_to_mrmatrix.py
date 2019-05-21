@@ -67,8 +67,14 @@ def parse(input_handle, output_hdf5, height, width,
 
     start_time = time.time()
     counter = 0
+    row_labels = []
     for row in reader:
-        x = np.array([float(p) for p in row[1 if is_labelled else None:]])
+        if is_labelled:
+            offset = 1
+            row_labels.append(row[0])
+        else:
+            offset = 0
+        x = np.array([float(p) for p in row[offset:]])
         ds[counter, :len(x)] = x
 
         counter += 1
@@ -82,6 +88,11 @@ def parse(input_handle, output_hdf5, height, width,
         print("counter:", counter, "sum(x):", sum(x),
               "time remaining: {:d} seconds".format(int(time_remaining)))
 
+    if is_labelled:
+        output_hdf5.create_dataset(
+            'row_labels',
+            data=np.array(row_labels, dtype=h5py.special_dtype(vlen=str)),
+            compression='lzf')
     coarsen(output_hdf5)
     output_hdf5.close()
 
