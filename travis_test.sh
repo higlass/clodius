@@ -13,7 +13,8 @@ start flake8
 # - Reduce the number of errors which are ignored everywhere else.
 flake8 --config=.flake8-ignore
 flake8 test/tsv_to_mrmatrix_test.py \
-       scripts/tsv_to_mrmatrix.py
+       scripts/tsv_to_mrmatrix.py \
+       test/*/*.py
 end flake8
 
 start download

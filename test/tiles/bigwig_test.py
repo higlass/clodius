@@ -96,12 +96,15 @@ def test_natsorted():
             'expected': ['1', '2', '3', '4', 'x', 'y', 'm']
         },
         {
-            'input': ['chr1', 'chr4', 'chr5', 'chr2', 'chr3', 'chrMT', 'chrY', 'chrX'],
-            'expected': ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chrX', 'chrY', 'chrMT']
+            'input': ['chr1', 'chr4', 'chr5', 'chr2',
+                      'chr3', 'chrMT', 'chrY', 'chrX'],
+            'expected': ['chr1', 'chr2', 'chr3', 'chr4',
+                         'chr5', 'chrX', 'chrY', 'chrMT']
         }
     ]
 
     for test in chromname_tests:
         sorted_output = hgbi.natsorted(test['input'])
-        assert sorted_output == test['expected'], 'Sorted output was %s\nExpected: %s' % (
-            sorted_output, test['expected'])
+        assert sorted_output == test['expected'],\
+            'Sorted output was %s\nExpected: %s' \
+            % (sorted_output, test['expected'])
