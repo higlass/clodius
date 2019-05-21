@@ -2,19 +2,10 @@
 exclude =
   .eggs
   src/multiprocess # on Travis, but not in my local checkout.
-  clodius/array.py
-  clodius/chromosomes.py
   clodius/cli/__init__.py
   clodius/cli/aggregate.py
   clodius/cli/convert.py
   clodius/cli/utils.py
-  clodius/db_tiles.py
-  clodius/describe_dataset.py
-  clodius/fpark.py
-  clodius/hdf_tiles.py
-  clodius/higlass_getter.py
-  clodius/multivec.py
-  clodius/save_tiles.py
   clodius/tiles/mrmatrix.py
   notebooks/Aggregating an array.ipynb
   notebooks/ENSEMBL annotations and RNAseq.ipynb
