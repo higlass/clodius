@@ -37,7 +37,11 @@ def check_table(filename):
     '''
 
     rows = c.execute(
-        'SELECT * from intervals,position_index where intervals.id=position_index.id and zoomLevel < 1 and rStartPos > 2400000000 and rEndPos < 2500000000')
+        'SELECT * from intervals,position_index '
+        'where intervals.id=position_index.id '
+        'and zoomLevel < 1 '
+        'and rStartPos > 2400000000 '
+        'and rEndPos < 2500000000')
     counter = 0
     for row in rows:
         assert(row[3] > 2400000000)
@@ -125,7 +129,8 @@ def test_random_importance():
         list(cdt.get_tiles(f.name, 1, 1).values())
     # print('rows:', rows)
 
-    # check to make sure that tiles in the higher zoom levels are all present in lower zoom levels
+    # check to make sure that tiles in the higher zoom levels
+    # are all present in lower zoom levels
     found = {}
     for row in cdt.get_tiles(f.name, 5, 15).values():
         for rect in row:
@@ -278,7 +283,8 @@ def test_tile_ranges():
 
     d1 = cht.get_discrete_data(f, 11, 5)
     #print("d1:", len(d1))
-    #print("dv:", [x for x in d1 if (int(x[1]) < 12000000 and int(x[2]) > 12000000)])
+    #print("dv:", [x for x in d1 if (int(x[1]) < 12000000
+    #              and int(x[2]) > 12000000)])
 
     d3 = cht.get_discrete_data(f, 12, 10)
     #print("d2:", len(d3))
