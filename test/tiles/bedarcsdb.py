@@ -18,9 +18,9 @@ def get_counts(filename, zoom, pos):
 
 def test_bedarcsdb_tiles1():
     filename = op.join(
-      'data',
-      '9ae0744a-9bc1-4cd7-b7cf-c6569ed9e4aa'
-      '.pcawg_consensus_1.6.161022.somatic.sv.bedpe.multires.db')
+        'data',
+        '9ae0744a-9bc1-4cd7-b7cf-c6569ed9e4aa'
+        '.pcawg_consensus_1.6.161022.somatic.sv.bedpe.multires.db')
 
     tiles_to_get = [(2, 2)]
 
