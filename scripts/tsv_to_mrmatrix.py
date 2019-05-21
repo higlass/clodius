@@ -135,7 +135,7 @@ def main():
 
     height = get_height(args.input_file, is_labelled=args.labelled)
     width = get_width(args.input_file, is_labelled=args.labelled,
-                      delimiter=args.delimiter
+                      delimiter=args.delimiter)
     print('height:', height)
     print('width:', width)
 
