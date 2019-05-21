@@ -119,11 +119,11 @@ def test_random_importance():
     # print("tileset_info:", tileset_info)
 
     rows = cdt.get_tiles(f.name, 0, 0)
-    #print("rows:", rows)
+    # print("rows:", rows)
 
     rows = list(cdt.get_tiles(f.name, 1, 0).values()) + \
         list(cdt.get_tiles(f.name, 1, 1).values())
-    #print('rows:', rows)
+    # print('rows:', rows)
 
     # check to make sure that tiles in the higher zoom levels are all present in lower zoom levels
     found = {}
