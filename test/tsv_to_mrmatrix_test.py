@@ -7,7 +7,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import h5py
 
-from scripts.tsv_to_mrmatrix import coarsen, parse
+from scripts.tsv_to_mrmatrix import coarsen, parse, get_height, get_width
 
 
 class CoarsenTest(unittest.TestCase):
@@ -21,7 +21,8 @@ class CoarsenTest(unittest.TestCase):
             g = hdf5.create_group('resolutions')
             g1 = g.create_group('1')
             ds = g1.create_dataset('values', (max_width, max_width),
-                                   dtype='f4', compression='lzf', fillvalue=np.nan)
+                                   dtype='f4', compression='lzf',
+                                   fillvalue=np.nan)
             for y in range(max_width):
                 a = np.array([float(x) for x in range(max_width)])
                 ds[y, :max_width] = a
@@ -70,7 +71,8 @@ class CoarsenTest(unittest.TestCase):
             g = hdf5.create_group('resolutions')
             g1 = g.create_group('1')
             ds = g1.create_dataset('values', (max_width, max_width),
-                                   dtype='f4', compression='lzf', fillvalue=np.nan)
+                                   dtype='f4', compression='lzf',
+                                   fillvalue=np.nan)
             for y in range(max_width):
                 a = np.array([float(x) for x in range(max_width)])
                 ds[y, :max_width] = a
@@ -107,7 +109,7 @@ class CoarsenTest(unittest.TestCase):
 
 
 class ParseTest(unittest.TestCase):
-    def test_parse(self):
+    def test_wide_labelled_square(self):
         with TemporaryDirectory() as tmp_dir:
             csv_path = tmp_dir + '/tmp.csv'
             with open(csv_path, 'w', newline='') as csv_file:
@@ -127,7 +129,11 @@ class ParseTest(unittest.TestCase):
             hdf5_path = tmp_dir + 'tmp.hdf5'
             hdf5_write_handle = h5py.File(hdf5_path, 'w')
 
-            parse(csv_handle, hdf5_write_handle)
+            height = get_height(csv_path)
+            width = get_width(csv_path, is_labelled=True)
+            parse(csv_handle, hdf5_write_handle, height, width,
+                  delimiter='\t', first_n=None, is_square=True,
+                  is_labelled=True)
 
             hdf5 = h5py.File(hdf5_path, 'r')
             self.assertEqual(list(hdf5.keys()), ['labels', 'resolutions'])
@@ -158,3 +164,118 @@ class ParseTest(unittest.TestCase):
             assert_array_equal(res_2[4], [0] * 256)
             assert_array_equal(res_2[5], [0] * 256)
             assert_array_equal(res_2[6], [0] * 256)
+            # TODO: We lose nan at higher aggregations.
+            # https://github.com/higlass/clodius/issues/62
+
+    def _assert_unlabelled_roundtrip_lt_256(
+            self, matrix, delimiter, is_square):
+        with TemporaryDirectory() as tmp_dir:
+            csv_path = tmp_dir + '/tmp.csv'
+            with open(csv_path, 'w', newline='') as csv_file:
+                writer = csv.writer(csv_file, delimiter=delimiter)
+                # body:
+                for row in matrix:
+                    writer.writerow(row)
+
+            csv_handle = open(csv_path, 'r')
+            hdf5_path = tmp_dir + 'tmp.hdf5'
+            hdf5_write_handle = h5py.File(hdf5_path, 'w')
+
+            is_labelled = False
+            height = get_height(csv_path, is_labelled=is_labelled)
+            width = get_width(csv_path, is_labelled=is_labelled)
+            parse(csv_handle, hdf5_write_handle, height, width,
+                  first_n=None, is_labelled=is_labelled,
+                  delimiter=delimiter, is_square=is_square)
+
+            hdf5 = h5py.File(hdf5_path, 'r')
+            self.assertEqual(list(hdf5.keys()), ['resolutions'])
+            self.assertEqual(list(hdf5['resolutions'].keys()), ['1'])
+            self.assertEqual(list(hdf5['resolutions']['1'].keys()),
+                             ['nan_values', 'values'])
+            assert_array_equal(
+                hdf5['resolutions']['1']['nan_values'],
+                [[0] * len(matrix[0])] * len(matrix)
+            )
+            assert_array_equal(
+                hdf5['resolutions']['1']['values'],
+                matrix
+            )
+
+    def test_unlabelled_csv_is_square_true(self):
+        self._assert_unlabelled_roundtrip_lt_256(
+            matrix=[[x + y for x in range(4)] for y in range(4)],
+            delimiter=',',
+            is_square=True
+        )
+
+    def test_unlabelled_tsv_is_square_false(self):
+        self._assert_unlabelled_roundtrip_lt_256(
+            matrix=[[x + y for x in range(4)] for y in range(4)],
+            delimiter='\t',
+            is_square=False
+        )
+
+    def _assert_unlabelled_roundtrip_1024(
+            self, matrix, first_row=None, first_col=None, first_n=None):
+        delimiter = '\t'
+        is_square = False
+        with TemporaryDirectory() as tmp_dir:
+            csv_path = tmp_dir + '/tmp.csv'
+            with open(csv_path, 'w', newline='') as csv_file:
+                writer = csv.writer(csv_file, delimiter=delimiter)
+                # body:
+                for row in matrix:
+                    writer.writerow(row)
+
+            csv_handle = open(csv_path, 'r')
+            hdf5_path = tmp_dir + 'tmp.hdf5'
+            hdf5_write_handle = h5py.File(hdf5_path, 'w')
+
+            is_labelled = False
+            height = get_height(csv_path, is_labelled=is_labelled)
+            width = get_width(csv_path, is_labelled=is_labelled)
+            parse(csv_handle, hdf5_write_handle, height, width,
+                  first_n=first_n, is_labelled=is_labelled,
+                  delimiter=delimiter, is_square=is_square)
+
+            hdf5 = h5py.File(hdf5_path, 'r')
+            self.assertEqual(list(hdf5.keys()), ['resolutions'])
+            self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2', '4'])
+            self.assertEqual(list(hdf5['resolutions']['1'].keys()),
+                             ['nan_values', 'values'])
+            self.assertEqual(list(hdf5['resolutions']['4'].keys()),
+                             ['values'])
+            res_4 = hdf5['resolutions']['4']['values']
+            if first_row:
+                assert_array_equal(res_4[0], first_row)
+            if first_col:
+                assert_array_equal(
+                    [res_4[y][0] for y in range(len(first_col))],
+                    first_col)
+
+    def test_unlabelled_tsv_tall(self):
+        self._assert_unlabelled_roundtrip_1024(
+            matrix=[[1 for x in range(4)] for y in range(1000)],
+            first_col=[16] * 250 + [0] * 6
+        )
+
+    def test_unlabelled_tsv_wide(self):
+        self._assert_unlabelled_roundtrip_1024(
+            matrix=[[1 for x in range(1000)] for y in range(4)],
+            first_row=[16] * 250 + [0] * 6
+        )
+
+    def test_unlabelled_tsv_tall_first_n(self):
+        self._assert_unlabelled_roundtrip_1024(
+            matrix=[[1 for x in range(4)] for y in range(1000)],
+            first_col=[8] + [0] * 255,
+            first_n=2
+        )
+
+    def test_unlabelled_tsv_wide_first_n(self):
+        self._assert_unlabelled_roundtrip_1024(
+            matrix=[[1 for x in range(1000)] for y in range(4)],
+            first_row=[8] * 250 + [0] * 6,
+            first_n=2
+        )
