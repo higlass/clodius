@@ -135,9 +135,12 @@ class ParseTest(unittest.TestCase):
                   delimiter='\t', first_n=None, is_labelled=True)
 
             hdf5 = h5py.File(hdf5_path, 'r')
-            self.assertEqual(list(hdf5.keys()), ['col_labels', 'resolutions', 'row_labels'])
-            self.assertEqual(list(hdf5['col_labels']), col_labels[1:])
-            self.assertEqual(list(hdf5['row_labels']), ['row-{}'.format(r) for r in range(9)])
+            self.assertEqual(list(hdf5.keys()),
+                             ['col_labels', 'resolutions', 'row_labels'])
+            self.assertEqual(list(hdf5['col_labels']),
+                             col_labels[1:])
+            self.assertEqual(list(hdf5['row_labels']),
+                             ['row-{}'.format(r) for r in range(9)])
 
             self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2'])
 
