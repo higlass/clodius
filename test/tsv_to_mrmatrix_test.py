@@ -164,8 +164,8 @@ class ParseTest(unittest.TestCase):
             assert_array_equal(res_2[4], [0] * 256)
             assert_array_equal(res_2[5], [0] * 256)
             assert_array_equal(res_2[6], [0] * 256)
-            # TODO: We lose nan at higher aggregations:
-            # Maybe regular mean/sum instead of treating missing values as 0?
+            # TODO: We lose nan at higher aggregations.
+            # https://github.com/higlass/clodius/issues/62
 
     def _assert_unlabelled_roundtrip_lt_256(
             self, matrix, delimiter, is_square):

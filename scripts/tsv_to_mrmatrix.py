@@ -51,6 +51,7 @@ def parse(input_handle, output_hdf5, height, width,
                 data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
                 compression='lzf')
         # TODO: Handle non-square labels
+        # https://github.com/higlass/clodius/issues/68
 
     tile_size = 256
     limit = max(height, width)
@@ -134,7 +135,10 @@ def main():
 
     height = get_height(args.input_file, is_labelled=args.labelled)
     width = get_width(args.input_file, is_labelled=args.labelled,
-                      delimiter=args.delimiter)
+                      delimiter=args.delimiter
+    print('height:', height)
+    print('width:', width)
+
     f_in = open(args.input_file, 'r', newline='')
 
     parse(f_in,
