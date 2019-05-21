@@ -72,7 +72,7 @@ class TileSaver(object):
         tile_id = "{}.{}".format(zoom_level, ".".join(map(str, tile_position)))
 
         # print "saving:", tile_id
-        tile = {'tile_id':  tile_id, "tile_value": tile_data}
+        tile = {'tile_id': tile_id, "tile_value": tile_data}
 
         self.save_tile(tile)
 
@@ -207,7 +207,7 @@ class ColumnFileTileSaver(TileSaver):
         else:
             ti = val['tile_id'].split(".")
             self.bulk_txt.write(
-                str(int(ti[0])+1) + "\t" + str(int(ti[1])+1) + "\t" + str(int(ti[1])+1) + "\t")
+                str(int(ti[0]) + 1) + "\t" + str(int(ti[1]) + 1) + "\t" + str(int(ti[1]) + 1) + "\t")
 
         self.bulk_txt.write(json.dumps(val) + "\n")
         curr_pos = self.bulk_txt.tell()
@@ -372,7 +372,7 @@ def save_to_elasticsearch(url, data, print_status=False):
         try:
             r = requests.post(url, data=data, timeout=8)
             if print_status:
-                print("\nSaved", uid,  r, "len(data):", len(data), url)
+                print("\nSaved", uid, r, "len(data):", len(data), url)
                 #print("data:", data)
             saved = True
             # print "data:", data
@@ -397,7 +397,7 @@ def save_tile(tile, output_dir, gzip_output):
     Save a tile to a particular base directory.
 
     This function create the appropriate sub-directory based on the
-    key. 
+    key.
 
     They key should be in the format (zoom_level, pos1, pos2...)
     e.g. (5,4,5)

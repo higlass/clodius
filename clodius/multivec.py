@@ -215,7 +215,7 @@ def create_multivec_multires(array_data, chromsizes,
         while start < len(chrom_data):
             # see above section
             chrom_data[start:start +
-                       chunk_size] = array_data[chrom][start:start+chunk_size]
+                       chunk_size] = array_data[chrom][start:start + chunk_size]
             start += int(min(standard_chunk_size,
                              len(array_data[chrom]) - start))
 
@@ -273,7 +273,7 @@ def create_multivec_multires(array_data, chromsizes,
 
             while start < len(chrom_data):
                 old_data = f['resolutions'][str(
-                    prev_resolution)]['values'][chrom][start:start+chunk_size]
+                    prev_resolution)]['values'][chrom][start:start + chunk_size]
                 #print("prev_resolution:", prev_resolution)
                 #print("old_data.shape", old_data.shape)
 
@@ -301,7 +301,7 @@ def create_multivec_multires(array_data, chromsizes,
                       "new_data length", len(new_data))
                 '''
                 f['resolutions'][str(curr_resolution)]['values'][chrom][int(
-                    start/2):int(start/2+chunk_size/2)] = new_data
+                    start / 2):int(start / 2 + chunk_size / 2)] = new_data
                 start += int(min(standard_chunk_size, len(chrom_data) - start))
 
         prev_resolution = curr_resolution

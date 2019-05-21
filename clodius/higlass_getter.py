@@ -55,7 +55,7 @@ def getData2(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
     j0 = absCoord2bin(c, startPos2)
     j1 = absCoord2bin(c, endPos2)
 
-    if (i1-i0) == 0 or (j1-j0) == 0:
+    if (i1 - i0) == 0 or (j1 - j0) == 0:
         return pd.DataFrame(columns=['genome_start', 'genome_end', 'balanced'])
 
     t1 = time.time()
@@ -78,7 +78,7 @@ def getData3(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
     j0 = absCoord2bin(c, startPos2)
     j1 = absCoord2bin(c, endPos2)
 
-    if (i1-i0) == 0 or (j1-j0) == 0:
+    if (i1 - i0) == 0 or (j1 - j0) == 0:
         return pd.DataFrame(columns=['genome_start', 'genome_end', 'balanced'])
 
     pixels = c.matrix(as_pixels=True, max_chunk=np.inf)[i0:i1, j0:j1]

@@ -112,7 +112,7 @@ def get_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
 
         for i in range(tile_x_pos, tile_x_pos + num_tiles):
             tile_x_start = i * tile_width
-            tile_x_end = (i+1) * tile_width
+            tile_x_end = (i + 1) * tile_width
             tile_pos = i
 
             if x_start < tile_x_end and x_end >= tile_x_start:
@@ -204,10 +204,10 @@ def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
         for i in range(tile_x_pos, tile_x_pos + numx):
             for j in range(tile_y_pos, tile_y_pos + numy):
                 tile_x_start = i * tile_width
-                tile_x_end = (i+1) * tile_width
+                tile_x_end = (i + 1) * tile_width
 
                 tile_y_start = j * tile_width
-                tile_y_end = (j+1) * tile_width
+                tile_y_end = (j + 1) * tile_width
 
                 if (
                     x_start < tile_x_end and

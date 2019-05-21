@@ -58,9 +58,9 @@ def bisect_left(a, x, lo=0, hi=None, comparator=None):
     if hi is None:
         hi = len(a)
     while lo < hi:
-        mid = (lo+hi)//2
+        mid = (lo + hi) // 2
         if comparator(a[mid], x) < 0:
-            lo = mid+1
+            lo = mid + 1
         else:
             hi = mid
     return lo
@@ -93,11 +93,11 @@ def bisect_right(a, x, lo=0, hi=None, comparator=None):
     if hi is None:
         hi = len(a)
     while lo < hi:
-        mid = (lo+hi)//2
+        mid = (lo + hi) // 2
         if comparator(x, a[mid]) < 0:
             hi = mid
         else:
-            lo = mid+1
+            lo = mid + 1
     return lo
 
 
@@ -111,7 +111,7 @@ def get_discrete_data(hdf_file, z, x):
         x (int): The x position of this tile
 
     Returns:
-        A 2D array of entries at that position. It is assumed that names of the 
+        A 2D array of entries at that position. It is assumed that names of the
         columns are known.
     '''
     # is the title within the range of possible tiles
@@ -223,7 +223,7 @@ def get_data(hdf_file, z, x):
         ret_array = ct.aggregate(a, int(num_to_agg))
     elif start_pos < max_position and max_position < end_pos:
         a = f[start_pos:end_pos][:]
-        a[max_position+1:end_pos] = np.nan
+        a[max_position + 1:end_pos] = np.nan
         ret_array = ct.aggregate(a, int(num_to_agg))
     else:
         ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
