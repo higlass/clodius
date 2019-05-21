@@ -1,3 +1,7 @@
+in progress
+
+- Make tsv_to_mrmatrix more flexible and add it to the exported scripts.
+
 v0.10.7
 
 - Changed bins_per_dimension in npvector.tileset_info to match the value in

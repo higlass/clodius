@@ -12,56 +12,12 @@ exclude =
   clodius/higlass_getter.py
   clodius/multivec.py
   clodius/save_tiles.py
-  clodius/tiles/bed2ddb.py
-  clodius/tiles/bedarcsdb.py
-  clodius/tiles/beddb.py
-  clodius/tiles/bedfile.py
-  clodius/tiles/bigwig.py
-  clodius/tiles/chromsizes.py
-  clodius/tiles/cooler.py
-  clodius/tiles/density.py
-  clodius/tiles/files.py
-  clodius/tiles/format.py
-  clodius/tiles/geo.py
-  clodius/tiles/hitile.py
-  clodius/tiles/imtiles.py
   clodius/tiles/mrmatrix.py
-  clodius/tiles/multivec.py
-  clodius/tiles/nplabels.py
-  clodius/tiles/npmatrix.py
-  clodius/tiles/npvector.py
-  clodius/tiles/points.py
-  clodius/tiles/time_interval.py
-  clodius/tiles/utils.py
   notebooks/Aggregating an array.ipynb
   notebooks/ENSEMBL annotations and RNAseq.ipynb
   notebooks/h37rv gene annotations.ipynb
   pyprof.sh
-  scripts/exonU.py
-  scripts/gff_to_chromsizes.py
-  scripts/gff_to_genepred.py
-  scripts/replace_importances.py
-  scripts/tsv_to_mrmatrix.py
   setup.py
-  test/bedfile_test.py
-  test/cli_test.py
-  test/mrmatrix_test.py
-  test/multivec_test.py
-  test/tiles/bed2ddb_test.py
-  test/tiles/bedarcsdb.py
-  test/tiles/beddb_test.py
-  test/tiles/bigwig_test.py
-  test/tiles/cooler_test.py
-  test/tiles/density_test.py
-  test/tiles/files_test.py
-  test/tiles/hitile_test.py
-  test/tiles/multivec_test.py
-  test/tiles/npmatrix_test.py
-  test/tiles/npvector_test.py
-  test/tiles/time_interval_test.py
-  test/tsv_to_mrmatrix_test.py
-  test/utils.py
-  test.py
 
 ignore =
   E203 # whitespace before

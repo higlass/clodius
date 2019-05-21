@@ -1,7 +1,8 @@
 import os.path as op
 
+
 def infer_filetype(filename):
-    _,ext = op.splitext(filename)
+    _, ext = op.splitext(filename)
 
     if ext.lower() == '.bw' or ext.lower() == '.bigwig':
         return 'bigwig'
@@ -13,6 +14,7 @@ def infer_filetype(filename):
         return 'hitile'
 
     return None
+
 
 def infer_datatype(filetype):
     if filetype == 'cooler':
