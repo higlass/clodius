@@ -15,6 +15,7 @@ def test_group_by_key():
     a.groupByKey()
     # TODO: Make assertions about result
 
+
 def test_textFile():
     a = fp.FakeSparkContext.textFile(
         'test/sample_data/piecewise-file/part-00000')

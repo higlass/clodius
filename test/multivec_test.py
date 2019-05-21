@@ -37,6 +37,7 @@ def test_load_multivec_tiles():
     op.join(testdir, 'sample_data', 'sample.bed.multires.mv5')
     # TODO: Make assertions about result
 
+
 def test_states_format_befile_to_multivec():
     runner = clt.CliRunner()
     input_file = op.join(testdir, 'sample_data',

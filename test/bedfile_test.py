@@ -151,7 +151,7 @@ def test_random_importance():
                 found[rect['xStart']] = True
 
     for key, value in found.items():
-        assert(value == True)
+        assert(value)
 
     pass
 
@@ -191,7 +191,7 @@ def test_no_chromosome_limit():
             foundOther = True
         break
     # make sure there's chromosome other than 14 in the output
-    assert(foundOther == True)
+    assert(foundOther)
 
     os.remove(f.name)
     pass
