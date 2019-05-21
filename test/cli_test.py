@@ -119,7 +119,8 @@ def test_clodius_aggregate_bedgraph():
 
     assert(not np.isnan(d[0]))
     assert(np.isnan(d[-1]))
-    prev_tile_3_0 = cht.get_data(f, 3, 0)
+    cht.get_data(f, 3, 0)
+    # TODO: Make assertions about result
 
     # print("prev_tile_3_0:", prev_tile_3_0)
 
@@ -217,7 +218,8 @@ def test_clodius_aggregate_bedgraph1():
     # print("result.output", result.output)
 
     f = h5py.File('/tmp/dm3_values.hitile')
-    max_zoom = f['meta'].attrs['max-zoom']
+    # max_zoom = f['meta'].attrs['max-zoom']
+    # TODO: Make assertions about result
     values = f['values_0']
 
     import numpy as np
@@ -260,7 +262,8 @@ def test_clodius_aggregate_bedgraph1():
     # print('output:', result.output, result)
 
     f = h5py.File('/tmp/test3chroms_values.hitile')
-    max_zoom = f['meta'].attrs['max-zoom']
+    # f['meta'].attrs['max-zoom']
+    # TODO: Make assertions about result
 
     # print('max_zoom:', max_zoom)
     # print("len", len(f['values_0']))

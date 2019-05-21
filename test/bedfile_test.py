@@ -54,12 +54,13 @@ def check_table(filename):
 def test_get_tiles():
     filename = 'test/sample_data/gene_annotations.short.db'
 
-    tiles = cdt.get_tiles(filename, 18, 169283)[169283]
-
+    cdt.get_tiles(filename, 18, 169283)[169283]
+    # TODO: Make assertions about result
     # print("tiles:", tiles)
-    x = int(tiles[0]['xStart'])
-
-    fields = tiles[0]['fields']
+    # x = int(tiles[0]['xStart'])
+    #
+    # fields = tiles[0]['fields']
+    # TODO: Make assertions
 
 
 def test_gene_annotations():
@@ -119,15 +120,18 @@ def test_random_importance():
     print("Exception:", a,b)
     '''
 
-    tileset_info = cdt.get_tileset_info(f.name)
+    cdt.get_tileset_info(f.name)
     # print("tileset_info:", tileset_info)
+    # TODO: Make assertions about result
 
-    rows = cdt.get_tiles(f.name, 0, 0)
+    cdt.get_tiles(f.name, 0, 0)
     # print("rows:", rows)
+    # TODO: Make assertions about result
 
-    rows = list(cdt.get_tiles(f.name, 1, 0).values()) + \
+    list(cdt.get_tiles(f.name, 1, 0).values()) + \
         list(cdt.get_tiles(f.name, 1, 1).values())
     # print('rows:', rows)
+    # TODO: Make assertions about result
 
     # check to make sure that tiles in the higher zoom levels
     # are all present in lower zoom levels
@@ -200,16 +204,16 @@ def test_chromosome_limit():
     input_file = op.join(testdir, 'sample_data',
                          'geneAnnotationsExonsUnions.short.bed')
 
-    result = runner.invoke(
+    runner.invoke(
         cca.bedfile,
         [input_file,
          '--max-per-tile', '60', '--importance-column', '5',
          '--assembly', 'hg19', '--chromosome', 'chr14',
          '--output-file', f.name])
+    # TODO: Make assertions about result
 
     # print('output:', result.output, result)
     rows = cdt.get_tiles(f.name, 0, 0)[0]
-    foundOther = False
 
     for row in rows:
         assert(row['fields'][0] == 'chr14')
@@ -224,11 +228,12 @@ def test_float_importance():
     runner = clt.CliRunner()
     input_file = op.join(testdir, 'sample_data', 'test_float_importance.bed')
 
-    result = runner.invoke(
+    runner.invoke(
         cca.bedfile,
         [input_file,
          '--max-per-tile', '2', '--importance-column', '4',
          '--assembly', 'hg38', '--no-header', '--output-file', f.name])
+    # TODO: Make assertions about result
 
 
 """

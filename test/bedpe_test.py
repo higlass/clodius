@@ -35,13 +35,15 @@ def test_clodius_aggregate_bedpe():
     assert(result.exit_code == 0)
     """
 
-    entries = cdt.get_2d_tiles(output_file, 0, 0, 0)
+    cdt.get_2d_tiles(output_file, 0, 0, 0)
     # print("entries:", entries)
 
-    tileset_info = cdt.get_tileset_info(output_file)
+    cdt.get_tileset_info(output_file)
+    # TODO: Make assertions about result
     # print('tileset_info', tileset_info)
 
-    entries = cdt.get_2d_tiles(output_file, 1, 0, 0, numx=2, numy=2)
+    cdt.get_2d_tiles(output_file, 1, 0, 0, numx=2, numy=2)
+    # TODO: Make assertions about result
     # print("entries:", entries)
 
     cdt.get_tileset_info(output_file)
