@@ -40,16 +40,15 @@ def coarsen(f, tile_size=256):
 
 
 def parse(input_handle, output_hdf5, height, width,
-          delimiter, first_n, is_square, is_labelled):
+          delimiter, first_n, is_labelled):
     reader = csv.reader(input_handle, delimiter=delimiter)
     if is_labelled:
         first_row = next(reader)
-        labels = first_row[1:(first_n + 1) if first_n else None]
-        if is_square:
-            output_hdf5.create_dataset(
-                'labels',
-                data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
-                compression='lzf')
+        col_labels = first_row[1:(first_n + 1) if first_n else None]
+        output_hdf5.create_dataset(
+            'col_labels',
+            data=np.array(col_labels, dtype=h5py.special_dtype(vlen=str)),
+            compression='lzf')
         # TODO: Handle non-square labels
         # https://github.com/higlass/clodius/issues/68
 
@@ -127,8 +126,6 @@ def main():
                         metavar='D', help='Delimiter; defaults to tab')
     parser.add_argument('-n', '--first-n', type=int, default=None, metavar='N',
                         help='Only read first N columns from first N rows')
-    parser.add_argument('-s', '--square', action='store_true',
-                        help='Row labels are assumed to match column labels')
     parser.add_argument('-l', '--labelled', action='store_true',
                         help='TSV Matrix has column and row labels')
     args = parser.parse_args()
@@ -146,7 +143,6 @@ def main():
           height=height, width=width,
           delimiter=args.delimiter,
           first_n=args.first_n,
-          is_square=args.square,
           is_labelled=args.labelled)
 
     f = h5py.File(args.output_file, 'r')

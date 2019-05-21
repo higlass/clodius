@@ -132,12 +132,11 @@ class ParseTest(unittest.TestCase):
             height = get_height(csv_path)
             width = get_width(csv_path, is_labelled=True)
             parse(csv_handle, hdf5_write_handle, height, width,
-                  delimiter='\t', first_n=None, is_square=True,
-                  is_labelled=True)
+                  delimiter='\t', first_n=None, is_labelled=True)
 
             hdf5 = h5py.File(hdf5_path, 'r')
-            self.assertEqual(list(hdf5.keys()), ['labels', 'resolutions'])
-            self.assertEqual(list(hdf5['labels']), labels[1:])
+            self.assertEqual(list(hdf5.keys()), ['col_labels', 'resolutions'])
+            self.assertEqual(list(hdf5['col_labels']), labels[1:])
 
             self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2'])
 
@@ -168,7 +167,7 @@ class ParseTest(unittest.TestCase):
             # https://github.com/higlass/clodius/issues/62
 
     def _assert_unlabelled_roundtrip_lt_256(
-            self, matrix, delimiter, is_square):
+            self, matrix, delimiter):
         with TemporaryDirectory() as tmp_dir:
             csv_path = tmp_dir + '/tmp.csv'
             with open(csv_path, 'w', newline='') as csv_file:
@@ -186,7 +185,7 @@ class ParseTest(unittest.TestCase):
             width = get_width(csv_path, is_labelled=is_labelled)
             parse(csv_handle, hdf5_write_handle, height, width,
                   first_n=None, is_labelled=is_labelled,
-                  delimiter=delimiter, is_square=is_square)
+                  delimiter=delimiter)
 
             hdf5 = h5py.File(hdf5_path, 'r')
             self.assertEqual(list(hdf5.keys()), ['resolutions'])
@@ -202,24 +201,15 @@ class ParseTest(unittest.TestCase):
                 matrix
             )
 
-    def test_unlabelled_csv_is_square_true(self):
+    def test_unlabelled_csv(self):
         self._assert_unlabelled_roundtrip_lt_256(
             matrix=[[x + y for x in range(4)] for y in range(4)],
-            delimiter=',',
-            is_square=True
-        )
-
-    def test_unlabelled_tsv_is_square_false(self):
-        self._assert_unlabelled_roundtrip_lt_256(
-            matrix=[[x + y for x in range(4)] for y in range(4)],
-            delimiter='\t',
-            is_square=False
+            delimiter=','
         )
 
     def _assert_unlabelled_roundtrip_1024(
             self, matrix, first_row=None, first_col=None, first_n=None):
         delimiter = '\t'
-        is_square = False
         with TemporaryDirectory() as tmp_dir:
             csv_path = tmp_dir + '/tmp.csv'
             with open(csv_path, 'w', newline='') as csv_file:
@@ -237,7 +227,7 @@ class ParseTest(unittest.TestCase):
             width = get_width(csv_path, is_labelled=is_labelled)
             parse(csv_handle, hdf5_write_handle, height, width,
                   first_n=first_n, is_labelled=is_labelled,
-                  delimiter=delimiter, is_square=is_square)
+                  delimiter=delimiter)
 
             hdf5 = h5py.File(hdf5_path, 'r')
             self.assertEqual(list(hdf5.keys()), ['resolutions'])
