@@ -9,7 +9,6 @@ import negspy.coordinates as nc
 import numpy as np
 import os.path as op
 import sys
-import traceback
 
 sys.path.append("scripts")
 
@@ -42,7 +41,7 @@ def test_clodius_aggregate_bedfile():
     assert(result.exit_code == 0)
 
     results = cdt.get_tiles(output_file, 6, 3, num_tiles=1)
-    #print("results:", results)
+    # print("results:", results)
 
     assert(len(results[3][0]['fields']) == 14)
 
@@ -76,7 +75,7 @@ def test_clodius_aggregate_bedgraph():
         cca.bedgraph,
         [input_file,
          '--output-file', output_file,
-         #'--assembly', 'grch37',
+         # '--assembly', 'grch37',
          '--chromsizes-filename', assembly_file,
          '--chromosome-col', '2',
          '--from-pos-col', '3',
@@ -92,7 +91,7 @@ def test_clodius_aggregate_bedgraph():
         [input_file,
          '--output-file', output_file,
          '--assembly', 'grch37',
-         #'--chromsizes-filename', assembly_file,
+         # '--chromsizes-filename', assembly_file,
          '--chromosome-col', '2',
          '--from-pos-col', '3',
          '--to-pos-col', '4',
@@ -112,49 +111,51 @@ def test_clodius_aggregate_bedgraph():
 
     assert(result.exit_code == 0)
     f = h5py.File(output_file)
-    #print("tile_0_0", d)
+    # print("tile_0_0", d)
 
-    #print("tile:", cht.get_data(f, 22, 0))
+    # print("tile:", cht.get_data(f, 22, 0))
     # return
     d = cht.get_data(f, 0, 0)
 
     assert(not np.isnan(d[0]))
     assert(np.isnan(d[-1]))
-    prev_tile_3_0 = cht.get_data(f, 3, 0)
+    cht.get_data(f, 3, 0)
+    # TODO: Make assertions about result
 
-    #print("prev_tile_3_0:", prev_tile_3_0)
+    # print("prev_tile_3_0:", prev_tile_3_0)
 
     assert(result.exit_code == 0)
-    return
-    assert(sum(prev_tile_3_0) < 0)
 
-    input_file = op.join(testdir, 'sample_data', 'cnvs_hw.tsv.gz')
-    result = runner.invoke(
-        cca.bedgraph,
-        [input_file,
-         '--output-file', output_file,
-         '--assembly', 'grch37',
-         '--chromosome-col', '2',
-         '--from-pos-col', '3',
-         '--to-pos-col', '4',
-         '--value-col', '5',
-         '--has-header',
-         '--nan-value', 'NA'])
-
-    '''
-    import traceback
-    print("exc_info:", result.exc_info)
-    a,b,tb = result.exc_info
-    print("result:", result)
-    print("result.output", result.output)
-    print("result.error", traceback.print_tb(tb))
-    print("Exception:", a,b)
-    '''
-
-    f = h5py.File(output_file)
-    tile_3_0 = cht.get_data(f, 3, 0)
-
-    assert(sum(tile_3_0) - sum(prev_tile_3_0) < 0.0001)
+    # TODO: Why are we ignoring these?
+    # assert(sum(prev_tile_3_0) < 0)
+    #
+    # input_file = op.join(testdir, 'sample_data', 'cnvs_hw.tsv.gz')
+    # result = runner.invoke(
+    #     cca.bedgraph,
+    #     [input_file,
+    #      '--output-file', output_file,
+    #      '--assembly', 'grch37',
+    #      '--chromosome-col', '2',
+    #      '--from-pos-col', '3',
+    #      '--to-pos-col', '4',
+    #      '--value-col', '5',
+    #      '--has-header',
+    #      '--nan-value', 'NA'])
+    #
+    # '''
+    # import traceback
+    # print("exc_info:", result.exc_info)
+    # a,b,tb = result.exc_info
+    # print("result:", result)
+    # print("result.output", result.output)
+    # print("result.error", traceback.print_tb(tb))
+    # print("Exception:", a,b)
+    # '''
+    #
+    # f = h5py.File(output_file)
+    # tile_3_0 = cht.get_data(f, 3, 0)
+    #
+    # assert(sum(tile_3_0) - sum(prev_tile_3_0) < 0.0001)
 
 
 testdir = op.realpath(op.dirname(__file__))
@@ -186,12 +187,8 @@ def test_clodius_aggregate_bedpe():
     assert(result.exit_code == 0)
 
     tiles = cdt.get_2d_tiles(output_file, 0, 0, 0, numx=1, numy=1)
-    # print("tiles:", tiles)
 
     assert('\n' not in tiles[(0, 0)][0]['fields'][2])
-
-    #import json
-    # json.dumps(tiles)
 
 
 testdir = op.realpath(op.dirname(__file__))
@@ -221,7 +218,8 @@ def test_clodius_aggregate_bedgraph1():
     # print("result.output", result.output)
 
     f = h5py.File('/tmp/dm3_values.hitile')
-    max_zoom = f['meta'].attrs['max-zoom']
+    # max_zoom = f['meta'].attrs['max-zoom']
+    # TODO: Make assertions about result
     values = f['values_0']
 
     import numpy as np
@@ -264,7 +262,8 @@ def test_clodius_aggregate_bedgraph1():
     # print('output:', result.output, result)
 
     f = h5py.File('/tmp/test3chroms_values.hitile')
-    max_zoom = f['meta'].attrs['max-zoom']
+    # f['meta'].attrs['max-zoom']
+    # TODO: Make assertions about result
 
     # print('max_zoom:', max_zoom)
     # print("len", len(f['values_0']))
