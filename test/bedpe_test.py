@@ -1,10 +1,7 @@
 from __future__ import print_function
 
 import clodius.db_tiles as cdt
-import click.testing as clt
 import clodius.cli.aggregate as cca
-import h5py
-import negspy.coordinates as nc
 import os.path as op
 import sys
 
@@ -31,21 +28,23 @@ def test_clodius_aggregate_bedpe():
             [input_file,
             '--output-file', output_file,
             '--importance-column', 'random',
-            '--has-header', 
+            '--has-header',
             '--assembly', 'b37'])
 
     #print('output:', result.output, result)
     assert(result.exit_code == 0)
     """
 
-    entries = cdt.get_2d_tiles(output_file, 0, 0, 0)
-    #print("entries:", entries)
+    cdt.get_2d_tiles(output_file, 0, 0, 0)
+    # print("entries:", entries)
 
-    tileset_info = cdt.get_tileset_info(output_file)
-    #print('tileset_info', tileset_info)
+    cdt.get_tileset_info(output_file)
+    # TODO: Make assertions about result
+    # print('tileset_info', tileset_info)
 
-    entries = cdt.get_2d_tiles(output_file, 1, 0, 0, numx=2, numy=2)
-    #print("entries:", entries)
+    cdt.get_2d_tiles(output_file, 1, 0, 0, numx=2, numy=2)
+    # TODO: Make assertions about result
+    # print("entries:", entries)
 
-    tileset_info = cdt.get_tileset_info(output_file)
-    #print('tileset_info', tileset_info)
+    cdt.get_tileset_info(output_file)
+    # TODO: Make assertion

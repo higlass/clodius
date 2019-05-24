@@ -1,5 +1,3 @@
-import sys
-
 import clodius.fpark as fp
 
 
@@ -14,7 +12,8 @@ def test_group_by_key():
     a = fp.FakeSparkContext.parallelize(
         [(1, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
 
-    b = a.groupByKey()
+    a.groupByKey()
+    # TODO: Make assertions about result
 
 
 def test_textFile():

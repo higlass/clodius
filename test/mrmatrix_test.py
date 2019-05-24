@@ -77,7 +77,8 @@ class TilesTest(unittest.TestCase):
                 '1': {
                     'values': np.array([[1.0, 2], [3, 4]])
                     # It's important that there is a float value:
-                    # If there isn't, np.nan will be converted to a large negative integer.
+                    # If there isn't, np.nan will be converted
+                    # to a large negative integer.
                 }
             }
         })
@@ -91,7 +92,9 @@ class TilesTest(unittest.TestCase):
         tileset = MockHdf5({
             'resolutions': {
                 '1': {
-                    'values': np.array([[float(x) for x in range(500)] for y in range(500)])
+                    'values': np.array(
+                        [[float(x) for x in range(500)] for y in range(500)]
+                    )
                 }
             }
         })
