@@ -2,6 +2,7 @@ import clodius.array as ct
 import math
 import numpy as np
 
+
 def get_tileset_info(hdf_file):
     '''
     Get information about the tileset.
@@ -22,12 +23,13 @@ def get_tileset_info(hdf_file):
         max_pos = d.attrs['max-length']
 
     return {
-                "max_pos": max_pos,
-                'min_pos': min_pos,
-                "max_width": d.attrs['max-width'],
-                "max_zoom": d.attrs['max-zoom'],
-                "tile_size": d.attrs['tile-size']
-            }
+        "max_pos": max_pos,
+        'min_pos': min_pos,
+        "max_width": d.attrs['max-width'],
+        "max_zoom": d.attrs['max-zoom'],
+        "tile_size": d.attrs['tile-size']
+    }
+
 
 def bisect_left(a, x, lo=0, hi=None, comparator=None):
     '''Bisect_left with with an additional comparator.
@@ -56,10 +58,13 @@ def bisect_left(a, x, lo=0, hi=None, comparator=None):
     if hi is None:
         hi = len(a)
     while lo < hi:
-        mid = (lo+hi)//2
-        if comparator(a[mid],x) < 0: lo = mid+1
-        else: hi = mid
+        mid = (lo + hi) // 2
+        if comparator(a[mid], x) < 0:
+            lo = mid + 1
+        else:
+            hi = mid
     return lo
+
 
 def bisect_right(a, x, lo=0, hi=None, comparator=None):
     '''Bisect_right with with an additional comparator.
@@ -88,10 +93,13 @@ def bisect_right(a, x, lo=0, hi=None, comparator=None):
     if hi is None:
         hi = len(a)
     while lo < hi:
-        mid = (lo+hi)//2
-        if comparator(x,a[mid]) < 0: hi = mid
-        else: lo = mid+1
+        mid = (lo + hi) // 2
+        if comparator(x, a[mid]) < 0:
+            hi = mid
+        else:
+            lo = mid + 1
     return lo
+
 
 def get_discrete_data(hdf_file, z, x):
     '''
@@ -103,7 +111,7 @@ def get_discrete_data(hdf_file, z, x):
         x (int): The x position of this tile
 
     Returns:
-        A 2D array of entries at that position. It is assumed that names of the 
+        A 2D array of entries at that position. It is assumed that names of the
         columns are known.
     '''
     # is the title within the range of possible tiles
@@ -114,7 +122,7 @@ def get_discrete_data(hdf_file, z, x):
         print("OUT OF LEFT RANGE")
         return []
 
-    d = hdf_file['meta'] 
+    d = hdf_file['meta']
     tile_size = int(d.attrs['tile-size'])
     max_length = int(d.attrs['max-length'])
     max_zoom = int(d.attrs['max-zoom'])
@@ -132,10 +140,10 @@ def get_discrete_data(hdf_file, z, x):
 
     # We need a way to compare data points that aren't numbers
     # (e.g. the arrays that are in f)
-    def comparator_start(a,b):
+    def comparator_start(a, b):
         return int(a[0]) - int(b[0])
 
-    def comparator_end(a,b):
+    def comparator_end(a, b):
         return int(a[1]) - int(b[1])
 
     tile_data_start = bisect_left(f, [tile_start], comparator=comparator_start)
@@ -161,13 +169,12 @@ def get_data(hdf_file, z, x):
         print("OUT OF LEFT RANGE")
         return []
 
-    d = hdf_file['meta'] 
+    d = hdf_file['meta']
 
     tile_size = int(d.attrs['tile-size'])
     zoom_step = int(d.attrs['zoom-step'])
     max_length = int(d.attrs['max-length'])
     max_zoom = int(d.attrs['max-zoom'])
-
 
     if 'min-pos' in d.attrs:
         min_pos = d.attrs['min-pos']
@@ -209,7 +216,6 @@ def get_data(hdf_file, z, x):
 
     f = hdf_file['values_' + str(int(next_stored_zoom))]
 
-
     if start_pos > max_position:
         # we want a tile that's after the last bit of data
         a = np.zeros(end_pos - start_pos)
@@ -217,7 +223,7 @@ def get_data(hdf_file, z, x):
         ret_array = ct.aggregate(a, int(num_to_agg))
     elif start_pos < max_position and max_position < end_pos:
         a = f[start_pos:end_pos][:]
-        a[max_position+1:end_pos] = np.nan
+        a[max_position + 1:end_pos] = np.nan
         ret_array = ct.aggregate(a, int(num_to_agg))
     else:
         ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
@@ -246,4 +252,3 @@ def get_data(hdf_file, z, x):
         return averages_array
 
     return ret_array
-    
