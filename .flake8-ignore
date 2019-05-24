@@ -3,9 +3,6 @@ exclude =
   .eggs
   src/multiprocess # on Travis, but not in my local checkout.
   clodius/cli/__init__.py
-  clodius/cli/aggregate.py
-  clodius/cli/convert.py
-  clodius/cli/utils.py
   clodius/tiles/mrmatrix.py
   notebooks/Aggregating an array.ipynb
   notebooks/ENSEMBL annotations and RNAseq.ipynb
