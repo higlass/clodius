@@ -7,4 +7,5 @@ def test_npvector():
     # print('ts:', hgnv.tileset_info(array))
     assert('max_width' in hgnv.tileset_info(array))
 
-    tile = hgnv.tiles(array, 0, 0)
+    hgnv.tiles(array, 0, 0)
+    # TODO: Make assertions about tile returned.
