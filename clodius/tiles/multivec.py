@@ -3,10 +3,11 @@ import math
 import numpy as np
 import time
 
+
 def abs2genomic(chromsizes, start_pos, end_pos):
     '''
     Convert absolute genomic sizes to genomic
-    
+
     Parameters:
     -----------
     chromsizes: [1000,...]
@@ -18,15 +19,16 @@ def abs2genomic(chromsizes, start_pos, end_pos):
     '''
     abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
     cid_lo, cid_hi = np.searchsorted(abs_chrom_offsets,
-                                   [start_pos, end_pos],
-                                   side='right') - 1
+                                     [start_pos, end_pos],
+                                     side='right') - 1
     rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
     rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
     start = rel_pos_lo
     for cid in range(cid_lo, cid_hi):
-      yield cid, start, chromsizes[cid]
-      start = 0
+        yield cid, start, chromsizes[cid]
+        start = 0
     yield cid_hi, start, rel_pos_hi
+
 
 def get_single_tile(filename, tile_pos):
     '''
@@ -44,13 +46,13 @@ def get_single_tile(filename, tile_pos):
     t15 = time.time()
 
     f = h5py.File(filename, 'r')
-    
+
     # print('tileset_info', tileset_info)
     t2 = time.time()
     # which resolution does this zoom level correspond to?
     resolution = tsinfo['resolutions'][tile_pos[0]]
     tile_size = tsinfo['tile_size']
-    
+
     # where in the data does the tile start and end
     tile_start = tile_pos[1] * tile_size * resolution
     tile_end = tile_start + tile_size * resolution
@@ -59,13 +61,13 @@ def get_single_tile(filename, tile_pos):
 
     #dense = f['resolutions'][str(resolution)][tile_start:tile_end]
     dense = get_tile(f, chromsizes, resolution,
-        tile_start, tile_end, tsinfo['shape'])
+                     tile_start, tile_end, tsinfo['shape'])
     #print("dense.shape", dense.shape)
 
     if len(dense) < tsinfo['tile_size']:
         # if there aren't enough rows to fill this tile, add some zeros
-        dense = np.vstack([dense, np.zeros((tsinfo['tile_size'] - len(dense), 
-            tsinfo['shape'][1]))])
+        dense = np.vstack([dense, np.zeros((tsinfo['tile_size'] - len(dense),
+                                            tsinfo['shape'][1]))])
 
     f.close()
     t3 = time.time()
@@ -74,14 +76,15 @@ def get_single_tile(filename, tile_pos):
 
     return dense.T
 
+
 def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
     '''
     Get the tile value given the start and end positions and
     chromosome positions. 
-    
+
     Drop bins at the ends of chromosomes if those bins aren't
     full.
-    
+
     Parameters:
     -----------
     f: h5py.File
@@ -95,7 +98,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
         The start_position of the interval to return
     end_pos: int
         The end position of the interval to return
-        
+
     Returns
     -------
     return_vals: [...]
@@ -115,7 +118,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
     # keep track of how much data has been returned in bins
     current_binned_data_position = 0
     current_data_position = 0
-    
+
     num_added = 0
     total_length = 0
 
@@ -123,7 +126,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
         n_bins = int(np.ceil((end - start) / binsize))
         total_length += end - start
         #print('cid', cid, start, end, 'tl:', total_length)
-        
+
         try:
             t1 = time.time()
 
@@ -158,9 +161,10 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
                     #print('data smaller than the bin size', start, end, binsize)
                     continue
             '''
-            
+
             # print("offset:", offset, "start_pos", start_pos, end_pos)
-            x = f['resolutions'][str(resolution)]['values'][chrom][start_pos:end_pos]
+            x = f['resolutions'][str(resolution)
+                                 ]['values'][chrom][start_pos:end_pos]
             current_binned_data_position += binsize * (end_pos - start_pos)
 
             # print("x:", x.shape)
@@ -194,6 +198,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
     # print("total fetch time:", t3 - t0)
 
     return np.concatenate(arrays)[:shape[0]]
+
 
 def tileset_info(filename):
     '''
@@ -231,18 +236,19 @@ def tileset_info(filename):
     tile_size = int(f['info'].attrs['tile-size'])
     first_chrom = f['chroms']['name'][0]
 
-    shape = list(f['resolutions'][str(resolutions[0])]['values'][first_chrom].shape)
+    shape = list(f['resolutions'][str(resolutions[0])]
+                 ['values'][first_chrom].shape)
     shape[0] = tile_size
 
     t3 = time.time()
     # print("tileset info time:", t3 - t2)
 
     tileset_info = {
-      'resolutions': resolutions,
-      'min_pos': min_pos,
-      'max_pos': max_pos,
-      'tile_size': tile_size,
-      'shape': shape
+        'resolutions': resolutions,
+        'min_pos': min_pos,
+        'max_pos': max_pos,
+        'tile_size': tile_size,
+        'shape': shape
     }
 
     if 'row_infos' in f['resolutions'][str(resolutions[0])].attrs:

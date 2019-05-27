@@ -49,7 +49,7 @@ def main():
                         help='The field in each JSON entry that indicates how important that entry is',
                         type=str)
     parser.add_argument('-v', '--value', dest='value_field', default='count',
-                        help='The that has the value of each point. Used for aggregation and display')
+                        help='The field that has the value of each point. Used for aggregation and display')
 
     group = parser.add_mutually_exclusive_group()
 
