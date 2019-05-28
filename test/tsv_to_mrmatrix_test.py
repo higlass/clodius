@@ -142,7 +142,8 @@ class ParseTest(unittest.TestCase):
             self.assertEqual(list(hdf5['row_labels']),
                              ['row-{}'.format(r) for r in range(9)])
 
-            self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2', '2-nan_values'])
+            self.assertEqual(list(hdf5['resolutions'].keys()),
+                             ['1', '2', '2-nan_values'])
 
             self.assertEqual(list(hdf5['resolutions']['1'].keys()), [
                              'nan_values', 'values'])
