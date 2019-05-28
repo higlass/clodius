@@ -72,8 +72,8 @@ def bedfile_to_multivec(input_filenames, f_out,
 
         prev_chrom = chrom
 
-        #print('parts', parts)
-        #print('chrom:', chrom, start)
+        # print('parts', parts)
+        # print('chrom:', chrom, start)
 
         data_start_index = start // base_resolution
 
@@ -90,7 +90,7 @@ def bedfile_to_multivec(input_filenames, f_out,
         '''
 
         assert(curr_index == data_start_index)
-        #print('vector', vector)
+        # print('vector', vector)
 
         # When the binsize is not equal to the base_resolution
         # "break down" the binsize into bins of the rbase_esolution size
@@ -118,7 +118,7 @@ def bedfile_to_multivec(input_filenames, f_out,
             batch_start_index = curr_index
             print("dumping batch:", chrom, batch_start_index)
 
-    #print('chrom', chrom)
+    # print('chrom', chrom)
     f_out[chrom][batch_start_index:batch_start_index +
                  len(batch)] = np.array(batch)
 
@@ -210,7 +210,7 @@ def create_multivec_multires(array_data, chromsizes,
         chrom_data = f['resolutions'][str(curr_resolution)]['values'][chrom]
 
         chunk_size = int(min(standard_chunk_size, len(chrom_data)))
-        #print("array_data.shape", array_data[chrom].shape)
+        # print("array_data.shape", array_data[chrom].shape)
 
         while start < len(chrom_data):
             # see above section
@@ -274,25 +274,25 @@ def create_multivec_multires(array_data, chromsizes,
             while start < len(chrom_data):
                 old_data = f['resolutions'][str(
                     prev_resolution)]['values'][chrom][start:start + chunk_size]
-                #print("prev_resolution:", prev_resolution)
-                #print("old_data.shape", old_data.shape)
+                # print("prev_resolution:", prev_resolution)
+                # print("old_data.shape", old_data.shape)
 
                 # this is a sort of roundabout way of calculating the
                 # shape of the aggregated array, but all its doing is
                 # just halving the first dimension of the previous shape
                 # without taking into account the other dimensions
-                #print("11 old_data.shape", old_data.shape)
+                # print("11 old_data.shape", old_data.shape)
                 if len(old_data) % 2 != 0:
                     # we need our array to have an even number of elements
                     # so we just add the last element again
                     old_data = np.concatenate((old_data, [old_data[-1]]))
                     chunk_size += 1
-                #print("22 old_data.shape", old_data.shape)
+                # print("22 old_data.shape", old_data.shape)
 
-                #print('old_data:', old_data)
-                #print("shape:", old_data.shape)
+                # print('old_data:', old_data)
+                # print("shape:", old_data.shape)
                 # actually sum the adjacent elements
-                #print("old_data.shape", old_data.shape)
+                # print("old_data.shape", old_data.shape)
                 new_data = agg(old_data)
 
                 '''

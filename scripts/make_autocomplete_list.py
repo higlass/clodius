@@ -28,7 +28,7 @@ def make_autocomplete_list(entries, options, tile_saver):
 
         if options.name not in entry:
             # if an entry doesn't have a name field, print a warning and continue
-            #print >>sys.stderr, "Found entry without a name:", entry['uid']
+            # print >>sys.stderr, "Found entry without a name:", entry['uid']
             return []
         # for each entry get each substring and add the entry to the list
         # of entries containing that substring
@@ -41,7 +41,7 @@ def make_autocomplete_list(entries, options, tile_saver):
                 substr = substr.replace('/', ' ').lower()
                 substr = ' '.join(substr.split()).replace(' ', '_')
 
-                #substrs += [((substr), [entry])]
+                # substrs += [((substr), [entry])]
                 substrs[substr] = [entry]
 
         return substrs.items()
@@ -74,7 +74,7 @@ def make_autocomplete_list(entries, options, tile_saver):
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python make_autocomplete_list.py processed-ski-area-elevations.json
 
     Create jsons for searching for ski areas. These will consist

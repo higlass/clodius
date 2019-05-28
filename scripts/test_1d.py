@@ -24,7 +24,7 @@ def main():
     parser.add_argument('-x', default=None, type=int)
 
     parser.add_argument('-n', '--num-trials', default=1, type=int)
-    #parser.add_argument('argument', nargs=1)
+    # parser.add_argument('argument', nargs=1)
     # parser.add_argument('-o', '--options', default='yo',
     # help="Some option", type='str')
     # parser.add_argument('-u', '--useless', action='store_true',
@@ -50,7 +50,7 @@ def main():
 
         d = ch.get_data(f, z, x)
         print("z:", z, "x:", x, "len:", len(d), d)
-        #d =  ch.get_data(f, 1, 1)
+        # d =  ch.get_data(f, 1, 1)
 
         # print "z:", z, "x:", x
     t2 = time.time()

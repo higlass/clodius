@@ -28,8 +28,8 @@ def main():
     num_args = 1
     parser = argparse.ArgumentParser()
 
-    #parser.add_argument('-o', '--options', dest='some_option', default='yo', help="Place holder for a real option", type='str')
-    #parser.add_argument('-u', '--useless', dest='uselesss', default=False, action='store_true', help='Another useless option')
+    # parser.add_argument('-o', '--options', dest='some_option', default='yo', help="Place holder for a real option", type='str')
+    # parser.add_argument('-u', '--useless', dest='uselesss', default=False, action='store_true', help='Another useless option')
     parser.add_argument('input_file')
     parser.add_argument('-b', '--bins-per-dimension',
                         help='The number of bins to divide the data into',

@@ -127,9 +127,9 @@ def tiles(grid, z, x, y, nan_grid=None, bin_size=256):
     b = np.nansum(a.reshape((a.shape[0], -1, num_to_sum)), axis=2)
     ret_array = np.nansum(b.T.reshape(b.shape[1], -1, num_to_sum), axis=2).T
     ret_array[ret_array == 0.] = np.nan
-    #print('ret_array:', ret_array)
+    # print('ret_array:', ret_array)
 
-    #print("sum:", np.nansum(ret_array))
+    # print("sum:", np.nansum(ret_array))
 
     if nan_grid is not None:
         # print("normalizing")
@@ -147,7 +147,7 @@ def tiles(grid, z, x, y, nan_grid=None, bin_size=256):
     x_pad = bin_size - ret_array.shape[0]
     y_pad = bin_size - ret_array.shape[1]
 
-    #print("ret_array:", ret_array.shape)
-    #print("x_pad:", x_pad, "y_pad:", y_pad)
+    # print("ret_array:", ret_array.shape)
+    # print("x_pad:", x_pad, "y_pad:", y_pad)
 
     return np.pad(ret_array, ((0, x_pad), (0, y_pad)), 'constant', constant_values=(np.nan, np.nan))

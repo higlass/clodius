@@ -110,7 +110,7 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     bin_size: int
         The number of values per bin
     '''
-    #print("max_dim", max_dim)
+    # print("max_dim", max_dim)
     max_zoom, x_start, x_end = max_zoom_and_data_bounds(array, z, x, bin_size)
     data = array[x_start:x_end]
 
@@ -122,7 +122,7 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     # add some data so that the data can be divided into squares
     divisible_x_width = num_to_sum * math.ceil(data.shape[0] / num_to_sum)
     divisible_x_pad = divisible_x_width - data.shape[0]
-    #print("data.shape", data.shape)
+    # print("data.shape", data.shape)
 
     # print("divisible_x_pad:", divisible_x_pad)
     # print("len(data)", len(data))
@@ -136,9 +136,9 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     # print('ret_array:', len(ret_array))
 
     # ret_array[ret_array == 0.] = np.nan
-    #print('ret_array:', ret_array)
+    # print('ret_array:', ret_array)
 
-    #print("sum:", np.nansum(ret_array))
+    # print("sum:", np.nansum(ret_array))
 
     if not_nan_array is not None:
         # print("normalizing")
@@ -154,7 +154,7 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     # determine how much to pad the array
     x_pad = bin_size - ret_array.shape[0]
 
-    #print("ret_array:", ret_array.shape)
+    # print("ret_array:", ret_array.shape)
     # print("x_pad:", x_pad)
 
     return np.pad(ret_array, ((0, x_pad)), 'constant', constant_values=(np.nan, ))

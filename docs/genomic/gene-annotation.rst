@@ -34,14 +34,14 @@ Set the assembly name and species ID
     ASSEMBLY=mm9
     TAXID=10090
 
-    #ASSEMBLY=hg19
-    #TAXID=9606
+    # ASSEMBLY=hg19
+    # TAXID=9606
 
-    #ASSEMBLY=sacCer3
-    #TAXID=559292
+    # ASSEMBLY=sacCer3
+    # TAXID=559292
 
-    #ASSEMBLY=dm6
-    #TAXID=7227
+    # ASSEMBLY=dm6
+    # TAXID=7227
 
 Download data from UCSC and NCBI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -122,7 +122,7 @@ Processing
     wc -l ~/data/genbank-data/${ASSEMBLY}/geneid_refseqid
 
 
-    #output -> geneid \t refseq_id \t citation_count
+    # output -> geneid \t refseq_id \t citation_count
 
     join ~/data/genbank-data/${ASSEMBLY}/geneid_refseqid \
         ~/data/genbank-data/${ASSEMBLY}/gene2pubmed-count  \

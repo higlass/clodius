@@ -41,7 +41,7 @@ def dump_transcript(gene_name,
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python gff_to_gene_pred.py
 """)
 
@@ -68,7 +68,7 @@ def main():
                 continue
 
             parts = line.strip().split('\t')
-            #print('parts:', parts)
+            # print('parts:', parts)
 
             chrom = parts[0]
             annotation_from = parts[1]
