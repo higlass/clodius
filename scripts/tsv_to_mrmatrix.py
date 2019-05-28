@@ -9,11 +9,11 @@ import argparse
 import time
 
 
-def coarsen(f, tile_size=256):
+def coarsen(f, type, tile_size=256):
     '''
     Create data pyramid.
     '''
-    grid = f['resolutions']['1']['values']
+    grid = f['resolutions']['1'][type]
     top_n = grid.shape[0]
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
 
@@ -31,7 +31,7 @@ def coarsen(f, tile_size=256):
 
         print("curr_size:", curr_size)
         g = r.create_group(str(curr_resolution))
-        values = g.require_dataset('values', curr_size, dtype='f4',
+        values = g.require_dataset(type, curr_size, dtype='f4',
                                    compression='lzf', fillvalue=np.nan)
 
         dask_dset = dask_dset.rechunk((chunk_size, chunk_size))
@@ -49,8 +49,6 @@ def parse(input_handle, output_hdf5, height, width,
             'col_labels',
             data=np.array(col_labels, dtype=h5py.special_dtype(vlen=str)),
             compression='lzf')
-        # TODO: Handle non-square labels
-        # https://github.com/higlass/clodius/issues/68
 
     tile_size = 256
     limit = max(height, width)
@@ -59,11 +57,10 @@ def parse(input_handle, output_hdf5, height, width,
 
     g = output_hdf5.create_group('resolutions')
     g1 = g.create_group('1')
-    ds = g1.create_dataset('values', (max_width, max_width),
-                           dtype='f4', compression='lzf', fillvalue=np.nan)
-    g1.create_dataset('nan_values', (max_width, max_width),
-                      dtype='f4', compression='lzf', fillvalue=0)
-    # TODO: We don't write to this... Is it necessary?
+    val_ds = g1.create_dataset('values', (max_width, max_width),
+                               dtype='f4', compression='lzf', fillvalue=np.nan)
+    nan_ds = g1.create_dataset('nan_values', (max_width, max_width),
+                               dtype='f4', compression='lzf', fillvalue=0)
 
     start_time = time.time()
     counter = 0
@@ -74,8 +71,12 @@ def parse(input_handle, output_hdf5, height, width,
             row_labels.append(row[0])
         else:
             offset = 0
-        x = np.array([float(p) for p in row[offset:]])
-        ds[counter, :len(x)] = x
+
+        val_np = np.array([float(p) for p in row[offset:]])
+        val_ds[counter, :len(val_np)] = val_np
+
+        nan_np = np.array([0 for p in row[offset:]])
+        nan_ds[counter, :len(nan_np)] = nan_np
 
         counter += 1
         if counter == first_n:
@@ -85,15 +86,16 @@ def parse(input_handle, output_hdf5, height, width,
         time_per_entry = time_elapsed / counter
 
         time_remaining = time_per_entry * (height - counter)
-        print("counter:", counter, "sum(x):", sum(x),
-              "time remaining: {:d} seconds".format(int(time_remaining)))
+        print("counter:", counter, "sum(x):", sum(val_np),
+              "time remaining: {:d} seconval_ds".format(int(time_remaining)))
 
     if is_labelled:
         output_hdf5.create_dataset(
             'row_labels',
             data=np.array(row_labels, dtype=h5py.special_dtype(vlen=str)),
             compression='lzf')
-    coarsen(output_hdf5)
+    coarsen(output_hdf5, 'values')
+    coarsen(output_hdf5, 'nan_values')
     output_hdf5.close()
 
 

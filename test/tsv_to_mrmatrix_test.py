@@ -38,7 +38,7 @@ class CoarsenTest(unittest.TestCase):
                 [float(x) for x in range(64)]
             )
 
-            coarsen(hdf5, tile_size=tile_size)
+            coarsen(hdf5, type='values', tile_size=tile_size)
 
             # after coarsen()
             self.assertEqual(list(hdf5.keys()), ['resolutions'])
@@ -77,7 +77,7 @@ class CoarsenTest(unittest.TestCase):
                 a = np.array([float(x) for x in range(max_width)])
                 ds[y, :max_width] = a
 
-            coarsen(hdf5, tile_size=tile_size)
+            coarsen(hdf5, type='values', tile_size=tile_size)
 
             # after coarsen()
             self.assertEqual(list(hdf5.keys()), ['resolutions'])
