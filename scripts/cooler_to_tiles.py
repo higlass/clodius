@@ -7,7 +7,6 @@ import collections as col
 import cooler
 import h5py
 import numpy as np
-import scipy.sparse as ss
 import sys
 import time
 

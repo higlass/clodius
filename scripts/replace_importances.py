@@ -1,12 +1,11 @@
 #!/usr/bin/python
 
-import sys
 import argparse
 
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python replace_importances.py dest_gene_pred source_gene_pred
 """)
 

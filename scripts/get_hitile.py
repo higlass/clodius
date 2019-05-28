@@ -4,7 +4,6 @@ from __future__ import print_function
 
 import clodius.hdf_tiles as hdft
 import h5py
-import sys
 import argparse
 
 

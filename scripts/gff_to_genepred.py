@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import random
-import shlex
 import sys
 import argparse
 

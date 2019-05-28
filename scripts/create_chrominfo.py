@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import Bio.SeqIO as bsio
 import argparse
 import gzip
 import sys

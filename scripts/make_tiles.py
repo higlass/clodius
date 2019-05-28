@@ -16,7 +16,6 @@ import functools as ft
 import json
 import os.path as op
 import sys
-import time
 
 
 def main():

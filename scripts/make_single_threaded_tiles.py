@@ -8,14 +8,11 @@ import collections as col
 import math
 import negspy.coordinates as nc
 import numpy as np
-import os
-import os.path as op
 import sortedcontainers as sco
 import sys
 import time
 
 import multiprocessing as mpr
-import traceback
 
 sys.excepthook = cst.handle_exception
 

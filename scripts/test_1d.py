@@ -4,10 +4,7 @@ from __future__ import print_function
 
 import argparse
 import clodius.hdf_tiles as ch
-import clodius.tiles as ct
 import h5py
-import math
-import numpy as np
 import random
 import sys
 import time
@@ -15,7 +12,7 @@ import time
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python read.py hdf_file
 """)
 

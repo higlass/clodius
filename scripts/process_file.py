@@ -3,7 +3,6 @@ from __future__ import print_function
 import argparse
 import os.path as op
 import subprocess as sp
-import sys
 import tempfile as tf
 
 

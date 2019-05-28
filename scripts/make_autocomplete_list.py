@@ -3,10 +3,6 @@
 import clodius.fpark as cfp
 import clodius.save_tiles as cst
 import collections as col
-import json
-import os
-import os.path as op
-import sys
 import argparse
 
 
