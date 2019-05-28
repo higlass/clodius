@@ -284,7 +284,7 @@ def main():
     args = parser.parse_args()
 
     if args.resolution is None and args.max_zoom is None:
-        print >>sys.stderr, "One of --resolution and --max-zoom must be set"
+        print("One of --resolution and --max-zoom must be set", file=sys.stderr)
         sys.exit(1)
 
     first_line = sys.stdin.readline()
@@ -333,7 +333,7 @@ def main():
 
     # print("max_zoom:", max_zoom)
     max_width = args.resolution * args.bins_per_dimension * 2 ** max_zoom
-    
+
     value_pos = args.value_pos
 
     # if there's not column designated as the value column, use the last column
