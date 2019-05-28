@@ -2,3 +2,4 @@
 
 ignore =
   E501 # line too long
+  E722 # do not use bare 'except'

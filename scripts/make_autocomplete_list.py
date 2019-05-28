@@ -2,7 +2,6 @@
 
 import clodius.fpark as cfp
 import clodius.save_tiles as cst
-import collections as col
 import argparse
 
 

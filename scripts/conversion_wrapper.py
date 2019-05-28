@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import argparse
 import clodius.cli.aggregate as cca
-import os
 import os.path as op
 import sys
 
