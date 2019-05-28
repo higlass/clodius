@@ -58,7 +58,7 @@ def test_get_tiles():
     # TODO: Make assertions about result
     # print("tiles:", tiles)
     # x = int(tiles[0]['xStart'])
-    # # fields = tiles[0]['fields']
+    # fields = tiles[0]['fields']
     # TODO: Make assertions
 
 

@@ -68,8 +68,8 @@ def states_bedline_to_vector(bedlines, states_dic):
     (e.g. chrom = "chr1", start = 1000, end = 2000, states_vector = [1,0,0,0])
     '''
     # we support passing in multiple bed files for multivec creation from
-    # # other file types, but this one only supports a single file so just
-    # # assume that a single file is passed in
+    # other file types, but this one only supports a single file so just
+    # assume that a single file is passed in
     bedline = bedlines[0]
 
     parts = bedline.decode('utf8').strip().split('\t')
