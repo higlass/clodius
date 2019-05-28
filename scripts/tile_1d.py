@@ -84,7 +84,7 @@ def main():
             parts = line.split()
             start = int(parts[0], 10)
             end = int(parts[1], 10)
-            val = float(parts[2])
+            # val = float(parts[2])
 
             if start > last_end:
                 # in case there's skipped values in the bed file
@@ -135,8 +135,7 @@ def main():
     # still need to take care of the last chunk
 
     data = np.array(data)
-    t1 = time.time()
-
+    
     '''
     curr_zoom = 0
     dsets = []

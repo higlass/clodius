@@ -25,7 +25,6 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                  bins_per_dimension, tile_saver, expand_range, ignore_0, tileset_info, max_width,
                  triangular=False, max_queue_size=40000, print_status=False):
     active_tiles = col.defaultdict(sco.SortedList)
-    max_data_in_sparse = bins_per_dimension ** len(position_cols) // 5.
     tile_contents = col.defaultdict(lambda: col.defaultdict(
         lambda: col.defaultdict(ft.partial(default_tile, length=len(value_pos)))))
     smallest_width = max_width // (2 ** max_zoom)
@@ -157,7 +156,6 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                     '''
                     if active_tiles[zoom_level][0][0] < current_tile[0]:
                         tile_position = active_tiles[zoom_level][0]
-                        tile_value = tile_contents[zoom_level][tile_position]
                         tile_bins = tile_contents[zoom_level][tile_position]
 
                         # print "tile_bins:", zoom_level, tile_position, tile_bins
@@ -226,7 +224,6 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
     for zoom_level in range(0, max_zoom + 1)[::-1]:
         for tile_position in active_tiles[zoom_level]:
-            tile_value = tile_contents[zoom_level][tile_position]
             tile_bins = tile_contents[zoom_level][tile_position]
 
             q.put((zoom_level, tile_position, tile_bins))
@@ -246,7 +243,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
 
 def main():
-    usage = """
+    """
     python make_tiles.py input_file
 
     Create tiles for all of the entries in the JSON file.
@@ -336,8 +333,7 @@ def main():
 
     # print("max_zoom:", max_zoom)
     max_width = args.resolution * args.bins_per_dimension * 2 ** max_zoom
-    smallest_width = args.resolution * args.bins_per_dimension
-
+    
     value_pos = args.value_pos
 
     # if there's not column designated as the value column, use the last column

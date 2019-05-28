@@ -15,10 +15,6 @@ def make_autocomplete_list(entries, options, tile_saver):
                     the tiles should be created
     :return: A list of tiles
     '''
-    # group each entry in input file according to its starting letter
-    ngrams = []
-    substrs = col.defaultdict(list)
-
     def entry_to_substrs(entry):
         substrs = {}
 
@@ -122,7 +118,7 @@ def main():
 
     print("one:", dataFile.take(1))
 
-    tiles = make_autocomplete_list(dataFile, args, tile_saver)
+    make_autocomplete_list(dataFile, args, tile_saver)
 
 
 if __name__ == '__main__':

@@ -70,7 +70,7 @@ def main():
             # print('parts:', parts)
 
             chrom = parts[0]
-            annotation_from = parts[1]
+            # annotation_from = parts[1]
             annotation_type = parts[2]
             start_pos = int(parts[3])
             end_pos = int(parts[4])
@@ -202,7 +202,7 @@ def main():
 
                 transcript_exons = []
                 transcript_id = attrs['ID']
-                transcript_gene_name = gene_name
+                # transcript_gene_name = gene_name
                 transcript_chrom = chrom
                 transcript_start = start_pos
                 transcript_end = end_pos

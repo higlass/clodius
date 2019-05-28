@@ -61,8 +61,6 @@ def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, m
         i = (df['genome_start'].values - start1) // binsize
         j = (df['genome_end'].values - start2) // binsize
         v = np.nan_to_num(df['balanced'].values)
-        m = (end1 - start1) // binsize
-        n = (end2 - start2) // binsize
 
         zi = zip(zip(i, j), v)
         tile_bins = dict(zi)

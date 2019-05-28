@@ -7,7 +7,7 @@ import tempfile as tf
 
 
 def main():
-    usage = """
+    """
     python make_tiles.py input_file
 
     Create tiles for all of the entries in the JSON file.

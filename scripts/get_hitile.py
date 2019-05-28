@@ -36,7 +36,7 @@ def main():
         last_index = int(tile_size * (max_pos / max_width))
         print("last_index:", last_index)
         tile_data = hdft.get_data(f, args.z, args.x)
-        # print("tile:", hdft.get_data(f, args.z, args.x))
+        print("tile:", tile_data)
 
 
 if __name__ == '__main__':
