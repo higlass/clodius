@@ -30,7 +30,8 @@ def coarsen(f, type, tile_size=256):
         curr_resolution *= 2
 
         print("curr_size:", curr_size)
-        g = r.create_group(str(curr_resolution))
+        group_name = '{}{}'.format(curr_resolution, '' if type == 'values' else '-' + type)
+        g = r.create_group(group_name)
         values = g.require_dataset(type, curr_size, dtype='f4',
                                    compression='lzf', fillvalue=np.nan)
 
