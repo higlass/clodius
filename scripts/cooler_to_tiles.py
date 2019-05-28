@@ -97,29 +97,29 @@ def recursive_generate_tiles(tile_positions, coolers_matrix, info, resolution, m
 
         # need to recurse into higher zoom levels
         '''
-        recursive_generate_tiles((zoom_level+1, 2 * x_pos, 2 * y_pos), coolers_matrix, info, 
+        recursive_generate_tiles((zoom_level+1, 2 * x_pos, 2 * y_pos), coolers_matrix, info,
                 resolution, max_zoom_to_generate, queue = queue)
-        recursive_generate_tiles((zoom_level+1, 2 * x_pos, 2 * y_pos + 1), coolers_matrix, info, 
+        recursive_generate_tiles((zoom_level+1, 2 * x_pos, 2 * y_pos + 1), coolers_matrix, info,
                 resolution, max_zoom_to_generate, queue = queue)
-        recursive_generate_tiles((zoom_level+1, 2 * x_pos + 1, 2 * y_pos + 1), coolers_matrix, info, 
+        recursive_generate_tiles((zoom_level+1, 2 * x_pos + 1, 2 * y_pos + 1), coolers_matrix, info,
                 resolution, max_zoom_to_generate, queue = queue)
-        recursive_generate_tiles((zoom_level+1, 2 * x_pos + 1, 2 * y_pos), coolers_matrix, info, 
+        recursive_generate_tiles((zoom_level+1, 2 * x_pos + 1, 2 * y_pos), coolers_matrix, info,
                 resolution, max_zoom_to_generate, queue = queue)
         '''
 
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    python cooler_to_tiles.py cooler_file 
+    python cooler_to_tiles.py cooler_file
 
     Requires the cooler package.
 """)
 
-    #parser.add_argument('argument', nargs=1)
+    # parser.add_argument('argument', nargs=1)
     # parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
+    # help="Some option", type='str')
     # parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
+    # help='Another useless option')
     parser.add_argument('filepath')
     parser.add_argument('-e', '--elasticsearch-url', default=None,
                         help="The url of the elasticsearch database where to save the tiles")

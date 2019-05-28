@@ -13,9 +13,9 @@ def main():
     parser.add_argument('dest')
     parser.add_argument('source')
     # parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
+    # help="Some option", type='str')
     # parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
+    # help='Another useless option')
 
     args = parser.parse_args()
 

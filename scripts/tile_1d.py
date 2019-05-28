@@ -38,9 +38,9 @@ def main():
     parser.add_argument('-t', '--tile-size', default=1024, type=int)
     parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
     # parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
+    # help="Some option", type='str')
     # parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
+    # help='Another useless option')
     args = parser.parse_args()
     last_end = 0
     data = []

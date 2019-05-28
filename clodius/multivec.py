@@ -49,7 +49,7 @@ def bedfile_to_multivec(input_filenames, f_out,
         chrom, start, end, vector = bedline_to_chrom_start_end_vector(
             lines, row_infos)
         # if vector[0] > 0 or vector[1] > 0:
-        #     print("c,s,e,v", chrom, start, end, vector)
+        # print("c,s,e,v", chrom, start, end, vector)
 
         if end % base_resolution != 0 or start % base_resolution != 0 and not warned:
             print("WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".

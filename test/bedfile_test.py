@@ -58,8 +58,7 @@ def test_get_tiles():
     # TODO: Make assertions about result
     # print("tiles:", tiles)
     # x = int(tiles[0]['xStart'])
-    #
-    # fields = tiles[0]['fields']
+    # # fields = tiles[0]['fields']
     # TODO: Make assertions
 
 
@@ -289,7 +288,7 @@ def test_tile_ranges():
     d1 = cht.get_discrete_data(f, 11, 5)
     #print("d1:", len(d1))
     #print("dv:", [x for x in d1 if (int(x[1]) < 12000000
-    #              and int(x[2]) > 12000000)])
+    # and int(x[2]) > 12000000)])
 
     d3 = cht.get_discrete_data(f, 12, 10)
     #print("d2:", len(d3))
