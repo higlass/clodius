@@ -194,13 +194,13 @@ def main():
                                     gene_importance,
                                     gene_start,
                                     gene_end,
-                                    transcript_id,
-                                    transcript_chrom,
-                                    transcript_start,
-                                    transcript_end,
-                                    transcript_strand,
-                                    transcript_cdss,
-                                    transcript_exons)
+                                    transcript_id)
+                # transcript_chrom,
+                # transcript_start,
+                # transcript_end,
+                # transcript_strand,
+                # transcript_cdss,
+                # transcript_exons)
 
                 transcript_exons = []
                 transcript_id = attrs['ID']
