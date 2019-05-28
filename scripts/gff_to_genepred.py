@@ -128,20 +128,22 @@ def main():
 
             if annotation_type == 'gene' or annotation_type == 'tRNA_gene':
                 if transcript_id is not None:
-                    dump_transcript(gene_name,
-                                    gene_id,
-                                    gene_type,
-                                    gene_description,
-                                    gene_importance,
-                                    gene_start,
-                                    gene_end,
-                                    transcript_id,
-                                    transcript_chrom,
-                                    transcript_start,
-                                    transcript_end,
-                                    transcript_strand,
-                                    transcript_cdss,
-                                    transcript_exons)
+                    pass
+                    # TODO: Fill in these variables
+                    # dump_transcript(gene_name,
+                    #                 gene_id,
+                    #                 gene_type,
+                    #                 gene_description,
+                    #                 gene_importance,
+                    #                 gene_start,
+                    #                 gene_end,
+                    #                 transcript_id,
+                    #                 transcript_chrom,
+                    #                 transcript_start,
+                    #                 transcript_end,
+                    #                 transcript_strand,
+                    #                 transcript_cdss,
+                    #                 transcript_exons)
 
                 split_id = attrs['ID'].split(':')
                 gene_id = attrs['ID']
