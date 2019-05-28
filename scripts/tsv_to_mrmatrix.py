@@ -54,13 +54,13 @@ def parse(input_handle, output_hdf5, height, width,
     tile_size = 256
     limit = max(height, width)
     max_zoom = math.ceil(math.log(limit / tile_size) / math.log(2))
-    max_width = tile_size * 2 ** max_zoom
+    max_dimension = tile_size * 2 ** max_zoom
 
     g = output_hdf5.create_group('resolutions')
     g1 = g.create_group('1')
-    val_ds = g1.create_dataset('values', (max_width, max_width),
+    val_ds = g1.create_dataset('values', (max_dimension, max_dimension),
                                dtype='f4', compression='lzf', fillvalue=np.nan)
-    nan_ds = g1.create_dataset('nan_values', (max_width, max_width),
+    nan_ds = g1.create_dataset('nan_values', (max_dimension, max_dimension),
                                dtype='f4', compression='lzf', fillvalue=0)
 
     start_time = time.time()
