@@ -20,9 +20,9 @@ def merge_gene_info(gene_infos, gene_info):
     merged = False
 
     for existing_gene_info in gene_infos[gene_info.geneId]:
-        if (existing_gene_info.chrName == gene_info.chrName and
-                existing_gene_info.txEnd > gene_info.txStart and
-                gene_info.txEnd > existing_gene_info.txStart):
+        if (existing_gene_info.chrName == gene_info.chrName
+                and existing_gene_info.txEnd > gene_info.txStart
+                and gene_info.txEnd > existing_gene_info.txStart):
 
             # overlapping genes, merge the exons of the second into the first
             existing_gene_info.txStart = min(existing_gene_info.txStart,

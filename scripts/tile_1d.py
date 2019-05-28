@@ -100,8 +100,8 @@ def main():
                 dsets[curr_zoom][positions[curr_zoom]                                 :positions[curr_zoom] + chunk_size] = curr_chunk
 
                 # aggregate and store aggregated values in the next zoom_level's data
-                data_buffers[curr_zoom +
-                             1] += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
+                data_buffers[curr_zoom + 1] \
+                  += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
                 data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
                 positions[curr_zoom] += chunk_size
                 data = data_buffers[curr_zoom + 1]
@@ -121,8 +121,8 @@ def main():
             print("len:", [len(d) for d in data_buffers])
 
             # aggregate and store aggregated values in the next zoom_level's data
-            data_buffers[curr_zoom +
-                         1] += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
+            data_buffers[curr_zoom + 1] \
+                += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
             data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
             positions[curr_zoom] += chunk_size
             data = data_buffers[curr_zoom + 1]
@@ -135,7 +135,7 @@ def main():
     # still need to take care of the last chunk
 
     data = np.array(data)
-    
+
     '''
     curr_zoom = 0
     dsets = []
