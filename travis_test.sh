@@ -12,8 +12,8 @@ start flake8
 flake8 --config=.flake8-ignore
 # TODO: Add more files to this list:
 flake8 test/**/*.py \
-       test/*.py
-# TODO: scripts/*.py
+       test/*.py \
+       scripts/*.py
 end flake8
 
 start download
