@@ -149,14 +149,6 @@ def bundled_tiles_wrapper_2d(tile_ids, tiles_function):
     return tile_values
 
 
-def random_tile(function):
-    zoom_level = random.randint(0, 10)
-    x_pos = random.randint(0, 2 ** zoom_level)
-    y_pos = random.randint(0, 2 ** zoom_level)
-
-    function(hg_points, zoom_level, x_pos, y_pos)
-
-
 def tile_bounds(tsinfo, z, x, y, width=1, height=1):
     '''
     Get the coordinate boundaries for the given tile.

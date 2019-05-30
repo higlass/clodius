@@ -138,9 +138,10 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
     (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(
         chromsizes_filename, assembly)
 
-    if method == 'maxtotal':
+    # TODO: "method" is not defined, so this would not work?
+    if method == 'maxtotal': # noqa: F821
         pass
-    if method == 'logsumexp':
+    if method == 'logsumexp': # noqa: F821
         def agg(x):
             a = x.T.reshape((x.shape[1], -1, 2))
             return sm.logsumexp(a, axis=2).T
@@ -1393,7 +1394,8 @@ def bigwig(
     filepath, output_file, assembly, chromosome, tile_size, chunk_size,
     chromsizes_filename, zoom_step
 ):
-    _bigwig(
+    # TODO: "_bigwig" is undefined
+    _bigwig( # noqa: F821
         filepath, chunk_size, zoom_step, tile_size, output_file, assembly,
         chromsizes_filename, chromosome
     )

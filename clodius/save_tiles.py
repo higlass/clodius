@@ -19,6 +19,7 @@ import slugid
 import sys
 import time
 import itertools
+import traceback
 
 from time import gmtime, strftime
 
@@ -222,7 +223,7 @@ class ColumnFileTileSaver(TileSaver):
                     column_file.write(self.bulk_txt.getvalue())
             except Exception as ex:
                 if self.log_file is not None:
-                    with open(log_file, 'a') as f:
+                    with open(self.log_file, 'a') as f:
                         f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
                         f.write(ex)
 
@@ -321,7 +322,7 @@ class ElasticSearchTileSaver(TileSaver):
                     "http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue(), self.print_status)
             except Exception as ex:
                 if self.log_file is not None:
-                    with open(log_file, 'a') as f:
+                    with open(self.log_file, 'a') as f:
                         f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
                         f.write(ex)
 
