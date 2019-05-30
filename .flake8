@@ -1,4 +1,7 @@
 [flake8]
+exclude =
+  src/*
+  src/**/*
 
 ignore =
   E501 # line too long
