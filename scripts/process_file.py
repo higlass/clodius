@@ -3,12 +3,11 @@ from __future__ import print_function
 import argparse
 import os.path as op
 import subprocess as sp
-import sys
 import tempfile as tf
 
 
 def main():
-    usage = """
+    """
     python make_tiles.py input_file
 
     Create tiles for all of the entries in the JSON file.

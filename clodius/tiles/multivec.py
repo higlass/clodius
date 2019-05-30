@@ -59,10 +59,10 @@ def get_single_tile(filename, tile_pos):
 
     chromsizes = list(zip(f['chroms']['name'], f['chroms']['length']))
 
-    #dense = f['resolutions'][str(resolution)][tile_start:tile_end]
+    # dense = f['resolutions'][str(resolution)][tile_start:tile_end]
     dense = get_tile(f, chromsizes, resolution,
                      tile_start, tile_end, tsinfo['shape'])
-    #print("dense.shape", dense.shape)
+    # print("dense.shape", dense.shape)
 
     if len(dense) < tsinfo['tile_size']:
         # if there aren't enough rows to fill this tile, add some zeros
@@ -125,7 +125,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
     for cid, start, end in abs2genomic([c[1] for c in chromsizes], start_pos, end_pos):
         n_bins = int(np.ceil((end - start) / binsize))
         total_length += end - start
-        #print('cid', cid, start, end, 'tl:', total_length)
+        # print('cid', cid, start, end, 'tl:', total_length)
 
         try:
             t1 = time.time()
@@ -144,21 +144,21 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
             if start_pos >= end_pos:
                 continue
 
-            #print("start:", start, "end", end)
-            #print("sp", start_pos * binsize, end_pos * binsize)
-            #print('current_data_position:', current_data_position)
-            #print('current_binned_data_position:', current_binned_data_position)
-            #print('binsize:', binsize, 'resolution:', resolution)
+            # print("start:", start, "end", end)
+            # print("sp", start_pos * binsize, end_pos * binsize)
+            # print('current_data_position:', current_data_position)
+            # print('current_binned_data_position:', current_binned_data_position)
+            # print('binsize:', binsize, 'resolution:', resolution)
 
             '''
             if start_pos == end_pos:
                 if current_data_position - current_binned_data_position > 0:
                     # adding this data as a single bin even though it's not large
                     # enough to cover one bin
-                    #print('catching up')
+                    # print('catching up')
                     end_pos += 1
                 else:
-                    #print('data smaller than the bin size', start, end, binsize)
+                    # print('data smaller than the bin size', start, end, binsize)
                     continue
             '''
 
@@ -172,7 +172,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
             # drop the very last bin if it is smaller than the binsize
             '''
             if len(x) > 1 and end == clen and clen % binsize != 0:
-                #print("dropping")
+                # print("dropping")
                 x = x[:-1]
             '''
 

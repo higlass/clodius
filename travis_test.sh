@@ -11,9 +11,9 @@ start flake8
 # TODO: Remove the special cases from this file:
 flake8 --config=.flake8-ignore
 # TODO: Add more files to this list:
-flake8 test/tsv_to_mrmatrix_test.py \
-       scripts/tsv_to_mrmatrix.py \
-       test/*/*.py
+flake8 test/**/*.py \
+       test/*.py \
+       scripts/*.py
 end flake8
 
 start download

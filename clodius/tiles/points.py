@@ -21,8 +21,8 @@ def format_data(tiles):
     new_out = []
 
     for tile_id, tile_data in tiles:
-        #print("len:", len(tile_data))
-        #tile_data['data'] = tile_data['gene1']
+        # print("len:", len(tile_data))
+        # tile_data['data'] = tile_data['gene1']
         new_out += [(tile_id, json.loads(tile_data.to_json(orient='records')))]
 
     return new_out
@@ -31,7 +31,7 @@ def format_data(tiles):
 def tiles(df, x_column, y_column, tileset_info, z, x, y, width=1, height=1):
     [minx, miny, maxx, maxy] = hgut.tile_bounds(
         tileset_info, z, x, y, width, height)
-    #print("x", x, 'y', y, width, height)
+    # print("x", x, 'y', y, width, height)
     max_per_tile = 30
 
     # get the entire region
@@ -45,7 +45,7 @@ def tiles(df, x_column, y_column, tileset_info, z, x, y, width=1, height=1):
     if width > 1 or height > 1:
         for i in range(width):
             for j in range(height):
-                #print("i:", i, "j:", j)
+                # print("i:", i, "j:", j)
                 [minx, miny, maxx, maxy] = hgut.tile_bounds(
                     tileset_info, z, x + i, y + j)
 

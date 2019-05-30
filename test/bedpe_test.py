@@ -31,7 +31,7 @@ def test_clodius_aggregate_bedpe():
             '--has-header',
             '--assembly', 'b37'])
 
-    #print('output:', result.output, result)
+    # print('output:', result.output, result)
     assert(result.exit_code == 0)
     """
 

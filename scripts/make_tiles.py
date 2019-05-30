@@ -16,20 +16,18 @@ import functools as ft
 import json
 import os.path as op
 import sys
-import time
 
 
 def main():
-    usage = """
+    """
     python make_tiles.py input_file
 
     Create tiles for all of the entries in the JSON file.
     """
-    num_args = 1
     parser = argparse.ArgumentParser()
 
-    #parser.add_argument('-o', '--options', dest='some_option', default='yo', help="Place holder for a real option", type='str')
-    #parser.add_argument('-u', '--useless', dest='uselesss', default=False, action='store_true', help='Another useless option')
+    # parser.add_argument('-o', '--options', dest='some_option', default='yo', help="Place holder for a real option", type='str')
+    # parser.add_argument('-u', '--useless', dest='uselesss', default=False, action='store_true', help='Another useless option')
     parser.add_argument('input_file')
     parser.add_argument('-b', '--bins-per-dimension',
                         help='The number of bins to divide the data into',
@@ -155,8 +153,6 @@ def main():
     else:
         mins = [float(p) for p in args.min_pos.split(',')]
         maxs = [float(p) for p in args.max_pos.split(',')]
-
-    max_width = max([b - a for (a, b) in zip(mins, maxs)])
 
     print("start time:", strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     entries = cti.load_entries_from_file(sc, args.input_file, args.column_names,

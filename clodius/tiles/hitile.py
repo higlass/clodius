@@ -95,7 +95,7 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
         max_data = da.coarsen(np.max, max_data, {0: zoom_factor})
 
         # reshape( (math.ceil(len(old_data) / zoom_factor), zoom_factor)).sum(axis=1)
-        #sys.stdout.write(' done\n')
+        # sys.stdout.write(' done\n')
         # sys.stdout.flush()
 
         '''
@@ -179,14 +179,14 @@ def get_data(hdf_file, z, x):
     start_pos = int((x * 2 ** zoom_offset * tile_size))
     end_pos = int(start_pos + total_in_length)
 
-    #print("max_position:", max_position)
+    # print("max_position:", max_position)
     max_position = int(max_position / 2 ** next_stored_zoom)
-    #print("new max_position:", max_position)
+    # print("new max_position:", max_position)
 
-    #print("start_pos:", start_pos)
-    #print("end_pos:", end_pos)
-    #print("next_stored_zoom", next_stored_zoom)
-    #print("max_position:", int(max_position))
+    # print("start_pos:", start_pos)
+    # print("end_pos:", end_pos)
+    # print("next_stored_zoom", next_stored_zoom)
+    # print("max_position:", int(max_position))
 
     f = hdf_file['values_' + str(int(next_stored_zoom))]
     f_min = hdf_file['mins_' + str(int(next_stored_zoom))]
@@ -223,10 +223,10 @@ def get_data(hdf_file, z, x):
         min_array = aggregate_min(f_min[start_pos:end_pos], int(num_to_agg))
         max_array = aggregate_max(f_max[start_pos:end_pos], int(num_to_agg))
 
-    #print("ret_array:", f[start_pos:end_pos])
-    #print('ret_array:', ret_array)
+    # print("ret_array:", f[start_pos:end_pos])
+    # print('ret_array:', ret_array)
 
-    #print('nansum', np.nansum(ret_array))
+    # print('nansum', np.nansum(ret_array))
 
     # check to see if we counted the number of NaN values in the given
     # interval

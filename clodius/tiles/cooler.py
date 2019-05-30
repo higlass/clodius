@@ -277,11 +277,11 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
     start2 = y_pos * tile_size
     end2 = (y_pos + y_width) * tile_size
 
-    #print("resolution:", resolution)
-    #print("tile_size:", tile_size)
-    #print("transform_type:", transform_type);
-    #print('start1:', start1, end1)
-    #print('start2:', start2, end2)
+    # print("resolution:", resolution)
+    # print("tile_size:", tile_size)
+    # print("transform_type:", transform_type);
+    # print('start1:', start1, end1)
+    # print('start2:', start2, end2)
 
     c = cooler.Cooler(hdf_for_resolution)
     (chroms, chrom_sizes, chrom_cum_lengths) = get_chromosome_names_cumul_lengths(c)
@@ -293,9 +293,9 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
         transform_type, resolution=resolution
     )
 
-    #print('start1', start1, 'end1', end1, 'weight', len(weight1), 'end1 - start1 / tile_size', (end1 - start1) / resolution)
+    # print('start1', start1, 'end1', end1, 'weight', len(weight1), 'end1 - start1 / tile_size', (end1 - start1) / resolution)
 
-    #print("data:", data)
+    # print("data:", data)
 
     # print("x_width:", x_width)
     # print("y_width:", y_width)
@@ -315,11 +315,11 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
             j0 = y_offset * BINS_PER_TILE
             j1 = j0 + BINS_PER_TILE + 1
 
-            #print("resolution:", resolution)
-            #print("tile_size", tile_size)
-            #print("x_pos:", x_pos, "x_offset", x_offset)
-            #print("start1", start1, 'end1', end1)
-            #print("start2", start2, 'end2', end2)
+            # print("resolution:", resolution)
+            # print("tile_size", tile_size)
+            # print("x_pos:", x_pos, "x_offset", x_offset)
+            # print("start1", start1, 'end1', end1)
+            # print("start2", start2, 'end2', end2)
 
             df = data[data['genome_start1'] >= start1]
             df = df[df['genome_start1'] < end1]
@@ -371,8 +371,8 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
                 out[:, bend1] = np.nan
                 out[bend2, :] = np.nan
 
-            #print('sum(isnan1)', isnan1-1)
-            #print('out.ravel()', sum(np.isnan(out.ravel())), len(out.ravel()))
+            # print('sum(isnan1)', isnan1-1)
+            # print('out.ravel()', sum(np.isnan(out.ravel())), len(out.ravel()))
             data_by_tilepos[(x_pos + x_offset, y_pos + y_offset)] = out.ravel()
 
     return data_by_tilepos

@@ -116,7 +116,7 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx=1, numy=1):
     MAX_ROWS = 25
     for r in all_rows:
         # fields = r[6].split('\t')
-        #print('fields', sorted([fields[0], fields[3]]), r[5])
+        # print('fields', sorted([fields[0], fields[3]]), r[5])
         try:
             uid = r[7].decode('utf-8')
         except AttributeError:
