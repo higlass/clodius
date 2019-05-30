@@ -11,7 +11,6 @@ def tiles(array, z, x, importances=None, tile_size=16):
     max_zoom, x_start, x_end = ctn.max_zoom_and_data_bounds(
         array, z, x, tile_size)
     print("XXXX x_start:x_end", x_start, x_end)
-    max_width = tile_size * 2 ** max_zoom
 
     tile_array = array[x_start:x_end]
 
@@ -36,7 +35,6 @@ def tiles_wrapper(array, tile_ids, importances):
         if len(parts) < 3:
             raise IndexError("Not enough tile info present")
 
-        uid = parts[0]
         z = int(parts[1])
         x = int(parts[2])
 

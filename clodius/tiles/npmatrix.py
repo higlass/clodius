@@ -12,7 +12,6 @@ def tiles_wrapper(grid, tile_ids):
         if len(parts) < 4:
             raise IndexError("Not enough tile info present")
 
-        uid = parts[0]
         z = int(parts[1])
         x = int(parts[3])
         y = int(parts[2])
@@ -88,8 +87,8 @@ def tiles(grid, z, x, y, nan_grid=None, bin_size=256):
 
     max_zoom = math.ceil(math.log(max_dim / bin_size) / math.log(2))
     max_zoom = 0 if max_zoom < 0 else max_zoom
-    max_width = 2 ** max_zoom * bin_size
 
+    # max_width = 2 ** max_zoom * bin_size
     # print("max_width:", max_width, 'bin_size:', bin_size, 'max_zoom', max_zoom)
 
     tile_width = 2 ** (max_zoom - z) * bin_size
