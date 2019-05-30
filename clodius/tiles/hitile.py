@@ -4,7 +4,6 @@ import math
 import numpy as np
 import os
 import os.path as op
-import sys
 
 
 def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function=np.sum):

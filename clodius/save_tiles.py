@@ -13,7 +13,6 @@ import numpy as np
 import os
 import os.path as op
 import queue
-import random
 import requests
 import signal
 import slugid

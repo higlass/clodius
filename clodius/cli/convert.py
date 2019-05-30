@@ -2,7 +2,6 @@ import click
 from . import cli
 import clodius.chromosomes as cch
 import clodius.multivec as cmv
-import gzip
 import h5py
 import math
 import negspy.coordinates as nc

@@ -1,9 +1,5 @@
-import math
 import numpy as np
-import clodius.tiles.format as ctf
 import clodius.tiles.npvector as ctn
-
-import json
 
 
 def tiles(array, z, x, importances=None, tile_size=16):

@@ -1,10 +1,4 @@
 from setuptools import setup, find_packages
-from distutils import sysconfig
-
-#from distutils.extension import Extension
-
-#from Cython.Distutils import build_ext
-#from Cython.Build import cythonize
 
 
 print("packages:", find_packages())

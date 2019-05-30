@@ -1,4 +1,3 @@
-import base64
 import collections as col
 import cooler
 import clodius.tiles.format as hgfo
