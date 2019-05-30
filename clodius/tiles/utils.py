@@ -116,11 +116,11 @@ def tiles_wrapper_2d(tile_ids, tiles_function):
 
 def bundled_tiles_wrapper_2d(tile_ids, tiles_function):
     '''
-    Bundle adjacent tile requests so that they can be 
-    processed concurrently. This is helpful for function 
-    that require scanning a dataset. It's faster to filter 
-    a large region and then break it down into individual 
-    tiles than to go over the entire dataset and filter 
+    Bundle adjacent tile requests so that they can be
+    processed concurrently. This is helpful for function
+    that require scanning a dataset. It's faster to filter
+    a large region and then break it down into individual
+    tiles than to go over the entire dataset and filter
     individual tiles multiple times.
     '''
     tile_values = []
@@ -171,9 +171,9 @@ def tile_bounds(tsinfo, z, x, y, width=1, height=1):
         The x position
     y: int
         The y position
-    width: int 
-        Return bounds for a region encompassing multiple tiles 
-    height: int 
+    width: int
+        Return bounds for a region encompassing multiple tiles
+    height: int
         Return bounds for a region encompassing multiple tiles
     '''
     min_pos = tsinfo['min_pos']

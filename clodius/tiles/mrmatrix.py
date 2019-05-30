@@ -4,7 +4,7 @@ def tileset_info(f, bounds=None):
     if 'min-pos' in f.attrs:
         min_pos = f.attrs['min-pos']
     else:
-        min_pos = [0,0]
+        min_pos = [0, 0]
 
     if 'max-pos' in f.attrs:
         max_pos = f.attrs['max-pos']
@@ -19,7 +19,7 @@ def tileset_info(f, bounds=None):
         'bins_per_dimension': 256,
     }
 
-def tiles(f, z,x,y):
+def tiles(f, z, x, y):
     '''
     Return tiles for the given region.
 

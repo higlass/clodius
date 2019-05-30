@@ -8,13 +8,13 @@ import h5py
 
 def csv_to_points(csv_file, output_file):
     '''
-    Convert a csv file containing points to a numpy array 
+    Convert a csv file containing points to a numpy array
     of [[x,y]] values.
 
     Parameters:
     -----------
-    csv_file: string 
-        The filename of the data file 
+    csv_file: string
+        The filename of the data file
 
     '''
     df = pd.read_table(csv_file, delimiter=',')
@@ -120,8 +120,8 @@ def filter_points(data, extent):
 
 def density_tiles(points_file, z, x, y, width=1, height=1):
     '''
-    Get a 2D histogram of the given region. If the height and 
-    width are specified, then we need to partition this into 
+    Get a 2D histogram of the given region. If the height and
+    width are specified, then we need to partition this into
     multiple returned tiles.
     '''
     returns = []
