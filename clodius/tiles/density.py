@@ -42,13 +42,6 @@ def csv_to_points(csv_file, output_file):
         dataset.attrs['max_zoom'] = max_zoom
         dataset.attrs['max_width'] = max_width
 
-    info = {
-        'min_pos': [min_x, min_y],
-        'max_pos': [min_y, max_y],
-        'max_zoom': max_zoom,
-        'max_width': max_width
-    }
-
     return df.reindex(columns=['x', 'y'])
 
 

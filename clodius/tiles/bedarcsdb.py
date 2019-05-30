@@ -23,7 +23,6 @@ def tiles(filepath, tile_ids):
 
     for tile_id in tile_ids:
         parts = tile_id.split('.')
-        uuid = parts[0]
         zoom = int(parts[1])
         xpos = int(parts[2])
 

@@ -70,7 +70,6 @@ def getData2(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
 
 
 def getData3(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
-    t1 = time.time()
     c = cooler_matrix['cooler']
 
     i0 = absCoord2bin(c, startPos1)

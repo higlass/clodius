@@ -309,11 +309,6 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
             start2 = (y_pos + y_offset) * tile_size
             end2 = (y_pos + y_offset + 1) * tile_size
 
-            i0 = x_offset * BINS_PER_TILE
-            i1 = i0 + BINS_PER_TILE + 1
-            j0 = y_offset * BINS_PER_TILE
-            j1 = j0 + BINS_PER_TILE + 1
-
             # print("resolution:", resolution)
             # print("tile_size", tile_size)
             # print("x_pos:", x_pos, "x_offset", x_offset)

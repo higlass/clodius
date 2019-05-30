@@ -10,7 +10,6 @@ def get_tileset_info(hdf_file):
     :param hdf_file: A file handle for an HDF5 file (h5py.File('...'))
     '''
     d = hdf_file['meta']
-    max_pox = d.attrs['max-length']
 
     if "min-pos" in d.attrs:
         min_pos = d.attrs['min-pos']

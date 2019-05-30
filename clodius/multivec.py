@@ -253,8 +253,8 @@ def create_multivec_multires(array_data, chromsizes,
             if chrom not in f['resolutions'][str(prev_resolution)]['values']:
                 continue
 
-            next_level_length = math.ceil(
-                len(f['resolutions'][str(prev_resolution)]['values'][chrom]) / 2)
+            # next_level_length = math.ceil(
+            #     len(f['resolutions'][str(prev_resolution)]['values'][chrom]) / 2)
 
             start = 0
 

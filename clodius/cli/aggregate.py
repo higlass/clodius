@@ -253,7 +253,7 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
             int(parts[to1_col])
             int(parts[from2_col])
             int(parts[to2_col])
-        except ValueError as ve:
+        except ValueError:
             error_str = (
                 "Couldn't convert one of the bedpe coordinates to an "
                 "integer. If the input file contains a header, make sure to "
@@ -486,7 +486,7 @@ def _bedfile(
         line_parts = line.strip().split(delimiter)
         try:
             dset += [line_to_np_array(line_parts)]
-        except IndexError as ie:
+        except IndexError:
             print("Invalid line:", line)
         header = map(
             str, list(range(1, len(line.strip().split(delimiter)) + 1)))
@@ -495,7 +495,7 @@ def _bedfile(
         line_parts = line.strip().split(delimiter)
         try:
             dset += [line_to_np_array(line_parts)]
-        except IndexError as ie:
+        except IndexError:
             print("Invalid line:", line)
 
     if chromosome is not None:
@@ -548,7 +548,7 @@ def _bedfile(
         header=header,
     )
 
-    max_width = tile_size * 2 ** max_zoom
+    # max_width = tile_size * 2 ** max_zoom
     uid_to_entry = {}
 
     intervals = []
@@ -658,7 +658,7 @@ def _bedfile(
                 # one extra question mark for the primary key
                 exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
 
-                ret = c.execute(
+                c.execute(
                     exec_statement,
                     # primary key, zoomLevel, startPos, endPos, chrOffset, line
                     (counter, curr_zoom,
@@ -674,7 +674,7 @@ def _bedfile(
                           value['endPos'] - value['startPos'])
 
                 exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
-                ret = c.execute(
+                c.execute(
                     exec_statement,
                     # add counter as a primary key
                     (counter, value['startPos'], value['endPos'])
@@ -1073,7 +1073,7 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
                 'geometry': json.dumps(feature['geometry']),
                 'properties': json.dumps(feature['properties']),
             })
-        except Exception as e:
+        except Exception:
             raise
 
     # this script stores data in a sqlite database

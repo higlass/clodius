@@ -1,7 +1,6 @@
 import h5py
 import math
 import numpy as np
-import time
 
 
 def abs2genomic(chromsizes, start_pos, end_pos):
@@ -42,9 +41,6 @@ def get_single_tile(filename, tile_pos):
     '''
     # t1 = time.time()
     tsinfo = tileset_info(filename)
-
-    t15 = time.time()
-
     f = h5py.File(filename, 'r')
 
     # print('tileset_info', tileset_info)
@@ -131,7 +127,6 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
             # t1 = time.time()
 
             chrom = chromsizes[cid][0]
-            clen = chromsizes[cid][1]
 
             offset = current_binned_data_position - current_data_position
             current_data_position += end - start
