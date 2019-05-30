@@ -65,6 +65,7 @@ def tiles(f, z, x, y):
     if x_pad > 0 or y_pad > 0:
         data = np.pad(
             data, ((0, x_pad), (0, y_pad)), 'constant',
-            constant_values = (np.nan, np.nan))
+            constant_values=(np.nan, np.nan)
+        )
 
     return data
