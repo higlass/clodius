@@ -39,7 +39,8 @@ def tiles(f, z, x, y):
     n_bins = tsinfo['bins_per_dimension']
 
     if z >= len(resolutions):
-        raise ValueError('Zoom level out of bounds:', z,
+        raise ValueError(
+            'Zoom level out of bounds:', z,
             "resolutions:", resolutions)
 
     tile_width = tsinfo['bins_per_dimension']
@@ -52,14 +53,16 @@ def tiles(f, z, x, y):
     tile_y_end = tile_y_start + n_bins
 
     mat = f['resolutions'][str(resolutions[z])]['values']
-    data = mat[tile_y_start:tile_y_end,
+    data = mat[
+        tile_y_start:tile_y_end,
         tile_x_start:tile_x_end]
 
     x_pad = n_bins - data.shape[0]
     y_pad = n_bins - data.shape[1]
 
     if x_pad > 0 or y_pad > 0:
-        data = np.pad(data, ((0, x_pad), (0, y_pad)), 'constant',
+        data = np.pad(
+            data, ((0, x_pad), (0, y_pad)), 'constant',
             constant_values = (np.nan, np.nan))
 
     return data
