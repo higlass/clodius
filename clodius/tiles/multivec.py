@@ -1,7 +1,6 @@
 import h5py
 import math
 import numpy as np
-import time
 
 
 def abs2genomic(chromsizes, start_pos, end_pos):
@@ -40,15 +39,12 @@ def get_single_tile(filename, tile_pos):
     tile_pos: (z, x)
         The zoom level and position of this tile
     '''
-    t1 = time.time()
+    # t1 = time.time()
     tsinfo = tileset_info(filename)
-
-    t15 = time.time()
-
     f = h5py.File(filename, 'r')
 
     # print('tileset_info', tileset_info)
-    t2 = time.time()
+    # t2 = time.time()
     # which resolution does this zoom level correspond to?
     resolution = tsinfo['resolutions'][tile_pos[0]]
     tile_size = tsinfo['tile_size']
@@ -70,8 +66,8 @@ def get_single_tile(filename, tile_pos):
                                             tsinfo['shape'][1]))])
 
     f.close()
-    t3 = time.time()
 
+    # t3 = time.time()
     # print("single time time: {:.2f} (tileset info: {:.2f}, open time: {:.2f})".format(t3 - t1, t15 - t1, t2 - t15))
 
     return dense.T
@@ -111,7 +107,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
     # print("length:", end_pos - start_pos)
     # print('shape:', shape)
 
-    t0 = time.time()
+    # t0 = time.time()
     arrays = []
     count = 0
 
@@ -128,10 +124,9 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
         # print('cid', cid, start, end, 'tl:', total_length)
 
         try:
-            t1 = time.time()
+            # t1 = time.time()
 
             chrom = chromsizes[cid][0]
-            clen = chromsizes[cid][1]
 
             offset = current_binned_data_position - current_data_position
             current_data_position += end - start
@@ -180,8 +175,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
                 num_added += len(x)
                 # print('cid:', cid, end-start, total_length, 'num_added:', num_added, 'x:', sum(x))
 
-            t2 = time.time()
-
+            # t2 = time.time()
             # print("time to fetch {}: {}".format(chrom, t2 - t1))
         except IndexError:
             # beyond the range of the available chromosomes
@@ -194,7 +188,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
 
     # print("total_length:", total_length)
     # print('arrays:', len(np.concatenate(arrays)))
-    t3 = time.time()
+    # t3 = time.time()
     # print("total fetch time:", t3 - t0)
 
     return np.concatenate(arrays)[:shape[0]]
@@ -216,9 +210,9 @@ def tileset_info(filename):
       A dictionary containing the information describing
       this dataset
     '''
-    t1 = time.time()
+    # t1 = time.time()
     f = h5py.File(filename, 'r')
-    t2 = time.time()
+    # t2 = time.time()
     # a sorted list of resolutions, lowest to highest
     # awkward to write because a the numbers representing resolution
     # are datapoints / pixel so lower resolution is actually a higher
@@ -240,7 +234,7 @@ def tileset_info(filename):
                  ['values'][first_chrom].shape)
     shape[0] = tile_size
 
-    t3 = time.time()
+    # t3 = time.time()
     # print("tileset info time:", t3 - t2)
 
     tileset_info = {

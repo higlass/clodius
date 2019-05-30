@@ -10,7 +10,6 @@ def get_tileset_info(hdf_file):
     :param hdf_file: A file handle for an HDF5 file (h5py.File('...'))
     '''
     d = hdf_file['meta']
-    max_pox = d.attrs['max-length']
 
     if "min-pos" in d.attrs:
         min_pos = d.attrs['min-pos']
@@ -124,9 +123,9 @@ def get_discrete_data(hdf_file, z, x):
 
     d = hdf_file['meta']
     tile_size = int(d.attrs['tile-size'])
-    max_length = int(d.attrs['max-length'])
+    # max_length = int(d.attrs['max-length'])
     max_zoom = int(d.attrs['max-zoom'])
-    max_width = tile_size * 2 ** max_zoom
+    # max_width = tile_size * 2 ** max_zoom
 
     # f is an array of data (e.g. [['34','53', 'x'],['48','57', 'y']] )
     # where the first two columns indicate the start and end points
@@ -173,14 +172,7 @@ def get_data(hdf_file, z, x):
 
     tile_size = int(d.attrs['tile-size'])
     zoom_step = int(d.attrs['zoom-step'])
-    max_length = int(d.attrs['max-length'])
     max_zoom = int(d.attrs['max-zoom'])
-
-    if 'min-pos' in d.attrs:
-        min_pos = d.attrs['min-pos']
-    else:
-        min_pos = 0
-
     max_width = tile_size * 2 ** max_zoom
 
     if 'max-position' in d.attrs:
@@ -189,7 +181,7 @@ def get_data(hdf_file, z, x):
         max_position = max_width
 
     rz = max_zoom - z
-    tile_width = max_width / 2**z
+    # tile_width = max_width / 2**z
 
     # because we only store some a subsection of the zoom levels
     next_stored_zoom = zoom_step * math.floor(rz / zoom_step)

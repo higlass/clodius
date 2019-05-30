@@ -36,8 +36,6 @@ def partition_by_adjacent_tiles(tile_ids, dimension=2):
 
         for tile_id_list in tile_id_lists:
             # iterate over each group of adjacent tiles
-            has_close_tile = False
-
             for ct_tile_id in tile_id_list:
                 ct_tile_id_parts = ct_tile_id.split('.')
                 ct_tile_position = list(
@@ -105,7 +103,6 @@ def tiles_wrapper_2d(tile_ids, tiles_function):
         if len(parts) < 4:
             raise IndexError("Not enough tile info present")
 
-        uid = parts[0]
         z, x, y = map(int, [parts[1], parts[2], parts[3]])
 
         tile_values += [(tile_id,

@@ -96,10 +96,10 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx):
             ):
                 # add the position offset to the returned values
                 new_rows[i] += [
-                    {'xStart': r[0],
-                     'xEnd': r[1],
-                     'yStart': r[2],
-                     'yEnd': r[3],
+                    {'xStart': x_start,
+                     'xEnd': x_end,
+                     'yStart': y_start,
+                     'yEnd': y_end,
                      'chrOffset': r[4],
                      'importance': r[5],
                      'uid': uid,

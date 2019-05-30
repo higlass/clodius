@@ -266,7 +266,6 @@ class ElasticSearchTileSaver(TileSaver):
                 # sparse values are stored as the following:
                 # value, # of positions it's found in, list of the positions
                 poss = sorted(poss)
-                dim_values = []
                 if len(self.initial_value) == 1:
                     value_xs_ys += [float(value)]
                 else:

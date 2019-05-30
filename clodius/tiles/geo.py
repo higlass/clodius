@@ -153,13 +153,13 @@ def get_tiles(db_file, zoom, x, y, width=1, height=1):
 
         try:
             geometry = json.loads(r[6])
-        except Exception as e:
+        except Exception:
             geometry = None
             pass
 
         try:
             properties = json.loads(r[7])
-        except Exception as e:
+        except Exception:
             properties = None
             pass
 

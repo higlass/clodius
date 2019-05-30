@@ -12,7 +12,6 @@ def tiles_wrapper(array, tile_ids, not_nan_array=None):
         if len(parts) < 3:
             raise IndexError("Not enough tile info present")
 
-        uid = parts[0]
         z = int(parts[1])
         x = int(parts[2])
 
@@ -78,8 +77,8 @@ def max_zoom_and_data_bounds(array, z, x, bin_size):
 
     max_zoom = math.ceil(math.log(max_dim / bin_size) / math.log(2))
     max_zoom = 0 if max_zoom < 0 else max_zoom
-    max_width = 2 ** max_zoom * bin_size
 
+    # max_width = 2 ** max_zoom * bin_size
     # print("max_width:", max_width, 'bin_size:', bin_size, 'max_zoom', max_zoom)
 
     tile_width = 2 ** (max_zoom - z) * bin_size
@@ -130,7 +129,6 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     a = np.pad(data, ((0, divisible_x_pad),), 'constant',
                constant_values=(np.nan,))
 
-    b = np.nansum(a.reshape((-1, num_to_sum)), axis=1)
     ret_array = np.nansum(a.reshape((-1, num_to_sum)), axis=1)
 
     # print('ret_array:', len(ret_array))
