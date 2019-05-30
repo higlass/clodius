@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def tileset_info(f, bounds=None):
     if 'min-pos' in f.attrs:
         min_pos = f.attrs['min-pos']
@@ -18,6 +19,7 @@ def tileset_info(f, bounds=None):
         'mirror_tiles': 'false',
         'bins_per_dimension': 256,
     }
+
 
 def tiles(f, z, x, y):
     '''
