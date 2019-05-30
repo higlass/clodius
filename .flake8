@@ -1,5 +1,11 @@
 [flake8]
+exclude =
+  src/*
+  src/**/*
 
 ignore =
   E501 # line too long
   E722 # do not use bare 'except'
+  W503 # line break before binary operator
+  W504 # line break after binary operator
+  F841 # local variable '...' is assigned to but never used -- TODO: reenable

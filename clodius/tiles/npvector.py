@@ -62,7 +62,7 @@ def tileset_info(array, bounds=None, bins_per_dimension=1024):
 
 def max_zoom_and_data_bounds(array, z, x, bin_size):
     '''
-    Return the maximum zoom level and data corresponding to the 
+    Return the maximum zoom level and data corresponding to the
     zoom level and position of the array.
 
     Parameters

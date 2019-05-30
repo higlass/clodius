@@ -80,7 +80,7 @@ def get_single_tile(filename, tile_pos):
 def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
     '''
     Get the tile value given the start and end positions and
-    chromosome positions. 
+    chromosome positions.
 
     Drop bins at the ends of chromosomes if those bins aren't
     full.

@@ -4,7 +4,6 @@ import math
 import numpy as np
 import os
 import os.path as op
-import sys
 
 
 def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function=np.sum):
@@ -204,7 +203,8 @@ def get_data(hdf_file, z, x):
         # everything should be nan
         ret_array = aggregate(a, int(num_to_agg))
         min_array = aggregate_min(a_min, int(num_to_agg))
-        max_array = aggregate_max(a_max, int(num_to_agg))
+        # In the line below, "a_max" is undefined, so this would not work:
+        # max_array = aggregate_max(a_max, int(num_to_agg))
     elif start_pos < max_position and max_position < end_pos:
         a = f[start_pos:end_pos][:]
         a[max_position + 1:end_pos] = np.nan
@@ -259,9 +259,9 @@ def tileset_info(hitile_path):
 
     Returns
     -------
-    tileset_info: {'min_pos': [], 
-                    'max_pos': [], 
-                    'tile_size': 1024, 
+    tileset_info: {'min_pos': [],
+                    'max_pos': [],
+                    'tile_size': 1024,
                     'max_zoom': 7
                     }
     '''

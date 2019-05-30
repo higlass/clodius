@@ -1,31 +1,26 @@
 from setuptools import setup, find_packages
-from distutils import sysconfig
-
-#from distutils.extension import Extension
-
-#from Cython.Distutils import build_ext
-#from Cython.Build import cythonize
 
 
 print("packages:", find_packages())
 
 setup_requires = [
-        'numpy',
-        ]
+    'numpy',
+]
 
 install_requires = [
-        'numpy',
-        'negspy',
-        'pysam',
-        'dask',
-        'requests',
-        'h5py',
-        'pandas',
-        'slugid',
-        'sortedcontainers',
-        'cooler>=0.8.0',
-        'pybbi==0.2.0',
-        'Click']
+    'numpy',
+    'negspy',
+    'pysam',
+    'dask',
+    'requests',
+    'h5py',
+    'pandas',
+    'slugid',
+    'sortedcontainers',
+    'cooler>=0.8.0',
+    'pybbi==0.2.0',
+    'Click'
+]
 
 setup(
     name='clodius',
@@ -42,7 +37,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-                'clodius = clodius.cli.aggregate:cli'
-            ]
-        }
+            'clodius = clodius.cli.aggregate:cli'
+        ]
+    }
 )

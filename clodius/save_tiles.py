@@ -13,13 +13,13 @@ import numpy as np
 import os
 import os.path as op
 import queue
-import random
 import requests
 import signal
 import slugid
 import sys
 import time
 import itertools
+import traceback
 
 from time import gmtime, strftime
 
@@ -201,7 +201,7 @@ class ColumnFileTileSaver(TileSaver):
 
         # [[1.0, [[78.0, 123.0], [64.0, 153.0]]]]
 
-        if val["tile_id"] is "tileset_info":
+        if val["tile_id"] == "tileset_info":
             self.bulk_txt.write(val["tile_id"] + "\t" +
                                 "1" + "\t" + "1" + "\t")
         else:
@@ -223,7 +223,7 @@ class ColumnFileTileSaver(TileSaver):
                     column_file.write(self.bulk_txt.getvalue())
             except Exception as ex:
                 if self.log_file is not None:
-                    with open(log_file, 'a') as f:
+                    with open(self.log_file, 'a') as f:
                         f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
                         f.write(ex)
 
@@ -322,7 +322,7 @@ class ElasticSearchTileSaver(TileSaver):
                     "http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue(), self.print_status)
             except Exception as ex:
                 if self.log_file is not None:
-                    with open(log_file, 'a') as f:
+                    with open(self.log_file, 'a') as f:
                         f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
                         f.write(ex)
 

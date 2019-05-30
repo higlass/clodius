@@ -2,7 +2,6 @@ import click
 from . import cli
 import clodius.chromosomes as cch
 import clodius.multivec as cmv
-import gzip
 import h5py
 import math
 import negspy.coordinates as nc
@@ -174,7 +173,7 @@ def _bedgraph_to_multivec(
                                     starting_resolution, has_header, chunk_size)
         elif format == 'states':
             assert(
-                row_infos != None), "A row_infos file must be provided for --format = 'states' "
+                row_infos is not None), "A row_infos file must be provided for --format = 'states' "
             states_names = [lne.decode('utf8').split('\t')[0]
                             for lne in row_infos]
             states_dic = {states_names[x]: x for x in range(len(row_infos))}

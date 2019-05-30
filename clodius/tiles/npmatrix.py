@@ -134,7 +134,10 @@ def tiles(grid, z, x, y, nan_grid=None, bin_size=256):
     if nan_grid is not None:
         # print("normalizing")
         # we want to calculate the means of the data points
-        not_nan_data = not_nan_grid[x_start:x_end, y_start:y_end]
+
+        # NOTE: In the line below, "nan_grid" was originally "not_nan_grid",
+        # which is undefined. This is my best guess of the desired behavior.
+        not_nan_data = nan_grid[x_start:x_end, y_start:y_end]
         na = np.pad(not_nan_data, ((0, divisible_x_pad), (0, divisible_y_pad)), 'constant',
                     constant_values=(np.nan, np.nan))
         nb = np.nansum(na.reshape((na.shape[1], -1, num_to_sum)), axis=2)

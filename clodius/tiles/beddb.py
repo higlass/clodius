@@ -1,4 +1,3 @@
-import collections as col
 import math
 import sqlite3
 
