@@ -198,7 +198,7 @@ def create_multivec_multires(array_data, chromsizes,
 
     # add the data
     for chrom, length in zip(chroms, lengths):
-        if not chrom in array_data:
+        if chrom not in array_data:
             print("Missing chrom {} in input file".format(chrom), file=sys.stderr)
             continue
 

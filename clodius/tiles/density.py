@@ -2,7 +2,6 @@ import clodius.tiles.format as hgfo
 import pandas as pd
 
 import numpy as np
-import pandas as pd
 import h5py
 
 

@@ -201,7 +201,7 @@ class ColumnFileTileSaver(TileSaver):
 
         # [[1.0, [[78.0, 123.0], [64.0, 153.0]]]]
 
-        if val["tile_id"] is "tileset_info":
+        if val["tile_id"] == "tileset_info":
             self.bulk_txt.write(val["tile_id"] + "\t" +
                                 "1" + "\t" + "1" + "\t")
         else:
