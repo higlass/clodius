@@ -1,10 +1,24 @@
 import random
+import math
 import numpy as np
 import pysam
 
-def sample_reads(samfile, num_entries=256, entry_length=10000, 
-        start_pos=None, 
-        end_pos=None,
+def abs2genomic(chromsizes, start_pos, end_pos):
+    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
+    cid_lo, cid_hi = np.searchsorted(abs_chrom_offsets,
+                                     [start_pos, end_pos],
+                                     side='right') - 1
+    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
+    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
+    start = rel_pos_lo
+    for cid in range(cid_lo, cid_hi):
+        yield cid, start, chromsizes[cid]
+        start = 0
+    yield cid_hi, start, rel_pos_hi
+
+def load_reads(samfile, 
+        start_pos, 
+        end_pos,
         chrom_order=None):
     '''
     Sample reads from the specified region, assuming that the chromosomes
@@ -14,10 +28,6 @@ def sample_reads(samfile, num_entries=256, entry_length=10000,
     -----------
     samfile: pysam.AlignmentFile
         A pysam entry into an indexed bam file
-    num_entries: int
-        The number of reads to sample
-    entry_length: int
-        The number of base pairs to sample in this file
     start_pos: int
         The start position of the sampled region
     end_pos: int
@@ -30,54 +40,34 @@ def sample_reads(samfile, num_entries=256, entry_length=10000,
     reads: [read1, read2...]
         The list of in the sampled regions
     '''
-
     total_length = sum(samfile.lengths)
     #print("tl:", total_length, np.cumsum(np.array(samfile.lengths)))
     
-    if start_pos is None:
-        start_pos = 1
-    if end_pos is None:
-        end_pos = total_length
-    
-    # limit the total length by the number of bases that we're going
-    # to fetch
-    poss = [int(i) for i in 
-            np.linspace(start_pos, end_pos - entry_length, num_entries)]
-
     # if chromorder is not None...
     # specify the chromosome order for the fetched reads
     
-    lengths = []
-    cum_seq_lengths = np.cumsum(np.array(samfile.lengths))
+    references = np.array(samfile.references)
+    lengths = np.array(samfile.lengths)
+
+    if chrom_order:
+        chrom_order = np.array(chrom_order)
+        chrom_order_ixs = np.nonzero(
+            np.in1d(references, chrom_order)
+        )
+        lengths = lengths[chrom_order_ixs]
+
     results = []
 
-    for pos in poss:
-        #print("pos1:", pos)
-        #print('cum_seq_lengths', cum_seq_lengths)
-        fnz = np.flatnonzero(cum_seq_lengths >= pos)
-
-        if len(fnz) == 0:
-            continue
-
-        #print('fnz:', fnz)
-        seq_num = fnz[0]
-        seq_name = samfile.references[seq_num]
-        #print("seq_name:", seq_name)
-        cname = '{}'.format(seq_name)
-        
-        #print('pos:', pos)
-        #print('cum_seq_lengths[seq_num]', cum_seq_lengths[seq_num])
-        if seq_num > 0:
-            pos = pos - cum_seq_lengths[seq_num-1]
-        #print("seq_name:", seq_name, 'pos:', pos )
-        
-        reads = samfile.fetch(cname, pos, pos + entry_length)
+    for cid, start, end in abs2genomic(lengths, start_pos, end_pos):
+        seq_name = f'{references[cid]}'
+        reads = samfile.fetch(seq_name, start, end)
 
         #print('reads:', reads)
         for read in reads:
             query_seq = read.query_sequence
 
-            differences = []
+            differences = []    
+
             try:
                 for counter, (qpos, rpos, ref_base) in enumerate(read.get_aligned_pairs(with_seq=True)):
                     # inferred from the pysam source code:
@@ -90,37 +80,21 @@ def sample_reads(samfile, num_entries=256, entry_length=10000,
                     elif qpos is None:
                         differences += [(counter, 'D')]
                     elif ref_base.islower():
-                        differences += [(qpos, query_seq[qpos])]
+                        differences += [(qpos, query_seq[qpos], ref_base)]
             except ValueError as ve:
                 # probably lacked an MD string
                 pass
 
-            results += [ [
+            results += [[
                     read.reference_id,
                     read.reference_start,
                     '-' if read.is_reverse else '+',
                     read.rlen,
                     differences
-                    ]]
-
-            '''
-            print('read:', read)
-            print("dir", dir(read))
-            print(read.reference_id)
-            print(read.reference_start)
-            print(read.rlen)
-            print(read.get_tag('MD'))
-            print(read.get_reference_sequence())
-            print(read.query_sequence)
-            print(read.get_aligned_pairs(with_seq=True))
-            '''
-            # results += [len(list(reads))]
-        
-        #samfile.count_coverage(cname, pos, pos + entry_length)
-        
+                ]]
     return results
 
-def tileset_info(tileset):
+def tileset_info(filename):
     '''
     Get the tileset info for a bam file
 
@@ -137,12 +111,11 @@ def tileset_info(tileset):
                     'max_zoom': 7
                     }
     '''
-    samfile = pysam.AlignmentFile(tut.get_datapath(tileset.datafile.url))
+    samfile = pysam.AlignmentFile(filename)
     total_length = sum(samfile.lengths)
 
     tile_size = 256
     max_zoom = math.ceil(math.log(total_length / tile_size) / math.log(2))
-    print("max_zoom:", max_zoom)
 
     tileset_info = {
         'min_pos': [0],
@@ -154,7 +127,7 @@ def tileset_info(tileset):
 
     return tileset_info
 
-def tiles(tileset, tile_ids):
+def tiles(filename, tile_ids):
     '''
     Generate tiles from a bigwig file.
 
@@ -172,22 +145,18 @@ def tiles(tileset, tile_ids):
         A list of tile_id, tile_data tuples
     '''
     generated_tiles = []
-    tileset_info = generate_bam_tileset_info(tileset)
-    samfile = pysam.AlignmentFile(tut.get_datapath(tileset.datafile.url))
+    tsinfo = tileset_info(filename)
+    samfile = pysam.AlignmentFile(filename)
 
     for tile_id in tile_ids:
         tile_id_parts = tile_id.split('.')
         tile_position = list(map(int, tile_id_parts[1:3]))
 
-        print('max_width', tileset_info['max_width'])
-        print("tile_position:", tile_position)
-        tile_width = tileset_info['max_width'] / 2 ** int(tile_position[0])
-        print("tile_width:", tile_width)
-
+        tile_width = tsinfo['max_width'] / 2 ** int(tile_position[0])
         start_pos = int(tile_position[1]) * tile_width
         end_pos = start_pos + tile_width
 
-        tile_value = tbf.sample_reads(samfile, start_pos = start_pos, end_pos = end_pos)
+        tile_value = load_reads(samfile, start_pos = start_pos, end_pos = end_pos)
         generated_tiles += [(tile_id, tile_value)]
 
     return generated_tiles
