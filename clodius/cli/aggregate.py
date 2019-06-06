@@ -164,8 +164,8 @@ def _bedpe(filepath, output_file,
     assembly, importance_column, has_header,
     max_per_tile, tile_size, chromosome=None,
         chromsizes_filename=None,
-        chr1_col=0, from1_col=1, to1_col=2,
-        chr2_col=3, from2_col=4, to2_col=5,
+        chr1_col=1, from1_col=2, to1_col=3,
+        chr2_col=4, from2_col=5, to2_col=6,
         max_zoom=None):
     print('chromsizes_filename', chromsizes_filename)
     print('output_file:', output_file)

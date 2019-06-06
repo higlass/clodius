@@ -49,3 +49,21 @@ def test_clodius_aggregate_bedpe():
 
     tileset_info = cdt.get_tileset_info(output_file)
     #print('tileset_info', tileset_info)
+    #
+def test_clodius_aggregate_bedpe2():
+    '''Use galGal6 chromsizes file'''
+    input_file = op.join(testdir, 'sample_data', 'galGal6.bed')
+    chromsizes_file = op.join(testdir, 'sample_data', 'galGal6.chrom.sizes')
+
+    output_file = '/tmp/blah.bed2ddb'
+    # the test is here to ensure that this doesn't raise an error
+    cca._bedpe(input_file, output_file, None,
+                chr1_col=1, chr2_col=1,
+                from1_col=2, from2_col=2,
+                to1_col=3, to2_col=3,
+               importance_column=None,
+               chromosome=None,
+               chromsizes_filename=chromsizes_file,
+               max_per_tile=100,
+               tile_size=1024,
+               has_header=True) 
