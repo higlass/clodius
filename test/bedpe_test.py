@@ -58,14 +58,13 @@ def test_clodius_aggregate_bedpe2():
     output_file = '/tmp/blah.bed2ddb'
     # the test is here to ensure that this doesn't raise an error
     cca._bedpe(input_file, output_file, None,
-                chr1_col=1, chr2_col=1,
-                from1_col=2, from2_col=2,
-                to1_col=3, to2_col=3,
+               chr1_col=1, chr2_col=1,
+               from1_col=2, from2_col=2,
+               to1_col=3, to2_col=3,
                importance_column=None,
                chromosome=None,
                chromsizes_filename=chromsizes_file,
                max_per_tile=100,
                tile_size=1024,
-               has_header=True) 
+               has_header=True)
     # TODO: make assertion
-
