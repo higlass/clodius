@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import argparse
 import clodius.cli.aggregate as cca
-import os
 import os.path as op
 import sys
 
@@ -88,9 +87,6 @@ def format_output_filename(input_file, filetype):
     :param input_file: String
     :param filetype: String
     """
-
-    input_file_basename = os.path.basename(input_file)
-
     file_extentions = {
         "gene_annotation": "bed",
         "hitile": "hitile",
