@@ -1,5 +1,6 @@
 import negspy.coordinates as nc
 
+
 def load_chromsizes(chromsizes_filename, assembly=None):
     '''
     Load a set of chromosomes from a file or using an assembly
@@ -16,7 +17,8 @@ def load_chromsizes(chromsizes_filename, assembly=None):
     if chromsizes_filename is not None:
         chrom_info = nc.get_chrominfo_from_file(chromsizes_filename)
         chrom_names = chrom_info.chrom_order
-        chrom_sizes = [chrom_info.chrom_lengths[c] for c in chrom_info.chrom_order]
+        chrom_sizes = [chrom_info.chrom_lengths[c]
+                       for c in chrom_info.chrom_order]
     else:
         if assembly is None:
             raise ValueError("No assembly or chromsizes specified")

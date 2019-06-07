@@ -8,14 +8,11 @@ import collections as col
 import math
 import negspy.coordinates as nc
 import numpy as np
-import os
-import os.path as op
 import sortedcontainers as sco
 import sys
 import time
 
 import multiprocessing as mpr
-import traceback
 
 sys.excepthook = cst.handle_exception
 
@@ -28,7 +25,6 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                  bins_per_dimension, tile_saver, expand_range, ignore_0, tileset_info, max_width,
                  triangular=False, max_queue_size=40000, print_status=False):
     active_tiles = col.defaultdict(sco.SortedList)
-    max_data_in_sparse = bins_per_dimension ** len(position_cols) // 5.
     tile_contents = col.defaultdict(lambda: col.defaultdict(
         lambda: col.defaultdict(ft.partial(default_tile, length=len(value_pos)))))
     smallest_width = max_width // (2 ** max_zoom)
@@ -54,8 +50,8 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
         calc_bin_poss = calculated_tile_bin_positions[tile_mod_pos]
 
         for bin_position, bin_value in tile_bins.items():
-            #old_abs_pos = [tp * bins_per_dimension + bp for (tp, bp) in zip(tile_position, bin_position)]
-            #new_bin_pos = tuple([int(op / 2) % bins_per_dimension for op in old_abs_pos])
+            # old_abs_pos = [tp * bins_per_dimension + bp for (tp, bp) in zip(tile_position, bin_position)]
+            # new_bin_pos = tuple([int(op / 2) % bins_per_dimension for op in old_abs_pos])
             # print "tile_position:", tile_position, bin_position
             '''
             for i in range(len(tile_position)):
@@ -69,13 +65,13 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             if calc_bin_pos != new_bin_pos:
                 print "Wrong calc_bin_pos!"
                 sys.exit(1)
-            #new_bin_pos = (0,)
+            # new_bin_pos = (0,)
             if zoom_level < 3:
                 print >>sys.stderr, "adding to next tile:", zoom_level-1, next_tile_position, "new_bin_pos:", new_bin_pos
             '''
             try:
                 new_tile_contents[calc_bin_poss[bin_position]] += bin_value
-                #print("ntc:", new_tile_contents[calc_bin_poss[bin_position]])
+                # print("ntc:", new_tile_contents[calc_bin_poss[bin_position]])
             except KeyError:
                 print("calc_bin_poss.keys():", calc_bin_poss.keys())
                 print("tile_mod_pos:", tile_mod_pos, tile_position)
@@ -122,7 +118,7 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
             entry_poss = [entry_pos]
             if expand_range is not None:
                 end_pos = int(line_parts[expand_range[1] - 1])
-                #print("ep", int(entry_pos[0]), end_pos -  int(entry_pos[0]) + 1)
+                # print("ep", int(entry_pos[0]), end_pos -  int(entry_pos[0]) + 1)
                 for i in range(int(entry_pos[0]), end_pos):
                     new_entry = entry_pos[::]
                     new_entry[0] = i
@@ -160,7 +156,6 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
                     '''
                     if active_tiles[zoom_level][0][0] < current_tile[0]:
                         tile_position = active_tiles[zoom_level][0]
-                        tile_value = tile_contents[zoom_level][tile_position]
                         tile_bins = tile_contents[zoom_level][tile_position]
 
                         # print "tile_bins:", zoom_level, tile_position, tile_bins
@@ -229,7 +224,6 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
     for zoom_level in range(0, max_zoom + 1)[::-1]:
         for tile_position in active_tiles[zoom_level]:
-            tile_value = tile_contents[zoom_level][tile_position]
             tile_bins = tile_contents[zoom_level][tile_position]
 
             q.put((zoom_level, tile_position, tile_bins))
@@ -249,15 +243,15 @@ def create_tiles(q, first_lines, input_source, position_cols, value_pos, max_zoo
 
 
 def main():
-    usage = """
+    """
     python make_tiles.py input_file
 
     Create tiles for all of the entries in the JSON file.
     """
     parser = argparse.ArgumentParser()
 
-    #parser.add_argument('-o', '--options', dest='some_option', default='yo', help="Place holder for a real option", type='str')
-    #parser.add_argument('-u', '--useless', dest='uselesss', default=False, action='store_true', help='Another useless option')
+    # parser.add_argument('-o', '--options', dest='some_option', default='yo', help="Place holder for a real option", type='str')
+    # parser.add_argument('-u', '--useless', dest='uselesss', default=False, action='store_true', help='Another useless option')
     parser.add_argument('--min-pos',
                         help="The minimum range for the tiling")
     parser.add_argument('--max-pos',
@@ -290,7 +284,7 @@ def main():
     args = parser.parse_args()
 
     if args.resolution is None and args.max_zoom is None:
-        print >>sys.stderr, "One of --resolution and --max-zoom must be set"
+        print("One of --resolution and --max-zoom must be set", file=sys.stderr)
         sys.exit(1)
 
     first_line = sys.stdin.readline()
@@ -337,9 +331,8 @@ def main():
     else:
         max_zoom = args.max_zoom
 
-    #print("max_zoom:", max_zoom)
+    # print("max_zoom:", max_zoom)
     max_width = args.resolution * args.bins_per_dimension * 2 ** max_zoom
-    smallest_width = args.resolution * args.bins_per_dimension
 
     value_pos = args.value_pos
 
@@ -366,7 +359,7 @@ def main():
     print("maxs:", maxs, "max_zoom:", max_zoom, "max_data_in_sparse:",
           max_data_in_sparse, "url:", args.elasticsearch_url)
 
-    #bin_counts = col.defaultdict(col.defaultdict(int))
+    # bin_counts = col.defaultdict(col.defaultdict(int))
     q = mpr.Queue(maxsize=args.max_queue_size)
 
     tilesaver_processes = []

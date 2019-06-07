@@ -2,11 +2,6 @@
 
 import clodius.fpark as cfp
 import clodius.save_tiles as cst
-import collections as col
-import json
-import os
-import os.path as op
-import sys
 import argparse
 
 
@@ -19,16 +14,12 @@ def make_autocomplete_list(entries, options, tile_saver):
                     the tiles should be created
     :return: A list of tiles
     '''
-    # group each entry in input file according to its starting letter
-    ngrams = []
-    substrs = col.defaultdict(list)
-
     def entry_to_substrs(entry):
         substrs = {}
 
         if options.name not in entry:
             # if an entry doesn't have a name field, print a warning and continue
-            #print >>sys.stderr, "Found entry without a name:", entry['uid']
+            # print >>sys.stderr, "Found entry without a name:", entry['uid']
             return []
         # for each entry get each substring and add the entry to the list
         # of entries containing that substring
@@ -41,7 +32,7 @@ def make_autocomplete_list(entries, options, tile_saver):
                 substr = substr.replace('/', ' ').lower()
                 substr = ' '.join(substr.split()).replace(' ', '_')
 
-                #substrs += [((substr), [entry])]
+                # substrs += [((substr), [entry])]
                 substrs[substr] = [entry]
 
         return substrs.items()
@@ -74,7 +65,7 @@ def make_autocomplete_list(entries, options, tile_saver):
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python make_autocomplete_list.py processed-ski-area-elevations.json
 
     Create jsons for searching for ski areas. These will consist
@@ -126,7 +117,7 @@ def main():
 
     print("one:", dataFile.take(1))
 
-    tiles = make_autocomplete_list(dataFile, args, tile_saver)
+    make_autocomplete_list(dataFile, args, tile_saver)
 
 
 if __name__ == '__main__':

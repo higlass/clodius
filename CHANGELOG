@@ -2,6 +2,7 @@ Upcoming
 
 - Removed redundant multivec function
 - Removed obsolete bigwig function
+- Make tsv_to_mrmatrix more flexible and add it to the exported 
 
 v0.10.7
 

@@ -4,7 +4,6 @@ from __future__ import print_function
 
 import clodius.hdf_tiles as hdft
 import h5py
-import sys
 import argparse
 
 
@@ -17,11 +16,11 @@ def main():
     parser.add_argument('filename')
     parser.add_argument('z', type=int)
     parser.add_argument('x', type=int)
-    #parser.add_argument('argument', nargs=1)
+    # parser.add_argument('argument', nargs=1)
     # parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
+    # help="Some option", type='str')
     # parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
+    # help='Another useless option')
 
     args = parser.parse_args()
 
@@ -37,8 +36,7 @@ def main():
         last_index = int(tile_size * (max_pos / max_width))
         print("last_index:", last_index)
         tile_data = hdft.get_data(f, args.z, args.x)
-
-        #print("tile:", hdft.get_data(f, args.z, args.x))
+        print("tile:", tile_data)
 
 
 if __name__ == '__main__':

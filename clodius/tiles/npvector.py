@@ -2,25 +2,26 @@ import math
 import numpy as np
 import clodius.tiles.format as ctf
 
+
 def tiles_wrapper(array, tile_ids, not_nan_array=None):
     tile_values = []
-    
+
     for tile_id in tile_ids:
         parts = tile_id.split('.')
 
         if len(parts) < 3:
             raise IndexError("Not enough tile info present")
 
-        uid = parts[0]
         z = int(parts[1])
         x = int(parts[2])
-    
+
         ret_array = tiles(array, z, x, not_nan_array).reshape((-1))
-        
-        tile_values +=  [(tile_id, 
+
+        tile_values += [(tile_id,
                          ctf.format_dense_tile(ret_array))]
 
     return tile_values
+
 
 def tileset_info(array, bounds=None, bins_per_dimension=1024):
     '''
@@ -46,8 +47,7 @@ def tileset_info(array, bounds=None, bins_per_dimension=1024):
     else:
         min_pos = [0]
         max_pos = [array.shape[0]]
-        
-    
+
     if len(array.shape) > 1:
         raise ValueError("The array shape is not a vector type", array.shape)
     return {
@@ -61,7 +61,7 @@ def tileset_info(array, bounds=None, bins_per_dimension=1024):
 
 def max_zoom_and_data_bounds(array, z, x, bin_size):
     '''
-    Return the maximum zoom level and data corresponding to the 
+    Return the maximum zoom level and data corresponding to the
     zoom level and position of the array.
 
     Parameters
@@ -77,10 +77,10 @@ def max_zoom_and_data_bounds(array, z, x, bin_size):
 
     max_zoom = math.ceil(math.log(max_dim / bin_size) / math.log(2))
     max_zoom = 0 if max_zoom < 0 else max_zoom
-    max_width = 2 ** max_zoom * bin_size
-    
+
+    # max_width = 2 ** max_zoom * bin_size
     # print("max_width:", max_width, 'bin_size:', bin_size, 'max_zoom', max_zoom)
-    
+
     tile_width = 2 ** (max_zoom - z) * bin_size
 
     x_start = x * tile_width
@@ -90,10 +90,11 @@ def max_zoom_and_data_bounds(array, z, x, bin_size):
 
     return max_zoom, x_start, x_end
 
+
 def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     '''
     Return tiles at the given positions.
-    
+
     Parameters
     -----------
     array: np.array
@@ -108,51 +109,50 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     bin_size: int
         The number of values per bin
     '''
-    #print("max_dim", max_dim)
+    # print("max_dim", max_dim)
     max_zoom, x_start, x_end = max_zoom_and_data_bounds(array, z, x, bin_size)
     data = array[x_start:x_end]
 
-    # print("tile_width", tile_width)    
+    # print("tile_width", tile_width)
     num_to_sum = 2 ** (max_zoom - z)
     # print("num_to_sum", num_to_sum)
     # print("data:", data)
-    
+
     # add some data so that the data can be divided into squares
     divisible_x_width = num_to_sum * math.ceil(data.shape[0] / num_to_sum)
     divisible_x_pad = divisible_x_width - data.shape[0]
-    #print("data.shape", data.shape)
-    
+    # print("data.shape", data.shape)
+
     # print("divisible_x_pad:", divisible_x_pad)
     # print("len(data)", len(data))
-    
-    a = np.pad(data, ((0, divisible_x_pad),), 'constant', 
-            constant_values=(np.nan,))
 
-    b = np.nansum(a.reshape((-1, num_to_sum)),axis=1)
-    ret_array = np.nansum(a.reshape((-1, num_to_sum)),axis=1)
+    a = np.pad(data, ((0, divisible_x_pad),), 'constant',
+               constant_values=(np.nan,))
+
+    ret_array = np.nansum(a.reshape((-1, num_to_sum)), axis=1)
 
     # print('ret_array:', len(ret_array))
-    
-    # ret_array[ret_array == 0.] = np.nan
-    #print('ret_array:', ret_array)
 
-    #print("sum:", np.nansum(ret_array))
-    
+    # ret_array[ret_array == 0.] = np.nan
+    # print('ret_array:', ret_array)
+
+    # print("sum:", np.nansum(ret_array))
+
     if not_nan_array is not None:
         # print("normalizing")
         # we want to calculate the means of the data points
         not_nan_data = not_nan_array[x_start:x_end]
-        na = np.pad(not_nan_data, ((0, divisible_x_pad)), 'constant', 
-                constant_values=(np.nan,))
-        norm_array = np.nansum(na.reshape((-1, num_to_sum)), axis=1)            
+        na = np.pad(not_nan_data, ((0, divisible_x_pad)), 'constant',
+                    constant_values=(np.nan,))
+        norm_array = np.nansum(na.reshape((-1, num_to_sum)), axis=1)
         # print("len:", len(na), len(ret_array), len(norm_array))
 
         ret_array = ret_array / (norm_array + 1)
-    
+
     # determine how much to pad the array
     x_pad = bin_size - ret_array.shape[0]
-    
-    #print("ret_array:", ret_array.shape)
+
+    # print("ret_array:", ret_array.shape)
     # print("x_pad:", x_pad)
 
-    return np.pad(ret_array, ((0,x_pad)), 'constant', constant_values=(np.nan, ))
+    return np.pad(ret_array, ((0, x_pad)), 'constant', constant_values=(np.nan, ))
