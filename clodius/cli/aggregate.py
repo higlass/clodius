@@ -111,7 +111,7 @@ def reduce_values_by_importance(
 
     return combined_entries[:max_entries_per_tile]
 
-def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, row_infos_filename=None):
+def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method, row_infos_filename=None):
     '''
     Aggregate a multivec file.
 
@@ -1320,69 +1320,6 @@ def bedgraph(filepath, output_file, assembly, chromosome_col,
         chromosome, tile_size, chunk_size, method, nan_value, 
         transform, count_nan, closed_interval,
         chromsizes_filename, zoom_step)
-    
-@aggregate.command()
-@click.argument(
-        'filepath',
-        metavar='FILEPATH'
-        )
-@click.option(
-    '--output-file',
-    '-o',
-    default=None,
-    help="The default output file name to use. If this isn't"
-         "specified, clodius will replace the current extension"
-         "with .hitile"
-)
-@click.option(
-    '--assembly',
-    '-a',
-    help='The genome assembly that this file was created against',
-    default='hg19'
-)
-@click.option(
-    '--chromosome',
-    default=None,
-    help="Only extract values for a particular chromosome."
-         "Use all chromosomes if not set."
-)
-@click.option(
-    '--tile-size',
-    '-t',
-    default=1024,
-    help="The number of data points in each tile."
-         "Used to determine the number of zoom levels"
-         "to create."
-)
-@click.option(
-    '--chunk-size',
-    '-c',
-    help='How many values to aggregate at once.'
-         'Specified as a power of two multiplier of the tile'
-         'size',
-    default=14
-)
-@click.option(
-    '--chromsizes-filename',
-    help="A file containing chromosome sizes and order",
-    default=None
-)
-@click.option(
-    '--zoom-step',
-    '-z',
-    help="The number of intermediate aggregation levels to"
-         "omit",
-    default=8
-)
-def bigwig(
-    filepath, output_file, assembly, chromosome, tile_size, chunk_size,
-    chromsizes_filename, zoom_step
-):
-    _bigwig(
-        filepath, chunk_size, zoom_step, tile_size, output_file, assembly,
-        chromsizes_filename, chromosome
-    )
-
 
 @aggregate.command()
 @click.argument(
@@ -1544,12 +1481,13 @@ def bedfile(
     help="The column containing the second end position"
 )
 def bedpe(
-    filepath, output_file, assembly, importance_column,
-    has_header, max_per_tile, tile_size, chromosome,
-    chromsizes_filename,
-    chr1_col, from1_col, to1_col,
-    chr2_col, from2_col, to2_col
+        filepath, output_file, assembly, importance_column,
+        has_header, max_per_tile, tile_size, chromosome,
+        chromsizes_filename,
+        chr1_col, from1_col, to1_col,
+        chr2_col, from2_col, to2_col
 ):
+    """Aggregate bedpe files"""
     _bedpe(
         filepath, output_file, assembly, importance_column, has_header,
         max_per_tile, tile_size, chromosome,
@@ -1573,11 +1511,11 @@ def bedpe(
          "with .gjdb"
 )
 @click.option(
-    '-m',
-    '--max-per-tile',
-    default=20,
-    type=int
-)
+    '-a',
+    '--assembly',
+    default=None,
+    help="The assembly that this data comes from. This parameter is"
+         "unnecessary and/or overwritten if --chromsizes-filename is specified")
 @click.option(
     '-s',
     '--tile-size',
@@ -1586,21 +1524,33 @@ def bedpe(
          "should span. This determines the maximum zoom level"
 )
 @click.option(
-        '--starting-resolution',
-        '-s',
-        default=256,
-        help="The resolution that the starting data is at (e.g. 1, 10, 20)")
+    '-c',
+    '--chromsizes-filename',
+    default=None,
+    help="The file containnig chromosome sizes and order")
 @click.option(
-        '--method',
-        help='The method used to aggregate values (e.g. sum, average...)',
-        type=click.Choice(['sum', 'logsumexp']),
-        default='sum')
+    '--starting-resolution',
+    '-s',
+    default=256,
+    help="The resolution that the starting data is at (e.g. 1, 10, 20)")
 @click.option(
-        '--row-infos-filename',
-        help="A file containing the names of the rows in the multivec file",
-        default=None)
-def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method, row_infos_filename):
-    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method, row_infos_filename)
+    '--method',
+    help='The method used to aggregate values (e.g. sum, average...)',
+    type=click.Choice(['sum', 'logsumexp']),
+    default='sum')
+@click.option(
+    '--row-infos-filename',
+    help="A file containing the names of the rows in the multivec file",
+    default=None)
+def multivec(
+        filepath, output_file, assembly, tile_size,
+        chromsizes_filename, starting_resolution, method,
+        row_infos_filename):
+    """Aggregate a multivec file"""
+    _multivec(
+        filepath, output_file, assembly, tile_size,
+        chromsizes_filename, starting_resolution, method,
+        row_infos_filename)
 
 @aggregate.command()
 @click.argument(
@@ -1638,50 +1588,7 @@ def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, st
 def geojson(
     filepath, output_file, max_per_tile, tile_size, max_zoom
 ):
+    """Aggregate a geojson file"""
     _geojson(
         filepath, output_file, max_per_tile, tile_size, max_zoom
     )
-
-
-@aggregate.command()
-@click.argument(
-        'filepath',
-        metavar='FILEPATH'
-        )
-@click.option(
-        '--output-file',
-        '-o',
-        default=None,
-        help="The default output file name to use. If this isn't"
-             "specified, clodius will replace the current extension"
-             "with .hitile"
-        )
-@click.option(
-        '--assembly',
-        '-a',
-        help='The genome assembly that this file was created against',
-        type=click.Choice(nc.available_chromsizes()),
-        default='hg19')
-@click.option(
-        '--tile-size',
-        '-t',
-        default=256,
-        help="The number of data points in each tile."
-             "Used to determine the number of zoom levels"
-             "to create.")
-@click.option(
-        '--chromsizes-filename',
-        help="A file containing chromosome sizes and order",
-        default=None)
-@click.option(
-        '--starting-resolution',
-        '-s',
-        default=256,
-        help="The resolution that the starting data is at (e.g. 1, 10, 20)")
-@click.option(
-        '--row-infos-filename',
-        help="A file containing the names of the rows in the multivec file",
-        default=None)
-def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution, row_infos_filename):
-    _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution, row_infos_filename)
-
