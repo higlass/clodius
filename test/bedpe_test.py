@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import clodius.db_tiles as cdt
 import clodius.cli.aggregate as cca
-import filecmp
+import os
 import os.path as op
 import sys
 import tempfile
@@ -58,6 +58,7 @@ def test_clodius_aggregate_bedpe2():
     '''Use galGal6 chromsizes file'''
     input_file = op.join(testdir, 'sample_data', 'galGal6.bed')
     chromsizes_file = op.join(testdir, 'sample_data', 'galGal6.chrom.sizes')
+    expected_file = op.join(testdir, 'sample_data', 'galGal6.bed.multires.db')
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         output_file = op.join(tmpdirname, 'blah.bed2ddb')
@@ -74,5 +75,9 @@ def test_clodius_aggregate_bedpe2():
                    has_header=True)
 
         tsinfo = cdt.get_tileset_info(output_file)
+
+        stat_output = os.stat(output_file)
+        stat_expected = os.stat(expected_file)
+
         assert tsinfo['max_length'] == 1065365426
-        # TODO: make assertion
+        assert stat_output.st_size == stat_expected.st_size
