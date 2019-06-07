@@ -107,6 +107,7 @@ def reduce_values_by_importance(
 
     return combined_entries[:max_entries_per_tile]
 
+
 def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method, row_infos_filename=None):
     '''
     Aggregate a multivec file.
@@ -1319,14 +1320,16 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
     help="The number of intermediate aggregation levels to"
          "omit",
     default=8)
-def bedgraph(filepath, output_file, assembly, chromosome_col, 
-        from_pos_col, to_pos_col, value_col, has_header, 
-        chromosome, tile_size, chunk_size, method, nan_value, 
+def bedgraph(
+        filepath, output_file, assembly, chromosome_col,
+        from_pos_col, to_pos_col, value_col, has_header,
+        chromosome, tile_size, chunk_size, method, nan_value,
         transform, count_nan, closed_interval,
         chromsizes_filename, zoom_step):
-    _bedgraph(filepath, output_file, assembly, chromosome_col, 
-        from_pos_col, to_pos_col, value_col, has_header, 
-        chromosome, tile_size, chunk_size, method, nan_value, 
+    _bedgraph(
+        filepath, output_file, assembly, chromosome_col,
+        from_pos_col, to_pos_col, value_col, has_header,
+        chromosome, tile_size, chunk_size, method, nan_value,
         transform, count_nan, closed_interval,
         chromsizes_filename, zoom_step)
 
@@ -1561,6 +1564,7 @@ def multivec(
         filepath, output_file, assembly, tile_size,
         chromsizes_filename, starting_resolution, method,
         row_infos_filename)
+
 
 @aggregate.command()
 @click.argument(
