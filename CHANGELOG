@@ -1,3 +1,8 @@
+Upcoming
+
+- Removed redundant multivec function
+- Removed obsolete bigwig function
+
 v0.10.7
 
 - Changed bins_per_dimension in npvector.tileset_info to match the value in
