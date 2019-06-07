@@ -264,10 +264,11 @@ def _bedpe(filepath, output_file,
                 "indicate that with the --has-header option. Line: {}"
                 .format(first_line)
             )
-            raise(ValueError(error_str))
+            raise ValueError(error_str)
         entries = [line_to_dict(first_line)]
 
-    entries += [line_to_dict(line.strip()) for line in f if len(line.strip())]
+    entries += [line_to_dict(line)
+                for line in [line.strip() for line in f] if line]
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
