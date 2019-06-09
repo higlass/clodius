@@ -1374,7 +1374,8 @@ def bedgraph(
 @click.option(
     '--max-per-tile',
     default=100,
-    type=int)
+    type=int,
+    help="The maximum number of entries to store per tile")
 @click.option(
     '--tile-size',
     default=1024,
@@ -1444,7 +1445,8 @@ def bedfile(
 @click.option(
     '--max-per-tile',
     default=100,
-    type=int
+    type=int,
+    help="The maximum number of entries to include per tile"
 )
 @click.option(
     '--tile-size',
@@ -1543,7 +1545,6 @@ def bedpe(
     help="The file containnig chromosome sizes and order")
 @click.option(
     '--starting-resolution',
-    '-s',
     default=256,
     help="The resolution that the starting data is at (e.g. 1, 10, 20)")
 @click.option(
