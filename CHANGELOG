@@ -1,3 +1,7 @@
+** Unreleased
+
+- Display more meaningful error messages when encountering unknown chromosomes or assemblies
+
 v0.10.7
 
 - Changed bins_per_dimension in npvector.tileset_info to match the value in
