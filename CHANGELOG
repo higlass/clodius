@@ -1,5 +1,6 @@
-in progress
+v0.10.9
 
+- Update the bedpe aggregator to fix the error in using a chromsizes file
 - Make tsv_to_mrmatrix more flexible and add it to the exported scripts.
 
 v0.10.7
