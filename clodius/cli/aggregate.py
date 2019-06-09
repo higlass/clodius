@@ -421,7 +421,14 @@ def _bedfile(
     else:
         bed_file = open(filepath, 'r')
 
-    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
+    try:
+        (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
+    except FileNotFoundError:
+        if chromsizes_filename is None:
+            print("Assembly not found:", assembly, file=sys.stderr)
+        else:
+            print("Chromsizes filename not found:", chromsizes_filename, file=sys.stderr)
+        return None
     rand = random.Random(3)
 
     def line_to_np_array(line):
@@ -458,6 +465,7 @@ def _bedfile(
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
         genome_end = chrom_info.cum_chrom_lengths[chrom] + stop + offset
 
+
         pos_offset = genome_start - start
         parts = {
             'startPos': genome_start,
@@ -482,6 +490,11 @@ def _bedfile(
         line_parts = line.strip().split(delimiter)
         try:
             dset += [line_to_np_array(line_parts)]
+        except KeyError:
+            print(f'Unable to find {line_parts[0]} in the list of chromosome sizes. '
+                  'Please make sure the correct assembly or chromsizes filename '
+                  'is passed in as a parameter', file=sys.stderr)
+            return None
         except IndexError as ie:
             print("Invalid line:", line)
         header = map(str, list(range(1,len(line.strip().split(delimiter))+1)))
@@ -681,6 +694,7 @@ def _bedfile(
 
         curr_zoom = 0
     conn.commit()
+    return True
 
 ###############################################################################
 def _bedgraph(
