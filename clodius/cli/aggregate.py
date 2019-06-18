@@ -162,11 +162,14 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
                                  row_infos=row_infos)
 
 
-def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile,
-           tile_size, max_zoom=None, chromosome=None,
+def _bedpe(filepath, output_file,
+           assembly, importance_column, has_header,
+           max_per_tile, tile_size, chromosome=None,
            chromsizes_filename=None,
-           chr1_col=0, from1_col=1, to1_col=2,
-           chr2_col=3, from2_col=4, to2_col=5):
+           chr1_col=1, from1_col=2, to1_col=3,
+           chr2_col=4, from2_col=5, to2_col=6,
+           max_zoom=None):
+
     print('output_file:', output_file)
 
     if filepath == '-':
@@ -194,31 +197,32 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         try:
             d['xs'] = [
                 chrom_info.cum_chrom_lengths[
-                    parts[chr1_col]] + int(parts[from1_col]),
+                    parts[chr1_col - 1]] + int(parts[from1_col - 1]),
                 chrom_info.cum_chrom_lengths[
-                    parts[chr1_col]] + int(parts[to1_col])
+                    parts[chr1_col - 1]] + int(parts[to1_col - 1])
             ]
             d['ys'] = [
                 chrom_info.cum_chrom_lengths[
-                    parts[chr2_col]] + int(parts[from2_col]),
+                    parts[chr2_col - 1]] + int(parts[from2_col - 1]),
                 chrom_info.cum_chrom_lengths[
-                    parts[chr2_col]] + int(parts[to2_col])
+                    parts[chr2_col - 1]] + int(parts[to2_col - 1])
             ]
         except KeyError:
             error_str = (
                 "ERROR converting chromosome position to genome position. "
                 "Please make sure you've specified the correct assembly "
-                "using the --assembly option. "
+                "using the --assembly option or a chromsizes file using the . "
+                "--chromsizes-filename option."
                 "Current assembly: {}, chromosomes: {},{}".format(
                     assembly,
-                    parts[chr1_col], parts[chr2_col]
+                    parts[chr1_col - 1], parts[chr2_col - 1]
                 )
             )
             raise(KeyError(error_str))
 
         d['uid'] = slugid.nice()
 
-        d['chrOffset'] = d['xs'][0] - int(parts[from1_col])
+        d['chrOffset'] = d['xs'][0] - int(parts[from1_col - 1])
 
         if importance_column is None:
             d['importance'] = max(
@@ -249,10 +253,10 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
                   "to1_col", to1_col, "to2_col", to2_col)
             '''
 
-            int(parts[from1_col])
-            int(parts[to1_col])
-            int(parts[from2_col])
-            int(parts[to2_col])
+            int(parts[from1_col - 1])
+            int(parts[to1_col - 1])
+            int(parts[from2_col - 1])
+            int(parts[to2_col - 1])
         except ValueError:
             error_str = (
                 "Couldn't convert one of the bedpe coordinates to an "
@@ -260,10 +264,11 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
                 "indicate that with the --has-header option. Line: {}"
                 .format(first_line)
             )
-            raise(ValueError(error_str))
+            raise ValueError(error_str)
         entries = [line_to_dict(first_line)]
 
-    entries += [line_to_dict(line.strip()) for line in f]
+    entries += [line_to_dict(line)
+                for line in [line.strip() for line in f] if line]
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -1504,11 +1509,12 @@ def bedpe(
 ):
     """Aggregate bedpe files"""
     _bedpe(
-        filepath, output_file, assembly, importance_column, has_header,
+        filepath, output_file,
+        assembly, importance_column, has_header,
         max_per_tile, tile_size, chromosome,
         chromsizes_filename,
-        chr1_col=chr1_col - 1, from1_col=from1_col - 1, to1_col=to1_col - 1,
-        chr2_col=chr2_col - 1, from2_col=from2_col - 1, to2_col=to2_col - 1
+        chr1_col=chr1_col, from1_col=from1_col, to1_col=to1_col,
+        chr2_col=chr2_col, from2_col=from2_col, to2_col=to2_col
     )
 
 
