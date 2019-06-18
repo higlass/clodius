@@ -7,25 +7,25 @@ def get_tileset_info(db_file):
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
 
-    row = c.execute("SELECT * from tileset_info").fetchone();
+    row = c.execute("SELECT * from tileset_info").fetchone()
     if row is not None and len(row) == 9:
         header = row[8]
     else:
         header = ""
 
     tileset_info = {
-            'zoom_step': row[0],
-            'max_length': row[1],
-            'assembly': row[2],
-            'chrom_names': row[3],
-            'chrom_sizes': row[4],
-            'tile_size': row[5],
-            'max_zoom': row[6],
-            'max_width': row[7],
-            "min_pos": [1],
-            "max_pos": [row[1]],
-            "header": header
-            }
+        'zoom_step': row[0],
+        'max_length': row[1],
+        'assembly': row[2],
+        'chrom_names': row[3],
+        'chrom_sizes': row[4],
+        'tile_size': row[5],
+        'max_zoom': row[6],
+        'max_width': row[7],
+        "min_pos": [1],
+        "max_pos": [row[1]],
+        "header": header
+    }
     conn.close()
 
     return tileset_info
@@ -112,7 +112,7 @@ def get_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
 
         for i in range(tile_x_pos, tile_x_pos + num_tiles):
             tile_x_start = i * tile_width
-            tile_x_end = (i+1) * tile_width
+            tile_x_end = (i + 1) * tile_width
             tile_pos = i
 
             if x_start < tile_x_end and x_end >= tile_x_start:
@@ -204,10 +204,10 @@ def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
         for i in range(tile_x_pos, tile_x_pos + numx):
             for j in range(tile_y_pos, tile_y_pos + numy):
                 tile_x_start = i * tile_width
-                tile_x_end = (i+1) * tile_width
+                tile_x_end = (i + 1) * tile_width
 
                 tile_y_start = j * tile_width
-                tile_y_end = (j+1) * tile_width
+                tile_y_end = (j + 1) * tile_width
 
                 if (
                     x_start < tile_x_end and
