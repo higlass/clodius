@@ -2,6 +2,7 @@ v0.10.9
 
 - Update the bedpe aggregator to fix the error in using a chromsizes file
 - Make tsv_to_mrmatrix more flexible and add it to the exported scripts.
+- Display more meaningful error messages when encountering unknown chromosomes or assemblies
 - Removed redundant multivec function
 - Removed obsolete bigwig function
 - Make tsv_to_mrmatrix more flexible and add it to the exported 
