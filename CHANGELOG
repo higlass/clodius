@@ -4,7 +4,8 @@ v0.10.9
 - Make tsv_to_mrmatrix more flexible and add it to the exported scripts.
 - Removed redundant multivec function
 - Removed obsolete bigwig function
-- Make tsv_to_mrmatrix more flexible and add it to the exported 
+- Make tsv_to_mrmatrix more flexible and add it to the exported
+- Detect non-symmetric square coolers using the storage-mode metadata. Support for the symmetric property is retained for the legacy mcool format.
 
 v0.10.7
 
