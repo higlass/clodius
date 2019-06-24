@@ -504,16 +504,16 @@ def make_mats(filepath):
         info["max_pos"] = [int(m) for m in info["max_pos"]]
         info["max_zoom"] = int(info["max_zoom"])
         info["max_width"] = int(info["max_width"])
-        
+
         if "transforms" in info:
             info["transforms"] = list(info["transforms"])
 
-        # legacy metadata for non-symmetric matrices    
+        # legacy metadata for non-symmetric matrices
         if 'symmetric' in c.info and not c.info['symmetric']:
             info['mirror_tiles'] = 'false'
         if 'storage-mode' in c.info and c.info['storage-mode'] == 'square':
             info['mirror_tiles'] = 'false'
-        
+
         mats[filepath] = [f, info]
 
     return f, info
