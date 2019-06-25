@@ -4,14 +4,17 @@ import gzip
 import h5py
 import math
 import numpy as np
+import logging
 import os
 import os.path as op
 import sys
 
+logger = logging.getLogger(__name__)
+
 
 def bedfile_to_multivec(input_filenames, f_out,
                         bedline_to_chrom_start_end_vector, base_resolution,
-                        has_header, chunk_size, row_infos=None):
+                        has_header, chunk_size, num_rows, row_infos=None):
     '''
     Convert an epilogos bedfile to multivec format.
     '''
@@ -41,7 +44,7 @@ def bedfile_to_multivec(input_filenames, f_out,
     print('base_resolution:', base_resolution)
     warned = False
 
-    for lines in zip(*files):
+    for count, lines in enumerate(zip(*files)):
         # Identifies bedfile headers and ignore them
         if "browser" == lines[0][0:7] or "track" in lines[0][0:6]:
             continue
@@ -49,19 +52,23 @@ def bedfile_to_multivec(input_filenames, f_out,
         chrom, start, end, vector = bedline_to_chrom_start_end_vector(
             lines, row_infos)
         # if vector[0] > 0 or vector[1] > 0:
-        print("c,s,e,v", chrom, start, end, vector)
+
+        if len(vector) < len(lines) * num_rows:
+            logger.warn('Lines contain less columns than expected: %s', lines)
+            vector += [np.nan] * (len(lines) * num_rows - len(vector))
 
         if end % base_resolution != 0 or start % base_resolution != 0 and not warned:
-            print("WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".
-                  format(base_resolution, lines))
+            logger.warn(
+                "WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".
+                format(base_resolution, lines))
             warned = True
             continue
 
         if prev_chrom is not None and chrom != prev_chrom:
             # we've reached a new chromosome so we'll dump all
             # the previous values
-            print("len(batch:", len(batch),
-                  "batch_start_index", batch_start_index)
+            # print("len(batch:", len(batch),
+            #       "batch_start_index", batch_start_index)
             f_out[prev_chrom][batch_start_index:batch_start_index +
                               len(batch)] = np.array(batch)
 
@@ -118,7 +125,6 @@ def bedfile_to_multivec(input_filenames, f_out,
             batch_start_index = curr_index
             print("dumping batch:", chrom, batch_start_index)
 
-    # print('chrom', chrom)
     f_out[chrom][batch_start_index:batch_start_index +
                  len(batch)] = np.array(batch)
 

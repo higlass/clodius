@@ -3,7 +3,6 @@ from __future__ import print_function
 import click.testing as clt
 import clodius.cli.convert as ccc
 import clodius.tiles.multivec as ctv
-import os
 import os.path as op
 import tempfile
 
@@ -14,22 +13,21 @@ def test_bedfile_to_multivec():
     runner = clt.CliRunner()
     input_file = op.join(testdir, 'sample_data', 'sample.multival.bed')
     chromsizes_file = op.join(testdir, 'sample_data', 'sample.multival.chrom.sizes')
-    
+
     with tempfile.TemporaryDirectory() as tmp_dir:
         out_file = op.join(tmp_dir, 'out.multivec')
         # TODO: Make assertions about result
         # print("input_file", input_file)
         # print("output_file", out_file.name)
 
-        result = runner.invoke(
+        _ = runner.invoke(
             ccc.bedfile_to_multivec,
             [input_file,
-            '--output-file', out_file,
+             '--output-file', out_file,
              '--assembly', 'hg38',
              '--num-rows', 3,
              '--chromsizes-filename', chromsizes_file,
              '--starting-resolution', '1000'])
-
 
         # import traceback
         # a, b, tb = result.exc_info
