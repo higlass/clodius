@@ -159,7 +159,7 @@ def get_data(f, start_pos_1, end_pos_1, start_pos_2, end_pos_2, transform='defau
         return (pixels[['genome_start1', 'genome_start2', 'count']], (None, None))
 
 
-def get_info(file_path):
+def _get_info_multi_v1(file_path):
     """Get information of a cooler file.
 
     Args:
@@ -492,26 +492,31 @@ def make_mats(filepath):
         c = cooler.Cooler(f['resolutions'][resolution])
         info['chromsizes'] = [[x[0], int(x[1])]
                               for x in c.chromsizes.iteritems()]
-        return (f, info)
+        if 'storage-mode' in c.info and c.info['storage-mode'] == 'square':
+            info['mirror_tiles'] = 'false'
+    else:
+        info = _get_info_multi_v1(filepath)
 
-    info = get_info(filepath)
+        c = cooler.Cooler(f['0'])
 
-    c = cooler.Cooler(f['0'])
+        info['chromsizes'] = [[x[0], int(x[1])] for x in c.chromsizes.iteritems()]
+        info["min_pos"] = [int(m) for m in info["min_pos"]]
+        info["max_pos"] = [int(m) for m in info["max_pos"]]
+        info["max_zoom"] = int(info["max_zoom"])
+        info["max_width"] = int(info["max_width"])
 
-    info['chromsizes'] = [[x[0], int(x[1])] for x in c.chromsizes.iteritems()]
-    info["min_pos"] = [int(m) for m in info["min_pos"]]
-    info["max_pos"] = [int(m) for m in info["max_pos"]]
-    info["max_zoom"] = int(info["max_zoom"])
-    info["max_width"] = int(info["max_width"])
+        if "transforms" in info:
+            info["transforms"] = list(info["transforms"])
 
-    if 'symmetric' in f['0'].attrs and not f['0'].attrs['symmetric']:
-        info['mirror_tiles'] = 'false'
+        # legacy metadata for non-symmetric matrices
+        if 'symmetric' in c.info and not c.info['symmetric']:
+            info['mirror_tiles'] = 'false'
+        if 'storage-mode' in c.info and c.info['storage-mode'] == 'square':
+            info['mirror_tiles'] = 'false'
 
-    if "transforms" in info:
-        info["transforms"] = list(info["transforms"])
+        mats[filepath] = [f, info]
 
-    mats[filepath] = [f, info]
-    return (f, info)
+    return f, info
 
 
 def tileset_info(filepath):

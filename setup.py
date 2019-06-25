@@ -1,7 +1,4 @@
-from setuptools import setup, find_packages
-
-
-print("packages:", find_packages())
+from setuptools import setup
 
 setup_requires = [
     'numpy',
@@ -17,9 +14,10 @@ install_requires = [
     'pandas',
     'slugid',
     'sortedcontainers',
-    'cooler>=0.8.0',
-    'pybbi==0.2.0',
-    'Click'
+    'nose',
+    'cooler>=0.8.5',
+    'pybbi>=0.2.0',
+    'Click>=7'
 ]
 
 setup(
