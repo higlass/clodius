@@ -16,7 +16,7 @@ def csv_to_points(csv_file, output_file):
         The filename of the data file
 
     '''
-    df = pd.read_table(csv_file, delimiter=',')
+    df = pd.read_csv(csv_file)
 
     min_x = df['x'].min()
     max_x = df['x'].max()
@@ -27,13 +27,12 @@ def csv_to_points(csv_file, output_file):
     height = max_y - min_y
 
     max_width = max(width, height)
-    # print("max_width:", max_width, min_x, min_y, max_x, max_y)
     max_zoom = 30
 
     with h5py.File(output_file, 'w') as f_out:
         dataset = f_out.create_dataset(
             'values', (len(df), 2), compression='gzip', dtype=np.float32)
-        dataset[:] = df.reindex(columns=['x', 'y']).as_matrix()
+        dataset[:] = df.reindex(columns=['x', 'y']).values
 
         dataset.attrs['min_x'] = min_x
         dataset.attrs['max_x'] = max_x
