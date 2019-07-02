@@ -1,11 +1,12 @@
 import clodius.tiles.format as hgfo
+from clodius.tiles.utils import tile_bounds
 import pandas as pd
 
 import numpy as np
 import h5py
 
 
-def csv_to_points(csv_file, output_file):
+def csv_to_points(csv_file, output_file, max_zoom: int = 30):
     '''
     Convert a csv file containing points to a numpy array
     of [[x,y]] values.
@@ -25,9 +26,7 @@ def csv_to_points(csv_file, output_file):
 
     width = max_x - min_x
     height = max_y - min_y
-
     max_width = max(width, height)
-    max_zoom = 30
 
     with h5py.File(output_file, 'w') as f_out:
         dataset = f_out.create_dataset(
@@ -53,32 +52,11 @@ def tileset_info(points_file):
 
         return {
             'min_pos': [float(dset.attrs['min_x']), float(dset.attrs['min_y'])],
-            'max_pos': [float(dset.attrs['max_y']), float(dset.attrs['max_y'])],
+            'max_pos': [float(dset.attrs['max_x']), float(dset.attrs['max_y'])],
             'max_width': float(dset.attrs['max_width']),
             'max_zoom': int(dset.attrs['max_zoom']),
             'mirror_tiles': 'false'
         }
-
-
-def tile_bounds(points_file, z, x, y, width=1, height=1):
-    '''
-    Get the boundaries of a tile
-
-    Parameters:
-    -----------
-    tileset_info: { min_pos, max_pos, max_width}
-        Information about the bounds of this tileset
-    '''
-
-    tsinfo = tileset_info(points_file)
-    tile_width = tsinfo['max_width'] / 2 ** z
-
-    x_start = tsinfo['min_pos'][0] + tile_width * x
-    x_end = tsinfo['min_pos'][0] + tile_width * (x + width)
-    y_start = tsinfo['min_pos'][1] + tile_width * y
-    y_end = tsinfo['min_pos'][1] + tile_width * (y + width)
-
-    return (x_start, x_end, y_start, y_end)
 
 
 def filter_points(data, extent):
@@ -127,7 +105,8 @@ def density_tiles(points_file, z, x, y, width=1, height=1):
             for j in range(height):
                 # filter from the larger subregion
                 filtered_points = filter_points(all_points,
-                                                tile_bounds(points_file, z, x + i, y + j))
+                                                tile_bounds(points_file, z,
+                                                            x + i, y + j))
 
                 dt = np.histogram2d(filtered_points[:, 0],
                                     filtered_points[:, 1], bins=256)[0].T
@@ -140,4 +119,5 @@ def density_tiles(points_file, z, x, y, width=1, height=1):
 
 def tiles(points_file, z, x, y, width=1, height=1):
     return [(tile_position, hgfo.format_dense_tile(data.flatten())) for
-            (tile_position, data) in density_tiles(points_file, z, x, y, width, height)]
+            (tile_position, data) in density_tiles(points_file, z, x, y,
+                                                   width, height)]
