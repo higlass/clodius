@@ -8,7 +8,7 @@ requests==2.13.0
 h5py==2.6.0
 #argparse # part of standard library
 pandas==0.19.2
-slugid==1.0.7
+slugid>=2.0.0
 sortedcontainers==1.5.7
 nose==1.3.7
 ipdb

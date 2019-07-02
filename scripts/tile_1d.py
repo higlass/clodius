@@ -10,11 +10,13 @@ import sys
 import time
 import argparse
 
+
 def reduce_data(data_array):
     s = set(data_array)
-    lookup_table = dict([(x,i) for i,x in enumerate(s)])
+    lookup_table = dict([(x, i) for i, x in enumerate(s)])
 
-    print("len lookup_table:", len(lookup_table), "len data_array:", len(data_array))
+    print("len lookup_table:", len(lookup_table),
+          "len data_array:", len(data_array))
     t1 = time.time()
     new_data = [lookup_table[d] for d in data_array]
     t2 = time.time()
@@ -35,10 +37,10 @@ def main():
     parser.add_argument('-z', '--zoom-step', default=8, type=int)
     parser.add_argument('-t', '--tile-size', default=1024, type=int)
     parser.add_argument('-o', '--output-file', default='/tmp/tmp.hdf5')
-    #parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
-    #parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
+    # parser.add_argument('-o', '--options', default='yo',
+    # help="Some option", type='str')
+    # parser.add_argument('-u', '--useless', action='store_true',
+    # help='Another useless option')
     args = parser.parse_args()
     last_end = 0
     data = []
@@ -60,7 +62,8 @@ def main():
     positions = []   # store where we are at the current dataset
     data_buffers = [[]]
     while hum_size / 2 ** z > tile_size:
-        dsets += [f.create_dataset('values_' + str(z), (hum_size / 2 ** z,), dtype='f',compression='gzip')]
+        dsets += [f.create_dataset('values_' + str(z),
+                                   (hum_size / 2 ** z,), dtype='f', compression='gzip')]
         data_buffers += [[]]
         positions += [0]
         z += args.zoom_step
@@ -70,10 +73,10 @@ def main():
     d.attrs['max-length'] = hum_size
     d.attrs['assembly'] = 'hg19'
     d.attrs['tile-size'] = tile_size
-    d.attrs['max-zoom'] = math.ceil(math.log(d.attrs['max-length'] / tile_size) / math.log(2))
+    d.attrs['max-zoom'] = math.ceil(
+        math.log(d.attrs['max-length'] / tile_size) / math.log(2))
 
     print("max_zoom:", d.attrs['max-zoom'])
-
 
     if args.filepath is None:
         print("Waiting for input...")
@@ -81,7 +84,7 @@ def main():
             parts = line.split()
             start = int(parts[0], 10)
             end = int(parts[1], 10)
-            val = float(parts[2])
+            # val = float(parts[2])
 
             if start > last_end:
                 # in case there's skipped values in the bed file
@@ -94,13 +97,13 @@ def main():
                 # get the current chunk and store it
                 print("curr_zoom:", curr_zoom)
                 curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
-                dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
+                dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom] + chunk_size] = curr_chunk
 
                 # aggregate and store aggregated values in the next zoom_level's data
-                data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
+                data_buffers[curr_zoom + 1] += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
                 data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
                 positions[curr_zoom] += chunk_size
-                data = data_buffers[curr_zoom+1]
+                data = data_buffers[curr_zoom + 1]
                 curr_zoom += 1
 
         # store the remaining data
@@ -110,16 +113,18 @@ def main():
             # get the current chunk and store it
             chunk_size = len(data_buffers[curr_zoom])
             curr_chunk = np.array(data_buffers[curr_zoom][:chunk_size])
-            dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom]+chunk_size] = curr_chunk
+            dsets[curr_zoom][positions[curr_zoom]:positions[curr_zoom] + chunk_size] = curr_chunk
 
-            print("curr_zoom:", curr_zoom, "position:", positions[curr_zoom] + len(curr_chunk))
+            print("curr_zoom:", curr_zoom, "position:",
+                  positions[curr_zoom] + len(curr_chunk))
             print("len:", [len(d) for d in data_buffers])
 
             # aggregate and store aggregated values in the next zoom_level's data
-            data_buffers[curr_zoom+1] += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
+            data_buffers[curr_zoom + 1] \
+                += list(ct.aggregate(curr_chunk, 2 ** args.zoom_step))
             data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
             positions[curr_zoom] += chunk_size
-            data = data_buffers[curr_zoom+1]
+            data = data_buffers[curr_zoom + 1]
             curr_zoom += 1
 
             # we've created enough tile levels to cover the entire maximum width
@@ -129,7 +134,6 @@ def main():
     # still need to take care of the last chunk
 
     data = np.array(data)
-    t1 = time.time()
 
     '''
     curr_zoom = 0
@@ -159,9 +163,8 @@ def main():
     print "len(data):", len(data)
     '''
 
-    #print data
+    # print data
+
 
 if __name__ == '__main__':
     main()
-
-

@@ -1,33 +1,33 @@
-import collections as col
-import math
 import sqlite3
+
 
 def tileset_info(db_file):
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
 
-    row = c.execute("SELECT * from tileset_info").fetchone();
+    row = c.execute("SELECT * from tileset_info").fetchone()
     if row is not None and len(row) == 9:
         header = row[8]
     else:
         header = ""
 
     ts_info = {
-            'zoom_step': row[0],
-            'max_length': row[1],
-            'assembly': row[2],
-            'chrom_names': row[3],
-            'chrom_sizes': row[4],
-            'tile_size': row[5],
-            'max_zoom': row[6],
-            'max_width': row[7],
-            "min_pos": [1],
-            "max_pos": [row[1]],
-            "header": header
-            }
+        'zoom_step': row[0],
+        'max_length': row[1],
+        'assembly': row[2],
+        'chrom_names': row[3],
+        'chrom_sizes': row[4],
+        'tile_size': row[5],
+        'max_zoom': row[6],
+        'max_width': row[7],
+        "min_pos": [1],
+        "max_pos": [row[1]],
+        "header": header
+    }
     conn.close()
 
     return ts_info
+
 
 def tiles(filepath, tile_ids):
     '''
@@ -47,12 +47,11 @@ def tiles(filepath, tile_ids):
     '''
     to_return = []
 
-    for  tile_id in tile_ids:
-        tile_option_parts = tile_id.split('|')[1:]
+    for tile_id in tile_ids:
+        # tile_option_parts = tile_id.split('|')[1:]
         tile_no_options = tile_id.split('|')[0]
         parts = tile_no_options.split('.')
 
-        uuid = parts[0]
         zoom = int(parts[1])
         xpos = int(parts[2])
 
@@ -64,15 +63,16 @@ def tiles(filepath, tile_ids):
             # the old rows are indexed by the higher
             # resolution tile numbers
             higher_xpos = 2 ** extra_zoom * xpos + j
-            old_rows = get_1D_tiles(filepath, 
-                    zoom + extra_zoom, 
-                    higher_xpos)
+            old_rows = get_1D_tiles(filepath,
+                                    zoom + extra_zoom,
+                                    higher_xpos)
             new_rows += old_rows
-                
+
         # print("new_rows length", len(new_rows))
         to_return += [(tile_id, new_rows)]
 
     return to_return
+
 
 def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
     '''
@@ -114,10 +114,10 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
         rStartPos <= {}
     '''.format(zoom, tile_start_pos, tile_end_pos)
 
-    import time
-    t1 = time.time()
+    # import time
+    # t1 = time.time()
     rows = c.execute(query).fetchall()
-    t2 = time.time()
+    # t2 = time.time()
 
     new_rows = []
 
@@ -127,17 +127,12 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
         except AttributeError:
             uid = r[5]
 
-        tile_pos = (
-            tile_x_pos + math.floor((r[0] - tile_start_pos) / tile_width)
-        )
-
         x_start = r[0]
         x_end = r[1]
 
         for i in range(tile_x_pos, tile_x_pos + num_tiles):
             tile_x_start = i * tile_width
-            tile_x_end = (i+1) * tile_width
-            tile_pos = i
+            tile_x_end = (i + 1) * tile_width
 
             if x_start < tile_x_end and x_end >= tile_x_start:
                 new_rows += [
@@ -151,6 +146,7 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
     conn.close()
 
     return new_rows
+
 
 def list_items(db_file, start, end, max_entries=None):
     '''

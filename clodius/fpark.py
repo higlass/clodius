@@ -4,6 +4,7 @@ import glob
 import itertools as it
 import os.path as op
 
+
 class ParallelData:
     def __init__(self, data):
         self.data = data
@@ -37,7 +38,7 @@ class ParallelData:
 
     def groupByKey(self):
         '''
-        When called on a dataset of (K, V) pairs, returns a dataset of (K, Iterable<V>) pairs. 
+        When called on a dataset of (K, V) pairs, returns a dataset of (K, Iterable<V>) pairs.
         '''
         buckets = col.defaultdict(list)
 
@@ -103,10 +104,12 @@ class ParallelData:
     def take(self, n):
         return self.data[:n]
 
+
 class FakeSparkContext:
     '''
     Emulate a SparkContext for local processing.
     '''
+
     def __init__(self):
         pass
 

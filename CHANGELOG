@@ -1,3 +1,32 @@
+v0.10.9
+
+- Update the bedpe aggregator to fix the error in using a chromsizes file
+- Make tsv_to_mrmatrix more flexible and add it to the exported scripts.
+- Display more meaningful error messages when encountering unknown chromosomes or assemblies
+- Removed redundant multivec function
+- Removed obsolete bigwig function
+- Make tsv_to_mrmatrix more flexible and add it to the exported
+- Detect non-symmetric square coolers using the storage-mode metadata. Support for the symmetric property is retained for the legacy mcool format.
+
+v0.10.7
+
+- Changed bins_per_dimension in npvector.tileset_info to match the value in
+in npvector.tiles (1024)
+
+v0.10.5
+
+- Removed slugid decode
+
+v0.10.2 (2019-02-06)
+
+- new option to import a "states" file format, a bed file with categorical data, e.g. from chromHMM to multivec format.
+- while converting a bed file to multivec, each segment can now be a multiple of base_resolution,
+rather than exactly match the base_resolution
+
+v0.10.1 (2019-01-22)
+
+- Removed a buggy print statement from the conversion script
+
 v0.9.5 (2018-11-11)
 
 - If the start position is greater than the end position, switch them around

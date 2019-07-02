@@ -17,14 +17,12 @@ before_install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   # Prefer stability to having the latest
-  #- conda update --yes conda
+  # - conda update --yes conda
 
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy=1.13.1
-  - pip install nose
   - pip install -r requirements.txt
-  - ./get_test_data.sh
+  - pip install -r requirements-dev.txt
 
 script:
-  - nosetests test 
-
+  - ./travis_test.sh
