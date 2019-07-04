@@ -46,7 +46,7 @@ def test_bedfile_to_multivec():
         # chr1    0   1000    1.0 2.0 3.0
         # chr1    1000    2000
         # chr2    5000    6000    20.0    30.0    40.0
-        # 
+        #
         # # input chromsizes
         # chr1  10000
         # chr2    8000
@@ -57,7 +57,7 @@ def test_bedfile_to_multivec():
         assert tile[0][0] == 1.0
         assert tile[0][15] == 20.0
 
-        assert tile[1][0] == 2.0        
+        assert tile[1][0] == 2.0
         assert tile[2][0] == 3.0
         assert tile[2][15] == 40.0
 
