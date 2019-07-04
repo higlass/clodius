@@ -134,6 +134,10 @@ def get_tiles(db_file, zoom, x, y, width=1, height=1):
 
     new_rows = col.defaultdict(list)
 
+    for i in range(x, x + width):
+        for j in range(y, y + height):
+            new_rows[(i,j)] = []
+
     for r in rows:
         try:
             uid = r[4].decode('utf-8')
@@ -158,6 +162,7 @@ def get_tiles(db_file, zoom, x, y, width=1, height=1):
         except Exception as e:
             properties = None
             pass
+
 
         for i in range(x, x + width):
             for j in range(y, y + height):
