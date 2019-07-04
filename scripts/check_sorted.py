@@ -13,15 +13,15 @@ for line in sys.stdin:
     val2 = int(parts[1])
 
     if val1 > val2:
-        print >>sys.stderr, "Not triangular:", counter
+        print("Not triangular:", counter, file=sys.stderr)
         sys.exit(1)
 
     if curr_val < prev_val:
-        print >>sys.stderr, "Not sorted, line:", counter
+        print("Not sorted, line:", counter, file=sys.stderr)
         sys.exit(1)
     elif curr_val == prev_val:
         if (curr_val2 < prev_val2):
-            print >>sys.stderr, "Not sorted, line:", counter
+            print("Not sorted, line:", counter, file=sys.stderr)
             sys.exit(1)
 
     prev_val = curr_val
@@ -29,4 +29,4 @@ for line in sys.stdin:
     counter += 1
 
     if counter % 1000000 == 0:
-        print "counter:", counter, prev_val, curr_val
+        print("counter:", counter, prev_val, curr_val)

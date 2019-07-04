@@ -1,31 +1,24 @@
-from setuptools import setup, find_packages
-from distutils import sysconfig
-
-#from distutils.extension import Extension
-
-#from Cython.Distutils import build_ext
-#from Cython.Build import cythonize
-
-
-print("packages:", find_packages())
+from setuptools import setup
 
 setup_requires = [
-        'numpy',
-        ]
+    'numpy',
+]
 
 install_requires = [
-        'numpy',
-        'negspy',
-        'pysam',
-        'dask',
-        'requests',
-        'h5py',
-        'pandas',
-        'slugid',
-        'sortedcontainers',
-        'cooler>=0.8.0',
-        'pybbi==0.2.0',
-        'Click']
+    'numpy',
+    'negspy',
+    'pysam',
+    'dask',
+    'requests',
+    'h5py',
+    'pandas',
+    'slugid',
+    'sortedcontainers',
+    'nose',
+    'cooler>=0.8.5',
+    'pybbi>=0.2.0',
+    'Click>=7'
+]
 
 setup(
     name='clodius',
@@ -37,9 +30,12 @@ setup(
     packages=['clodius', 'clodius.cli', 'clodius.tiles'],
     setup_requires=setup_requires,
     install_requires=install_requires,
+    scripts=[
+        'scripts/tsv_to_mrmatrix.py'
+    ],
     entry_points={
         'console_scripts': [
-            'clodius = clodius.cli.aggregate:cli',
-            ]
-        }
+            'clodius = clodius.cli.aggregate:cli'
+        ]
+    }
 )

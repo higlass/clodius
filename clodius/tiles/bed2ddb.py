@@ -1,5 +1,6 @@
 import collections as col
-import sqlite3 
+import sqlite3
+
 
 def get_2d_tileset_info(db_file):
     conn = sqlite3.connect(db_file)
@@ -22,7 +23,8 @@ def get_2d_tileset_info(db_file):
 
     return tileset_info
 
-def get_1D_tiles(db_file, tile_ids):
+
+def get_1D_tiles(db_file, zoom, tile_x_pos, numx):
     '''
     Retrieve a contiguous set of tiles from a 2D db tile file.
 
@@ -86,7 +88,7 @@ def get_1D_tiles(db_file, tile_ids):
 
         for i in range(tile_x_pos, tile_x_pos + numx):
             tile_x_start = i * tile_width
-            tile_x_end = (i+1) * tile_width
+            tile_x_end = (i + 1) * tile_width
 
             if (
                 x_start < tile_x_end and
@@ -94,10 +96,10 @@ def get_1D_tiles(db_file, tile_ids):
             ):
                 # add the position offset to the returned values
                 new_rows[i] += [
-                    {'xStart': r[0],
-                     'xEnd': r[1],
-                     'yStart': r[2],
-                     'yEnd': r[3],
+                    {'xStart': x_start,
+                     'xEnd': x_end,
+                     'yStart': y_start,
+                     'yEnd': y_end,
                      'chrOffset': r[4],
                      'importance': r[5],
                      'uid': uid,
@@ -105,6 +107,7 @@ def get_1D_tiles(db_file, tile_ids):
     conn.close()
 
     return new_rows
+
 
 def get_2D_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
     '''
@@ -179,10 +182,10 @@ def get_2D_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
         for i in range(tile_x_pos, tile_x_pos + numx):
             for j in range(tile_y_pos, tile_y_pos + numy):
                 tile_x_start = i * tile_width
-                tile_x_end = (i+1) * tile_width
+                tile_x_end = (i + 1) * tile_width
 
                 tile_y_start = j * tile_width
-                tile_y_end = (j+1) * tile_width
+                tile_y_end = (j + 1) * tile_width
 
                 if (
                     x_start < tile_x_end and
