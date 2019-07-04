@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import Bio.SeqIO as bsio
 import argparse
 import gzip
 import sys
@@ -8,13 +7,13 @@ import sys
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python create_chrominfo.py [genome.fa/-]
 
     Create a chrominfo file for a genome
 """)
 
-    #parser.add_argument('argument', nargs=1)
+    # parser.add_argument('argument', nargs=1)
     parser.add_argument('fasta_file')
 
     args = parser.parse_args()
@@ -26,7 +25,7 @@ def main():
     else:
         f = open(args.fasta_file, 'rb')
 
-    #fseq = bsio.parse(f, 'fasta')
+    # fseq = bsio.parse(f, 'fasta')
 
     curr_name = None
     curr_size = 0
@@ -43,14 +42,14 @@ def main():
             curr_size += len(line.strip())
     print("{}\t{}".format(curr_name, curr_size))
 
-    #parser.add_argument('argument', nargs=1)
+    # parser.add_argument('argument', nargs=1)
     # parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
+    # help="Some option", type='str')
     # parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
+    # help='Another useless option')
     '''
     for record in fseq:
-        #print("record.id", record.id, len(record.seq), file=sys.stderr)
+        # print("record.id", record.id, len(record.seq), file=sys.stderr)
         print("{}\t{}".format(record.id, len(record.seq)))
 
     args = parser.parse_args()

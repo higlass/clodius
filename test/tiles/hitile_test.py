@@ -1,11 +1,8 @@
 import dask.array as da
 import h5py
 import clodius.tiles.hitile as hghi
-import math
 import numpy as np
 import os.path as op
-import random
-import sys
 import tempfile
 
 

@@ -7,3 +7,4 @@ wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/wgEncodeCaltechRnaSeqHuv
 wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/points_density.h5
 wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/int_matrices.hdf5
 wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/corrected.geneListwithStrand.bed.multires
+wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/labels.h5

@@ -1,10 +1,4 @@
-from setuptools import setup, find_packages
-from distutils import sysconfig
-
-#from distutils.extension import Extension
-
-#from Cython.Distutils import build_ext
-#from Cython.Build import cythonize
+from setuptools import setup
 
 setup_requires = [
     'numpy',
@@ -36,9 +30,12 @@ setup(
     packages=['clodius', 'clodius.cli', 'clodius.tiles'],
     setup_requires=setup_requires,
     install_requires=install_requires,
+    scripts=[
+        'scripts/tsv_to_mrmatrix.py'
+    ],
     entry_points={
         'console_scripts': [
-            'clodius = clodius.cli.aggregate:cli',
+            'clodius = clodius.cli.aggregate:cli'
         ]
     }
 )

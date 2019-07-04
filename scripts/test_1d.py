@@ -4,10 +4,7 @@ from __future__ import print_function
 
 import argparse
 import clodius.hdf_tiles as ch
-import clodius.tiles as ct
 import h5py
-import math
-import numpy as np
 import random
 import sys
 import time
@@ -15,7 +12,7 @@ import time
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python read.py hdf_file
 """)
 
@@ -24,11 +21,11 @@ def main():
     parser.add_argument('-x', default=None, type=int)
 
     parser.add_argument('-n', '--num-trials', default=1, type=int)
-    #parser.add_argument('argument', nargs=1)
+    # parser.add_argument('argument', nargs=1)
     # parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
+    # help="Some option", type='str')
     # parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
+    # help='Another useless option')
 
     args = parser.parse_args()
 
@@ -50,7 +47,7 @@ def main():
 
         d = ch.get_data(f, z, x)
         print("z:", z, "x:", x, "len:", len(d), d)
-        #d =  ch.get_data(f, 1, 1)
+        # d =  ch.get_data(f, 1, 1)
 
         # print "z:", z, "x:", x
     t2 = time.time()
