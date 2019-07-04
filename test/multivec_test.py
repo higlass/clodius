@@ -16,9 +16,6 @@ def test_bedfile_to_multivec():
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         out_file = op.join(tmp_dir, 'out.multivec')
-        # TODO: Make assertions about result
-        # print("input_file", input_file)
-        # print("output_file", out_file.name)
 
         _ = runner.invoke(
             ccc.bedfile_to_multivec,
@@ -43,6 +40,26 @@ def test_bedfile_to_multivec():
 
         assert 'resolutions' in tsinfo
         assert tsinfo['max_pos'][0] == 18000
+        tile = (ctv.get_single_tile(out_file, (0, 0)))
+
+        # input_file:
+        # chr1    0   1000    1.0 2.0 3.0
+        # chr1    1000    2000
+        # chr2    5000    6000    20.0    30.0    40.0
+        # 
+        # # input chromsizes
+        # chr1  10000
+        # chr2    8000
+
+        # first row, first chrom first value
+        assert len(tile) == 3
+
+        assert tile[0][0] == 1.0
+        assert tile[0][15] == 20.0
+
+        assert tile[1][0] == 2.0        
+        assert tile[2][0] == 3.0
+        assert tile[2][15] == 40.0
 
 
 def test_load_multivec_tiles():

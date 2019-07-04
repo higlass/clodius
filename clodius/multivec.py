@@ -44,9 +44,9 @@ def bedfile_to_multivec(input_filenames, f_out,
     print('base_resolution:', base_resolution)
     warned = False
 
-    for count, lines in enumerate(zip(*files)):
+    for _, lines in enumerate(zip(*files)):
         # Identifies bedfile headers and ignore them
-        if "browser" == lines[0][0:7] or "track" in lines[0][0:6]:
+        if lines[0].startswith('browser') or lines[0].startswith('track'):
             continue
 
         chrom, start, end, vector = bedline_to_chrom_start_end_vector(
@@ -57,7 +57,7 @@ def bedfile_to_multivec(input_filenames, f_out,
             logger.warn('Lines contain fewer columns than expected: %s', lines)
             vector += [np.nan] * (len(lines) * num_rows - len(vector))
 
-         if (end % base_resolution != 0 or start % base_resolution != 0) and not warned:
+        if (end % base_resolution != 0 or start % base_resolution != 0) and not warned:
             logger.warn(
                 "WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".
                 format(base_resolution, lines))
