@@ -11,6 +11,23 @@ import tempfile
 testdir = op.realpath(op.dirname(__file__))
 
 
+def test_nonstandard_chrom():
+    filename = 'test/sample_data/test_non_standard_chrom.bed'
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    ret = cca._bedfile(filename, f.name,
+                       'hg19', None, False,
+                       None, 100, 1024, None, None, 0)
+
+    assert ret is None
+
+    ret = cca._bedfile(filename, f.name,
+                       'dfsdfs', None, False,
+                       None, 100, 1024, None, None, 0)
+
+    assert ret is None
+
+
 def test_get_tileset_info():
     filename = 'test/sample_data/gene_annotations.short.db'
     t = cdt.get_tileset_info(filename)
