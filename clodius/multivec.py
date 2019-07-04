@@ -54,7 +54,7 @@ def bedfile_to_multivec(input_filenames, f_out,
         # if vector[0] > 0 or vector[1] > 0:
 
         if len(vector) < len(lines) * num_rows:
-            logger.warn('Lines contain less columns than expected: %s', lines)
+            logger.warn('Lines contain fewer columns than expected: %s', lines)
             vector += [np.nan] * (len(lines) * num_rows - len(vector))
 
         if end % base_resolution != 0 or start % base_resolution != 0 and not warned:
