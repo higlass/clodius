@@ -57,7 +57,7 @@ def bedfile_to_multivec(input_filenames, f_out,
             logger.warn('Lines contain fewer columns than expected: %s', lines)
             vector += [np.nan] * (len(lines) * num_rows - len(vector))
 
-        if end % base_resolution != 0 or start % base_resolution != 0 and not warned:
+         if (end % base_resolution != 0 or start % base_resolution != 0) and not warned:
             logger.warn(
                 "WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".
                 format(base_resolution, lines))
