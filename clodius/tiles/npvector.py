@@ -123,7 +123,7 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     ret_array = np.nansum(a.reshape((-1, num_to_sum)), axis=1)
 
     if not_nan_array is None:
-        not_nan_data = ~np.isnan(ret_array[x_start:x_end])
+        not_nan_data = ~np.isnan(array[x_start:x_end])
     else:
         not_nan_data = not_nan_array[x_start:x_end]
 
