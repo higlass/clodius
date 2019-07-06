@@ -170,7 +170,7 @@ def _bedgraph_to_multivec(
 
         if format == 'epilogos':
             cmv.bedfile_to_multivec(filepaths, f_out, epilogos_bedline_to_vector,
-                                    starting_resolution, has_header, chunk_size)
+                                    starting_resolution, has_header, chunk_size, num_rows)
         elif format == 'states':
             assert(
                 row_infos is not None), "A row_infos file must be provided for --format = 'states' "
@@ -179,10 +179,10 @@ def _bedgraph_to_multivec(
             states_dic = {states_names[x]: x for x in range(len(row_infos))}
 
             cmv.bedfile_to_multivec(filepaths, f_out, states_bedline_to_vector,
-                                    starting_resolution, has_header, chunk_size, states_dic)
+                                    starting_resolution, has_header, chunk_size, num_rows, states_dic)
         else:
             cmv.bedfile_to_multivec(filepaths, f_out, bedline_to_chrom_start_end_vector,
-                                    starting_resolution, has_header, chunk_size)
+                                    starting_resolution, has_header, chunk_size, num_rows)
 
         f_out.close()
         tf = temp_file
