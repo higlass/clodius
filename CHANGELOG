@@ -1,4 +1,6 @@
-**Unreleased**
+v0.10.11
+
+- Calculate np.nan on the fly if not available for npvector tracks
 
 v0.10.10
 
