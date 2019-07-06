@@ -20,14 +20,15 @@ def tiles(labels, z, x, importances=None, tile_size=16):
         indices = np.argsort(tile_importances)[::-1][:tile_size]
     else:
         tile_importances = np.zeros(x_end - x_start)
-        indices = np.linspace(x_start, x_end - 1, tile_size, dtype=int) - x_start
+        indices = np.linspace(x_start, x_end - 1,
+                              tile_size, dtype=int) - x_start
 
     return [{'x': x, 'label': label, 'importance': importance}
             for x, label, importance
-                in zip((x_start + indices).tolist(),
-                       tile_labels[indices].tolist(),
-                       tile_importances[indices].tolist())
-    ]
+            in zip((x_start + indices).tolist(),
+                   tile_labels[indices].tolist(),
+                   tile_importances[indices].tolist())
+            ]
 
 
 def tiles_wrapper(array, tile_ids, importances):
