@@ -54,7 +54,8 @@ def tileset_info(array, bounds=None, bins_per_dimension=1024):
         "min_pos": min_pos,
         "max_pos": max_pos,
         "max_zoom": max_zoom,
-        "bins_per_dimension": bins_per_dimension
+        "bins_per_dimension": bins_per_dimension,
+        "tile_size": bins_per_dimension,
     }
 
 
