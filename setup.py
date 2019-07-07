@@ -3,6 +3,9 @@ import os
 import io
 
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
 def read(*parts, **kwargs):
     filepath = os.path.join(HERE, *parts)
     encoding = kwargs.pop('encoding', 'utf-8')
