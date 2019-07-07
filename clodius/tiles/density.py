@@ -105,7 +105,7 @@ def density_tiles(points_file, z, x, y, width=1, height=1):
             for j in range(height):
                 # filter from the larger subregion
                 filtered_points = filter_points(
-                    all_points, tile_bounds(points_file, z, x + i, y + j)
+                    all_points, tile_bounds(tileset_info(points_file), z, x + i, y + j)
                 )
 
                 dt = np.histogram2d(filtered_points[:, 0],
