@@ -228,7 +228,8 @@ def test_clodius_aggregate_bedgraph1():
     assert(np.isnan(values[14]))
     assert(np.isnan(values[15]))
 
-    chr_2r_pos = nc.chr_pos_to_genome_pos('chr2R', 0, 'dm3')
+    chrom_info = nc.get_chrominfo('dm3')
+    chr_2r_pos = nc.chr_pos_to_genome_pos('chr2R', 0, chrom_info)
     # print('chr_2r_pos:', chr_2r_pos)
 
     assert(np.isnan(values[chr_2r_pos + 28]))
