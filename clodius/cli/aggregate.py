@@ -22,9 +22,13 @@ import sys
 import time
 import gzip
 import json
+import typing
 
 from .utils import get_tile_pos_from_lng_lat
+from .utils import collapse
 
+REGULAR_TYPE = 0
+FILLER_TYPE = 1
 
 @cli.group()
 def aggregate():
@@ -247,12 +251,6 @@ def _bedpe(filepath, output_file,
         try:
             parts = first_line.split()
 
-            '''
-            print("chr1_col", chr1_col, "chr2_col", chr2_col,
-                  "from1_col:", from1_col, "from2_col", from2_col,
-                  "to1_col", to1_col, "to2_col", to2_col)
-            '''
-
             int(parts[from1_col - 1])
             int(parts[to1_col - 1])
             int(parts[from2_col - 1])
@@ -402,6 +400,71 @@ def _bedpe(filepath, output_file,
     return
 
 
+def _create_fillers(
+    intervals: typing.List,
+    max_zoom: int,
+    cum_chrom_lengths: typing.Dict,
+    cursor: sqlite3.Cursor,
+    added: typing.Set[int]
+):
+    '''
+    Create "filler" regions that show where there's annotations, even
+    if some of them may be hidden.
+
+
+    Args:
+        intervals: A list of genomic intervals
+        max_zoom: The maximum zoom level
+        cursor: An sqlite3 cursor for inserting data into the DB
+        added: A list of the fillers that have already been added
+    '''
+    # we don't need fillers for the highest zoom level
+    
+    curr_zoom = 1
+    counter = len(added)
+
+    while curr_zoom <= max_zoom:
+        scale = 1 / 2 ** curr_zoom
+
+        intervals = collapse(intervals, scale)
+
+        exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?,?)'
+        exec_statement_ix = 'INSERT INTO position_index VALUES (?,?,?)'
+
+        for value in intervals:
+            uid = f'{value["start"]}_{value["end"]}_{value["strand"]}'
+            if uid in added:
+                continue
+            else:
+                added.add(uid)
+
+            cursor.execute(
+                exec_statement,
+                # primary key, zoomLevel, startPos, endPos, chrOffset, line
+                (counter, max_zoom - curr_zoom,
+                 0,
+                 value['start'], value['end'],
+                 value['chrOffset'],
+                 uid,
+                 '',
+                 FILLER_TYPE,
+                 value['strand'])
+            )
+
+            cursor.execute(
+                exec_statement_ix,
+                # add counter as a primary key
+                (counter, value['start'], value['end'])
+            )
+
+            counter += 1
+
+        curr_zoom += 1
+
+    print("len(added)", len(added))
+    return added
+
+
 def _bedfile(
     filepath,
     output_file,
@@ -415,6 +478,8 @@ def _bedfile(
     chromsizes_filename,
     offset
 ):
+
+
     if output_file is None:
         output_file = filepath + ".beddb"
     else:
@@ -482,8 +547,15 @@ def _bedfile(
             'chrOffset': pos_offset,
             'fields': '\t'.join(line),
             'importance': importance,
-            'chromosome': str(chrom)
+            'chromosome': str(chrom),
         }
+
+        if len(line) >= 6:
+            strand = line[5]
+        else:
+            strand = 'o'
+
+        parts['strand'] = strand
 
         return parts
 
@@ -574,13 +646,13 @@ def _bedfile(
     for d in dset:
         uid = d['uid']
         uid_to_entry[uid] = d
-        intervals += [(d['startPos'], d['endPos'], uid)]
+        intervals += [(d['startPos'], d['endPos'], uid, d['chromosome'])]
 
     tile_width = tile_size
 
     c = conn.cursor()
     c.execute(
-        '''
+        f'''
         CREATE TABLE intervals
         (
             id int PRIMARY KEY,
@@ -590,7 +662,9 @@ def _bedfile(
             endPos int,
             chrOffset int,
             uid text,
-            fields text
+            fields text,
+            type INTEGER DEFAULT {REGULAR_TYPE},
+            strand text
         )
         '''
     )
@@ -607,21 +681,41 @@ def _bedfile(
     curr_zoom = 0
     counter = 0
 
-    max_viewable_zoom = max_zoom
+    # print("intervals:", intervals)
 
-    if max_zoom is not None and max_zoom < max_zoom:
-        max_viewable_zoom = max_zoom
+    segments = [{
+        'start': s[0],
+        'end': s[1],
+        'strand': uid_to_entry[s[2]]['strand'],
+        'chrOffset': uid_to_entry[s[2]]['chrOffset'],
+    } for s in intervals]
 
+    sorted_segments = sorted(segments, key=lambda x: x['start'])
+
+    plus_segments = list(filter(lambda x: x['strand'] == '+', sorted_segments))
+    minus_segments = list(filter(lambda x: x['strand'] == '-', sorted_segments))
+    neither_segments = list(filter(lambda x: x['strand'] == 'o', sorted_segments))
+
+    added = _create_fillers(plus_segments, max_zoom,
+                    chrom_info.cum_chrom_lengths, c, set())
+    added = _create_fillers(minus_segments, max_zoom,
+                    chrom_info.cum_chrom_lengths, c, added)
+    added = _create_fillers(neither_segments, max_zoom,
+                    chrom_info.cum_chrom_lengths, c, added)
+
+    counter = len(added)
     sorted_intervals = sorted(intervals,
-                              key=lambda x: -uid_to_entry[x[-1]]['importance'])
+                              key=lambda x: -uid_to_entry[x[2]]['importance'])
     # print('si:', sorted_intervals[:10])
     print("max_per_tile:", max_per_tile)
+    print("counter1:", counter)
+    # print('sorted_segments:', sorted_segments)
 
     tile_counts = col.defaultdict(int)
 
     for interval in sorted_intervals:
         # go through each interval from most important to least
-        while curr_zoom <= max_viewable_zoom:
+        while curr_zoom <= max_zoom:
             # try to place it in the highest zoom level and go down from there
             tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
 
@@ -670,10 +764,10 @@ def _bedfile(
 
             if space_available:
                 # there's available space
-                value = uid_to_entry[interval[-1]]
+                value = uid_to_entry[interval[2]]
 
                 # one extra question mark for the primary key
-                exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
+                exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?,?)'
 
                 c.execute(
                     exec_statement,
@@ -683,7 +777,9 @@ def _bedfile(
                      value['startPos'], value['endPos'],
                      value['chrOffset'],
                      value['uid'],
-                     value['fields'])
+                     value['fields'],
+                     REGULAR_TYPE,
+                     value['strand'])
                 )
 
                 if counter % 1000 == 0:

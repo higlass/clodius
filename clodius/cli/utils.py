@@ -1,5 +1,59 @@
 import math
 
+DEFAULT_MAX_DIST_BETWEEN = 5
+
+"""
+* Take a list of genes, which can be any list with elements containing
+* { start, end } fields and return another list of { start, end } 
+* fields containing the collapsed genes. 
+*
+* The segments should be sorted by their start coordinate.
+*
+* The scale parameter is the number of base pairs per pixels
+"""
+def collapse(segments,
+             scale,
+             max_dist_between=DEFAULT_MAX_DIST_BETWEEN):
+    collapsed = []
+
+    # no segments in, no segments out
+    if not segments:
+      return []
+
+    #start with the first segment
+    curr_start = segments[0]['start']
+    curr_end = segments[0]['end']
+
+    # continue on to the next segments
+    for segment in segments:
+        if segment['start'] < curr_end + max_dist_between * 1 / scale:
+            curr_end = max(curr_end, segment['end'])
+        else:
+            collapsed += [{
+                **segment,
+                **{
+                    'type': 'filler',
+                    'start': curr_start,
+                    'end': curr_end,
+                }
+            }]
+
+            curr_start = segment['start']
+            curr_end = segment['end']
+
+    # add the final segment
+    collapsed += [{
+        **segments[-1],
+        ** {
+            'start': curr_start,
+            'end': curr_end,
+            'type': 'filler',
+        }
+    }]
+
+#     print('collapsed:', collapsed)
+    return collapsed
+
 
 def get_tile_box(zoom, x, y):
     """convert Google-style Mercator tile coordinate to

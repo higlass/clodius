@@ -73,6 +73,11 @@ def tiles(filepath, tile_ids):
 
     return to_return
 
+def convert_type(int_type):
+    REGULAR_TYPE = 0
+    FILLER_TYPE = 1
+
+    return 'filler' if int_type == FILLER_TYPE else 'regular'
 
 def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
     '''
@@ -105,7 +110,7 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
     tile_end_pos = tile_start_pos + num_tiles * tile_width
 
     query = '''
-    SELECT startPos, endPos, chrOffset, importance, fields, uid
+    SELECT startPos, endPos, chrOffset, importance, fields, uid, type, strand
     FROM intervals,position_index
     WHERE
         intervals.id=position_index.id AND
@@ -114,6 +119,7 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
         rStartPos <= {}
     '''.format(zoom, tile_start_pos, tile_end_pos)
 
+    # print("query:", query)
     # import time
     # t1 = time.time()
     rows = c.execute(query).fetchall()
@@ -141,7 +147,9 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
                      'xEnd': r[1],
                      'chrOffset': r[2],
                      'importance': r[3],
+                     'type': convert_type(r[6]),
                      'uid': uid,
+                     'strand': r[7],
                      'fields': r[4].split('\t')}]
     conn.close()
 
@@ -172,7 +180,7 @@ def list_items(db_file, start, end, max_entries=None):
     zoom = 100000
 
     query = '''
-    SELECT startPos, endPos, chrOffset, importance, fields, uid
+    SELECT startPos, endPos, chrOffset, importance, fields, uid, type
     FROM intervals,position_index
     WHERE
         intervals.id=position_index.id AND
@@ -201,6 +209,7 @@ def list_items(db_file, start, end, max_entries=None):
              'chrOffset': r[2],
              'importance': r[3],
              'uid': uid,
+             'type': convert_type(r[6]),
              'fields': r[4].split('\t')}]
     conn.close()
 
