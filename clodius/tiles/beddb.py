@@ -73,10 +73,10 @@ def tiles(filepath, tile_ids):
 
     return to_return
 
-def convert_type(int_type):
-    REGULAR_TYPE = 0
-    FILLER_TYPE = 1
+REGULAR_TYPE = 0
+FILLER_TYPE = 1
 
+def convert_type(int_type):
     return 'filler' if int_type == FILLER_TYPE else 'regular'
 
 def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
@@ -116,14 +116,30 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
         intervals.id=position_index.id AND
         zoomLevel <= {} AND
         rEndPos >= {} AND
-        rStartPos <= {}
-    '''.format(zoom, tile_start_pos, tile_end_pos)
+        rStartPos <= {} AND
+        intervals.type == {}
+    '''.format(zoom, tile_start_pos, tile_end_pos, REGULAR_TYPE)
 
     # print("query:", query)
     # import time
     # t1 = time.time()
     rows = c.execute(query).fetchall()
     # t2 = time.time()
+    
+    # get fillers
+    query = '''
+    SELECT startPos, endPos, chrOffset, importance, fields, uid, type, strand
+    FROM intervals,position_index
+    WHERE
+        intervals.id=position_index.id AND
+        zoomLevel == {} AND
+        rEndPos >= {} AND
+        rStartPos <= {} AND
+        intervals.type == {}
+    '''.format(zoom, tile_start_pos, tile_end_pos, FILLER_TYPE)
+
+    filler_rows = c.execute(query).fetchall()
+    rows += filler_rows
 
     new_rows = []
 
@@ -186,8 +202,9 @@ def list_items(db_file, start, end, max_entries=None):
         intervals.id=position_index.id AND
         zoomLevel <= {} AND
         rEndPos >= {} AND
-        rStartPos <= {}
-    '''.format(zoom, start, end)
+        rStartPos <= {} AND 
+        intervals.type = {}
+    '''.format(zoom, start, end, REGULAR_TYPE)
 
     if max_entries is not None:
         query += ' LIMIT {}'.format(max_entries)

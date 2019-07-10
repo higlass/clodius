@@ -405,7 +405,7 @@ def _create_fillers(
     max_zoom: int,
     cum_chrom_lengths: typing.Dict,
     cursor: sqlite3.Cursor,
-    added: typing.Set[int]
+    counter: int
 ):
     '''
     Create "filler" regions that show where there's annotations, even
@@ -416,12 +416,11 @@ def _create_fillers(
         intervals: A list of genomic intervals
         max_zoom: The maximum zoom level
         cursor: An sqlite3 cursor for inserting data into the DB
-        added: A list of the fillers that have already been added
+        counter: The number of entries already added
     '''
     # we don't need fillers for the highest zoom level
     
     curr_zoom = 1
-    counter = len(added)
 
     while curr_zoom <= max_zoom:
         scale = 1 / 2 ** curr_zoom
@@ -432,12 +431,8 @@ def _create_fillers(
         exec_statement_ix = 'INSERT INTO position_index VALUES (?,?,?)'
 
         for value in intervals:
-            uid = f'{value["start"]}_{value["end"]}_{value["strand"]}'
-            if uid in added:
-                continue
-            else:
-                added.add(uid)
-
+            # uid = f'{value['start']}_{value['end']}_{value['strand']}'
+            uid = slugid.nice()
             cursor.execute(
                 exec_statement,
                 # primary key, zoomLevel, startPos, endPos, chrOffset, line
@@ -461,8 +456,7 @@ def _create_fillers(
 
         curr_zoom += 1
 
-    print("len(added)", len(added))
-    return added
+    return counter
 
 
 def _bedfile(
@@ -696,14 +690,13 @@ def _bedfile(
     minus_segments = list(filter(lambda x: x['strand'] == '-', sorted_segments))
     neither_segments = list(filter(lambda x: x['strand'] == 'o', sorted_segments))
 
-    added = _create_fillers(plus_segments, max_zoom,
-                    chrom_info.cum_chrom_lengths, c, set())
-    added = _create_fillers(minus_segments, max_zoom,
-                    chrom_info.cum_chrom_lengths, c, added)
-    added = _create_fillers(neither_segments, max_zoom,
-                    chrom_info.cum_chrom_lengths, c, added)
+    counter = _create_fillers(plus_segments, max_zoom,
+                    chrom_info.cum_chrom_lengths, c, counter)
+    counter = _create_fillers(minus_segments, max_zoom,
+                    chrom_info.cum_chrom_lengths, c, counter)
+    counter = _create_fillers(neither_segments, max_zoom,
+                    chrom_info.cum_chrom_lengths, c, counter)
 
-    counter = len(added)
     sorted_intervals = sorted(intervals,
                               key=lambda x: -uid_to_entry[x[2]]['importance'])
     # print('si:', sorted_intervals[:10])
