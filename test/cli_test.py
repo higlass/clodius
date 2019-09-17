@@ -110,7 +110,7 @@ def test_clodius_aggregate_bedgraph():
     '''
 
     assert(result.exit_code == 0)
-    f = h5py.File(output_file)
+    f = h5py.File(output_file, 'r')
     # print("tile_0_0", d)
 
     # print("tile:", cht.get_data(f, 22, 0))
@@ -213,7 +213,7 @@ def test_clodius_aggregate_bedgraph1():
 
     # print("result.output", result.output)
 
-    f = h5py.File('/tmp/dm3_values.hitile')
+    f = h5py.File('/tmp/dm3_values.hitile', 'r')
     # max_zoom = f['meta'].attrs['max-zoom']
     # TODO: Make assertions about result
     values = f['values_0']
