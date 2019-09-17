@@ -1,4 +1,3 @@
-import dask.array as da
 import h5py
 import clodius.tiles.hitile as hghi
 import numpy as np

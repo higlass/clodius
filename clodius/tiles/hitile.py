@@ -45,6 +45,7 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
 
     min_data = da.from_array(old_data, chunks)
     max_data = da.from_array(old_data, chunks)
+    old_data = da.from_array(old_data, chunks)
 
     for z in range(0, max_zoom, zoom_step):
         values_dset = f_new.require_dataset('values_' + str(z), (len(old_data),),
