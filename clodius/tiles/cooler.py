@@ -62,7 +62,8 @@ def get_chromosome_names_cumul_lengths(c):
     return chrom_names, chrom_sizes, chrom_cum_lengths
 
 
-def get_data(f, start_pos_1, end_pos_1, start_pos_2, end_pos_2, transform='default', resolution=None):
+def get_data(f, start_pos_1, end_pos_1, start_pos_2, end_pos_2,
+             transform='default', resolution=None):
     """Get balanced pixel data.
 
     Args:
@@ -180,7 +181,7 @@ def _get_info_multi_v1(file_path):
 
         c = cooler.Cooler(f["0"])
 
-        (chroms, chrom_sizes, chrom_cum_lengths) = get_chromosome_names_cumul_lengths(c)
+        chroms, chrom_sizes, chrom_cum_lengths = get_chromosome_names_cumul_lengths(c)
 
         total_length = int(chrom_cum_lengths[-1])
         max_zoom = f.attrs['max-zoom']
@@ -228,7 +229,8 @@ def get_quadtree_depth(chromsizes, binsize):
 
 
 def get_zoom_resolutions(chromsizes, base_res):
-    return [base_res * 2**x for x in range(get_quadtree_depth(chromsizes, base_res) + 1)]
+    return [base_res * 2**x
+            for x in range(get_quadtree_depth(chromsizes, base_res) + 1)]
 
 
 def print_zoom_resolutions(chromsizes_file, base_res):
@@ -242,7 +244,8 @@ def print_zoom_resolutions(chromsizes_file, base_res):
     print(','.join(str(res) for res in resolutions))
 
 
-def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='default', x_width=1, y_width=1):
+def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos,
+               transform_type='default', x_width=1, y_width=1):
     '''
     Generate tiles for a given location. This function retrieves tiles for
     a rectangular region of width x_width and height y_width
@@ -271,19 +274,13 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
 
     tile_size = resolution * BINS_PER_TILE
 
-    start1 = x_pos * tile_size
-    end1 = (x_pos + x_width) * tile_size
-    start2 = y_pos * tile_size
-    end2 = (y_pos + y_width) * tile_size
-
-    # print("resolution:", resolution)
-    # print("tile_size:", tile_size)
-    # print("transform_type:", transform_type);
-    # print('start1:', start1, end1)
-    # print('start2:', start2, end2)
+    start2 = x_pos * tile_size
+    end2 = (x_pos + x_width) * tile_size
+    start1 = y_pos * tile_size
+    end1 = (y_pos + y_width) * tile_size
 
     c = cooler.Cooler(hdf_for_resolution)
-    (chroms, chrom_sizes, chrom_cum_lengths) = get_chromosome_names_cumul_lengths(c)
+    chroms, chrom_sizes, chrom_cum_lengths = get_chromosome_names_cumul_lengths(c)
 
     total_length = sum(chrom_sizes.values())
 
@@ -292,28 +289,16 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
         transform_type, resolution=resolution
     )
 
-    # print('start1', start1, 'end1', end1, 'weight', len(weight1), 'end1 - start1 / tile_size', (end1 - start1) / resolution)
-
-    # print("data:", data)
-
-    # print("x_width:", x_width)
-    # print("y_width:", y_width)
     # split out the individual tiles
     data_by_tilepos = {}
 
     for x_offset in range(0, x_width):
         for y_offset in range(0, y_width):
 
-            start1 = (x_pos + x_offset) * tile_size
-            end1 = (x_pos + x_offset + 1) * tile_size
-            start2 = (y_pos + y_offset) * tile_size
-            end2 = (y_pos + y_offset + 1) * tile_size
-
-            # print("resolution:", resolution)
-            # print("tile_size", tile_size)
-            # print("x_pos:", x_pos, "x_offset", x_offset)
-            # print("start1", start1, 'end1', end1)
-            # print("start2", start2, 'end2', end2)
+            start2 = (x_pos + x_offset) * tile_size
+            end2 = (x_pos + x_offset + 1) * tile_size
+            start1 = (y_pos + y_offset) * tile_size
+            end1 = (y_pos + y_offset + 1) * tile_size
 
             df = data[data['genome_start1'] >= start1]
             df = df[df['genome_start1'] < end1]
@@ -323,8 +308,8 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
 
             binsize = resolution
 
-            j = ((df['genome_start1'].values - start1) // binsize).astype(int)
-            i = ((df['genome_start2'].values - start2) // binsize).astype(int)
+            i = ((df['genome_start1'].values - start1) // binsize).astype(int)
+            j = ((df['genome_start2'].values - start2) // binsize).astype(int)
 
             if 'balanced' in df:
                 v = np.nan_to_num(df['balanced'].values)
@@ -359,11 +344,11 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
                 bend1 = bend1[bend1 >= 0]
                 bend2 = bend2[bend2 >= 0]
 
-                out[:, bi] = np.nan
-                out[bj, :] = np.nan
+                out[:, bj] = np.nan
+                out[bi, :] = np.nan
 
-                out[:, bend1] = np.nan
-                out[bend2, :] = np.nan
+                out[:, bend2] = np.nan
+                out[bend1, :] = np.nan
 
             # print('sum(isnan1)', isnan1-1)
             # print('out.ravel()', sum(np.isnan(out.ravel())), len(out.ravel()))
@@ -499,7 +484,8 @@ def make_mats(filepath):
 
         c = cooler.Cooler(f['0'])
 
-        info['chromsizes'] = [[x[0], int(x[1])] for x in c.chromsizes.iteritems()]
+        info['chromsizes'] = [[x[0], int(x[1])]
+                              for x in c.chromsizes.iteritems()]
         info["min_pos"] = [int(m) for m in info["min_pos"]]
         info["max_pos"] = [int(m) for m in info["max_pos"]]
         info["max_zoom"] = int(info["max_zoom"])
@@ -515,6 +501,8 @@ def make_mats(filepath):
             info['mirror_tiles'] = 'false'
 
         mats[filepath] = [f, info]
+
+    info['mirror_tiles'] = 'false'
 
     return f, info
 
@@ -609,9 +597,13 @@ def generate_tiles(filepath, tile_ids):
     tileset_file_and_info = mats[filepath]
 
     tile_ids_by_zoom_and_transform = bin_tiles_by_zoom_level_and_transform(
-        tile_ids).values()
-    partitioned_tile_ids = list(it.chain(*[hgut.partition_by_adjacent_tiles(t)
-                                           for t in tile_ids_by_zoom_and_transform]))
+        tile_ids
+    ).values()
+
+    partitioned_tile_ids = list(
+        it.chain(*[hgut.partition_by_adjacent_tiles(t)
+                   for t in tile_ids_by_zoom_and_transform])
+    )
 
     generated_tiles = []
 
