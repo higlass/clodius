@@ -17,8 +17,7 @@ before_install:
   # Prefer stability to having the latest
   # - conda update --yes conda
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy=1.13.1
-  - pip install -r requirements.txt
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy
   - pip install -r requirements-dev.txt
 script:
   - ./travis_test.sh
