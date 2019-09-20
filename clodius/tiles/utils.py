@@ -36,8 +36,6 @@ def partition_by_adjacent_tiles(tile_ids, dimension=2):
 
         for tile_id_list in tile_id_lists:
             # iterate over each group of adjacent tiles
-            has_close_tile = False
-
             for ct_tile_id in tile_id_list:
                 ct_tile_id_parts = ct_tile_id.split('.')
                 ct_tile_position = list(
@@ -105,7 +103,6 @@ def tiles_wrapper_2d(tile_ids, tiles_function):
         if len(parts) < 4:
             raise IndexError("Not enough tile info present")
 
-        uid = parts[0]
         z, x, y = map(int, [parts[1], parts[2], parts[3]])
 
         tile_values += [(tile_id,
@@ -116,11 +113,11 @@ def tiles_wrapper_2d(tile_ids, tiles_function):
 
 def bundled_tiles_wrapper_2d(tile_ids, tiles_function):
     '''
-    Bundle adjacent tile requests so that they can be 
-    processed concurrently. This is helpful for function 
-    that require scanning a dataset. It's faster to filter 
-    a large region and then break it down into individual 
-    tiles than to go over the entire dataset and filter 
+    Bundle adjacent tile requests so that they can be
+    processed concurrently. This is helpful for function
+    that require scanning a dataset. It's faster to filter
+    a large region and then break it down into individual
+    tiles than to go over the entire dataset and filter
     individual tiles multiple times.
     '''
     tile_values = []
@@ -149,14 +146,6 @@ def bundled_tiles_wrapper_2d(tile_ids, tiles_function):
     return tile_values
 
 
-def random_tile(function):
-    zoom_level = random.randint(0, 10)
-    x_pos = random.randint(0, 2 ** zoom_level)
-    y_pos = random.randint(0, 2 ** zoom_level)
-
-    function(hg_points, zoom_level, x_pos, y_pos)
-
-
 def tile_bounds(tsinfo, z, x, y, width=1, height=1):
     '''
     Get the coordinate boundaries for the given tile.
@@ -171,9 +160,9 @@ def tile_bounds(tsinfo, z, x, y, width=1, height=1):
         The x position
     y: int
         The y position
-    width: int 
-        Return bounds for a region encompassing multiple tiles 
-    height: int 
+    width: int
+        Return bounds for a region encompassing multiple tiles
+    height: int
         Return bounds for a region encompassing multiple tiles
     '''
     min_pos = tsinfo['min_pos']

@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import random
-import shlex
 import sys
 import argparse
 
@@ -41,7 +40,7 @@ def dump_transcript(gene_name,
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python gff_to_gene_pred.py
 """)
 
@@ -50,9 +49,9 @@ def main():
                         help='Store the chromsizes in a separate file',
                         type=str)
     # parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
+    # help="Some option", type='str')
     # parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
+    # help='Another useless option')
 
     args = parser.parse_args()
 
@@ -68,10 +67,10 @@ def main():
                 continue
 
             parts = line.strip().split('\t')
-            #print('parts:', parts)
+            # print('parts:', parts)
 
             chrom = parts[0]
-            annotation_from = parts[1]
+            # annotation_from = parts[1]
             annotation_type = parts[2]
             start_pos = int(parts[3])
             end_pos = int(parts[4])
@@ -129,20 +128,22 @@ def main():
 
             if annotation_type == 'gene' or annotation_type == 'tRNA_gene':
                 if transcript_id is not None:
-                    dump_transcript(gene_name,
-                                    gene_id,
-                                    gene_type,
-                                    gene_description,
-                                    gene_importance,
-                                    gene_start,
-                                    gene_end,
-                                    transcript_id,
-                                    transcript_chrom,
-                                    transcript_start,
-                                    transcript_end,
-                                    transcript_strand,
-                                    transcript_cdss,
-                                    transcript_exons)
+                    pass
+                    # TODO: Fill in these variables
+                    # dump_transcript(gene_name,
+                    #                 gene_id,
+                    #                 gene_type,
+                    #                 gene_description,
+                    #                 gene_importance,
+                    #                 gene_start,
+                    #                 gene_end,
+                    #                 transcript_id,
+                    #                 transcript_chrom,
+                    #                 transcript_start,
+                    #                 transcript_end,
+                    #                 transcript_strand,
+                    #                 transcript_cdss,
+                    #                 transcript_exons)
 
                 split_id = attrs['ID'].split(':')
                 gene_id = attrs['ID']
@@ -193,17 +194,17 @@ def main():
                                     gene_importance,
                                     gene_start,
                                     gene_end,
-                                    transcript_id,
-                                    transcript_chrom,
-                                    transcript_start,
-                                    transcript_end,
-                                    transcript_strand,
-                                    transcript_cdss,
-                                    transcript_exons)
+                                    transcript_id)
+                # transcript_chrom,
+                # transcript_start,
+                # transcript_end,
+                # transcript_strand,
+                # transcript_cdss,
+                # transcript_exons)
 
                 transcript_exons = []
                 transcript_id = attrs['ID']
-                transcript_gene_name = gene_name
+                # transcript_gene_name = gene_name
                 transcript_chrom = chrom
                 transcript_start = start_pos
                 transcript_end = end_pos

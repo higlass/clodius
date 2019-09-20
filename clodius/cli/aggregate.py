@@ -35,11 +35,6 @@ def aggregate():
     pass
 
 
-def store_meta_data(cursor, zoom_step, max_length, assembly, chrom_names,
-                    chrom_sizes, tile_size, max_zoom, max_width, header=[]):
-    print("chrom_names:", chrom_names)
-
-
 def store_meta_data(
     cursor,
     zoom_step,
@@ -113,7 +108,7 @@ def reduce_values_by_importance(
     return combined_entries[:max_entries_per_tile]
 
 
-def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, row_infos_filename=None):
+def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method, row_infos_filename=None):
     '''
     Aggregate a multivec file.
 
@@ -138,9 +133,10 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
     (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(
         chromsizes_filename, assembly)
 
-    if method == 'maxtotal':
+    # TODO: "method" is not defined, so this would not work?
+    if method == 'maxtotal':  # noqa: F821
         pass
-    if method == 'logsumexp':
+    if method == 'logsumexp':  # noqa: F821
         def agg(x):
             a = x.T.reshape((x.shape[1], -1, 2))
             return sm.logsumexp(a, axis=2).T
@@ -166,11 +162,14 @@ def _multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, s
                                  row_infos=row_infos)
 
 
-def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_per_tile,
-           tile_size, max_zoom=None, chromosome=None,
+def _bedpe(filepath, output_file,
+           assembly, importance_column, has_header,
+           max_per_tile, tile_size, chromosome=None,
            chromsizes_filename=None,
-           chr1_col=0, from1_col=1, to1_col=2,
-           chr2_col=3, from2_col=4, to2_col=5):
+           chr1_col=1, from1_col=2, to1_col=3,
+           chr2_col=4, from2_col=5, to2_col=6,
+           max_zoom=None):
+
     print('output_file:', output_file)
 
     if filepath == '-':
@@ -198,31 +197,32 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
         try:
             d['xs'] = [
                 chrom_info.cum_chrom_lengths[
-                    parts[chr1_col]] + int(parts[from1_col]),
+                    parts[chr1_col - 1]] + int(parts[from1_col - 1]),
                 chrom_info.cum_chrom_lengths[
-                    parts[chr1_col]] + int(parts[to1_col])
+                    parts[chr1_col - 1]] + int(parts[to1_col - 1])
             ]
             d['ys'] = [
                 chrom_info.cum_chrom_lengths[
-                    parts[chr2_col]] + int(parts[from2_col]),
+                    parts[chr2_col - 1]] + int(parts[from2_col - 1]),
                 chrom_info.cum_chrom_lengths[
-                    parts[chr2_col]] + int(parts[to2_col])
+                    parts[chr2_col - 1]] + int(parts[to2_col - 1])
             ]
         except KeyError:
             error_str = (
                 "ERROR converting chromosome position to genome position. "
                 "Please make sure you've specified the correct assembly "
-                "using the --assembly option. "
+                "using the --assembly option or a chromsizes file using the . "
+                "--chromsizes-filename option."
                 "Current assembly: {}, chromosomes: {},{}".format(
                     assembly,
-                    parts[chr1_col], parts[chr2_col]
+                    parts[chr1_col - 1], parts[chr2_col - 1]
                 )
             )
             raise(KeyError(error_str))
 
         d['uid'] = slugid.nice()
 
-        d['chrOffset'] = d['xs'][0] - int(parts[from1_col])
+        d['chrOffset'] = d['xs'][0] - int(parts[from1_col - 1])
 
         if importance_column is None:
             d['importance'] = max(
@@ -253,21 +253,22 @@ def _bedpe(filepath, output_file, assembly, importance_column, has_header, max_p
                   "to1_col", to1_col, "to2_col", to2_col)
             '''
 
-            int(parts[from1_col])
-            int(parts[to1_col])
-            int(parts[from2_col])
-            int(parts[to2_col])
-        except ValueError as ve:
+            int(parts[from1_col - 1])
+            int(parts[to1_col - 1])
+            int(parts[from2_col - 1])
+            int(parts[to2_col - 1])
+        except ValueError:
             error_str = (
                 "Couldn't convert one of the bedpe coordinates to an "
                 "integer. If the input file contains a header, make sure to "
                 "indicate that with the --has-header option. Line: {}"
                 .format(first_line)
             )
-            raise(ValueError(error_str))
+            raise ValueError(error_str)
         entries = [line_to_dict(first_line)]
 
-    entries += [line_to_dict(line.strip()) for line in f]
+    entries += [line_to_dict(line)
+                for line in [line.strip() for line in f] if line]
 
     # We neeed chromosome information as well as the assembly size to properly
     # tile this data
@@ -428,8 +429,15 @@ def _bedfile(
     else:
         bed_file = open(filepath, 'r')
 
-    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(
-        chromsizes_filename, assembly)
+    try:
+        (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(chromsizes_filename, assembly)
+    except FileNotFoundError:
+        if chromsizes_filename is None:
+            print("Assembly not found:", assembly, file=sys.stderr)
+        else:
+            print("Chromsizes filename not found:", chromsizes_filename, file=sys.stderr)
+        return None
+
     rand = random.Random(3)
 
     def line_to_np_array(line):
@@ -490,7 +498,12 @@ def _bedfile(
         line_parts = line.strip().split(delimiter)
         try:
             dset += [line_to_np_array(line_parts)]
-        except IndexError as ie:
+        except KeyError:
+            print(f'Unable to find {line_parts[0]} in the list of chromosome sizes. '
+                  'Please make sure the correct assembly or chromsizes filename '
+                  'is passed in as a parameter', file=sys.stderr)
+            return None
+        except IndexError:
             print("Invalid line:", line)
         header = map(
             str, list(range(1, len(line.strip().split(delimiter)) + 1)))
@@ -499,7 +512,7 @@ def _bedfile(
         line_parts = line.strip().split(delimiter)
         try:
             dset += [line_to_np_array(line_parts)]
-        except IndexError as ie:
+        except IndexError:
             print("Invalid line:", line)
 
     if chromosome is not None:
@@ -552,7 +565,7 @@ def _bedfile(
         header=header,
     )
 
-    max_width = tile_size * 2 ** max_zoom
+    # max_width = tile_size * 2 ** max_zoom
     uid_to_entry = {}
 
     intervals = []
@@ -662,7 +675,7 @@ def _bedfile(
                 # one extra question mark for the primary key
                 exec_statement = 'INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)'
 
-                ret = c.execute(
+                c.execute(
                     exec_statement,
                     # primary key, zoomLevel, startPos, endPos, chrOffset, line
                     (counter, curr_zoom,
@@ -678,7 +691,7 @@ def _bedfile(
                           value['endPos'] - value['startPos'])
 
                 exec_statement = 'INSERT INTO position_index VALUES (?,?,?)'
-                ret = c.execute(
+                c.execute(
                     exec_statement,
                     # add counter as a primary key
                     (counter, value['startPos'], value['endPos'])
@@ -691,6 +704,7 @@ def _bedfile(
 
         curr_zoom = 0
     conn.commit()
+    return True
 
 ###############################################################################
 
@@ -1077,7 +1091,7 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
                 'geometry': json.dumps(feature['geometry']),
                 'properties': json.dumps(feature['properties']),
             })
-        except Exception as e:
+        except Exception:
             raise
 
     # this script stores data in a sqlite database
@@ -1322,81 +1336,20 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
     '--zoom-step',
     '-z',
     help="The number of intermediate aggregation levels to"
-    "omit",
-    default=8)
-def bedgraph(filepath, output_file, assembly, chromosome_col,
-             from_pos_col, to_pos_col, value_col, has_header,
-             chromosome, tile_size, chunk_size, method, nan_value,
-             transform, count_nan, closed_interval,
-             chromsizes_filename, zoom_step):
-    _bedgraph(filepath, output_file, assembly, chromosome_col,
-              from_pos_col, to_pos_col, value_col, has_header,
-              chromosome, tile_size, chunk_size, method, nan_value,
-              transform, count_nan, closed_interval,
-              chromsizes_filename, zoom_step)
-
-
-@aggregate.command()
-@click.argument(
-    'filepath',
-    metavar='FILEPATH'
-)
-@click.option(
-    '--output-file',
-    '-o',
-    default=None,
-    help="The default output file name to use. If this isn't"
-         "specified, clodius will replace the current extension"
-         "with .hitile"
-)
-@click.option(
-    '--assembly',
-    '-a',
-    help='The genome assembly that this file was created against',
-    default='hg19'
-)
-@click.option(
-    '--chromosome',
-    default=None,
-    help="Only extract values for a particular chromosome."
-         "Use all chromosomes if not set."
-)
-@click.option(
-    '--tile-size',
-    '-t',
-    default=1024,
-    help="The number of data points in each tile."
-         "Used to determine the number of zoom levels"
-         "to create."
-)
-@click.option(
-    '--chunk-size',
-    '-c',
-    help='How many values to aggregate at once.'
-         'Specified as a power of two multiplier of the tile'
-         'size',
-    default=14
-)
-@click.option(
-    '--chromsizes-filename',
-    help="A file containing chromosome sizes and order",
-    default=None
-)
-@click.option(
-    '--zoom-step',
-    '-z',
-    help="The number of intermediate aggregation levels to"
          "omit",
-    default=8
-)
-def bigwig(
-    filepath, output_file, assembly, chromosome, tile_size, chunk_size,
-    chromsizes_filename, zoom_step
-):
-    _bigwig(
-        filepath, chunk_size, zoom_step, tile_size, output_file, assembly,
-        chromsizes_filename, chromosome
-    )
+    default=8)
+def bedgraph(
+        filepath, output_file, assembly, chromosome_col,
+        from_pos_col, to_pos_col, value_col, has_header,
+        chromosome, tile_size, chunk_size, method, nan_value,
+        transform, count_nan, closed_interval,
+        chromsizes_filename, zoom_step):
+    _bedgraph(
+        filepath, output_file, assembly, chromosome_col,
+        from_pos_col, to_pos_col, value_col, has_header,
+        chromosome, tile_size, chunk_size, method, nan_value,
+        transform, count_nan, closed_interval,
+        chromsizes_filename, zoom_step)
 
 
 @aggregate.command()
@@ -1439,7 +1392,8 @@ def bigwig(
 @click.option(
     '--max-per-tile',
     default=100,
-    type=int)
+    type=int,
+    help="The maximum number of entries to store per tile")
 @click.option(
     '--tile-size',
     default=1024,
@@ -1509,7 +1463,8 @@ def bedfile(
 @click.option(
     '--max-per-tile',
     default=100,
-    type=int
+    type=int,
+    help="The maximum number of entries to include per tile"
 )
 @click.option(
     '--tile-size',
@@ -1559,18 +1514,20 @@ def bedfile(
     help="The column containing the second end position"
 )
 def bedpe(
-    filepath, output_file, assembly, importance_column,
-    has_header, max_per_tile, tile_size, chromosome,
-    chromsizes_filename,
-    chr1_col, from1_col, to1_col,
-    chr2_col, from2_col, to2_col
+        filepath, output_file, assembly, importance_column,
+        has_header, max_per_tile, tile_size, chromosome,
+        chromsizes_filename,
+        chr1_col, from1_col, to1_col,
+        chr2_col, from2_col, to2_col
 ):
+    """Aggregate bedpe files"""
     _bedpe(
-        filepath, output_file, assembly, importance_column, has_header,
+        filepath, output_file,
+        assembly, importance_column, has_header,
         max_per_tile, tile_size, chromosome,
         chromsizes_filename,
-        chr1_col=chr1_col - 1, from1_col=from1_col - 1, to1_col=to1_col - 1,
-        chr2_col=chr2_col - 1, from2_col=from2_col - 1, to2_col=to2_col - 1
+        chr1_col=chr1_col, from1_col=from1_col, to1_col=to1_col,
+        chr2_col=chr2_col, from2_col=from2_col, to2_col=to2_col
     )
 
 
@@ -1588,11 +1545,11 @@ def bedpe(
          "with .gjdb"
 )
 @click.option(
-    '-m',
-    '--max-per-tile',
-    default=20,
-    type=int
-)
+    '-a',
+    '--assembly',
+    default=None,
+    help="The assembly that this data comes from. This parameter is"
+         "unnecessary and/or overwritten if --chromsizes-filename is specified")
 @click.option(
     '-s',
     '--tile-size',
@@ -1601,8 +1558,12 @@ def bedpe(
          "should span. This determines the maximum zoom level"
 )
 @click.option(
+    '-c',
+    '--chromsizes-filename',
+    default=None,
+    help="The file containnig chromosome sizes and order")
+@click.option(
     '--starting-resolution',
-    '-s',
     default=256,
     help="The resolution that the starting data is at (e.g. 1, 10, 20)")
 @click.option(
@@ -1614,9 +1575,15 @@ def bedpe(
     '--row-infos-filename',
     help="A file containing the names of the rows in the multivec file",
     default=None)
-def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, starting_resolution, method, row_infos_filename):
-    _multivec(filepath, output_file, assembly, tile_size,
-              chromsizes_filename, starting_resolution, method, row_infos_filename)
+def multivec(
+        filepath, output_file, assembly, tile_size,
+        chromsizes_filename, starting_resolution, method,
+        row_infos_filename):
+    """Aggregate a multivec file"""
+    _multivec(
+        filepath, output_file, assembly, tile_size,
+        chromsizes_filename, starting_resolution, method,
+        row_infos_filename)
 
 
 @aggregate.command()
@@ -1655,50 +1622,7 @@ def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, st
 def geojson(
     filepath, output_file, max_per_tile, tile_size, max_zoom
 ):
+    """Aggregate a geojson file"""
     _geojson(
         filepath, output_file, max_per_tile, tile_size, max_zoom
     )
-
-
-@aggregate.command()
-@click.argument(
-    'filepath',
-    metavar='FILEPATH'
-)
-@click.option(
-    '--output-file',
-    '-o',
-    default=None,
-    help="The default output file name to use. If this isn't"
-    "specified, clodius will replace the current extension"
-    "with .hitile"
-)
-@click.option(
-    '--assembly',
-    '-a',
-    help='The genome assembly that this file was created against',
-    type=click.Choice(nc.available_chromsizes()),
-    default='hg19')
-@click.option(
-    '--tile-size',
-    '-t',
-    default=256,
-    help="The number of data points in each tile."
-    "Used to determine the number of zoom levels"
-    "to create.")
-@click.option(
-    '--chromsizes-filename',
-    help="A file containing chromosome sizes and order",
-    default=None)
-@click.option(
-    '--starting-resolution',
-    '-s',
-    default=256,
-    help="The resolution that the starting data is at (e.g. 1, 10, 20)")
-@click.option(
-    '--row-infos-filename',
-    help="A file containing the names of the rows in the multivec file",
-    default=None)
-def multivec(filepath, output_file, assembly, tile_size, chromsizes_filename, base_resolution, row_infos_filename):
-    _multivec(filepath, output_file, assembly, tile_size,
-              chromsizes_filename, base_resolution, row_infos_filename)

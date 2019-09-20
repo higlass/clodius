@@ -4,14 +4,17 @@ import gzip
 import h5py
 import math
 import numpy as np
+import logging
 import os
 import os.path as op
 import sys
 
+logger = logging.getLogger(__name__)
+
 
 def bedfile_to_multivec(input_filenames, f_out,
                         bedline_to_chrom_start_end_vector, base_resolution,
-                        has_header, chunk_size, row_infos=None):
+                        has_header, chunk_size, num_rows, row_infos=None):
     '''
     Convert an epilogos bedfile to multivec format.
     '''
@@ -41,27 +44,31 @@ def bedfile_to_multivec(input_filenames, f_out,
     print('base_resolution:', base_resolution)
     warned = False
 
-    for lines in zip(*files):
+    for _, lines in enumerate(zip(*files)):
         # Identifies bedfile headers and ignore them
-        if "browser" == lines[0].decode('utf8')[0:7] or "track" in lines[0].decode('utf8')[0:6]:
+        if lines[0].startswith('browser') or lines[0].startswith('track'):
             continue
 
         chrom, start, end, vector = bedline_to_chrom_start_end_vector(
             lines, row_infos)
         # if vector[0] > 0 or vector[1] > 0:
-        #     print("c,s,e,v", chrom, start, end, vector)
 
-        if end % base_resolution != 0 or start % base_resolution != 0 and not warned:
-            print("WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".
-                  format(base_resolution, lines))
+        if len(vector) < len(lines) * num_rows:
+            logger.warn('Lines contain fewer columns than expected: %s', lines)
+            vector += [np.nan] * (len(lines) * num_rows - len(vector))
+
+        if (end % base_resolution != 0 or start % base_resolution != 0) and not warned:
+            logger.warn(
+                "WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".
+                format(base_resolution, lines))
             warned = True
             continue
 
         if prev_chrom is not None and chrom != prev_chrom:
             # we've reached a new chromosome so we'll dump all
             # the previous values
-            print("len(batch:", len(batch),
-                  "batch_start_index", batch_start_index)
+            # print("len(batch:", len(batch),
+            #       "batch_start_index", batch_start_index)
             f_out[prev_chrom][batch_start_index:batch_start_index +
                               len(batch)] = np.array(batch)
 
@@ -72,8 +79,8 @@ def bedfile_to_multivec(input_filenames, f_out,
 
         prev_chrom = chrom
 
-        #print('parts', parts)
-        #print('chrom:', chrom, start)
+        # print('parts', parts)
+        # print('chrom:', chrom, start)
 
         data_start_index = start // base_resolution
 
@@ -90,7 +97,7 @@ def bedfile_to_multivec(input_filenames, f_out,
         '''
 
         assert(curr_index == data_start_index)
-        #print('vector', vector)
+        # print('vector', vector)
 
         # When the binsize is not equal to the base_resolution
         # "break down" the binsize into bins of the rbase_esolution size
@@ -118,7 +125,6 @@ def bedfile_to_multivec(input_filenames, f_out,
             batch_start_index = curr_index
             print("dumping batch:", chrom, batch_start_index)
 
-    #print('chrom', chrom)
     f_out[chrom][batch_start_index:batch_start_index +
                  len(batch)] = np.array(batch)
 
@@ -198,7 +204,7 @@ def create_multivec_multires(array_data, chromsizes,
 
     # add the data
     for chrom, length in zip(chroms, lengths):
-        if not chrom in array_data:
+        if chrom not in array_data:
             print("Missing chrom {} in input file".format(chrom), file=sys.stderr)
             continue
 
@@ -210,7 +216,7 @@ def create_multivec_multires(array_data, chromsizes,
         chrom_data = f['resolutions'][str(curr_resolution)]['values'][chrom]
 
         chunk_size = int(min(standard_chunk_size, len(chrom_data)))
-        #print("array_data.shape", array_data[chrom].shape)
+        # print("array_data.shape", array_data[chrom].shape)
 
         while start < len(chrom_data):
             # see above section
@@ -253,8 +259,8 @@ def create_multivec_multires(array_data, chromsizes,
             if chrom not in f['resolutions'][str(prev_resolution)]['values']:
                 continue
 
-            next_level_length = math.ceil(
-                len(f['resolutions'][str(prev_resolution)]['values'][chrom]) / 2)
+            # next_level_length = math.ceil(
+            #     len(f['resolutions'][str(prev_resolution)]['values'][chrom]) / 2)
 
             start = 0
 
@@ -274,25 +280,25 @@ def create_multivec_multires(array_data, chromsizes,
             while start < len(chrom_data):
                 old_data = f['resolutions'][str(
                     prev_resolution)]['values'][chrom][start:start + chunk_size]
-                #print("prev_resolution:", prev_resolution)
-                #print("old_data.shape", old_data.shape)
+                # print("prev_resolution:", prev_resolution)
+                # print("old_data.shape", old_data.shape)
 
                 # this is a sort of roundabout way of calculating the
                 # shape of the aggregated array, but all its doing is
                 # just halving the first dimension of the previous shape
                 # without taking into account the other dimensions
-                #print("11 old_data.shape", old_data.shape)
+                # print("11 old_data.shape", old_data.shape)
                 if len(old_data) % 2 != 0:
                     # we need our array to have an even number of elements
                     # so we just add the last element again
                     old_data = np.concatenate((old_data, [old_data[-1]]))
                     chunk_size += 1
-                #print("22 old_data.shape", old_data.shape)
+                # print("22 old_data.shape", old_data.shape)
 
-                #print('old_data:', old_data)
-                #print("shape:", old_data.shape)
+                # print('old_data:', old_data)
+                # print("shape:", old_data.shape)
                 # actually sum the adjacent elements
-                #print("old_data.shape", old_data.shape)
+                # print("old_data.shape", old_data.shape)
                 new_data = agg(old_data)
 
                 '''

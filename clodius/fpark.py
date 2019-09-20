@@ -38,7 +38,7 @@ class ParallelData:
 
     def groupByKey(self):
         '''
-        When called on a dataset of (K, V) pairs, returns a dataset of (K, Iterable<V>) pairs. 
+        When called on a dataset of (K, V) pairs, returns a dataset of (K, Iterable<V>) pairs.
         '''
         buckets = col.defaultdict(list)
 

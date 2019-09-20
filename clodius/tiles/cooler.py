@@ -1,4 +1,3 @@
-import base64
 import collections as col
 import cooler
 import clodius.tiles.format as hgfo
@@ -160,7 +159,7 @@ def get_data(f, start_pos_1, end_pos_1, start_pos_2, end_pos_2, transform='defau
         return (pixels[['genome_start1', 'genome_start2', 'count']], (None, None))
 
 
-def get_info(file_path):
+def _get_info_multi_v1(file_path):
     """Get information of a cooler file.
 
     Args:
@@ -277,11 +276,11 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
     start2 = y_pos * tile_size
     end2 = (y_pos + y_width) * tile_size
 
-    #print("resolution:", resolution)
-    #print("tile_size:", tile_size)
-    #print("transform_type:", transform_type);
-    #print('start1:', start1, end1)
-    #print('start2:', start2, end2)
+    # print("resolution:", resolution)
+    # print("tile_size:", tile_size)
+    # print("transform_type:", transform_type);
+    # print('start1:', start1, end1)
+    # print('start2:', start2, end2)
 
     c = cooler.Cooler(hdf_for_resolution)
     (chroms, chrom_sizes, chrom_cum_lengths) = get_chromosome_names_cumul_lengths(c)
@@ -293,9 +292,9 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
         transform_type, resolution=resolution
     )
 
-    #print('start1', start1, 'end1', end1, 'weight', len(weight1), 'end1 - start1 / tile_size', (end1 - start1) / resolution)
+    # print('start1', start1, 'end1', end1, 'weight', len(weight1), 'end1 - start1 / tile_size', (end1 - start1) / resolution)
 
-    #print("data:", data)
+    # print("data:", data)
 
     # print("x_width:", x_width)
     # print("y_width:", y_width)
@@ -310,16 +309,11 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
             start2 = (y_pos + y_offset) * tile_size
             end2 = (y_pos + y_offset + 1) * tile_size
 
-            i0 = x_offset * BINS_PER_TILE
-            i1 = i0 + BINS_PER_TILE + 1
-            j0 = y_offset * BINS_PER_TILE
-            j1 = j0 + BINS_PER_TILE + 1
-
-            #print("resolution:", resolution)
-            #print("tile_size", tile_size)
-            #print("x_pos:", x_pos, "x_offset", x_offset)
-            #print("start1", start1, 'end1', end1)
-            #print("start2", start2, 'end2', end2)
+            # print("resolution:", resolution)
+            # print("tile_size", tile_size)
+            # print("x_pos:", x_pos, "x_offset", x_offset)
+            # print("start1", start1, 'end1', end1)
+            # print("start2", start2, 'end2', end2)
 
             df = data[data['genome_start1'] >= start1]
             df = df[df['genome_start1'] < end1]
@@ -371,8 +365,8 @@ def make_tiles(hdf_for_resolution, resolution, x_pos, y_pos, transform_type='def
                 out[:, bend1] = np.nan
                 out[bend2, :] = np.nan
 
-            #print('sum(isnan1)', isnan1-1)
-            #print('out.ravel()', sum(np.isnan(out.ravel())), len(out.ravel()))
+            # print('sum(isnan1)', isnan1-1)
+            # print('out.ravel()', sum(np.isnan(out.ravel())), len(out.ravel()))
             data_by_tilepos[(x_pos + x_offset, y_pos + y_offset)] = out.ravel()
 
     return data_by_tilepos
@@ -498,26 +492,31 @@ def make_mats(filepath):
         c = cooler.Cooler(f['resolutions'][resolution])
         info['chromsizes'] = [[x[0], int(x[1])]
                               for x in c.chromsizes.iteritems()]
-        return (f, info)
+        if 'storage-mode' in c.info and c.info['storage-mode'] == 'square':
+            info['mirror_tiles'] = 'false'
+    else:
+        info = _get_info_multi_v1(filepath)
 
-    info = get_info(filepath)
+        c = cooler.Cooler(f['0'])
 
-    c = cooler.Cooler(f['0'])
+        info['chromsizes'] = [[x[0], int(x[1])] for x in c.chromsizes.iteritems()]
+        info["min_pos"] = [int(m) for m in info["min_pos"]]
+        info["max_pos"] = [int(m) for m in info["max_pos"]]
+        info["max_zoom"] = int(info["max_zoom"])
+        info["max_width"] = int(info["max_width"])
 
-    info['chromsizes'] = [[x[0], int(x[1])] for x in c.chromsizes.iteritems()]
-    info["min_pos"] = [int(m) for m in info["min_pos"]]
-    info["max_pos"] = [int(m) for m in info["max_pos"]]
-    info["max_zoom"] = int(info["max_zoom"])
-    info["max_width"] = int(info["max_width"])
+        if "transforms" in info:
+            info["transforms"] = list(info["transforms"])
 
-    if 'symmetric' in f['0'].attrs and not f['0'].attrs['symmetric']:
-        info['mirror_tiles'] = 'false'
+        # legacy metadata for non-symmetric matrices
+        if 'symmetric' in c.info and not c.info['symmetric']:
+            info['mirror_tiles'] = 'false'
+        if 'storage-mode' in c.info and c.info['storage-mode'] == 'square':
+            info['mirror_tiles'] = 'false'
 
-    if "transforms" in info:
-        info["transforms"] = list(info["transforms"])
+        mats[filepath] = [f, info]
 
-    mats[filepath] = [f, info]
-    return (f, info)
+    return f, info
 
 
 def tileset_info(filepath):

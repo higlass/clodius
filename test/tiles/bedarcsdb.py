@@ -44,39 +44,39 @@ def test_bedarcsdb_tiles1():
 
     '''
     data = hgbad.tiles(filename, ["b.0.0"])
-    #print('data:', len(data[0][1][0]))
+    # print('data:', len(data[0][1][0]))
     counts = col.defaultdict(int)
 
     for i,d in enumerate(data[0][1][0]):
         chr1,chr2 = sorted([d['fields'][0], d['fields'][3]])
-        #print('d:', d)
+        # print('d:', d)
 
         counts[(chr1,chr2)] += 1
-    #print('counts:', counts)
+    # print('counts:', counts)
 
-    #print('counts:', counts)
+    # print('counts:', counts)
     return
 
     data = hgbad.tiles(filename, ["b.4.11".format(pos)])
-    #print('data:', len(data[0][1][11]))
+    # print('data:', len(data[0][1][11]))
     counts = col.defaultdict(int)
 
     for d in data[0][1][11]:
         chr1,chr2 = sorted([d['fields'][0], d['fields'][3]])
 
         counts[(chr1,chr2)] += 1
-    #print('counts:', counts)
+    # print('counts:', counts)
 
     data = hgbad.tiles(filename, ["b.4.10".format(pos)])
-    #print('data:', len(data[0][1][10]))
+    # print('data:', len(data[0][1][10]))
     counts = col.defaultdict(int)
 
     for i,d in enumerate(data[0][1][10]):
         chr1,chr2 = sorted([d['fields'][0], d['fields'][3]])
-        #print('d:', d)
+        # print('d:', d)
 
         counts[(chr1,chr2)] += 1
-    #print('counts:', counts)
+    # print('counts:', counts)
     '''
 
 

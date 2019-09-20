@@ -13,13 +13,13 @@ import numpy as np
 import os
 import os.path as op
 import queue
-import random
 import requests
 import signal
 import slugid
 import sys
 import time
 import itertools
+import traceback
 
 from time import gmtime, strftime
 
@@ -36,7 +36,7 @@ def tile_saver_worker(q, tile_saver, finished):
         # print "working...", q.qsize()
         try:
             (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
-            #print("saving...", zoom_level, tile_pos, 'queue.qsize:', q.qsize(), q.empty(), "finished:", finished.value)
+            # print("saving...", zoom_level, tile_pos, 'queue.qsize:', q.qsize(), q.empty(), "finished:", finished.value)
             tile_saver.save_binned_tile(zoom_level,
                                         tile_pos,
                                         tile_bins)
@@ -46,7 +46,7 @@ def tile_saver_worker(q, tile_saver, finished):
         except queue.Empty:
             tile_saver.flush()
 
-    #print("finishing", q.qsize(), tile_saver)
+    # print("finishing", q.qsize(), tile_saver)
     tile_saver.flush()
 
 
@@ -54,7 +54,7 @@ class TileSaver(object):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions, print_status=False, initial_value=0.0):
         self.max_data_in_sparse = max_data_in_sparse
 
-        #self.max_data_in_sparse = 0
+        # self.max_data_in_sparse = 0
         self.bins_per_dimension = bins_per_dimension
         self.num_dimensions = num_dimensions
         self.print_status = print_status
@@ -201,7 +201,7 @@ class ColumnFileTileSaver(TileSaver):
 
         # [[1.0, [[78.0, 123.0], [64.0, 153.0]]]]
 
-        if val["tile_id"] is "tileset_info":
+        if val["tile_id"] == "tileset_info":
             self.bulk_txt.write(val["tile_id"] + "\t" +
                                 "1" + "\t" + "1" + "\t")
         else:
@@ -223,7 +223,7 @@ class ColumnFileTileSaver(TileSaver):
                     column_file.write(self.bulk_txt.getvalue())
             except Exception as ex:
                 if self.log_file is not None:
-                    with open(log_file, 'a') as f:
+                    with open(self.log_file, 'a') as f:
                         f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
                         f.write(ex)
 
@@ -249,7 +249,7 @@ class ElasticSearchTileSaver(TileSaver):
         # this implementation shouldn't do anything
         # derived classes should implement this functionality themselves
 
-        #self.bulk_txt.write(json.dumps({"index": {"_id": val['tile_id']}}) + "\n")
+        # self.bulk_txt.write(json.dumps({"index": {"_id": val['tile_id']}}) + "\n")
         if ('sparse' in val['tile_value']):
             sparse_values = val['tile_value']['sparse']
 
@@ -259,14 +259,13 @@ class ElasticSearchTileSaver(TileSaver):
                     value_pos[tuple(sparse_value[1])] += [sparse_value[0]]
                 else:
                     value_pos[sparse_value[1]] += [sparse_value[0]]
-            #val['tile_value']['sparse'] = value_pos.items()
+            # val['tile_value']['sparse'] = value_pos.items()
 
             value_xs_ys = []
             for value, poss in value_pos.items():
                 # sparse values are stored as the following:
                 # value, # of positions it's found in, list of the positions
                 poss = sorted(poss)
-                dim_values = []
                 if len(self.initial_value) == 1:
                     value_xs_ys += [float(value)]
                 else:
@@ -286,7 +285,7 @@ class ElasticSearchTileSaver(TileSaver):
             print val['tile_id'], len([x for x in val['tile_value']['dense'] if x > 0])
         '''
 
-        #val['tile_value']['dense'] = []
+        # val['tile_value']['dense'] = []
 
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(doc_id))
         self.bulk_txt.write(json.dumps(doc) + "\n")
@@ -303,10 +302,10 @@ class ElasticSearchTileSaver(TileSaver):
             self.bulk_txt.write('] }}')
 
 
-        #sys.exit(1)
-        #new_string += str(val) + "\n"
+        # sys.exit(1)
+        # new_string += str(val) + "\n"
 
-        #self.bulk_txt_len += len(new_string)
+        # self.bulk_txt_len += len(new_string)
         '''
 
         curr_pos = self.bulk_txt.tell()
@@ -322,7 +321,7 @@ class ElasticSearchTileSaver(TileSaver):
                     "http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue(), self.print_status)
             except Exception as ex:
                 if self.log_file is not None:
-                    with open(log_file, 'a') as f:
+                    with open(self.log_file, 'a') as f:
                         f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
                         f.write(ex)
 
@@ -367,13 +366,13 @@ def save_to_elasticsearch(url, data, print_status=False):
     to_sleep = 1
 
     uid = slugid.nice()
-    #print("print_status:", print_status)
+    # print("print_status:", print_status)
     while not saved:
         try:
             r = requests.post(url, data=data, timeout=8)
             if print_status:
                 print("\nSaved", uid, r, "len(data):", len(data), url)
-                #print("data:", data)
+                # print("data:", data)
             saved = True
             # print "data:", data
         except Exception as ex:

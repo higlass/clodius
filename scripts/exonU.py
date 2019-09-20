@@ -2,8 +2,6 @@ from __future__ import print_function
 
 __author__ = "Alaleh Azhir,Peter Kerpedjiev"
 
-#!/usr/bin/python
-
 import collections as col
 import sys
 import argparse
@@ -22,9 +20,7 @@ def merge_gene_info(gene_infos, gene_info):
     merged = False
 
     for existing_gene_info in gene_infos[gene_info.geneId]:
-        if (existing_gene_info.chrName == gene_info.chrName and
-                existing_gene_info.txEnd > gene_info.txStart and
-                gene_info.txEnd > existing_gene_info.txStart):
+        if (existing_gene_info.chrName == gene_info.chrName and existing_gene_info.txEnd > gene_info.txStart and gene_info.txEnd > existing_gene_info.txStart):
 
             # overlapping genes, merge the exons of the second into the first
             existing_gene_info.txStart = min(existing_gene_info.txStart,
@@ -45,7 +41,7 @@ def merge_gene_info(gene_infos, gene_info):
 
 def main():
     parser = argparse.ArgumentParser(description="""
-    
+
     python ExonUnion.py Calculate the union of the exons of a list
     of transcript.
 
@@ -54,9 +50,9 @@ def main():
 
     parser.add_argument('transcript_bed')
     # parser.add_argument('-o', '--options', default='yo',
-    #					 help="Some option", type='str')
+    # help="Some option", type='str')
     # parser.add_argument('-u', '--useless', action='store_true',
-    #					 help='Another useless option')
+    # help='Another useless option')
     args = parser.parse_args()
 
     inputFile = open(args.transcript_bed, 'r')

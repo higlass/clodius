@@ -128,20 +128,18 @@ def test_clodius_aggregate_bedgraph():
 
     # TODO: Why are we ignoring these?
     # assert(sum(prev_tile_3_0) < 0)
-    #
     # input_file = op.join(testdir, 'sample_data', 'cnvs_hw.tsv.gz')
     # result = runner.invoke(
-    #     cca.bedgraph,
-    #     [input_file,
-    #      '--output-file', output_file,
-    #      '--assembly', 'grch37',
-    #      '--chromosome-col', '2',
-    #      '--from-pos-col', '3',
-    #      '--to-pos-col', '4',
-    #      '--value-col', '5',
-    #      '--has-header',
-    #      '--nan-value', 'NA'])
-    #
+    # cca.bedgraph,
+    # [input_file,
+    # '--output-file', output_file,
+    # '--assembly', 'grch37',
+    # '--chromosome-col', '2',
+    # '--from-pos-col', '3',
+    # '--to-pos-col', '4',
+    # '--value-col', '5',
+    # '--has-header',
+    # '--nan-value', 'NA'])
     # '''
     # import traceback
     # print("exc_info:", result.exc_info)
@@ -151,10 +149,8 @@ def test_clodius_aggregate_bedgraph():
     # print("result.error", traceback.print_tb(tb))
     # print("Exception:", a,b)
     # '''
-    #
     # f = h5py.File(output_file)
     # tile_3_0 = cht.get_data(f, 3, 0)
-    #
     # assert(sum(tile_3_0) - sum(prev_tile_3_0) < 0.0001)
 
 

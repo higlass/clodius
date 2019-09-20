@@ -20,6 +20,9 @@ def load_chromsizes(chromsizes_filename, assembly=None):
         chrom_sizes = [chrom_info.chrom_lengths[c]
                        for c in chrom_info.chrom_order]
     else:
+        if assembly is None:
+            raise ValueError("No assembly or chromsizes specified")
+
         chrom_info = nc.get_chrominfo(assembly)
         chrom_names = nc.get_chromorder(assembly)
         chrom_sizes = nc.get_chromsizes(assembly)

@@ -2,7 +2,6 @@ import click
 from . import cli
 import clodius.chromosomes as cch
 import clodius.multivec as cmv
-import gzip
 import h5py
 import math
 import negspy.coordinates as nc
@@ -68,8 +67,8 @@ def states_bedline_to_vector(bedlines, states_dic):
     (e.g. chrom = "chr1", start = 1000, end = 2000, states_vector = [1,0,0,0])
     '''
     # we support passing in multiple bed files for multivec creation from
-    # # other file types, but this one only supports a single file so just
-    # # assume that a single file is passed in
+    # other file types, but this one only supports a single file so just
+    # assume that a single file is passed in
     bedline = bedlines[0]
 
     parts = bedline.decode('utf8').strip().split('\t')
@@ -171,19 +170,19 @@ def _bedgraph_to_multivec(
 
         if format == 'epilogos':
             cmv.bedfile_to_multivec(filepaths, f_out, epilogos_bedline_to_vector,
-                                    starting_resolution, has_header, chunk_size)
+                                    starting_resolution, has_header, chunk_size, num_rows)
         elif format == 'states':
             assert(
-                row_infos != None), "A row_infos file must be provided for --format = 'states' "
+                row_infos is not None), "A row_infos file must be provided for --format = 'states' "
             states_names = [lne.decode('utf8').split('\t')[0]
                             for lne in row_infos]
             states_dic = {states_names[x]: x for x in range(len(row_infos))}
 
             cmv.bedfile_to_multivec(filepaths, f_out, states_bedline_to_vector,
-                                    starting_resolution, has_header, chunk_size, states_dic)
+                                    starting_resolution, has_header, chunk_size, num_rows, states_dic)
         else:
             cmv.bedfile_to_multivec(filepaths, f_out, bedline_to_chrom_start_end_vector,
-                                    starting_resolution, has_header, chunk_size)
+                                    starting_resolution, has_header, chunk_size, num_rows)
 
         f_out.close()
         tf = temp_file

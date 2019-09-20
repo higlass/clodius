@@ -24,7 +24,7 @@ def get_2d_tileset_info(db_file):
     return tileset_info
 
 
-def get_1D_tiles(db_file, tile_ids):
+def get_1D_tiles(db_file, zoom, tile_x_pos, numx):
     '''
     Retrieve a contiguous set of tiles from a 2D db tile file.
 
@@ -96,10 +96,10 @@ def get_1D_tiles(db_file, tile_ids):
             ):
                 # add the position offset to the returned values
                 new_rows[i] += [
-                    {'xStart': r[0],
-                     'xEnd': r[1],
-                     'yStart': r[2],
-                     'yEnd': r[3],
+                    {'xStart': x_start,
+                     'xEnd': x_end,
+                     'yStart': y_start,
+                     'yEnd': y_end,
                      'chrOffset': r[4],
                      'importance': r[5],
                      'uid': uid,

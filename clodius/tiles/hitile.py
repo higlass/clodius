@@ -4,7 +4,6 @@ import math
 import numpy as np
 import os
 import os.path as op
-import sys
 
 
 def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function=np.sum):
@@ -29,7 +28,6 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
     f_new = h5py.File(filename, 'w')
 
     tile_size = 1024
-    min_pos = 0
     max_pos = len(old_data)
 
     # we store every n'th zoom level
@@ -45,14 +43,10 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
 
     meta.attrs['max-width'] = tile_size * 2 ** max_zoom
 
-    prev_length = max_pos
-
     min_data = da.from_array(old_data, chunks)
     max_data = da.from_array(old_data, chunks)
 
     for z in range(0, max_zoom, zoom_step):
-        dset_length = math.ceil(max_pos / 2 ** z)
-
         values_dset = f_new.require_dataset('values_' + str(z), (len(old_data),),
                                             dtype='f', compression='gzip')
 
@@ -60,9 +54,6 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
                                           dtype='f', compression='gzip')
         maxs_dset = f_new.require_dataset('maxs_' + str(z), (len(old_data),),
                                           dtype='f', compression='gzip')
-
-        nan_values_dset = f_new.require_dataset('nan_values_' + str(z), (len(old_data),),
-                                                dtype='f', compression='gzip')
 
         da.store(old_data, values_dset)
         da.store(min_data, mins_dset)
@@ -95,7 +86,7 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
         max_data = da.coarsen(np.max, max_data, {0: zoom_factor})
 
         # reshape( (math.ceil(len(old_data) / zoom_factor), zoom_factor)).sum(axis=1)
-        #sys.stdout.write(' done\n')
+        # sys.stdout.write(' done\n')
         # sys.stdout.flush()
 
         '''
@@ -149,13 +140,7 @@ def get_data(hdf_file, z, x):
 
     tile_size = int(d.attrs['tile-size'])
     zoom_step = int(d.attrs['zoom-step'])
-    max_length = int(d.attrs['max-length'])
     max_zoom = int(d.attrs['max-zoom'])
-
-    if 'min-pos' in d.attrs:
-        min_pos = d.attrs['min-pos']
-    else:
-        min_pos = 0
 
     max_width = tile_size * 2 ** max_zoom
 
@@ -165,7 +150,7 @@ def get_data(hdf_file, z, x):
         max_position = max_width
 
     rz = max_zoom - z
-    tile_width = max_width / 2**z
+    # tile_width = max_width / 2**z
 
     # because we only store some a subsection of the zoom levels
     next_stored_zoom = zoom_step * math.floor(rz / zoom_step)
@@ -179,14 +164,14 @@ def get_data(hdf_file, z, x):
     start_pos = int((x * 2 ** zoom_offset * tile_size))
     end_pos = int(start_pos + total_in_length)
 
-    #print("max_position:", max_position)
+    # print("max_position:", max_position)
     max_position = int(max_position / 2 ** next_stored_zoom)
-    #print("new max_position:", max_position)
+    # print("new max_position:", max_position)
 
-    #print("start_pos:", start_pos)
-    #print("end_pos:", end_pos)
-    #print("next_stored_zoom", next_stored_zoom)
-    #print("max_position:", int(max_position))
+    # print("start_pos:", start_pos)
+    # print("end_pos:", end_pos)
+    # print("next_stored_zoom", next_stored_zoom)
+    # print("max_position:", int(max_position))
 
     f = hdf_file['values_' + str(int(next_stored_zoom))]
     f_min = hdf_file['mins_' + str(int(next_stored_zoom))]
@@ -204,7 +189,8 @@ def get_data(hdf_file, z, x):
         # everything should be nan
         ret_array = aggregate(a, int(num_to_agg))
         min_array = aggregate_min(a_min, int(num_to_agg))
-        max_array = aggregate_max(a_max, int(num_to_agg))
+        # In the line below, "a_max" is undefined, so this would not work:
+        # max_array = aggregate_max(a_max, int(num_to_agg))
     elif start_pos < max_position and max_position < end_pos:
         a = f[start_pos:end_pos][:]
         a[max_position + 1:end_pos] = np.nan
@@ -223,10 +209,10 @@ def get_data(hdf_file, z, x):
         min_array = aggregate_min(f_min[start_pos:end_pos], int(num_to_agg))
         max_array = aggregate_max(f_max[start_pos:end_pos], int(num_to_agg))
 
-    #print("ret_array:", f[start_pos:end_pos])
-    #print('ret_array:', ret_array)
+    # print("ret_array:", f[start_pos:end_pos])
+    # print('ret_array:', ret_array)
 
-    #print('nansum', np.nansum(ret_array))
+    # print('nansum', np.nansum(ret_array))
 
     # check to see if we counted the number of NaN values in the given
     # interval
@@ -259,9 +245,9 @@ def tileset_info(hitile_path):
 
     Returns
     -------
-    tileset_info: {'min_pos': [], 
-                    'max_pos': [], 
-                    'tile_size': 1024, 
+    tileset_info: {'min_pos': [],
+                    'max_pos': [],
+                    'tile_size': 1024,
                     'max_zoom': 7
                     }
     '''
@@ -320,19 +306,14 @@ def tiles(filepath, tile_ids):
             tile_position[1]
         )
 
+        '''
         if len(dense):
             max_dense = max(dense)
             min_dense = min(dense)
         else:
             max_dense = 0
             min_dense = 0
-
-        min_f16 = np.finfo('float16').min
-        max_f16 = np.finfo('float16').max
-
         has_nan = len([d for d in dense if np.isnan(d)]) > 0
-
-        '''
         if (
             not has_nan and
             max_dense > min_f16 and max_dense < max_f16 and
