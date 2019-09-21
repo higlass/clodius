@@ -48,6 +48,7 @@ def load_reads(samfile,
 
     references = np.array(samfile.references)
     lengths = np.array(samfile.lengths)
+    abs_chrom_offsets = np.r_[0, np.cumsum(lengths)]
 
     if chrom_order:
         chrom_order = np.array(chrom_order)
@@ -59,12 +60,16 @@ def load_reads(samfile,
     results = []
 
     for cid, start, end in abs2genomic(lengths, start_pos, end_pos):
+        chr_offset = int(abs_chrom_offsets[cid])
+
         seq_name = f'{references[cid]}'
         reads = samfile.fetch(seq_name, start, end)
 
         #print('reads:', reads)
         for read in reads:
-            query_seq = read.query_sequence
+            if read.is_unmapped:
+                continue
+            # query_seq = read.query_sequence
 
             # differences = []
 
@@ -84,16 +89,18 @@ def load_reads(samfile,
             # except ValueError as ve:
             #     # probably lacked an MD string
             #     pass
-
-            results += [{
-                "id": read.query_name,
-                "start": int(read.reference_start + start),
-                "end": int(read.reference_end + start),
-                "md": read.get_tag('MD'),
-                "chrName": read.reference_name,
-                "chrOffset": int(start),
-                "cigar": "YO"
-            }]
+            try:
+                results += [{
+                    "id": read.query_name,
+                    "from": int(read.reference_start + chr_offset),
+                    "to": int(read.reference_end + chr_offset),
+                    "md": read.get_tag('MD'),
+                    "chrName": read.reference_name,
+                    "chrOffset": chr_offset,
+                    "cigar": read.cigarstring
+                }]
+            except:
+                raise
     return results
 
 def tileset_info(filename):
@@ -146,7 +153,6 @@ def tiles(filename, tile_ids):
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
     '''
-    print("tiles:", tile_ids)
     generated_tiles = []
     tsinfo = tileset_info(filename)
     samfile = pysam.AlignmentFile(filename)
