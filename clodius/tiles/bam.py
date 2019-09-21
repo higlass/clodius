@@ -16,8 +16,8 @@ def abs2genomic(chromsizes, start_pos, end_pos):
         start = 0
     yield cid_hi, start, rel_pos_hi
 
-def load_reads(samfile, 
-        start_pos, 
+def load_reads(samfile,
+        start_pos,
         end_pos,
         chrom_order=None):
     '''
@@ -42,10 +42,10 @@ def load_reads(samfile,
     '''
     total_length = sum(samfile.lengths)
     #print("tl:", total_length, np.cumsum(np.array(samfile.lengths)))
-    
+
     # if chromorder is not None...
     # specify the chromosome order for the fetched reads
-    
+
     references = np.array(samfile.references)
     lengths = np.array(samfile.lengths)
 
@@ -66,32 +66,34 @@ def load_reads(samfile,
         for read in reads:
             query_seq = read.query_sequence
 
-            differences = []    
+            # differences = []
 
-            try:
-                for counter, (qpos, rpos, ref_base) in enumerate(read.get_aligned_pairs(with_seq=True)):
-                    # inferred from the pysam source code:
-                    # https://github.com/pysam-developers/pysam/blob/3defba98911d99abf8c14a483e979431f069a9d2/pysam/libcalignedsegment.pyx
-                    # and GitHub issue:
-                    # https://github.com/pysam-developers/pysam/issues/163
-                    #print('qpos, rpos, ref_base', qpos, rpos, ref_base)
-                    if rpos is None:
-                        differences += [(qpos, 'I')]
-                    elif qpos is None:
-                        differences += [(counter, 'D')]
-                    elif ref_base.islower():
-                        differences += [(qpos, query_seq[qpos], ref_base)]
-            except ValueError as ve:
-                # probably lacked an MD string
-                pass
+            # try:
+            #     for counter, (qpos, rpos, ref_base) in enumerate(read.get_aligned_pairs(with_seq=True)):
+            #         # inferred from the pysam source code:
+            #         # https://github.com/pysam-developers/pysam/blob/3defba98911d99abf8c14a483e979431f069a9d2/pysam/libcalignedsegment.pyx
+            #         # and GitHub issue:
+            #         # https://github.com/pysam-developers/pysam/issues/163
+            #         #print('qpos, rpos, ref_base', qpos, rpos, ref_base)
+            #         if rpos is None:
+            #             differences += [(qpos, 'I')]
+            #         elif qpos is None:
+            #             differences += [(counter, 'D')]
+            #         elif ref_base.islower():
+            #             differences += [(qpos, query_seq[qpos], ref_base)]
+            # except ValueError as ve:
+            #     # probably lacked an MD string
+            #     pass
 
-            results += [[
-                    read.reference_id,
-                    read.reference_start,
-                    '-' if read.is_reverse else '+',
-                    read.rlen,
-                    differences
-                ]]
+            results += [{
+                "id": read.query_name,
+                "start": int(read.reference_start + start),
+                "end": int(read.reference_end + start),
+                "md": read.get_tag('MD'),
+                "chrName": read.reference_name,
+                "chrOffset": int(start),
+                "cigar": "YO"
+            }]
     return results
 
 def tileset_info(filename):
@@ -105,9 +107,9 @@ def tileset_info(filename):
 
     Returns
     -------
-    tileset_info: {'min_pos': [], 
-                    'max_pos': [], 
-                    'tile_size': 1024, 
+    tileset_info: {'min_pos': [],
+                    'max_pos': [],
+                    'tile_size': 1024,
                     'max_zoom': 7
                     }
     '''
@@ -144,6 +146,7 @@ def tiles(filename, tile_ids):
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
     '''
+    print("tiles:", tile_ids)
     generated_tiles = []
     tsinfo = tileset_info(filename)
     samfile = pysam.AlignmentFile(filename)
