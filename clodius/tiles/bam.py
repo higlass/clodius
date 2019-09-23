@@ -136,7 +136,7 @@ def tileset_info(filename):
 
     return tileset_info
 
-def tiles(filename, tile_ids):
+def tiles(filename, tile_ids, index_filename=None):
     '''
     Generate tiles from a bigwig file.
 
@@ -147,6 +147,8 @@ def tiles(filename, tile_ids):
     tile_ids: [str,...]
         A list of tile_ids (e.g. xyx.0.0) identifying the tiles
         to be retrieved
+    index_filename: str
+        The name of the file containing the index
 
     Returns
     -------
@@ -155,7 +157,10 @@ def tiles(filename, tile_ids):
     '''
     generated_tiles = []
     tsinfo = tileset_info(filename)
-    samfile = pysam.AlignmentFile(filename)
+    samfile = pysam.AlignmentFile(
+        filename,
+        index_filename=index_filename
+    )
 
     for tile_id in tile_ids:
         tile_id_parts = tile_id.split('.')
