@@ -1,3 +1,9 @@
+v0.10.12
+
+- Simplified density tiles generator.
+- Fix error with `npvector` tileset_info.
+- Add `__version__`.
+
 v0.10.11
 
 - Calculate np.nan on the fly if not available for npvector tracks
