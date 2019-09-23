@@ -1,7 +1,7 @@
-import random
 import math
 import numpy as np
 import pysam
+
 
 def abs2genomic(chromsizes, start_pos, end_pos):
     abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
@@ -16,10 +16,8 @@ def abs2genomic(chromsizes, start_pos, end_pos):
         start = 0
     yield cid_hi, start, rel_pos_hi
 
-def load_reads(samfile,
-        start_pos,
-        end_pos,
-        chrom_order=None):
+
+def load_reads(samfile, start_pos, end_pos, chrom_order=None):
     '''
     Sample reads from the specified region, assuming that the chromosomes
     are ordered in some fashion. Returns an list of pysam reads
@@ -40,9 +38,6 @@ def load_reads(samfile,
     reads: [read1, read2...]
         The list of in the sampled regions
     '''
-    total_length = sum(samfile.lengths)
-    #print("tl:", total_length, np.cumsum(np.array(samfile.lengths)))
-
     # if chromorder is not None...
     # specify the chromosome order for the fetched reads
 
@@ -65,7 +60,6 @@ def load_reads(samfile,
         seq_name = f'{references[cid]}'
         reads = samfile.fetch(seq_name, start, end)
 
-        #print('reads:', reads)
         for read in reads:
             if read.is_unmapped:
                 continue
@@ -103,6 +97,7 @@ def load_reads(samfile,
                 raise
     return results
 
+
 def tileset_info(filename):
     '''
     Get the tileset info for a bam file
@@ -135,6 +130,7 @@ def tileset_info(filename):
     }
 
     return tileset_info
+
 
 def tiles(filename, tile_ids, index_filename=None):
     '''
@@ -170,7 +166,7 @@ def tiles(filename, tile_ids, index_filename=None):
         start_pos = int(tile_position[1]) * tile_width
         end_pos = start_pos + tile_width
 
-        tile_value = load_reads(samfile, start_pos = start_pos, end_pos = end_pos)
+        tile_value = load_reads(samfile, start_pos=start_pos, end_pos=end_pos)
         generated_tiles += [(tile_id, tile_value)]
 
     return generated_tiles
