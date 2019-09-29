@@ -18,7 +18,7 @@ TILE_SIZE = 1024
 
 AGGREGATION_MODES = {
     'mean': {'name': 'Mean', 'value': 'mean'},
-    'min':  {'name': 'Min', 'value': 'min'},
+    'min': {'name': 'Min', 'value': 'min'},
     'max': {'name': 'Max', 'value': 'max'},
     'std': {'name': 'Standard Deviation', 'value': 'std'},
 }
