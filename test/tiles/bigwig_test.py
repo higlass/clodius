@@ -69,28 +69,28 @@ def test_bigwig_tiles():
     whisker_tile = hgbi.tiles(filename, ['x.0.0.whisker'])
 
     mean_val = np.frombuffer(
-      base64.b64decode(mean_tile[0][1]['dense']),
-      dtype=mean_tile[0][1]['dtype']
+        base64.b64decode(mean_tile[0][1]['dense']),
+        dtype=mean_tile[0][1]['dtype']
     )
 
     min_val = np.frombuffer(
-      base64.b64decode(min_tile[0][1]['dense']),
-      dtype=min_tile[0][1]['dtype']
+        base64.b64decode(min_tile[0][1]['dense']),
+        dtype=min_tile[0][1]['dtype']
     )
 
     max_val = np.frombuffer(
-      base64.b64decode(max_tile[0][1]['dense']),
-      dtype=max_tile[0][1]['dtype']
+        base64.b64decode(max_tile[0][1]['dense']),
+        dtype=max_tile[0][1]['dtype']
     )
 
     std_val = np.frombuffer(
-      base64.b64decode(std_tile[0][1]['dense']),
-      dtype=std_tile[0][1]['dtype']
+        base64.b64decode(std_tile[0][1]['dense']),
+        dtype=std_tile[0][1]['dtype']
     )
 
     min_max_val = np.frombuffer(
-      base64.b64decode(min_max_tile[0][1]['dense']),
-      dtype=min_max_tile[0][1]['dtype']
+        base64.b64decode(min_max_tile[0][1]['dense']),
+        dtype=min_max_tile[0][1]['dtype']
     )
 
     whisker_val = np.frombuffer(
