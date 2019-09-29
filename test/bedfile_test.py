@@ -21,12 +21,6 @@ def test_nonstandard_chrom():
 
     assert ret is None
 
-    ret = cca._bedfile(filename, f.name,
-                       'dfsdfs', None, False,
-                       None, 100, 1024, None, None, 0)
-
-    assert ret is None
-
 
 def test_get_tileset_info():
     filename = 'test/sample_data/gene_annotations.short.db'

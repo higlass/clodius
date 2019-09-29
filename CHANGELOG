@@ -1,3 +1,8 @@
+v0.11.1
+
+- Added `max_tile_width` parameter to ct.bam.tiles() so that users can set a
+  limit on how large of a region data is returned for
+
 v0.11.0
 
 - Added bamfile support

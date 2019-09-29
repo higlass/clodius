@@ -1,4 +1,3 @@
-import dask.array as da
 import h5py
 import clodius.tiles.hitile as hghi
 import numpy as np
@@ -10,11 +9,13 @@ def test_hitile():
     array_size = int(1e6)
     chunk_size = 2**19
 
-    data = da.from_array(np.random.random((array_size,)), chunks=(chunk_size,))
+    data = np.random.random((array_size,))
 
     with tempfile.TemporaryDirectory() as td:
         output_file = op.join(td, 'blah.hitile')
-        hghi.array_to_hitile(data, output_file, zoom_step=6)
+        hghi.array_to_hitile(
+            data, output_file, zoom_step=6, chunks=(chunk_size,)
+        )
 
         with h5py.File(output_file, 'r') as f:
             (means, mins, maxs) = hghi.get_data(f, 0, 0)
