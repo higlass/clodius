@@ -1,3 +1,7 @@
+v0.11.0
+
+- Added bamfile support
+
 v0.10.12
 
 - Simplified density tiles generator.
