@@ -502,7 +502,7 @@ def make_mats(filepath):
 
         mats[filepath] = [f, info]
 
-    # info['mirror_tiles'] = 'false'
+    info['origin'] = 'upper-left'
 
     return f, info
 
