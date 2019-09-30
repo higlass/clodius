@@ -45,30 +45,23 @@ The recommended way to develop `clodius` is to use a [conda](https://conda.io/do
 install `clodius` with develop mode:
 
 ```shell
-python setup.py develop
-```
-
-Note that making changes to the `clodius/fast.pyx` [cython](http://docs.cython.org/en/latest/src/quickstart/cythonize.html) module requires an
-explicit recompile step:
-
-```shell
-python setup.py build_ext --inplace
+pip install -e .
 ```
 
 ## Testing
 
 
-The unit tests for clodius can be run using [nosetests](http://nose.readthedocs.io/en/latest/):
+The unit tests for clodius can be run using [pytest](https://docs.pytest.org/en/latest/):
 
 ```shell
-nosetests test
+pytest
 ```
 
 Individual unit tests can be specified by indicating the file and function
 they are defined in:
 
 ```shell
-nosetests test/cli_test.py:test_clodius_aggregate_bedgraph
+pytest test/cli_test.py:test_clodius_aggregate_bedgraph
 ```
 
 ## Quick start with Docker

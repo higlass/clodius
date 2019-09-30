@@ -2,13 +2,11 @@ import clodius.tiles.bigwig as hgbi
 import os.path as op
 import numpy as np
 import base64
+import pytest
 
 
-def arr_eq_nan(a, b):
-    return ((a == b) | (np.isnan(a) & np.isnan(b))).all()
-
-
-def test_bigwig_tiles():
+@pytest.mark.parametrize("engine", ["pybbi", "pybigwig"])
+def test_bigwig_tiles(engine):
     filename = op.join(
         'data',
         'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig'
@@ -60,14 +58,14 @@ def test_bigwig_tiles():
     )
 
     assert min_max_val.shape[0] == 2 * mean_val.shape[0]
-    assert arr_eq_nan(min_max_val[::2], min_val)
-    assert arr_eq_nan(min_max_val[1::2], max_val)
+    assert np.allclose(min_max_val[::2], min_val, equal_nan=True)
+    assert np.allclose(min_max_val[1::2], max_val, equal_nan=True)
 
     assert whisker_val.shape[0] == 4 * mean_val.shape[0]
-    assert arr_eq_nan(whisker_val[::4], min_val)
-    assert arr_eq_nan(whisker_val[1::4], max_val)
-    assert arr_eq_nan(whisker_val[2::4], mean_val)
-    assert arr_eq_nan(whisker_val[3::4], std_val)
+    assert np.allclose(whisker_val[::4], min_val, equal_nan=True)
+    assert np.allclose(whisker_val[1::4], max_val, equal_nan=True)
+    assert np.allclose(whisker_val[2::4], mean_val, equal_nan=True)
+    assert np.allclose(whisker_val[3::4], std_val, equal_nan=True)
 
 
 def test_tileset_info():
