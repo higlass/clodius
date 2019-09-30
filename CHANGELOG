@@ -1,3 +1,7 @@
+?
+
+- Maintenance: Swicthed from nose to pytest and added coverage reporting.
+
 v0.11.1
 
 - Added `max_tile_width` parameter to ct.bam.tiles() so that users can set a
