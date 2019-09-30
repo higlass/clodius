@@ -55,7 +55,7 @@ def tileset_info(points_file):
             'max_pos': [float(attrs['max_x']), float(attrs['max_y'])],
             'max_width': float(attrs['max_width']),
             'max_zoom': int(attrs['max_zoom']),
-            'mirror_tiles': 'false'
+            'mirror_tiles': False
         }
 
 

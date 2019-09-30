@@ -478,7 +478,7 @@ def make_mats(filepath):
         info['chromsizes'] = [[x[0], int(x[1])]
                               for x in c.chromsizes.iteritems()]
         if 'storage-mode' in c.info and c.info['storage-mode'] == 'square':
-            info['mirror_tiles'] = 'false'
+            info['mirror_tiles'] = False
     else:
         info = _get_info_multi_v1(filepath)
 
@@ -496,9 +496,9 @@ def make_mats(filepath):
 
         # legacy metadata for non-symmetric matrices
         if 'symmetric' in c.info and not c.info['symmetric']:
-            info['mirror_tiles'] = 'false'
+            info['mirror_tiles'] = False
         if 'storage-mode' in c.info and c.info['storage-mode'] == 'square':
-            info['mirror_tiles'] = 'false'
+            info['mirror_tiles'] = False
 
         mats[filepath] = [f, info]
 
