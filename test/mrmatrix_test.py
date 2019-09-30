@@ -35,7 +35,7 @@ class TilesetInfoTest(unittest.TestCase):
             'bins_per_dimension': 256,
             'max_pos': (2, 2),
             'min_pos': [0, 0],
-            'mirror_tiles': 'false',
+            'mirror_tiles': False,
             'resolutions': [1]
         }
 

@@ -16,7 +16,7 @@ def tileset_info(f, bounds=None):
         'min_pos': min_pos,
         'max_pos': max_pos,
         'resolutions': [int(r) for r in f['resolutions']],
-        'mirror_tiles': 'false',
+        'mirror_tiles': False,
         'bins_per_dimension': 256,
     }
 

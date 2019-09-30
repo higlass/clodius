@@ -60,7 +60,7 @@ def tileset_info(grid, bounds=None):
         "min_pos": min_pos,
         "max_pos": max_pos,
         "max_zoom": max_zoom,
-        "mirror_tiles": "false",
+        "mirror_tiles": False,
         "bins_per_dimension": bin_size
     }
 
