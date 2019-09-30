@@ -2,11 +2,9 @@ import clodius.tiles.bigwig as hgbi
 import os.path as op
 import numpy as np
 import base64
-import pytest
 
 
-@pytest.mark.parametrize("engine", ["pybbi", "pybigwig"])
-def test_bigwig_tiles(engine):
+def test_bigwig_tiles():
     filename = op.join(
         'data',
         'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig'
