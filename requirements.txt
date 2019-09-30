@@ -1,20 +1,13 @@
-negspy==0.2.19
-numpy==1.14.0
-
-# Pinning necessary here to avoid compilation errors in 0.9.1.4
-pysam==0.9.1.4
-
-requests==2.13.0
-h5py==2.6.0
-#argparse # part of standard library
-pandas==0.19.2
-slugid>=2.0.0
-sortedcontainers==1.5.7
+numpy==1.16.3
+negspy==0.2.22
+pysam==0.15.2
+dask==2.0.0
+requests
+h5py==2.9.0
+pandas==0.24.2
+slugid==2.0.0
+sortedcontainers
 nose==1.3.7
-ipdb
-pybbi==0.2.0
-cooler==0.7.11
-dask
-
-# Multiprocess
--e git://github.com/uqfoundation/multiprocess@02c1480e3e0a8d6740a2234f1f757d8d90dc7705#egg=multiprocess
+cooler>=0.8.5
+pybbi>=0.2.0
+Click>=7

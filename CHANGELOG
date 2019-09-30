@@ -1,5 +1,25 @@
-v0.10.9
+v0.11.1
 
+- Added `max_tile_width` parameter to ct.bam.tiles() so that users can set a
+  limit on how large of a region data is returned for
+
+v0.11.0
+
+- Added bamfile support
+
+v0.10.12
+
+- Simplified density tiles generator.
+- Fix error with `npvector` tileset_info.
+- Add `__version__`.
+
+v0.10.11
+
+- Calculate np.nan on the fly if not available for npvector tracks
+
+v0.10.10
+
+- Fix error in bedfile_to_multivec conversion when encountering value-less files
 - Update the bedpe aggregator to fix the error in using a chromsizes file
 - Make tsv_to_mrmatrix more flexible and add it to the exported scripts.
 - Display more meaningful error messages when encountering unknown chromosomes or assemblies

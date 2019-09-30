@@ -110,7 +110,7 @@ def test_clodius_aggregate_bedgraph():
     '''
 
     assert(result.exit_code == 0)
-    f = h5py.File(output_file)
+    f = h5py.File(output_file, 'r')
     # print("tile_0_0", d)
 
     # print("tile:", cht.get_data(f, 22, 0))
@@ -213,7 +213,7 @@ def test_clodius_aggregate_bedgraph1():
 
     # print("result.output", result.output)
 
-    f = h5py.File('/tmp/dm3_values.hitile')
+    f = h5py.File('/tmp/dm3_values.hitile', 'r')
     # max_zoom = f['meta'].attrs['max-zoom']
     # TODO: Make assertions about result
     values = f['values_0']
@@ -228,7 +228,8 @@ def test_clodius_aggregate_bedgraph1():
     assert(np.isnan(values[14]))
     assert(np.isnan(values[15]))
 
-    chr_2r_pos = nc.chr_pos_to_genome_pos('chr2R', 0, 'dm3')
+    chrom_info = nc.get_chrominfo('dm3')
+    chr_2r_pos = nc.chr_pos_to_genome_pos('chr2R', 0, chrom_info)
     # print('chr_2r_pos:', chr_2r_pos)
 
     assert(np.isnan(values[chr_2r_pos + 28]))

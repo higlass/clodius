@@ -1,8 +1,7 @@
 sudo: required
 language: python
 python:
-      - "3.6"
-
+  - '3.6'
 cache: apt
 addons:
   apt:
@@ -11,18 +10,23 @@ addons:
     - libatlas-base-dev
     - liblapack-dev
     - gfortran
-
 before_install:
-  - wget http://repo.continuum.io/miniconda/Miniconda3-4.3.21-Linux-x86_64.sh -O miniconda.sh
+  - wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   # Prefer stability to having the latest
   # - conda update --yes conda
-
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy=1.13.1
-  - pip install -r requirements.txt
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy
   - pip install -r requirements-dev.txt
-
 script:
   - ./travis_test.sh
+deploy:
+  provider: pypi
+  user: pkerpedjiev
+  password:
+    secure: b+wsW0bd+vMccC7omA13nJPe4TyO4eEntYvAxvDvDdFfSBiOeZbQ6PitGneBOsQmFPr6b4dYwracx8XarnO4cDzi4vIhGpgcfVfmcAQgxBGSicy3JrWbK1BDzBE3i72uZb7aLdqIETV2/Q0+Wqw9tQgT9BY21gdYP0MJWc977JpnOxqyt2KCrIurg+loYUPpEKs/zRqtggygxhtVkQCWF11BjPUBsyZiNJRIV5C1F5yIkWe5WnDTBMq8VGIUtM7d+IYen3dNBGFU12VhBhKqFfy15HoV3ZHLvlSU/6+vbTPoN3OE87bw7wY/yO3JK/pPyxJk/3ppoFFaXz6TooPY5HjQ0WklUoHsiiAKnpjVv1Mi/myFLW+nPqgl88CqgoJ9UUR3s/jE6GdvwClBFmIRwlwqSN3on4Yx7UBEybdhLoSAHxoRSbfLicGwBzZGqALNd/SF02t9kvFAw3V0lPLsIRVpZTdB4PMaYaYHr3ntwownDt3eufOpZzimumaQFlda3uGBimVwna3NP9gL50xT6oH/CyRWbEbVuDTd+fLSjnh8yjpGvQCrA67jlpyf2irTO4IeneaD7DuQaFOev9gJx4jcjwHCmyPLIK5JVRdaFA4mDU1m/kP89HMjFid2I0nyVekuAqBKkhwn+IEf61MAzOh/ySwRS+vvh/IUETZ0jTM=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: higlass/clodius
