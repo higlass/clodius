@@ -1,4 +1,7 @@
-# Clodius <img src="https://travis-ci.org/hms-dbmi/clodius.svg?branch=develop"/>
+# Clodius
+
+[![Build Status](https://travis-ci.org/higlass/clodius.svg?branch=develop)](https://travis-ci.org/higlass/clodius)
+[![Docs](https://img.shields.io/badge/docs-📖-red.svg?colorB=6680ff)](https://docs.higlass.io/data_preparation.html)
 
 Displaying large amounts of data often requires first turning it into
 not-so-large amounts of data. Clodius is a program and library designed
