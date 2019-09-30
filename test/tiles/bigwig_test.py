@@ -12,6 +12,11 @@ def test_bigwig_tiles(engine):
         'wgEncodeCaltechRnaSeqHuvecR1x75dTh1014IlnaPlusSignalRep2.bigWig'
     )
 
+    if engine == "pybbi":
+        pytest.importorskip("bbi")
+    elif engine == "pybigwig":
+        pytest.importorskip("pyBigWig")
+
     mean_tile = hgbi.tiles(filename, ['x.0.0'], engine=engine)
     mean_mean_tile = hgbi.tiles(filename, ['x.0.0.mean'], engine=engine)
     min_tile = hgbi.tiles(filename, ['x.0.0.min'], engine=engine)
