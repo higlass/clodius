@@ -231,13 +231,24 @@ def _bedgraph_to_multivec(
             def agg(x):
                 return x.T.reshape((x.shape[1], -1, 2)).sum(axis=2).T
 
-        cmv.create_multivec_multires(f_in,
-                                     chromsizes=zip(chrom_names, chrom_sizes),
-                                     agg=agg,
-                                     starting_resolution=starting_resolution,
-                                     tile_size=tile_size,
-                                     output_file=output_file,
-                                     row_infos=row_infos)
+        if format == 'states':
+            states_row_infos = [state_name.encode('utf8') for state_name in states_names]
+            cmv.create_multivec_multires(f_in,
+                                         chromsizes=zip(chrom_names, chrom_sizes),
+                                         agg=agg,
+                                         starting_resolution=starting_resolution,
+                                         tile_size=tile_size,
+                                         output_file=output_file,
+                                         row_infos=states_row_infos)
+        else:
+            cmv.create_multivec_multires(f_in,
+                                         chromsizes=zip(chrom_names, chrom_sizes),
+                                         agg=agg,
+                                         starting_resolution=starting_resolution,
+                                         tile_size=tile_size,
+                                         output_file=output_file,
+                                         row_infos=row_infos)
+
 
 
 @convert.command()
