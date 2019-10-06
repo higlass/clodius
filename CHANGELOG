@@ -1,4 +1,7 @@
-- Maintenance: Swicthed from nose to pytest and added coverage reporting.
+v0.11.3
+
+- Maintenance: Switched from nose to pytest and added coverage reporting.
+- Use columnar format for BAM reads return values
 
 v0.11.2
 
