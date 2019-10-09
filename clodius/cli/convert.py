@@ -250,7 +250,6 @@ def _bedgraph_to_multivec(
                                          row_infos=row_infos)
 
 
-
 @convert.command()
 @click.argument(
     'filepaths',
