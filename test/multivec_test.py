@@ -127,27 +127,20 @@ def test_retain_lines():
     row_infos_file = op.join(testdir, 'sample_data', 'states_format_test_row_infos_v2.txt')
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        out_file = op.join(tmp_dir, 'out.multivec')
+        out_file = op.join(tmp_dir, 'out.multires.mv5')
 
-        _ = runner.invoke(
+        result = runner.invoke(
             ccc.bedfile_to_multivec,
             [input_file,
              '--output-file', out_file,
-             '--assembly', 'hg38',
-             '--num-rows', 3,
+             '--format', 'states',
              '--chromsizes-filename', chromsizes_file,
-             '--starting-resolution', '1000'
+             '--starting-resolution', '1000',
              '--row-infos-filename', row_infos_file,
              '--num-rows', '3'])
 
         # import traceback
-        # a, b, tb = result.exc_info
-
-        # print("exc_info:", result.exc_info)
-        # print("result:", result)
-        # print("result.output", result.output)
-        # print("result.error", traceback.print_tb(tb))
-        # print("Exception:", a,b)
+        a, b, tb = result.exc_info
 
         # input_file:
         # chr1    0   1000  State1
