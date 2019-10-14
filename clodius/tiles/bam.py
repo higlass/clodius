@@ -52,7 +52,15 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
         )
         lengths = lengths[chrom_order_ixs]
 
-    results = []
+    results = {
+        'id': [],
+        'from': [],
+        'to': [],
+        'md': [],
+        'chrName': [],
+        'chrOffset': [],
+        'cigar': [],
+    }
 
     for cid, start, end in abs2genomic(lengths, start_pos, end_pos):
         chr_offset = int(abs_chrom_offsets[cid])
@@ -84,15 +92,13 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
             #     # probably lacked an MD string
             #     pass
             try:
-                results += [{
-                    "id": read.query_name,
-                    "from": int(read.reference_start + chr_offset),
-                    "to": int(read.reference_end + chr_offset),
-                    "md": read.get_tag('MD'),
-                    "chrName": read.reference_name,
-                    "chrOffset": chr_offset,
-                    "cigar": read.cigarstring
-                }]
+                results['id'] += [read.query_name]
+                results['from'] += [int(read.reference_start + chr_offset)]
+                results['to'] += [int(read.reference_end + chr_offset)]
+                results['md'] += [read.get_tag('MD')]
+                results['chrName'] += [read.reference_name]
+                results['chrOffset'] += [chr_offset]
+                results['cigar'] += [read.cigarstring]
             except:
                 raise
     return results
@@ -132,7 +138,7 @@ def tileset_info(filename):
     return tileset_info
 
 
-def tiles(filename, tile_ids, index_filename=None):
+def tiles(filename, tile_ids, index_filename=None, max_tile_width=None):
     '''
     Generate tiles from a bigwig file.
 
@@ -145,6 +151,9 @@ def tiles(filename, tile_ids, index_filename=None):
         to be retrieved
     index_filename: str
         The name of the file containing the index
+    max_tile_width: int
+        How wide can each tile be before we return no data. This
+        can be used to limit the amount of data returned.
 
     Returns
     -------
@@ -163,10 +172,15 @@ def tiles(filename, tile_ids, index_filename=None):
         tile_position = list(map(int, tile_id_parts[1:3]))
 
         tile_width = tsinfo['max_width'] / 2 ** int(tile_position[0])
-        start_pos = int(tile_position[1]) * tile_width
-        end_pos = start_pos + tile_width
 
-        tile_value = load_reads(samfile, start_pos=start_pos, end_pos=end_pos)
-        generated_tiles += [(tile_id, tile_value)]
+        if max_tile_width and tile_width >= max_tile_width:
+            # this tile is larger than the max allowed
+            return [(tile_id, {'error': f'Tile too large, no data returned. Max tile size: {max_tile_width}'})]
+        else:
+            start_pos = int(tile_position[1]) * tile_width
+            end_pos = start_pos + tile_width
+
+            tile_value = load_reads(samfile, start_pos=start_pos, end_pos=end_pos)
+            generated_tiles += [(tile_id, tile_value)]
 
     return generated_tiles

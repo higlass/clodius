@@ -65,7 +65,8 @@ def natcmp(x, y):
         [int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a]
     )
 
-    # order of these parameters is purposefully reverse how they should be ordered
+    # order of these parameters is purposefully reverse how they should be
+    # ordered
     for key in ['m', 'y', 'x']:
         if key in y.lower():
             return -1
@@ -230,7 +231,6 @@ def get_bigwig_tile(
     aggregation_mode='mean',
     range_mode=None
 ):
-
     if chromsizes is None:
         chromsizes = get_chromsizes(bwpath)
 
