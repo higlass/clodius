@@ -29,7 +29,7 @@ def epilogos_bedline_to_vector(bedlines, row_infos=None):
     An array containing the values associated with that line
     '''
     bedline = bedlines[0]
-    parts = bedline.decode('utf8').strip().split('\t')
+    parts = bedline.strip().split('\t')
     # extract the state values e.g. [...,[0,14],[0.56,15]]
     array_str = parts[3].split(':')[-1]
 
@@ -70,8 +70,7 @@ def states_bedline_to_vector(bedlines, states_dic):
     # other file types, but this one only supports a single file so just
     # assume that a single file is passed in
     bedline = bedlines[0]
-
-    parts = bedline.decode('utf8').strip().split('\t')
+    parts = bedline.strip().split('\t')
     chrom = parts[0]
     start = int(parts[1])
     end = int(parts[2])

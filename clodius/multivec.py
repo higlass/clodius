@@ -20,11 +20,9 @@ def bedfile_to_multivec(input_filenames, f_out,
     '''
 
     files = []
-    in_bytes = False
     for input_filename in input_filenames:
         if op.splitext(input_filename)[1] == '.gz':
-            files += [gzip.open(input_filename, 'r')]
-            in_bytes = True
+            files += [gzip.open(input_filename, 'rt')]
         else:
             files += [open(input_filename, 'r')]
 
@@ -48,12 +46,8 @@ def bedfile_to_multivec(input_filenames, f_out,
     for _, lines in enumerate(zip(*files)):
 
         # Identifies bedfile headers and ignore them
-        if in_bytes:
-            if lines[0].startswith('browser'.encode('utf8')) or lines[0].startswith('track'.encode('utf8')):
-                continue
-        else:
-            if lines[0].startswith('browser') or lines[0].startswith('track'):
-                continue
+        if lines[0].startswith('browser') or lines[0].startswith('track'):
+            continue
 
         chrom, start, end, vector = bedline_to_chrom_start_end_vector(
             lines, row_infos)
@@ -63,7 +57,7 @@ def bedfile_to_multivec(input_filenames, f_out,
             vector += [np.nan] * (len(lines) * num_rows - len(vector))
 
         if start % base_resolution != 0:
-            print("Error: The start coordinate is not a multiple of the resolution")
+            logger.error('The start coordinate is not a multiple of the resolution in line: %s', lines)
             sys.exit(1)
 
         if prev_chrom is not None and chrom != prev_chrom:
