@@ -95,12 +95,18 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
                 results['id'] += [read.query_name]
                 results['from'] += [int(read.reference_start + chr_offset)]
                 results['to'] += [int(read.reference_end + chr_offset)]
-                results['md'] += [read.get_tag('MD')]
                 results['chrName'] += [read.reference_name]
                 results['chrOffset'] += [chr_offset]
                 results['cigar'] += [read.cigarstring]
             except:
                 raise
+
+            try:
+                results['md'] += [read.get_tag('MD')]
+            except KeyError:
+                results['md'] += ['']
+                continue
+
     return results
 
 
@@ -168,7 +174,7 @@ def tiles(filename, tile_ids, index_filename=None, max_tile_width=None):
     )
 
     for tile_id in tile_ids:
-        tile_id_parts = tile_id.split('.')
+        tile_id_parts = tile_id.split('|')[0].split('.')
         tile_position = list(map(int, tile_id_parts[1:3]))
 
         tile_width = tsinfo['max_width'] / 2 ** int(tile_position[0])
