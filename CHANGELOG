@@ -1,3 +1,7 @@
+v0.11.5
+
+- Add tiles function and test for multivec. It can be used in higlass-python and higlass server.
+
 v0.11.4
 
 - Modified bedfile_to_multivec conversion to retain lines in which the end coordinate is not a multiple of the resolution.
