@@ -48,8 +48,8 @@ def tiles(filename, tile_ids):
         tile_pos = [int(i) for i in tile_id.split('.')[1:3]]
         ma = get_single_tile(filename, tile_pos)
         has_nan = np.isnan(ma).any()
-        ma_max = ma.max() if ma else 0
-        ma_min = ma.min() if ma else 0
+        ma_max = ma.max() if ma.size else 0
+        ma_min = ma.min() if ma.size else 0
         use_f16 = (not has_nan and (ma_min > f16_min and ma_max < f16_max))
         ma = ma.astype(np.float16 if use_f16 else np.float32)
         ma_base64 = base64.b64encode(ma.ravel()).decode("utf-8")
