@@ -1,4 +1,5 @@
 import clodius.tiles.bigbed as hgbb
+import clodius.tiles.bigwig as hgbw
 import os.path as op
 
 
@@ -64,7 +65,7 @@ def test_natsorted():
     ]
 
     for test in chromname_tests:
-        sorted_output = hgbb.natsorted(test['input'])
+        sorted_output = hgbw.natsorted(test['input'])
         assert sorted_output == test['expected'],\
             'Sorted output was %s\nExpected: %s' \
             % (sorted_output, test['expected'])
