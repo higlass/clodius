@@ -6,6 +6,7 @@ import pandas as pd
 import re
 import sys
 import random
+import clodius.tiles.bigwig as hgbw
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -13,75 +14,12 @@ MAX_THREADS = 4
 TILE_SIZE = 1024
 MIN_ELEMENTS = 1
 MAX_ELEMENTS = 50
+DEFAULT_SCORE = 0
 
 logger = logging.getLogger(__name__)
 
 range_modes = {}
 range_modes['significant'] = {'name': 'Significant', 'value': 'significant'}
-
-
-def get_quadtree_depth(chromsizes):
-    tile_size_bp = TILE_SIZE
-    min_tile_cover = np.ceil(sum(chromsizes) / tile_size_bp)
-    return int(np.ceil(np.log2(min_tile_cover)))
-
-
-def get_zoom_resolutions(chromsizes):
-    return [2**x for x in range(get_quadtree_depth(chromsizes) + 1)][::-1]
-
-
-def natsort_key(s, _NS_REGEX=re.compile(r'(\d+)', re.U)):
-    return tuple(
-        [int(x) if x.isdigit() else x for x in _NS_REGEX.split(s) if x]
-    )
-
-
-def natcmp(x, y):
-    if x.find('_') >= 0:
-        x_parts = x.split('_')
-        if y.find('_') >= 0:
-            # chr_1 vs chr_2
-            y_parts = y.split('_')
-
-            return natcmp(x_parts[1], y_parts[1])
-        else:
-            # chr_1 vs chr1
-            # chr1 comes first
-            return 1
-    if y.find('_') >= 0:
-        # chr1 vs chr_1
-        # y comes second
-        return -1
-
-    _NS_REGEX = re.compile(r'(\d+)', re.U)
-    x_parts = tuple(
-        [int(a) if a.isdigit() else a for a in _NS_REGEX.split(x) if a]
-    )
-    y_parts = tuple(
-        [int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a]
-    )
-
-    # order of these parameters is purposefully reverse how they should be
-    # ordered
-    for key in ['m', 'y', 'x']:
-        if key in y.lower():
-            return -1
-        if key in x.lower():
-            return 1
-
-    try:
-        if x_parts < y_parts:
-            return -1
-        elif y_parts > x_parts:
-            return 1
-        else:
-            return 0
-    except TypeError:
-        return 1
-
-
-def natsorted(iterable):
-    return sorted(iterable, key=ft.cmp_to_key(natcmp))
 
 
 def get_chromsizes(bbpath):
@@ -92,7 +30,7 @@ def get_chromsizes(bbpath):
 
     """
     chromsizes = bbi.chromsizes(bbpath)
-    chromosomes = natsorted(chromsizes.keys())
+    chromosomes = hgbw.natsorted(chromsizes.keys())
     chrom_series = pd.Series(chromsizes)[chromosomes]
     return chrom_series
 
@@ -215,21 +153,27 @@ def fetch_data(a):
         return final_intervals
     
     for interval in intervals:
-        scores.append(int(interval[4]))
+        try:
+            scores.append(int(interval[4]))
+        except ValueError:
+            scores.append(DEFAULT_SCORE)
         intervals_length += 1
     
     # generate beddb-like elements for parsing by the higlass plugin
     if intervals_length >= min_elements and intervals_length <= max_elements:
         for interval in intervals2:
-            final_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': int(interval[4]), 'fields': interval})
+            score = DEFAULT_SCORE
+            try:
+                score = int(interval[4])
+            except ValueError:
+                pass
+            final_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': score, 'fields': interval})
             
     elif intervals_length > max_elements:
         thresholded_intervals = []
         desired_perc = max_elements / intervals_length
         thresholded_score = int(np.quantile(scores, 1-desired_perc))
-        for interval in intervals2:
-            if int(interval[4]) >= thresholded_score:
-                thresholded_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': int(interval[4]), 'fields': interval})
+        thresholded_intervals = [{'chrOffset': chrOffsets[chrom], 'importance': int(interval[4]), 'fields': interval} for interval in intervals2 if int(interval[4]) >= thresholded_score]
         thresholded_intervals_length = len(thresholded_intervals)
         if thresholded_intervals_length > max_elements:
             indices = random.sample(range(thresholded_intervals_length), max_elements)
@@ -256,7 +200,7 @@ def get_bigbed_tile(
     if max_elements is None:
         max_elements = MAX_ELEMENTS
 
-    resolutions = get_zoom_resolutions(chromsizes)
+    resolutions = hgbw.get_zoom_resolutions(chromsizes)
     binsize = resolutions[zoom_level]
 
     cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
@@ -358,7 +302,7 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
         if chromsizes_to_use is None:
             chromsizes_to_use = get_chromsizes(bbpath)
 
-        max_depth = get_quadtree_depth(chromsizes_to_use)
+        max_depth = hgbw.get_quadtree_depth(chromsizes_to_use)
         tile_size = TILE_SIZE * 2 ** (max_depth - zoom_level)
         start_pos = tile_pos * tile_size
         end_pos = start_pos + tile_size

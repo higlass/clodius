@@ -17,7 +17,7 @@ def test_bigbed_tiles():
     base_tile_data = base_tile[0][1]
     assert num_chroms == len(base_tile_data), 'Number of chromosomes in bigBed file was {}\nExpected: {}\n'.format(len(base_tile_data), num_chroms)
     
-    signif_tile = hgbb.tiles(filename, ['x.0.0.significance'])
+    signif_tile = hgbb.tiles(filename, ['x.0.0.significant'])
     signif_tile_data = signif_tile[0][1]
     assert num_chroms == len(signif_tile_data), 'Number of chromosomes in bigBed file was {}\nExpected: {}\n'.format(len(signif_tile_data), num_chroms)
 
