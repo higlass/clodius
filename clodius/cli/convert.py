@@ -29,7 +29,7 @@ def epilogos_bedline_to_vector(bedlines, row_infos=None):
     An array containing the values associated with that line
     '''
     bedline = bedlines[0]
-    parts = bedline.decode('utf8').strip().split('\t')
+    parts = bedline.strip().split('\t')
     # extract the state values e.g. [...,[0,14],[0.56,15]]
     array_str = parts[3].split(':')[-1]
 
@@ -70,8 +70,7 @@ def states_bedline_to_vector(bedlines, states_dic):
     # other file types, but this one only supports a single file so just
     # assume that a single file is passed in
     bedline = bedlines[0]
-
-    parts = bedline.decode('utf8').strip().split('\t')
+    parts = bedline.strip().split('\t')
     chrom = parts[0]
     start = int(parts[1])
     end = int(parts[2])
@@ -231,13 +230,23 @@ def _bedgraph_to_multivec(
             def agg(x):
                 return x.T.reshape((x.shape[1], -1, 2)).sum(axis=2).T
 
-        cmv.create_multivec_multires(f_in,
-                                     chromsizes=zip(chrom_names, chrom_sizes),
-                                     agg=agg,
-                                     starting_resolution=starting_resolution,
-                                     tile_size=tile_size,
-                                     output_file=output_file,
-                                     row_infos=row_infos)
+        if format == 'states':
+            states_row_infos = [state_name.encode('utf8') for state_name in states_names]
+            cmv.create_multivec_multires(f_in,
+                                         chromsizes=zip(chrom_names, chrom_sizes),
+                                         agg=agg,
+                                         starting_resolution=starting_resolution,
+                                         tile_size=tile_size,
+                                         output_file=output_file,
+                                         row_infos=states_row_infos)
+        else:
+            cmv.create_multivec_multires(f_in,
+                                         chromsizes=zip(chrom_names, chrom_sizes),
+                                         agg=agg,
+                                         starting_resolution=starting_resolution,
+                                         tile_size=tile_size,
+                                         output_file=output_file,
+                                         row_infos=row_infos)
 
 
 @convert.command()

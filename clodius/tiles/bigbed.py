@@ -6,11 +6,11 @@ import pandas as pd
 import re
 import sys
 import random
+import clodius.tiles.bigwig as hgbw
 
 from concurrent.futures import ThreadPoolExecutor
 
-MAX_THREADS = 4
-TILE_SIZE = 1024
+DEFAULT_RANGE_MODE = 'significant'
 MIN_ELEMENTS = 1
 MAX_ELEMENTS = 50
 
@@ -20,145 +20,10 @@ range_modes = {}
 range_modes['significant'] = {'name': 'Significant', 'value': 'significant'}
 
 
-def get_quadtree_depth(chromsizes):
-    tile_size_bp = TILE_SIZE
-    min_tile_cover = np.ceil(sum(chromsizes) / tile_size_bp)
-    return int(np.ceil(np.log2(min_tile_cover)))
-
-
-def get_zoom_resolutions(chromsizes):
-    return [2**x for x in range(get_quadtree_depth(chromsizes) + 1)][::-1]
-
-
-def natsort_key(s, _NS_REGEX=re.compile(r'(\d+)', re.U)):
-    return tuple(
-        [int(x) if x.isdigit() else x for x in _NS_REGEX.split(s) if x]
-    )
-
-
-def natcmp(x, y):
-    if x.find('_') >= 0:
-        x_parts = x.split('_')
-        if y.find('_') >= 0:
-            # chr_1 vs chr_2
-            y_parts = y.split('_')
-
-            return natcmp(x_parts[1], y_parts[1])
-        else:
-            # chr_1 vs chr1
-            # chr1 comes first
-            return 1
-    if y.find('_') >= 0:
-        # chr1 vs chr_1
-        # y comes second
-        return -1
-
-    _NS_REGEX = re.compile(r'(\d+)', re.U)
-    x_parts = tuple(
-        [int(a) if a.isdigit() else a for a in _NS_REGEX.split(x) if a]
-    )
-    y_parts = tuple(
-        [int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a]
-    )
-
-    # order of these parameters is purposefully reverse how they should be
-    # ordered
-    for key in ['m', 'y', 'x']:
-        if key in y.lower():
-            return -1
-        if key in x.lower():
-            return 1
-
-    try:
-        if x_parts < y_parts:
-            return -1
-        elif y_parts > x_parts:
-            return 1
-        else:
-            return 0
-    except TypeError:
-        return 1
-
-
-def natsorted(iterable):
-    return sorted(iterable, key=ft.cmp_to_key(natcmp))
-
-
-def get_chromsizes(bbpath):
-    """
-    TODO: replace this with negspy
-
-    Also, return NaNs from any missing chromosomes in bbi.fetch
-
-    """
-    chromsizes = bbi.chromsizes(bbpath)
-    chromosomes = natsorted(chromsizes.keys())
-    chrom_series = pd.Series(chromsizes)[chromosomes]
-    return chrom_series
-
-
-def abs2genomic(chromsizes, start_pos, end_pos):
-    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes.values)]
-    cid_lo, cid_hi = np.searchsorted(abs_chrom_offsets,
-                                     [start_pos, end_pos],
-                                     side='right') - 1
-    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
-    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
-    start = rel_pos_lo
-    for cid in range(cid_lo, cid_hi):
-        yield cid, start, chromsizes[cid]
-        start = 0
-    yield cid_hi, start, rel_pos_hi
-
-
 def tileset_info(bbpath, chromsizes=None):
-    '''
-    Get the tileset info for a bigWig file
-
-    Parameters
-    ----------
-    bbpath: string
-        The path to the bigbed file from which to retrieve data
-    chromsizes: [[chrom, size],...]
-        A list of chromosome sizes associated with this tileset.
-        Typically passed in to specify in what order data from
-        the bigbed should be returned.
-
-    Returns
-    -------
-    tileset_info: {
-                   'min_pos': [],
-                   'max_pos': [],
-                   'tile_size': 1024,
-                   'max_zoom': 7
-                  }
-    '''
-    TILE_SIZE = 1024
-
-    if chromsizes is None:
-        chromsizes = get_chromsizes(bbpath)
-        chromsizes_list = []
-
-        for chrom, size in chromsizes.iteritems():
-            chromsizes_list += [[chrom, int(size)]]
-    else:
-        chromsizes_list = chromsizes
-
-    min_tile_cover = np.ceil(
-        sum([int(c[1]) for c in chromsizes_list]) / TILE_SIZE
-    )
-    max_zoom = int(np.ceil(np.log2(min_tile_cover)))
-
-    tileset_info = {
-        'min_pos': [0],
-        'max_pos': [TILE_SIZE * 2 ** max_zoom],
-        'max_width': TILE_SIZE * 2 ** max_zoom,
-        'tile_size': TILE_SIZE,
-        'max_zoom': max_zoom,
-        'chromsizes': chromsizes_list,
-        'range_modes': range_modes
-    }
-    return tileset_info
+    ti = hgbw.tileset_info(bbpath, chromsizes)
+    ti['range_modes'] = range_modes
+    return ti
 
 
 def fetch_data(a):
@@ -178,8 +43,6 @@ def fetch_data(a):
     try:
         chrom = chromsizes.index[cid]
         clen = chromsizes.values[cid]
-
-        kwargs = {"bins": n_bins, "missing": np.nan}
         
         fetch_factory = ft.partial(bbi.fetch_intervals, bbpath, chrom, start, end)
 
@@ -227,9 +90,7 @@ def fetch_data(a):
         thresholded_intervals = []
         desired_perc = max_elements / intervals_length
         thresholded_score = int(np.quantile(scores, 1-desired_perc))
-        for interval in intervals2:
-            if int(interval[4]) >= thresholded_score:
-                thresholded_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': int(interval[4]), 'fields': interval})
+        thresholded_intervals = [{'chrOffset': chrOffsets[chrom], 'importance': int(interval[4]), 'fields': interval} for interval in intervals2 if int(interval[4]) >= thresholded_score]
         thresholded_intervals_length = len(thresholded_intervals)
         if thresholded_intervals_length > max_elements:
             indices = random.sample(range(thresholded_intervals_length), max_elements)
@@ -249,17 +110,17 @@ def get_bigbed_tile(
     max_elements=None
 ):
     if chromsizes is None:
-        chromsizes = get_chromsizes(bbpath)
+        chromsizes = hgbw.get_chromsizes(bbpath)
         
     if min_elements is None:
         min_elements = MIN_ELEMENTS
     if max_elements is None:
         max_elements = MAX_ELEMENTS
 
-    resolutions = get_zoom_resolutions(chromsizes)
+    resolutions = hgbw.get_zoom_resolutions(chromsizes)
     binsize = resolutions[zoom_level]
 
-    cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
+    cids_starts_ends = list(hgbw.abs2genomic(chromsizes, start_pos, end_pos))
     
     with ThreadPoolExecutor(max_workers=16) as e:
         arrays = list(
@@ -304,7 +165,7 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
     '''
-    TILE_SIZE = 1024
+    
     min_elements = -1
     max_elements = -1
     
@@ -314,7 +175,7 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
         tile_no_options = tile_id.split('|')[0]
         tile_id_parts = tile_no_options.split('.')
         tile_position = list(map(int, tile_id_parts[1:3]))
-        return_value = tile_id_parts[3] if len(tile_id_parts) > 3 else 'mean'
+        return_value = tile_id_parts[3] if len(tile_id_parts) > 3 else DEFAULT_RANGE_MODE
 
         range_mode = return_value if return_value in range_modes else None
 
@@ -334,8 +195,8 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
             max_elements = min_elements + 1
             
         if max_elements <= 0:
-            min_elements = 1
-            max_elements = 10
+            min_elements = MIN_ELEMENTS
+            max_elements = MAX_ELEMENTS
 
         if chromsizes:
             chromnames = [c[0] for c in chromsizes]
@@ -356,10 +217,10 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
         # this doesn't combine multiple consequetive ids, which
         # would speed things up
         if chromsizes_to_use is None:
-            chromsizes_to_use = get_chromsizes(bbpath)
+            chromsizes_to_use = hgbw.get_chromsizes(bbpath)
 
-        max_depth = get_quadtree_depth(chromsizes_to_use)
-        tile_size = TILE_SIZE * 2 ** (max_depth - zoom_level)
+        max_depth = hgbw.get_quadtree_depth(chromsizes_to_use)
+        tile_size = hgbw.TILE_SIZE * 2 ** (max_depth - zoom_level)
         start_pos = tile_pos * tile_size
         end_pos = start_pos + tile_size
     
@@ -380,28 +241,4 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
 
 
 def chromsizes(filename):
-    '''
-    Get a list of chromosome sizes from this [presumably] bigwig
-    file.
-
-    Parameters:
-    -----------
-    filename: string
-        The filename of the bigwig file
-
-    Returns
-    -------
-    chromsizes: [(name:string, size:int), ...]
-        An ordered list of chromosome names and sizes
-    '''
-    try:
-        chrom_series = get_chromsizes(filename)
-        data = []
-        for chrom, size in chrom_series.iteritems():
-            data.append([chrom, size])
-        return data
-    except Exception as ex:
-        logger.error(ex)
-        raise Exception(
-            'Error loading chromsizes from bigwig file: {}'.format(ex)
-        )
+    return hgbw.chromsizes(filename)

@@ -45,3 +45,8 @@ output.tar
 profile.dat
 profile.png
 aws_keys.py
+
+#test related
+a.out
+test/sample_data/3_header_100_testfile.bed.multires.mv5
+test/sample_data/states_format_input_testfile.bed.multires.mv5

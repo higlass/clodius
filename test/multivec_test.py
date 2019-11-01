@@ -5,6 +5,7 @@ import clodius.cli.convert as ccc
 import clodius.tiles.multivec as ctv
 import os.path as op
 import tempfile
+import h5py
 
 testdir = op.realpath(op.dirname(__file__))
 
@@ -117,3 +118,46 @@ def test_ignore_bedfile_headers():
 
     # import traceback
     a, b, tb = result.exc_info
+
+
+def test_retain_lines():
+    runner = clt.CliRunner()
+    input_file = op.join(testdir, 'sample_data', 'sample2.multival.bed')
+    chromsizes_file = op.join(testdir, 'sample_data', 'sample2.multival.chrom.sizes')
+    row_infos_file = op.join(testdir, 'sample_data', 'states_format_test_row_infos_v2.txt')
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        out_file = op.join(tmp_dir, 'out.multires.mv5')
+
+        result = runner.invoke(
+            ccc.bedfile_to_multivec,
+            [input_file,
+             '--output-file', out_file,
+             '--format', 'states',
+             '--chromsizes-filename', chromsizes_file,
+             '--starting-resolution', '1000',
+             '--row-infos-filename', row_infos_file,
+             '--num-rows', '3'])
+
+        # import traceback
+        a, b, tb = result.exc_info
+
+        # input_file:
+        # chr1    0   1000  State1
+        # chr1    1000    10111  State2
+        # chr2    5000    8000  State3
+        #
+        # # input chromsizes
+        # chr1  10111
+        # chr2    8000
+        #
+        # # input row_infos file
+        # State1
+        # State2
+        # State3
+
+        f = h5py.File(out_file, 'r')
+        # The last bin of chromosome 1 should contain the State2 Vector [0,1,0]
+        assert f['resolutions']['1000']['values']['chr1'][10][0] == 0.0
+        assert f['resolutions']['1000']['values']['chr1'][10][1] == 1.0
+        assert f['resolutions']['1000']['values']['chr1'][10][2] == 0.0
