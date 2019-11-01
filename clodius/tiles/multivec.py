@@ -1,5 +1,7 @@
-import h5py
 import math
+import base64
+
+import h5py
 import numpy as np
 
 
@@ -27,6 +29,38 @@ def abs2genomic(chromsizes, start_pos, end_pos):
         yield cid, start, chromsizes[cid]
         start = 0
     yield cid_hi, start, rel_pos_hi
+
+
+def tiles(filename, tile_ids):
+    """
+    Retrieve multiple multivec tiles from tids.
+    ----------
+    filename: string
+        The multires file containing the multivec data
+    tile_ids: [str,...]
+        A list of tile_ids (e.g. xyx.0.0) identifying the tiles
+        to be retrieved
+    """
+    f16 = np.finfo("float16")
+    f16_min, f16_max = f16.min, f16.max
+    generated_tiles = []
+    for tile_id in tile_ids:
+        tile_pos = [int(i) for i in tile_id.split('.')[1:3]]
+        ma = get_single_tile(filename, tile_pos)
+        has_nan = np.isnan(ma).any()
+        ma_max = ma.max() if ma.size else 0
+        ma_min = ma.min() if ma.size else 0
+        use_f16 = (not has_nan and (ma_min > f16_min and ma_max < f16_max))
+        ma = ma.astype(np.float16 if use_f16 else np.float32)
+        ma_base64 = base64.b64encode(ma.ravel()).decode("utf-8")
+        tile_value = {
+            "dense": ma_base64,
+            "dtype": 'float16' if use_f16 else 'float32',
+            "shape": ma.shape
+        }
+        generated_tiles.append((tile_id, tile_value))
+
+    return generated_tiles
 
 
 def get_single_tile(filename, tile_pos):

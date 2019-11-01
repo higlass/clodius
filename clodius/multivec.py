@@ -22,7 +22,7 @@ def bedfile_to_multivec(input_filenames, f_out,
     files = []
     for input_filename in input_filenames:
         if op.splitext(input_filename)[1] == '.gz':
-            files += [gzip.open(input_filename, 'r')]
+            files += [gzip.open(input_filename, 'rt')]
         else:
             files += [open(input_filename, 'r')]
 
@@ -41,10 +41,10 @@ def bedfile_to_multivec(input_filenames, f_out,
         files[0].readline()
 
     prev_chrom = None
-    print('base_resolution:', base_resolution)
-    warned = False
 
+    print('base_resolution:', base_resolution)
     for _, lines in enumerate(zip(*files)):
+
         # Identifies bedfile headers and ignore them
         if lines[0].startswith('browser') or lines[0].startswith('track'):
             continue
@@ -52,17 +52,13 @@ def bedfile_to_multivec(input_filenames, f_out,
         chrom, start, end, vector = bedline_to_chrom_start_end_vector(
             lines, row_infos)
         # if vector[0] > 0 or vector[1] > 0:
-
         if len(vector) < len(lines) * num_rows:
             logger.warn('Lines contain fewer columns than expected: %s', lines)
             vector += [np.nan] * (len(lines) * num_rows - len(vector))
 
-        if (end % base_resolution != 0 or start % base_resolution != 0) and not warned:
-            logger.warn(
-                "WARNING: either the start or end coordinate is not a multiple of the base resolution ({}): {}".
-                format(base_resolution, lines))
-            warned = True
-            continue
+        if start % base_resolution != 0:
+            logger.error('The start coordinate is not a multiple of the resolution in line: %s', lines)
+            sys.exit(1)
 
         if prev_chrom is not None and chrom != prev_chrom:
             # we've reached a new chromosome so we'll dump all
@@ -102,8 +98,9 @@ def bedfile_to_multivec(input_filenames, f_out,
         # When the binsize is not equal to the base_resolution
         # "break down" the binsize into bins of the rbase_esolution size
         # and add the values to each bin.
+        # If there is a remainder, add an additional bin
+        data_end_index = math.ceil(end / base_resolution)
 
-        data_end_index = end // base_resolution
         while curr_index < data_end_index:
             batch += [vector]
             curr_index += 1

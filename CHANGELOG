@@ -3,6 +3,17 @@ Future version
 - Added tile queries for bigBed files, using score data (if available)
   to threshold those elements returned, based on a specified or default maximum
 
+v0.11.5
+
+- Add tiles function and test for multivec. It can be used in higlass-python and higlass server.
+
+v0.11.4
+
+- Modified bedfile_to_multivec conversion to retain lines in which the end coordinate is not a multiple of the resolution.
+  It adds an extra bin for the remainder. It also displays an error when start coordinate is not multiple of resolution
+- Fix bug to handle headers.
+- Modified create_multivec_multires for states files to show only the contents of the first column of the row_infos file as the name of the state.
+
 v0.11.3
 
 - Maintenance: Switched from nose to pytest and added coverage reporting.
