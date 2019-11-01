@@ -1,22 +1,20 @@
 import clodius.tiles.bigbed as hgbb
 import os.path as op
-import numpy as np
-import base64
-import sys
+
 
 def test_bigbed_tiles():
     filename = op.join(
         'data',
         'masterlist_DHSs_733samples_WM20180608_all_mean_signal_colorsMax.bed.bb'
     )
-    
+
     tileset_info = hgbb.tileset_info(filename)
     num_chroms = len(tileset_info['chromsizes'])
 
     base_tile = hgbb.tiles(filename, ['x.0.0'])
     base_tile_data = base_tile[0][1]
     assert num_chroms == len(base_tile_data), 'Number of chromosomes in bigBed file was {}\nExpected: {}\n'.format(len(base_tile_data), num_chroms)
-    
+
     signif_tile = hgbb.tiles(filename, ['x.0.0.significant'])
     signif_tile_data = signif_tile[0][1]
     assert num_chroms == len(signif_tile_data), 'Number of chromosomes in bigBed file was {}\nExpected: {}\n'.format(len(signif_tile_data), num_chroms)
@@ -28,7 +26,7 @@ def test_bigbed_tiles():
         for mtd in max_elems_tile_data:
             assert len(mtd) <= me, 'Number of observed elements with max element threshold was {}\nExpected: {}\n'.format(len(mtd), me)
 
-    min_max_element_ranges = [(1,5), (5,10)]
+    min_max_element_ranges = [(1, 5), (5, 10)]
     for mmer in min_max_element_ranges:
         min_element = mmer[0]
         max_element = mmer[1]

@@ -3,8 +3,6 @@ import functools as ft
 import logging
 import numpy as np
 import pandas as pd
-import re
-import sys
 import random
 import clodius.tiles.bigwig as hgbw
 
@@ -38,17 +36,14 @@ def fetch_data(a):
         start,
         end
     ) = a
-    n_bins = int(np.ceil((end - start) / binsize))
 
     try:
         chrom = chromsizes.index[cid]
-        clen = chromsizes.values[cid]
-        
+
         fetch_factory = ft.partial(bbi.fetch_intervals, bbpath, chrom, start, end)
 
         if range_mode == 'significant':
             intervals, intervals2 = fetch_factory(), fetch_factory()
-
         else:
             intervals, intervals2 = fetch_factory(), fetch_factory()
 
@@ -57,11 +52,11 @@ def fetch_data(a):
         # probably means we've requested a range of absolute
         # coordinates that stretch beyond the end of the genome
         intervals, intervals2 = None, None
-        
+
     except KeyError:
         # probably requested a chromosome that doesn't exist (e.g. chrM)
         intervals, intervals2 = None, None
-        
+
     offset = 0
     offsetIdx = 0
     chrOffsets = {}
@@ -69,33 +64,33 @@ def fetch_data(a):
         chrOffsets[chromsizes.index[offsetIdx]] = offset
         offset += chrSize
         offsetIdx += 1
-        
+
     final_intervals = []
     intervals_length = 0
     scores = []
-    
+
     if not intervals:
         return final_intervals
-    
+
     for interval in intervals:
         scores.append(int(interval[4]))
         intervals_length += 1
-    
+
     # generate beddb-like elements for parsing by the higlass plugin
     if intervals_length >= min_elements and intervals_length <= max_elements:
         for interval in intervals2:
             final_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': int(interval[4]), 'fields': interval})
-            
+
     elif intervals_length > max_elements:
         thresholded_intervals = []
         desired_perc = max_elements / intervals_length
-        thresholded_score = int(np.quantile(scores, 1-desired_perc))
+        thresholded_score = int(np.quantile(scores, 1 - desired_perc))
         thresholded_intervals = [{'chrOffset': chrOffsets[chrom], 'importance': int(interval[4]), 'fields': interval} for interval in intervals2 if int(interval[4]) >= thresholded_score]
         thresholded_intervals_length = len(thresholded_intervals)
         if thresholded_intervals_length > max_elements:
             indices = random.sample(range(thresholded_intervals_length), max_elements)
             final_intervals = [thresholded_intervals[i] for i in sorted(indices)]
- 
+
     return final_intervals
 
 
@@ -111,7 +106,7 @@ def get_bigbed_tile(
 ):
     if chromsizes is None:
         chromsizes = hgbw.get_chromsizes(bbpath)
-        
+
     if min_elements is None:
         min_elements = MIN_ELEMENTS
     if max_elements is None:
@@ -121,7 +116,7 @@ def get_bigbed_tile(
     binsize = resolutions[zoom_level]
 
     cids_starts_ends = list(hgbw.abs2genomic(chromsizes, start_pos, end_pos))
-    
+
     with ThreadPoolExecutor(max_workers=16) as e:
         arrays = list(
             e.map(
@@ -137,7 +132,7 @@ def get_bigbed_tile(
                 ]
             )
         )
-        
+
     return [x for x in arrays if x != []]
 
 
@@ -165,10 +160,10 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
     '''
-    
+
     min_elements = -1
     max_elements = -1
-    
+
     generated_tiles = []
     for tile_id in tile_ids:
         tile_option_parts = tile_id.split('|')[1:]
@@ -185,15 +180,15 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
             min_elements = int(tile_options['min'])
         if 'max' in tile_options:
             max_elements = int(tile_options['max'])
-            
+
         if min_elements > max_elements:
             temp_min_elements = min_elements
             min_elements = max_elements
-            max_elements = temp_min_elements 
+            max_elements = temp_min_elements
         elif min_elements == max_elements:
             min_elements = max_elements
             max_elements = min_elements + 1
-            
+
         if max_elements <= 0:
             min_elements = MIN_ELEMENTS
             max_elements = MAX_ELEMENTS
@@ -223,7 +218,7 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
         tile_size = hgbw.TILE_SIZE * 2 ** (max_depth - zoom_level)
         start_pos = tile_pos * tile_size
         end_pos = start_pos + tile_size
-    
+
         tile_value = get_bigbed_tile(
             bbpath,
             zoom_level,
@@ -236,7 +231,7 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
         )
 
         generated_tiles += [(tile_id, tile_value)]
-    
+
     return generated_tiles
 
 
