@@ -37,18 +37,18 @@ def fetch_data(a):
         start,
         end
     ) = a
-    
+
     '''
-    Retrieve tile data from a bigbed file. 
-    
-    This approach currently returns a subset of intervals within the bounds of the specified 
-    query range. 
-    
-    The subset is determined, at this time, by using the population of scores in the score 
-    column of the BED data to generate a quantile value that would allow, at most, a maximum 
+    Retrieve tile data from a bigbed file.
+
+    This approach currently returns a subset of intervals within the bounds of the specified
+    query range.
+
+    The subset is determined, at this time, by using the population of scores in the score
+    column of the BED data to generate a quantile value that would allow, at most, a maximum
     number of elements (either a default or specified value). Because intervals are discrete
-    elements, it is possible for a quantile to allow a few more elements than the desired 
-    limit; in this case, a uniformly-random sample is drawn from the thresholded set without 
+    elements, it is possible for a quantile to allow a few more elements than the desired
+    limit; in this case, a uniformly-random sample is drawn from the thresholded set without
     replacement.
 
     Parameters
@@ -73,7 +73,7 @@ def fetch_data(a):
         Start position of interval query (relative to chromosome)
     end: integer
         End position of interval query (relative to chromosome)
-        
+
     Returns
     -------
     intervals: [{'chrOffset': integer, 'importance': integer, 'fields': [interval]}, ... ]
@@ -118,7 +118,7 @@ def fetch_data(a):
     for interval in intervals:
         try:
             scores.append(int(interval[4]))
-        except (ValueError, IndexError) as err:
+        except (ValueError, IndexError):
             scores.append(DEFAULT_SCORE)
         intervals_length += 1
 
@@ -128,7 +128,7 @@ def fetch_data(a):
             try:
                 score = int(interval[4])
                 final_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': score, 'fields': interval})
-            except (ValueError, IndexError) as err:
+            except (ValueError, IndexError):
                 final_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': DEFAULT_SCORE, 'fields': interval})
 
     elif intervals_length > max_elements:
@@ -140,7 +140,7 @@ def fetch_data(a):
                 score = int(interval[4])
                 if score >= thresholded_score:
                     thresholded_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': score, 'fields': interval})
-            except (ValueError, IndexError) as err:
+            except (ValueError, IndexError):
                 if DEFAULT_SCORE >= thresholded_score:
                     thresholded_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': DEFAULT_SCORE, 'fields': interval})
         thresholded_intervals_length = len(thresholded_intervals)
@@ -191,9 +191,8 @@ def get_bigbed_tile(
         )
 
     # concatenate bigBed tileset data across chromosomes, so that it looks similar to a beddb response
-    flatten = lambda l: [item for sublist in l for item in sublist]
     results = [x for x in arrays if x != []]
-    return flatten(results)
+    return [item for sublist in results for item in sublist]
 
 
 def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
