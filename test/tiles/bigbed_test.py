@@ -35,7 +35,7 @@ def test_bigbed_tiles():
         min_max_elems_tile_data = min_max_elems_tile[0][1]
         for mmtd in min_max_elems_tile_data:
             mmtdl = len(mmtd)
-            assert mmtdl >= min_element and mmtdl <= max_element, 'Number of observed elements with min/max threshold was {}\nExpected: {} to {}\n'.format(mmtdl, min_element, max_element)
+            assert mmtdl >= min_element and mmtdl <= max_element, 'Number of observed elements with min/max threshold was {}\nExpected: {} to {}\nData: {}\n'.format(mmtdl, min_element, max_element, min_max_elems_tile_data)
 
 
 def test_tileset_info():
