@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 DEFAULT_RANGE_MODE = 'significant'
 MIN_ELEMENTS = 1
-MAX_ELEMENTS = 50
+MAX_ELEMENTS = 200
 DEFAULT_SCORE = 0
 
 logger = logging.getLogger(__name__)
@@ -190,7 +190,10 @@ def get_bigbed_tile(
             )
         )
 
-    return [x for x in arrays if x != []]
+    # concatenate bigBed tileset data across chromosomes, so that it looks similar to a beddb response
+    flatten = lambda l: [item for sublist in l for item in sublist]
+    results = [x for x in arrays if x != []]
+    return flatten(results)
 
 
 def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
