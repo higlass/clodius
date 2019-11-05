@@ -14,18 +14,18 @@ def test_bigbed_tiles():
 
     base_tile = hgbb.tiles(filename, ['x.0.0'])
     base_tile_data = base_tile[0][1]
-    assert num_chroms == len(base_tile_data), 'Number of chromosomes in bigBed file was {}\nExpected: {}\n'.format(len(base_tile_data), num_chroms)
+    assert (num_chroms * hgbb.MAX_ELEMENTS) == len(base_tile_data), 'Number of chromosomes in bigBed file was {}\nExpected: {}\n'.format(len(base_tile_data), (num_chroms * hgbb.MAX_ELEMENTS))
 
     signif_tile = hgbb.tiles(filename, ['x.0.0.significant'])
     signif_tile_data = signif_tile[0][1]
-    assert num_chroms == len(signif_tile_data), 'Number of chromosomes in bigBed file was {}\nExpected: {}\n'.format(len(signif_tile_data), num_chroms)
+    assert (num_chroms * hgbb.MAX_ELEMENTS) == len(signif_tile_data), 'Number of chromosomes in bigBed file was {}\nExpected: {}\n'.format(len(signif_tile_data), (num_chroms * hgbb.MAX_ELEMENTS))
 
     max_elements = [5, 10, 25, 100]
     for me in max_elements:
         max_elems_tile = hgbb.tiles(filename, ['x.0.0|max:{}'.format(me)])
         max_elems_tile_data = max_elems_tile[0][1]
         for mtd in max_elems_tile_data:
-            assert len(mtd) <= me, 'Number of observed elements with max element threshold was {}\nExpected: {}\n'.format(len(mtd), me)
+            assert len(mtd) <= (me * hgbb.MAX_ELEMENTS), 'Number of observed elements with max element threshold was {}\nExpected: {}\n'.format(len(mtd), (me * hgbb.MAX_ELEMENTS))
 
     min_max_element_ranges = [(1, 5), (5, 10)]
     for mmer in min_max_element_ranges:
