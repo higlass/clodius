@@ -33,9 +33,8 @@ def test_bigbed_tiles():
         max_element = mmer[1]
         min_max_elems_tile = hgbb.tiles(filename, ['x.0.0|min:{}|max:{}'.format(min_element, max_element)])
         min_max_elems_tile_data = min_max_elems_tile[0][1]
-        for mmtd in min_max_elems_tile_data:
-            mmtdl = len(mmtd)
-            assert mmtdl >= min_element and mmtdl <= max_element, 'Number of observed elements with min/max threshold was {}\nExpected: {} to {}\nTile data: {}\nAll data: {}\n'.format(mmtdl, min_element, max_element, mmtdl, min_max_elems_tile_data)
+        mmtdl = len(min_max_elems_tile_data)
+        assert mmtdl >= min_element and mmtdl <= max_element * hgbb.MAX_ELEMENTS, 'Number of observed elements with min/max threshold was {}\nExpected: {} to {}\nAll data length: {}\nAll data: {}\n'.format(mmtdl, min_element, max_element, mmtdl, min_max_elems_tile_data)
 
 
 def test_tileset_info():
