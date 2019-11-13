@@ -1,3 +1,7 @@
+Future version
+
+- Added tile queries for bigBed files, using score data (if available) to threshold those elements returned, based on a specified or default maximum.
+
 v0.11.5
 
 - Add tiles function and test for multivec. It can be used in higlass-python and higlass server.
