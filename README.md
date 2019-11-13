@@ -34,6 +34,7 @@ The output files can then be displayed using the [higlass-docker container](http
   - [Bed Files](docs/genomic/bed.rst)
   - [BedGraph Files](docs/genomic/bedgraph.rst)
   - [Bedpe-like Files](docs/genomic/bedpe.rst)
+  - [BigBed Files](docs/genomic/bigbed.rst)
   - [BigWig Files](docs/genomic/bigwig.rst)
   - [Chromosome Sizes](docs/genomic/chromosome-sizes.rst)
   - [Cooler Files](docs/genomic/cooler.rst)
