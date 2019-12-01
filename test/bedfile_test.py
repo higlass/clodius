@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import click.testing as clt
 import clodius.cli.aggregate as cca
-import clodius.db_tiles as cdt
+import clodius.tiles.beddb as ctb
 import os
 import os.path as op
 import sqlite3
@@ -24,7 +24,7 @@ def test_nonstandard_chrom():
 
 def test_get_tileset_info():
     filename = "test/sample_data/gene_annotations.short.db"
-    t = cdt.get_tileset_info(filename)
+    t = ctb.tileset_info(filename)
 
     assert t["zoom_step"] == 1
     assert t["max_length"] == 3137161264
@@ -39,13 +39,6 @@ def test_table_created():
 def check_table(filename):
     conn = sqlite3.connect(filename)
     c = conn.cursor()
-
-    print("fetching...")
-
-    """
-    for row in c.execute('SELECT * from intervals'):
-        print ("row:", row)
-    """
 
     rows = c.execute(
         "SELECT * from intervals,position_index "
@@ -66,7 +59,7 @@ def check_table(filename):
 def test_get_tiles():
     filename = "test/sample_data/gene_annotations.short.db"
 
-    cdt.get_tiles(filename, 18, 169283)[169283]
+    ctb.tiles(filename, ["x.18.169283"])
     # TODO: Make assertions about result
     # print("tiles:", tiles)
     # x = int(tiles[0]['xStart'])
@@ -106,14 +99,14 @@ def test_gene_annotations():
     print("Exception:", a,b)
     """
 
-    rows = cdt.get_tiles(f.name, 0, 0)
-    assert len(rows[0]) == 2
+    rows = ctb.tiles(f.name, ["x.0.0"])[0][1]
+    assert len(rows) == 2
 
-    rows = cdt.get_tiles(f.name, 11, 113)
-    assert rows[113][0]["fields"][3] == "Lrp1b"
+    rows = ctb.tiles(f.name, ["x.11.113"])[0][1]
+    assert rows[0]["fields"][3] == "Lrp1b"
 
-    rows = cdt.get_tiles(f.name, 11, 112)
-    assert rows[112][0]["fields"][3] == "Lrp1b"
+    rows = ctb.tiles(f.name, ["x.11.112"])[0][1]
+    assert rows[0]["fields"][3] == "Lrp1b"
 
 
 def test_random_importance():
@@ -150,36 +143,23 @@ def test_random_importance():
     print("Exception:", a,b)
     """
 
-    cdt.get_tileset_info(f.name)
-    # print("tileset_info:", tileset_info)
-    # TODO: Make assertions about result
-
-    cdt.get_tiles(f.name, 0, 0)
-    # print("rows:", rows)
-    # TODO: Make assertions about result
-
-    list(cdt.get_tiles(f.name, 1, 0).values()) + list(
-        cdt.get_tiles(f.name, 1, 1).values()
-    )
-    # print('rows:', rows)
-    # TODO: Make assertions about result
+    tsinfo = ctb.tileset_info(f.name)
+    assert "version" in tsinfo
 
     # check to make sure that tiles in the higher zoom levels
     # are all present in lower zoom levels
     found = {}
-    for row in cdt.get_tiles(f.name, 5, 15).values():
-        for rect in row:
-            found[rect["xStart"]] = False
 
-    for row in cdt.get_tiles(f.name, 6, 30).values():
-        for rect in row:
-            if rect["xStart"] in found:
-                found[rect["xStart"]] = True
+    for rect in ctb.tiles(f.name, ["x.5.15"])[0][1]:
+        found[rect["xStart"]] = False
 
-    for row in cdt.get_tiles(f.name, 6, 31).values():
-        for rect in row:
-            if rect["xStart"] in found:
-                found[rect["xStart"]] = True
+    for rect in ctb.tiles(f.name, ["x.6.30"])[0][1]:
+        if rect["xStart"] in found:
+            found[rect["xStart"]] = True
+
+    for rect in ctb.tiles(f.name, ["x.6.31"])[0][1]:
+        if rect["xStart"] in found:
+            found[rect["xStart"]] = True
 
     for key, value in found.items():
         assert value
@@ -218,7 +198,7 @@ def test_no_chromosome_limit():
     """
     a, b, tb = result.exc_info
 
-    rows = cdt.get_tiles(f.name, 0, 0)[0]
+    rows = ctb.tiles(f.name, ["x.0.0"])[0][1]
     foundOther = False
 
     for row in rows:
@@ -260,7 +240,7 @@ def test_chromosome_limit():
     # TODO: Make assertions about result
 
     # print('output:', result.output, result)
-    rows = cdt.get_tiles(f.name, 0, 0)[0]
+    rows = ctb.tiles(f.name, ["x.0.0"])[0][1]
 
     for row in rows:
         assert row["fields"][0] == "chr14"
@@ -291,69 +271,3 @@ def test_float_importance():
         ],
     )
     # TODO: Make assertions about result
-
-
-"""
-def test_get_tiles():
-    f = h5py.File('test/sample_data/cnv.hibed')
-    data = cht.get_discrete_data(f, 22, 48)
-
-    assert(len(data) > 0)
-
-    data = cht.get_discrete_data(f, 22, 50)
-    assert(len(data) > 0)
-
-    data = cht.get_discrete_data(f, 0, 0)
-    assert(len(data) == 100)
-
-def check_tile_for_duplicate_entries(discrete_data):
-    '''
-    Make sure that there are no entries with the same UID in any tile.
-    '''
-    seen = set()
-
-    for i,d in enumerate(discrete_data):
-        uid = d[-2]
-
-        if uid in seen:
-            # print("seen uid:", uid)
-            # print("d:", d)
-            return False
-
-        # print("adding uid:", uid, d[:3])
-        seen.add(uid)
-
-    return True
-
-
-def test_tile_ranges():
-    f = h5py.File('test/sample_data/cnv.hibed')
-
-    data11 = cht.get_discrete_data(f, 11, 6)
-    assert(check_tile_for_duplicate_entries(data11) == True)
-
-    max_length_11 = max([int(d[2]) - int(d[1]) for d in data11])
-    # print("data11:", max_length_11)
-
-    data10 = cht.get_discrete_data(f, 10, 3)
-    max_length_10 = max([int(d[2]) - int(d[1]) for d in data10])
-    # print("data10:", max_length_10)
-
-    # more zoomed out tiles should have longer tiles than more
-    # zoomed in tiles
-    assert(max_length_10 >= max_length_11)
-
-    d1 = cht.get_discrete_data(f, 11, 5)
-    # print("d1:", len(d1))
-    # print("dv:", [x for x in d1 if (int(x[1]) < 12000000
-    # and int(x[2]) > 12000000)])
-
-    d3 = cht.get_discrete_data(f, 12, 10)
-    # print("d2:", len(d3))
-
-    d4 = cht.get_discrete_data(f, 12, 11)
-    # print("d3:", len(d4))
-
-def test_limit_by_chromosome():
-
-"""

@@ -3,13 +3,20 @@ import sqlite3
 
 def tileset_info(db_file):
     conn = sqlite3.connect(db_file)
-    c = conn.cursor()
+    cursor = conn.cursor()
 
-    row = c.execute("SELECT * from tileset_info").fetchone()
+    row = cursor.execute("SELECT * from tileset_info").fetchone()
     if row is not None and len(row) == 9:
         header = row[8]
     else:
         header = ""
+
+    colnames = next(zip(*cursor.description))
+
+    if "version" not in colnames:
+        version = 1
+    else:
+        version = int(row[colnames.index("version")])
 
     ts_info = {
         "zoom_step": row[0],
@@ -23,6 +30,7 @@ def tileset_info(db_file):
         "min_pos": [1],
         "max_pos": [row[1]],
         "header": header,
+        "version": version,
     }
     conn.close()
 
@@ -93,6 +101,8 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
         A set of tiles, indexed by position
     """
     ts_info = tileset_info(db_file)
+    version = ts_info["version"]
+
     conn = sqlite3.connect(db_file)
 
     c = conn.cursor()
@@ -113,6 +123,20 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
     """.format(
         zoom, tile_start_pos, tile_end_pos
     )
+
+    if version > 1:
+        query = """
+        SELECT startPos, endPos, chrOffset, importance, fields, uid
+        FROM intervals,position_index
+        WHERE
+            intervals.id=position_index.id AND
+            rStartZoomLevel <= {} AND
+            rEndZoomLevel >= 0 AND
+            rEndPos >= {} AND
+            rStartPos <= {}
+        """.format(
+            zoom, tile_start_pos, tile_end_pos
+        )
 
     # import time
     # t1 = time.time()

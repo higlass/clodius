@@ -45,6 +45,7 @@ def store_meta_data(
     tile_size,
     max_zoom,
     max_width,
+    version,
     header=[],
 ):
     cursor.execute(
@@ -59,13 +60,14 @@ def store_meta_data(
             tile_size REAL,
             max_zoom INT,
             max_width REAL,
-            header text
+            header text,
+            version text
         )
         """
     )
 
     cursor.execute(
-        "INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?,?,?)",
         (
             zoom_step,
             max_length,
@@ -76,6 +78,7 @@ def store_meta_data(
             max_zoom,
             max_width,
             "\t".join(header),
+            version,
         ),
     )
 
@@ -192,6 +195,7 @@ def _bedpe(
     to2_col=6,
     max_zoom=None,
 ):
+    BED2DDB_VERSION = 1
 
     print("output_file:", output_file)
 
@@ -316,6 +320,7 @@ def _bedpe(
         tile_size=tile_size,
         max_zoom=max_zoom,
         max_width=tile_size * 2 ** max_zoom,
+        version=BED2DDB_VERSION,
     )
 
     # max_width = tile_size * 2 ** max_zoom
@@ -436,6 +441,8 @@ def _bedfile(
     chromsizes_filename,
     offset,
 ):
+    BEDDB_VERSION = 2
+
     if output_file is None:
         output_file = filepath + ".beddb"
     else:
@@ -588,6 +595,7 @@ def _bedfile(
         max_zoom=max_zoom,
         max_width=tile_size * 2 ** max_zoom,
         header=header,
+        version=BEDDB_VERSION,
     )
 
     # max_width = tile_size * 2 ** max_zoom
@@ -624,7 +632,7 @@ def _bedfile(
         """
         CREATE VIRTUAL TABLE position_index USING rtree(
             id,
-            rStartPos, rEndPos
+            rStartZoomLevel, rEndZoomLevel, rStartPos, rEndPos
         )
         """
     )
@@ -719,11 +727,11 @@ def _bedfile(
                 if counter % 1000 == 0:
                     print("counter:", counter, value["endPos"] - value["startPos"])
 
-                exec_statement = "INSERT INTO position_index VALUES (?,?,?)"
+                exec_statement = "INSERT INTO position_index VALUES (?,?,?,?,?)"
                 c.execute(
                     exec_statement,
                     # add counter as a primary key
-                    (counter, value["startPos"], value["endPos"]),
+                    (counter, curr_zoom, curr_zoom, value["startPos"], value["endPos"]),
                 )
 
                 counter += 1
