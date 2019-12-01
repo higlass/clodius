@@ -20,7 +20,7 @@ for line in sys.stdin:
         print("Not sorted, line:", counter, file=sys.stderr)
         sys.exit(1)
     elif curr_val == prev_val:
-        if (curr_val2 < prev_val2):
+        if curr_val2 < prev_val2:
             print("Not sorted, line:", counter, file=sys.stderr)
             sys.exit(1)
 

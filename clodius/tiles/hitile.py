@@ -6,8 +6,10 @@ import os
 import os.path as op
 
 
-def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function=np.sum):
-    '''
+def array_to_hitile(
+    old_data, filename, zoom_step=8, chunks=(1e6,), agg_function=np.sum
+):
+    """
     Downsample a dataset so that it's compatible with HiGlass (filetype: hitile, datatype: vector)
 
     Parameters
@@ -19,13 +21,13 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
         data will be stored.
     zoom_step: int
         The number of zoom levels to skip when aggregating
-    '''
+    """
     import dask.array as da
 
     if op.exists(filename):
         os.remove(filename)
 
-    f_new = h5py.File(filename, 'w')
+    f_new = h5py.File(filename, "w")
 
     tile_size = 1024
     max_pos = len(old_data)
@@ -35,26 +37,29 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
 
     max_zoom = math.ceil(math.log(max_pos / tile_size) / math.log(2))
 
-    meta = f_new.create_dataset('meta', (1,), dtype='f')
-    meta.attrs['tile-size'] = tile_size
-    meta.attrs['zoom-step'] = zoom_step
-    meta.attrs['max-length'] = max_pos
-    meta.attrs['max-zoom'] = max_zoom
+    meta = f_new.create_dataset("meta", (1,), dtype="f")
+    meta.attrs["tile-size"] = tile_size
+    meta.attrs["zoom-step"] = zoom_step
+    meta.attrs["max-length"] = max_pos
+    meta.attrs["max-zoom"] = max_zoom
 
-    meta.attrs['max-width'] = tile_size * 2 ** max_zoom
+    meta.attrs["max-width"] = tile_size * 2 ** max_zoom
 
     min_data = da.from_array(old_data, chunks)
     max_data = da.from_array(old_data, chunks)
     old_data = da.from_array(old_data, chunks)
 
     for z in range(0, max_zoom, zoom_step):
-        values_dset = f_new.require_dataset('values_' + str(z), (len(old_data),),
-                                            dtype='f', compression='gzip')
+        values_dset = f_new.require_dataset(
+            "values_" + str(z), (len(old_data),), dtype="f", compression="gzip"
+        )
 
-        mins_dset = f_new.require_dataset('mins_' + str(z), (len(old_data),),
-                                          dtype='f', compression='gzip')
-        maxs_dset = f_new.require_dataset('maxs_' + str(z), (len(old_data),),
-                                          dtype='f', compression='gzip')
+        mins_dset = f_new.require_dataset(
+            "mins_" + str(z), (len(old_data),), dtype="f", compression="gzip"
+        )
+        maxs_dset = f_new.require_dataset(
+            "maxs_" + str(z), (len(old_data),), dtype="f", compression="gzip"
+        )
 
         da.store(old_data, values_dset)
         da.store(min_data, mins_dset)
@@ -65,11 +70,14 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
         # if so, use the previous last value
         if len(old_data) % zoom_factor != 0:
             old_data = da.concatenate(
-                (old_data, [old_data[-1]] * (zoom_factor - len(old_data) % zoom_factor)))
+                (old_data, [old_data[-1]] * (zoom_factor - len(old_data) % zoom_factor))
+            )
             min_data = da.concatenate(
-                (min_data, [max_data[-1]] * (zoom_factor - len(min_data) % zoom_factor)))
+                (min_data, [max_data[-1]] * (zoom_factor - len(min_data) % zoom_factor))
+            )
             max_data = da.concatenate(
-                (max_data, [max_data[-1]] * (zoom_factor - len(max_data) % zoom_factor)))
+                (max_data, [max_data[-1]] * (zoom_factor - len(max_data) % zoom_factor))
+            )
 
         # aggregate the data by summing adjacent datapoints
         # sys.stdout.write('summing...')
@@ -90,10 +98,10 @@ def array_to_hitile(old_data, filename, zoom_step=8, chunks=(1e6,), agg_function
         # sys.stdout.write(' done\n')
         # sys.stdout.flush()
 
-        '''
+        """
         if len(old_data) < 10000:
             plt.plot(old_data)
-        '''
+        """
 
     # plt.plot(old_data)
     f_new.close()
@@ -121,32 +129,32 @@ def aggregate_max(a, num_to_agg):
 
 
 def get_data(hdf_file, z, x):
-    '''
+    """
     Return a tile from an hdf_file.
 
     :param hdf_file: A file handle for an HDF5 file (h5py.File('...'))
     :param z: The zoom level
     :param x: The x position of the tile
-    '''
+    """
 
     # is the title within the range of possible tiles
-    if x > 2**z:
+    if x > 2 ** z:
         print("OUT OF RIGHT RANGE")
         return ([], [], [])
     if x < 0:
         print("OUT OF LEFT RANGE")
         return ([], [], [])
 
-    d = hdf_file['meta']
+    d = hdf_file["meta"]
 
-    tile_size = int(d.attrs['tile-size'])
-    zoom_step = int(d.attrs['zoom-step'])
-    max_zoom = int(d.attrs['max-zoom'])
+    tile_size = int(d.attrs["tile-size"])
+    zoom_step = int(d.attrs["zoom-step"])
+    max_zoom = int(d.attrs["max-zoom"])
 
     max_width = tile_size * 2 ** max_zoom
 
-    if 'max-position' in d.attrs:
-        max_position = int(d.attrs['max-position'])
+    if "max-position" in d.attrs:
+        max_position = int(d.attrs["max-position"])
     else:
         max_position = max_width
 
@@ -174,9 +182,9 @@ def get_data(hdf_file, z, x):
     # print("next_stored_zoom", next_stored_zoom)
     # print("max_position:", int(max_position))
 
-    f = hdf_file['values_' + str(int(next_stored_zoom))]
-    f_min = hdf_file['mins_' + str(int(next_stored_zoom))]
-    f_max = hdf_file['maxs_' + str(int(next_stored_zoom))]
+    f = hdf_file["values_" + str(int(next_stored_zoom))]
+    f_min = hdf_file["mins_" + str(int(next_stored_zoom))]
+    f_max = hdf_file["maxs_" + str(int(next_stored_zoom))]
 
     if start_pos > max_position:
         # we want a tile that's after the last bit of data
@@ -194,13 +202,13 @@ def get_data(hdf_file, z, x):
         # max_array = aggregate_max(a_max, int(num_to_agg))
     elif start_pos < max_position and max_position < end_pos:
         a = f[start_pos:end_pos][:]
-        a[max_position + 1:end_pos] = np.nan
+        a[max_position + 1 : end_pos] = np.nan
 
         a_min = f_min[start_pos:end_pos][:]
-        a_min[max_position + 1:end_pos] = np.nan
+        a_min[max_position + 1 : end_pos] = np.nan
 
         a_max = f_max[start_pos:end_pos][:]
-        a_max[max_position + 1:end_pos] = np.nan
+        a_max[max_position + 1 : end_pos] = np.nan
 
         ret_array = aggregate(a, int(num_to_agg))
         min_array = aggregate_min(a_min, int(num_to_agg))
@@ -220,7 +228,7 @@ def get_data(hdf_file, z, x):
 
     f_nan = None
     if "nan_values_" + str(int(next_stored_zoom)) in hdf_file:
-        f_nan = hdf_file['nan_values_' + str(int(next_stored_zoom))]
+        f_nan = hdf_file["nan_values_" + str(int(next_stored_zoom))]
         nan_array = aggregate(f_nan[start_pos:end_pos], int(num_to_agg))
         num_aggregated = 2 ** (max_zoom - z)
 
@@ -236,7 +244,7 @@ def get_data(hdf_file, z, x):
 
 
 def tileset_info(hitile_path):
-    '''
+    """
     Get the tileset info for a hitile file.
 
     Parameters
@@ -251,35 +259,32 @@ def tileset_info(hitile_path):
                     'tile_size': 1024,
                     'max_zoom': 7
                     }
-    '''
-    hdf_file = h5py.File(hitile_path, 'r')
+    """
+    hdf_file = h5py.File(hitile_path, "r")
 
-    d = hdf_file['meta']
+    d = hdf_file["meta"]
 
     if "min-pos" in d.attrs:
-        min_pos = d.attrs['min-pos']
+        min_pos = d.attrs["min-pos"]
     else:
         min_pos = 0
 
     if "max-pos" in d.attrs:
-        max_pos = d.attrs['max-pos']
+        max_pos = d.attrs["max-pos"]
     else:
-        max_pos = d.attrs['max-length']
+        max_pos = d.attrs["max-length"]
 
     return {
         "max_pos": [int(max_pos)],
-        'min_pos': [int(min_pos)],
-        "max_width": 2 ** math.ceil(
-            math.log(max_pos - min_pos
-                     ) / math.log(2)
-        ),
-        "max_zoom": int(d.attrs['max-zoom']),
-        "tile_size": int(d.attrs['tile-size'])
+        "min_pos": [int(min_pos)],
+        "max_width": 2 ** math.ceil(math.log(max_pos - min_pos) / math.log(2)),
+        "max_zoom": int(d.attrs["max-zoom"]),
+        "tile_size": int(d.attrs["tile-size"]),
     }
 
 
 def tiles(filepath, tile_ids):
-    '''
+    """
     Generate tiles from a hitile file.
 
     Parameters
@@ -294,20 +299,18 @@ def tiles(filepath, tile_ids):
     -------
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
-    '''
+    """
     generated_tiles = []
 
     for tile_id in tile_ids:
-        tile_id_parts = tile_id.split('.')
+        tile_id_parts = tile_id.split(".")
         tile_position = list(map(int, tile_id_parts[1:3]))
 
         (dense, mins, maxs) = get_data(
-            h5py.File(filepath),
-            tile_position[0],
-            tile_position[1]
+            h5py.File(filepath), tile_position[0], tile_position[1]
         )
 
-        '''
+        """
         if len(dense):
             max_dense = max(dense)
             min_dense = min(dense)
@@ -327,12 +330,12 @@ def tiles(filepath, tile_ids):
                 'dtype': 'float16'
             }
         else:
-        '''
+        """
         tile_value = {
-            'dense': base64.b64encode(dense.astype('float32')).decode('utf-8'),
-            'mins': base64.b64encode(mins.astype('float32')).decode('utf-8'),
-            'maxs': base64.b64encode(maxs.astype('float32')).decode('utf-8'),
-            'dtype': 'float32'
+            "dense": base64.b64encode(dense.astype("float32")).decode("utf-8"),
+            "mins": base64.b64encode(mins.astype("float32")).decode("utf-8"),
+            "maxs": base64.b64encode(maxs.astype("float32")).decode("utf-8"),
+            "dtype": "float32",
         }
 
         generated_tiles += [(tile_id, tile_value)]

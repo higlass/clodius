@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import collections as col
+
 try:
     import cStringIO as csio
 except ImportError:
@@ -37,9 +38,7 @@ def tile_saver_worker(q, tile_saver, finished):
         try:
             (zoom_level, tile_pos, tile_bins) = q.get(timeout=1)
             # print("saving...", zoom_level, tile_pos, 'queue.qsize:', q.qsize(), q.empty(), "finished:", finished.value)
-            tile_saver.save_binned_tile(zoom_level,
-                                        tile_pos,
-                                        tile_bins)
+            tile_saver.save_binned_tile(zoom_level, tile_pos, tile_bins)
         except (KeyboardInterrupt, SystemExit):
             print("Exiting...")
             break
@@ -51,7 +50,14 @@ def tile_saver_worker(q, tile_saver, finished):
 
 
 class TileSaver(object):
-    def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions, print_status=False, initial_value=0.0):
+    def __init__(
+        self,
+        max_data_in_sparse,
+        bins_per_dimension,
+        num_dimensions,
+        print_status=False,
+        initial_value=0.0,
+    ):
         self.max_data_in_sparse = max_data_in_sparse
 
         # self.max_data_in_sparse = 0
@@ -72,33 +78,51 @@ class TileSaver(object):
         tile_id = "{}.{}".format(zoom_level, ".".join(map(str, tile_position)))
 
         # print "saving:", tile_id
-        tile = {'tile_id': tile_id, "tile_value": tile_data}
+        tile = {"tile_id": tile_id, "tile_value": tile_data}
 
         self.save_tile(tile)
 
-    def save_dense_tile(self, zoom_level, tile_position, tile_bins,
-                        min_value, max_value):
-        initial_values = [self.initial_value] * \
-            (self.bins_per_dimension ** self.num_dimensions)
+    def save_dense_tile(
+        self, zoom_level, tile_position, tile_bins, min_value, max_value
+    ):
+        initial_values = [self.initial_value] * (
+            self.bins_per_dimension ** self.num_dimensions
+        )
 
         for (bin_pos, val) in tile_bins.items():
-            index = int(sum([bp * self.bins_per_dimension **
-                             i for i, bp in enumerate(bin_pos)]))
+            index = int(
+                sum([bp * self.bins_per_dimension ** i for i, bp in enumerate(bin_pos)])
+            )
             initial_values[index] = val
 
         if len(self.initial_value) == 1:
-            self.make_and_save_tile(zoom_level, tile_position, {"dense":
-                                                                [round(
-                                                                    v[0], 5) for v in initial_values],
-                                                                'min_value': min_value, 'max_value': max_value})
+            self.make_and_save_tile(
+                zoom_level,
+                tile_position,
+                {
+                    "dense": [round(v[0], 5) for v in initial_values],
+                    "min_value": min_value,
+                    "max_value": max_value,
+                },
+            )
         else:
-            self.make_and_save_tile(zoom_level, tile_position, {"dense":
-                                                                list(it.chain.from_iterable(
-                                                                    [[round(y, 5) for y in v] for v in initial_values])),
-                                                                'min_value': min_value, 'max_value': max_value})
+            self.make_and_save_tile(
+                zoom_level,
+                tile_position,
+                {
+                    "dense": list(
+                        it.chain.from_iterable(
+                            [[round(y, 5) for y in v] for v in initial_values]
+                        )
+                    ),
+                    "min_value": min_value,
+                    "max_value": max_value,
+                },
+            )
 
-    def save_sparse_tile(self, zoom_level, tile_position, tile_bins,
-                         min_value, max_value):
+    def save_sparse_tile(
+        self, zoom_level, tile_position, tile_bins, min_value, max_value
+    ):
         shown = []
         for (bin_pos, bin_val) in tile_bins.items():
             if len(bin_val) == 1:
@@ -106,36 +130,54 @@ class TileSaver(object):
             else:
                 shown += [[list(map(float, bin_pos)), list(bin_val)]]
 
-        self.make_and_save_tile(zoom_level, tile_position, {"sparse": shown,
-                                                            'min_value': min_value, 'max_value': max_value})
+        self.make_and_save_tile(
+            zoom_level,
+            tile_position,
+            {"sparse": shown, "min_value": min_value, "max_value": max_value},
+        )
 
     def save_tile_array(self, zoom_level, tile_position, tile_data):
-        '''
+        """
         Save a tile that has all of its data in one long array
 
         :param zoom_level: An integer zoom_level (0 for zoomed all the way out)
         :param tile_position: An n-dimensional array, where n is the number of dimensions
                               in the dataset.
         :param tile_data: The data in the tile.
-        '''
+        """
         min_value = min(tile_data)
         max_value = max(tile_data)
 
-        self.make_and_save_tile(zoom_level, tile_position, {'dense':
-                                                            [round(v, 5)
-                                                             for v in tile_data],
-                                                            'min_value': min_value, 'max_value': max_value})
+        self.make_and_save_tile(
+            zoom_level,
+            tile_position,
+            {
+                "dense": [round(v, 5) for v in tile_data],
+                "min_value": min_value,
+                "max_value": max_value,
+            },
+        )
 
     def save_binned_tile(self, zoom_level, tile_position, tile_bins):
         max_value = list(np.max(np.array(list(tile_bins.values())), axis=0))
         min_value = list(np.min(np.array(list(tile_bins.values())), axis=0))
 
         if len(tile_bins) < self.max_data_in_sparse:
-            self.save_sparse_tile(zoom_level, tile_position, tile_bins,
-                                  min_value=min_value, max_value=max_value)
+            self.save_sparse_tile(
+                zoom_level,
+                tile_position,
+                tile_bins,
+                min_value=min_value,
+                max_value=max_value,
+            )
         else:
-            self.save_dense_tile(zoom_level, tile_position, tile_bins,
-                                 min_value=min_value, max_value=max_value)
+            self.save_dense_tile(
+                zoom_level,
+                tile_position,
+                tile_bins,
+                min_value=min_value,
+                max_value=max_value,
+            )
 
     def flush():
         return
@@ -143,26 +185,36 @@ class TileSaver(object):
 
 class EmptyTileSaver(TileSaver):
     def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions):
-        super(EmptyTileSaver, self).__init__(max_data_in_sparse,
-                                             bins_per_dimension,
-                                             num_dimensions)
+        super(EmptyTileSaver, self).__init__(
+            max_data_in_sparse, bins_per_dimension, num_dimensions
+        )
 
 
 class ColumnFileTileSaver(TileSaver):
-    def __init__(self, max_data_in_sparse, bins_per_dimension, num_dimensions,
-                 file_path, log_file, print_status, initial_value):
-        super(ColumnFileTileSaver, self).__init__(max_data_in_sparse,
-                                                  bins_per_dimension,
-                                                  num_dimensions,
-                                                  print_status,
-                                                  initial_value)
+    def __init__(
+        self,
+        max_data_in_sparse,
+        bins_per_dimension,
+        num_dimensions,
+        file_path,
+        log_file,
+        print_status,
+        initial_value,
+    ):
+        super(ColumnFileTileSaver, self).__init__(
+            max_data_in_sparse,
+            bins_per_dimension,
+            num_dimensions,
+            print_status,
+            initial_value,
+        )
         self.file_path = file_path
         self.bulk_txt = csio.StringIO()
         self.bulk_txt_len = 0
         self.log_file = log_file
 
     def save_tile(self, val):
-        '''
+        """
         if ('dense' in val['tile_value']):
             value_pos = col.defaultdict(list)
             dense_values = val['tile_value']['dense']
@@ -180,9 +232,9 @@ class ColumnFileTileSaver(TileSaver):
 
                 value_pos[key] = diffs
             val['tile_value']['dense'] = value_pos.items()
-        '''
+        """
 
-        '''
+        """
         if ('sparse' in val['tile_value']):
             sparse_values = val['tile_value']['sparse']
             value_pos = col.defaultdict(list)
@@ -197,17 +249,22 @@ class ColumnFileTileSaver(TileSaver):
                 ys = [p[1] for p in poss]
                 value_xs_ys += [value, xs, ys]
             val['tile_value']['sparse'] = value_xs_ys
-        '''
+        """
 
         # [[1.0, [[78.0, 123.0], [64.0, 153.0]]]]
 
         if val["tile_id"] == "tileset_info":
-            self.bulk_txt.write(val["tile_id"] + "\t" +
-                                "1" + "\t" + "1" + "\t")
+            self.bulk_txt.write(val["tile_id"] + "\t" + "1" + "\t" + "1" + "\t")
         else:
-            ti = val['tile_id'].split(".")
+            ti = val["tile_id"].split(".")
             self.bulk_txt.write(
-                str(int(ti[0]) + 1) + "\t" + str(int(ti[1]) + 1) + "\t" + str(int(ti[1]) + 1) + "\t")
+                str(int(ti[0]) + 1)
+                + "\t"
+                + str(int(ti[1]) + 1)
+                + "\t"
+                + str(int(ti[1]) + 1)
+                + "\t"
+            )
 
         self.bulk_txt.write(json.dumps(val) + "\n")
         curr_pos = self.bulk_txt.tell()
@@ -223,7 +280,7 @@ class ColumnFileTileSaver(TileSaver):
                     column_file.write(self.bulk_txt.getvalue())
             except Exception as ex:
                 if self.log_file is not None:
-                    with open(self.log_file, 'a') as f:
+                    with open(self.log_file, "a") as f:
                         f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
                         f.write(ex)
 
@@ -233,13 +290,23 @@ class ColumnFileTileSaver(TileSaver):
 
 
 class ElasticSearchTileSaver(TileSaver):
-    def __init__(self, max_data_in_sparse=None, bins_per_dimension=None, num_dimensions=None,
-                 es_path=None, log_file=None, print_status=False, initial_value=None):
-        super(ElasticSearchTileSaver, self).__init__(max_data_in_sparse,
-                                                     bins_per_dimension,
-                                                     num_dimensions,
-                                                     print_status,
-                                                     initial_value)
+    def __init__(
+        self,
+        max_data_in_sparse=None,
+        bins_per_dimension=None,
+        num_dimensions=None,
+        es_path=None,
+        log_file=None,
+        print_status=False,
+        initial_value=None,
+    ):
+        super(ElasticSearchTileSaver, self).__init__(
+            max_data_in_sparse,
+            bins_per_dimension,
+            num_dimensions,
+            print_status,
+            initial_value,
+        )
         self.es_path = es_path
         self.bulk_txt = csio.StringIO()
         self.bulk_txt_len = 0
@@ -250,8 +317,8 @@ class ElasticSearchTileSaver(TileSaver):
         # derived classes should implement this functionality themselves
 
         # self.bulk_txt.write(json.dumps({"index": {"_id": val['tile_id']}}) + "\n")
-        if ('sparse' in val['tile_value']):
-            sparse_values = val['tile_value']['sparse']
+        if "sparse" in val["tile_value"]:
+            sparse_values = val["tile_value"]["sparse"]
 
             value_pos = col.defaultdict(list)
             for sparse_value in sparse_values:
@@ -275,22 +342,22 @@ class ElasticSearchTileSaver(TileSaver):
                 for i in range(len(poss[0])):
                     value_xs_ys += [p[i] for p in poss]
 
-            val['tile_value']['sparse'] = value_xs_ys
+            val["tile_value"]["sparse"] = value_xs_ys
 
-        self.save_value(val['tile_id'], val)
+        self.save_value(val["tile_id"], val)
 
     def save_value(self, doc_id, doc):
-        '''
+        """
         if ('dense' in val['tile_value']):
             print val['tile_id'], len([x for x in val['tile_value']['dense'] if x > 0])
-        '''
+        """
 
         # val['tile_value']['dense'] = []
 
         self.bulk_txt.write('{{"index": {{"_id": "{}"}}}}\n'.format(doc_id))
         self.bulk_txt.write(json.dumps(doc) + "\n")
 
-        '''
+        """
         self.bulk_txt.write('{{"tile_id": {}, "tile_value": '.format(val['tile_id']))
 
         if 'sparse' in val['tile_value']:
@@ -306,7 +373,7 @@ class ElasticSearchTileSaver(TileSaver):
         # new_string += str(val) + "\n"
 
         # self.bulk_txt_len += len(new_string)
-        '''
+        """
 
         curr_pos = self.bulk_txt.tell()
         # self.bulk_txt.write(new_string)
@@ -318,10 +385,13 @@ class ElasticSearchTileSaver(TileSaver):
             # only save the tile if it had enough data
             try:
                 save_to_elasticsearch(
-                    "http://" + self.es_path + "/_bulk", self.bulk_txt.getvalue(), self.print_status)
+                    "http://" + self.es_path + "/_bulk",
+                    self.bulk_txt.getvalue(),
+                    self.print_status,
+                )
             except Exception as ex:
                 if self.log_file is not None:
-                    with open(self.log_file, 'a') as f:
+                    with open(self.log_file, "a") as f:
                         f.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
                         f.write(ex)
 
@@ -330,14 +400,15 @@ class ElasticSearchTileSaver(TileSaver):
             self.bulk_txt = csio.StringIO()
 
 
-def save_tile_to_elasticsearch(partition, elasticsearch_nodes,
-                               elasticsearch_path, print_status=False):
+def save_tile_to_elasticsearch(
+    partition, elasticsearch_nodes, elasticsearch_path, print_status=False
+):
     bulk_txt = ""
     es_url = op.join(elasticsearch_nodes, elasticsearch_path)
     put_url = op.join(es_url, "_bulk")
 
     for val in partition:
-        bulk_txt += json.dumps({"index": {"_id": val['tile_id']}}) + "\n"
+        bulk_txt += json.dumps({"index": {"_id": val["tile_id"]}}) + "\n"
         bulk_txt += json.dumps(val) + "\n"
 
         if len(bulk_txt) > 5000000:
@@ -350,7 +421,7 @@ def save_tile_to_elasticsearch(partition, elasticsearch_nodes,
 
 
 def save_to_elasticsearch(url, data, print_status=False):
-    '''
+    """
     Save some data to elastic search.
 
     The data should be a string suitable for bulk import by
@@ -361,7 +432,7 @@ def save_to_elasticsearch(url, data, print_status=False):
                 e.g. localhost:9200/hg19/tiles/_bulk
     :param data: The data to import.
                 e.g. {"index": {"_id": "blah", "my_json": {"x": 2}}}
-    '''
+    """
     saved = False
     to_sleep = 1
 
@@ -378,12 +449,18 @@ def save_to_elasticsearch(url, data, print_status=False):
         except Exception as ex:
 
             to_sleep *= 2
-            print("\nError saving to elastic search (", uid,
-                  "), sleeping:", to_sleep, ex, file=sys.stderr)
+            print(
+                "\nError saving to elastic search (",
+                uid,
+                "), sleeping:",
+                to_sleep,
+                ex,
+                file=sys.stderr,
+            )
             time.sleep(to_sleep)
 
             if to_sleep > 600:
-                with open('unsaved.err', 'a') as f:
+                with open("unsaved.err", "a") as f:
                     f.write("UNSAVED url:", url, "\n")
                     f.write(data)
                     f.flush()
@@ -392,7 +469,7 @@ def save_to_elasticsearch(url, data, print_status=False):
 
 
 def save_tile(tile, output_dir, gzip_output):
-    '''
+    """
     Save a tile to a particular base directory.
 
     This function create the appropriate sub-directory based on the
@@ -400,11 +477,11 @@ def save_tile(tile, output_dir, gzip_output):
 
     They key should be in the format (zoom_level, pos1, pos2...)
     e.g. (5,4,5)
-    '''
+    """
     key = tile[0]
     tile_value = tile[1]
 
-    outpath = op.join(output_dir, '.'.join(map(str, key)))
+    outpath = op.join(output_dir, ".".join(map(str, key)))
     outdir = op.dirname(outpath)
 
     if not op.exists(outdir):
@@ -415,11 +492,12 @@ def save_tile(tile, output_dir, gzip_output):
             # checked if it exists and when we're making it
             print("Error making directories:", oe, file=sys.stderr)
 
-    output_json = {"_source": {"tile_id": ".".join(map(str, key)),
-                               "tile_value": tile_value}}
+    output_json = {
+        "_source": {"tile_id": ".".join(map(str, key)), "tile_value": tile_value}
+    }
     if gzip_output:
-        with gzip.open(outpath + ".gz", 'w') as f:
+        with gzip.open(outpath + ".gz", "w") as f:
             f.write(json.dumps(output_json, indent=2))
     else:
-        with open(outpath, 'w') as f:
+        with open(outpath, "w") as f:
             f.write(json.dumps(output_json, indent=2))

@@ -4,34 +4,34 @@ import numpy as np
 
 
 def get_tileset_info(hdf_file):
-    '''
+    """
     Get information about the tileset.
 
     :param hdf_file: A file handle for an HDF5 file (h5py.File('...'))
-    '''
-    d = hdf_file['meta']
+    """
+    d = hdf_file["meta"]
 
     if "min-pos" in d.attrs:
-        min_pos = d.attrs['min-pos']
+        min_pos = d.attrs["min-pos"]
     else:
         min_pos = 0
 
     if "max-pos" in d.attrs:
-        max_pos = d.attrs['max-pos']
+        max_pos = d.attrs["max-pos"]
     else:
-        max_pos = d.attrs['max-length']
+        max_pos = d.attrs["max-length"]
 
     return {
         "max_pos": max_pos,
-        'min_pos': min_pos,
-        "max_width": d.attrs['max-width'],
-        "max_zoom": d.attrs['max-zoom'],
-        "tile_size": d.attrs['tile-size']
+        "min_pos": min_pos,
+        "max_width": d.attrs["max-width"],
+        "max_zoom": d.attrs["max-zoom"],
+        "tile_size": d.attrs["tile-size"],
     }
 
 
 def bisect_left(a, x, lo=0, hi=None, comparator=None):
-    '''Bisect_left with with an additional comparator.
+    """Bisect_left with with an additional comparator.
 
     Based on the bisect_left function from the python bisect module.
 
@@ -50,10 +50,10 @@ def bisect_left(a, x, lo=0, hi=None, comparator=None):
         lo (int): The starting index of items to search in a
         hi (int): The end index of items to search in a
         comparator (function(a,b)): A way to compare objects
-    '''
+    """
 
     if lo < 0:
-        raise ValueError('lo must be non-negative')
+        raise ValueError("lo must be non-negative")
     if hi is None:
         hi = len(a)
     while lo < hi:
@@ -66,7 +66,7 @@ def bisect_left(a, x, lo=0, hi=None, comparator=None):
 
 
 def bisect_right(a, x, lo=0, hi=None, comparator=None):
-    '''Bisect_right with with an additional comparator.
+    """Bisect_right with with an additional comparator.
 
     Based on the bisect_right function from the python bisect module.
 
@@ -86,9 +86,9 @@ def bisect_right(a, x, lo=0, hi=None, comparator=None):
         lo (int): The starting index of items to search in a
         hi (int): The end index of items to search in a
         comparator (function(a,b)): A way to compare objects
-    '''
+    """
     if lo < 0:
-        raise ValueError('lo must be non-negative')
+        raise ValueError("lo must be non-negative")
     if hi is None:
         hi = len(a)
     while lo < hi:
@@ -101,7 +101,7 @@ def bisect_right(a, x, lo=0, hi=None, comparator=None):
 
 
 def get_discrete_data(hdf_file, z, x):
-    '''
+    """
     Get a discrete set of data from an hdf_tile file.
 
     Args:
@@ -112,19 +112,19 @@ def get_discrete_data(hdf_file, z, x):
     Returns:
         A 2D array of entries at that position. It is assumed that names of the
         columns are known.
-    '''
+    """
     # is the title within the range of possible tiles
-    if x > 2**z:
+    if x > 2 ** z:
         print("OUT OF RIGHT RANGE")
         return []
     if x < 0:
         print("OUT OF LEFT RANGE")
         return []
 
-    d = hdf_file['meta']
-    tile_size = int(d.attrs['tile-size'])
+    d = hdf_file["meta"]
+    tile_size = int(d.attrs["tile-size"])
     # max_length = int(d.attrs['max-length'])
-    max_zoom = int(d.attrs['max-zoom'])
+    max_zoom = int(d.attrs["max-zoom"])
     # max_width = tile_size * 2 ** max_zoom
 
     # f is an array of data (e.g. [['34','53', 'x'],['48','57', 'y']] )
@@ -152,31 +152,31 @@ def get_discrete_data(hdf_file, z, x):
 
 
 def get_data(hdf_file, z, x):
-    '''
+    """
     Return a tile from an hdf_file.
 
     :param hdf_file: A file handle for an HDF5 file (h5py.File('...'))
     :param z: The zoom level
     :param x: The x position of the tile
-    '''
+    """
 
     # is the title within the range of possible tiles
-    if x > 2**z:
+    if x > 2 ** z:
         print("OUT OF RIGHT RANGE")
         return []
     if x < 0:
         print("OUT OF LEFT RANGE")
         return []
 
-    d = hdf_file['meta']
+    d = hdf_file["meta"]
 
-    tile_size = int(d.attrs['tile-size'])
-    zoom_step = int(d.attrs['zoom-step'])
-    max_zoom = int(d.attrs['max-zoom'])
+    tile_size = int(d.attrs["tile-size"])
+    zoom_step = int(d.attrs["zoom-step"])
+    max_zoom = int(d.attrs["max-zoom"])
     max_width = tile_size * 2 ** max_zoom
 
-    if 'max-position' in d.attrs:
-        max_position = int(d.attrs['max-position'])
+    if "max-position" in d.attrs:
+        max_position = int(d.attrs["max-position"])
     else:
         max_position = max_width
 
@@ -199,14 +199,14 @@ def get_data(hdf_file, z, x):
     max_position = int(max_position / 2 ** next_stored_zoom)
     # print("new max_position:", max_position)
 
-    '''
+    """
     print("start_pos:", start_pos)
     print("end_pos:", end_pos)
     print("next_stored_zoom", next_stored_zoom)
     print("max_position:", int(max_position))
-    '''
+    """
 
-    f = hdf_file['values_' + str(int(next_stored_zoom))]
+    f = hdf_file["values_" + str(int(next_stored_zoom))]
 
     if start_pos > max_position:
         # we want a tile that's after the last bit of data
@@ -215,15 +215,15 @@ def get_data(hdf_file, z, x):
         ret_array = ct.aggregate(a, int(num_to_agg))
     elif start_pos < max_position and max_position < end_pos:
         a = f[start_pos:end_pos][:]
-        a[max_position + 1:end_pos] = np.nan
+        a[max_position + 1 : end_pos] = np.nan
         ret_array = ct.aggregate(a, int(num_to_agg))
     else:
         ret_array = ct.aggregate(f[start_pos:end_pos], int(num_to_agg))
 
-    '''
+    """
     print("ret_array:", f[start_pos:end_pos])
     print('ret_array:', ret_array)
-    '''
+    """
     # print('nansum', np.nansum(ret_array))
 
     # check to see if we counted the number of NaN values in the given
@@ -231,7 +231,7 @@ def get_data(hdf_file, z, x):
 
     f_nan = None
     if "nan_values_" + str(int(next_stored_zoom)) in hdf_file:
-        f_nan = hdf_file['nan_values_' + str(int(next_stored_zoom))]
+        f_nan = hdf_file["nan_values_" + str(int(next_stored_zoom))]
         nan_array = ct.aggregate(f_nan[start_pos:end_pos], int(num_to_agg))
         num_aggregated = 2 ** (max_zoom - z)
 

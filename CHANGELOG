@@ -1,3 +1,8 @@
+** Next Release
+
+- Ran black on the entire code base
+
+
 v0.12.0
 
 - Added tile queries for bigBed files, using score data (if available) to threshold those elements returned, based on a specified or default maximum.

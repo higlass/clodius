@@ -7,7 +7,7 @@ def tiles_wrapper(array, tile_ids, not_nan_array=None):
     tile_values = []
 
     for tile_id in tile_ids:
-        parts = tile_id.split('.')
+        parts = tile_id.split(".")
 
         if len(parts) < 3:
             raise IndexError("Not enough tile info present")
@@ -23,9 +23,9 @@ def tiles_wrapper(array, tile_ids, not_nan_array=None):
 
 
 def tileset_info(array, bounds=None, bins_per_dimension=1024):
-    '''
+    """
     Get the tileset info for the array
-    '''
+    """
     max_dim = max(array.shape)
 
     max_zoom = math.ceil(math.log(max_dim / bins_per_dimension) / math.log(2))
@@ -60,7 +60,7 @@ def tileset_info(array, bounds=None, bins_per_dimension=1024):
 
 
 def max_zoom_and_data_bounds(array, z, x, bin_size):
-    '''
+    """
     Return the maximum zoom level and data corresponding to the
     zoom level and position of the array.
 
@@ -72,7 +72,7 @@ def max_zoom_and_data_bounds(array, z, x, bin_size):
         The zoom level
     x: int
         The x position
-    '''
+    """
     max_dim = array.shape[0]
 
     max_zoom = math.ceil(math.log(max_dim / bin_size) / math.log(2))
@@ -92,7 +92,7 @@ def max_zoom_and_data_bounds(array, z, x, bin_size):
 
 
 def tiles(array, z, x, not_nan_array=None, bin_size=1024):
-    '''
+    """
     Return tiles at the given positions.
 
     Parameters
@@ -108,7 +108,7 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
         in the original array. Can be precalculated for speed.
     bin_size: int
         The number of values per bin
-    '''
+    """
     max_zoom, x_start, x_end = max_zoom_and_data_bounds(array, z, x, bin_size)
     data = array[x_start:x_end]
 
@@ -118,8 +118,7 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     divisible_x_width = num_to_sum * math.ceil(data.shape[0] / num_to_sum)
     divisible_x_pad = divisible_x_width - data.shape[0]
 
-    a = np.pad(data, ((0, divisible_x_pad),), 'constant',
-               constant_values=(np.nan,))
+    a = np.pad(data, ((0, divisible_x_pad),), "constant", constant_values=(np.nan,))
 
     ret_array = np.nansum(a.reshape((-1, num_to_sum)), axis=1)
 
@@ -130,10 +129,7 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
 
     # we want to calculate the means of the data points
     na = np.pad(
-        not_nan_data,
-        ((0, divisible_x_pad)),
-        'constant',
-        constant_values=(np.nan,)
+        not_nan_data, ((0, divisible_x_pad)), "constant", constant_values=(np.nan,)
     )
     norm_array = np.nansum(na.reshape((-1, num_to_sum)), axis=1)
     ret_array = ret_array / (norm_array + 1)
@@ -141,6 +137,4 @@ def tiles(array, z, x, not_nan_array=None, bin_size=1024):
     # determine how much to pad the array
     x_pad = bin_size - ret_array.shape[0]
 
-    return np.pad(
-        ret_array, ((0, x_pad)), 'constant', constant_values=(np.nan, )
-    )
+    return np.pad(ret_array, ((0, x_pad)), "constant", constant_values=(np.nan,))

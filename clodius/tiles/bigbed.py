@@ -8,7 +8,7 @@ import clodius.tiles.bigwig as hgbw
 
 from concurrent.futures import ThreadPoolExecutor
 
-DEFAULT_RANGE_MODE = 'significant'
+DEFAULT_RANGE_MODE = "significant"
 MIN_ELEMENTS = 1
 MAX_ELEMENTS = 200
 DEFAULT_SCORE = 0
@@ -16,12 +16,12 @@ DEFAULT_SCORE = 0
 logger = logging.getLogger(__name__)
 
 range_modes = {}
-range_modes['significant'] = {'name': 'Significant', 'value': 'significant'}
+range_modes["significant"] = {"name": "Significant", "value": "significant"}
 
 
 def tileset_info(bbpath, chromsizes=None):
     ti = hgbw.tileset_info(bbpath, chromsizes)
-    ti['range_modes'] = range_modes
+    ti["range_modes"] = range_modes
     return ti
 
 
@@ -35,10 +35,10 @@ def fetch_data(a):
         max_elements,
         cid,
         start,
-        end
+        end,
     ) = a
 
-    '''
+    """
     Retrieve tile data from a bigbed file.
 
     This approach currently returns a subset of intervals within the bounds of the specified
@@ -78,14 +78,14 @@ def fetch_data(a):
     -------
     intervals: [{'chrOffset': integer, 'importance': integer, 'fields': [interval]}, ... ]
         A list of beddb-like gene annotation objects
-    '''
+    """
 
     try:
         chrom = chromsizes.index[cid]
 
         fetch_factory = ft.partial(bbi.fetch_intervals, bbpath, chrom, start, end)
 
-        if range_mode == 'significant':
+        if range_mode == "significant":
             intervals, intervals2 = fetch_factory(), fetch_factory()
         else:
             intervals, intervals2 = fetch_factory(), fetch_factory()
@@ -127,9 +127,21 @@ def fetch_data(a):
         for interval in intervals2:
             try:
                 score = int(interval[4])
-                final_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': score, 'fields': interval})
+                final_intervals.append(
+                    {
+                        "chrOffset": chrOffsets[chrom],
+                        "importance": score,
+                        "fields": interval,
+                    }
+                )
             except (ValueError, IndexError):
-                final_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': DEFAULT_SCORE, 'fields': interval})
+                final_intervals.append(
+                    {
+                        "chrOffset": chrOffsets[chrom],
+                        "importance": DEFAULT_SCORE,
+                        "fields": interval,
+                    }
+                )
 
     elif intervals_length > max_elements:
         thresholded_intervals = []
@@ -139,10 +151,22 @@ def fetch_data(a):
             try:
                 score = int(interval[4])
                 if score >= thresholded_score:
-                    thresholded_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': score, 'fields': interval})
+                    thresholded_intervals.append(
+                        {
+                            "chrOffset": chrOffsets[chrom],
+                            "importance": score,
+                            "fields": interval,
+                        }
+                    )
             except (ValueError, IndexError):
                 if DEFAULT_SCORE >= thresholded_score:
-                    thresholded_intervals.append({'chrOffset': chrOffsets[chrom], 'importance': DEFAULT_SCORE, 'fields': interval})
+                    thresholded_intervals.append(
+                        {
+                            "chrOffset": chrOffsets[chrom],
+                            "importance": DEFAULT_SCORE,
+                            "fields": interval,
+                        }
+                    )
         thresholded_intervals_length = len(thresholded_intervals)
         if thresholded_intervals_length > max_elements:
             indices = random.sample(range(thresholded_intervals_length), max_elements)
@@ -159,7 +183,7 @@ def get_bigbed_tile(
     chromsizes=None,
     range_mode=None,
     min_elements=None,
-    max_elements=None
+    max_elements=None,
 ):
     if chromsizes is None:
         chromsizes = hgbw.get_chromsizes(bbpath)
@@ -177,16 +201,21 @@ def get_bigbed_tile(
     with ThreadPoolExecutor(max_workers=16) as e:
         arrays = list(
             e.map(
-                fetch_data, [
-                    tuple([
-                        bbpath,
-                        binsize,
-                        chromsizes,
-                        range_mode,
-                        min_elements,
-                        max_elements
-                    ] + list(c)) for c in cids_starts_ends
-                ]
+                fetch_data,
+                [
+                    tuple(
+                        [
+                            bbpath,
+                            binsize,
+                            chromsizes,
+                            range_mode,
+                            min_elements,
+                            max_elements,
+                        ]
+                        + list(c)
+                    )
+                    for c in cids_starts_ends
+                ],
             )
         )
 
@@ -196,7 +225,7 @@ def get_bigbed_tile(
 
 
 def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
-    '''
+    """
     Generate tiles from a bigbed file.
 
     Parameters
@@ -218,27 +247,29 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
     -------
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
-    '''
+    """
 
     min_elements = -1
     max_elements = -1
 
     generated_tiles = []
     for tile_id in tile_ids:
-        tile_option_parts = tile_id.split('|')[1:]
-        tile_no_options = tile_id.split('|')[0]
-        tile_id_parts = tile_no_options.split('.')
+        tile_option_parts = tile_id.split("|")[1:]
+        tile_no_options = tile_id.split("|")[0]
+        tile_id_parts = tile_no_options.split(".")
         tile_position = list(map(int, tile_id_parts[1:3]))
-        return_value = tile_id_parts[3] if len(tile_id_parts) > 3 else DEFAULT_RANGE_MODE
+        return_value = (
+            tile_id_parts[3] if len(tile_id_parts) > 3 else DEFAULT_RANGE_MODE
+        )
 
         range_mode = return_value if return_value in range_modes else None
 
-        tile_options = dict([o.split(':') for o in tile_option_parts])
+        tile_options = dict([o.split(":") for o in tile_option_parts])
 
-        if 'min' in tile_options:
-            min_elements = int(tile_options['min'])
-        if 'max' in tile_options:
-            max_elements = int(tile_options['max'])
+        if "min" in tile_options:
+            min_elements = int(tile_options["min"])
+        if "max" in tile_options:
+            max_elements = int(tile_options["max"])
 
         if min_elements > max_elements:
             temp_min_elements = min_elements
@@ -258,8 +289,8 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
             chromsizes_to_use = pd.Series(chromlengths, index=chromnames)
         else:
             chromsizes_id = None
-            if 'cos' in tile_options:
-                chromsizes_id = tile_options['cos']
+            if "cos" in tile_options:
+                chromsizes_id = tile_options["cos"]
             if chromsizes_id in chromsizes_map:
                 chromsizes_to_use = chromsizes_map[chromsizes_id]
             else:
@@ -286,7 +317,7 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
             chromsizes_to_use,
             range_mode=range_mode,
             min_elements=min_elements,
-            max_elements=max_elements
+            max_elements=max_elements,
         )
 
         generated_tiles += [(tile_id, tile_value)]

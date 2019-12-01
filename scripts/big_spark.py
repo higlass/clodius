@@ -17,7 +17,7 @@ def main():
     args = parser.parse_args()
 
     sc = SparkContext(appName="big-spark-test")
-    entries = sc.textFile(args.input_file).map(lambda x: x.strip().split(' '))
+    entries = sc.textFile(args.input_file).map(lambda x: x.strip().split(" "))
 
     print("entries.take(1):", entries.take(1))
 
