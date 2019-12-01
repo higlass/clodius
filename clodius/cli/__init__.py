@@ -8,7 +8,7 @@ click.core._verify_python3_env = lambda: None
 
 
 CONTEXT_SETTINGS = {
-    'help_option_names': ['-h', '--help'],
+    "help_option_names": ["-h", "--help"],
 }
 
 

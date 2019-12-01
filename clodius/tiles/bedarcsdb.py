@@ -4,7 +4,7 @@ import sqlite3
 
 
 def tiles(filepath, tile_ids):
-    '''
+    """
     Generate tiles from this dataset.
 
     Parameters
@@ -18,11 +18,11 @@ def tiles(filepath, tile_ids):
     -------
     tiles: [(tile_id, tile_value),...]
         A list of values indexed by the tile position
-    '''
+    """
     to_return = []
 
     for tile_id in tile_ids:
-        parts = tile_id.split('.')
+        parts = tile_id.split(".")
         zoom = int(parts[1])
         xpos = int(parts[2])
 
@@ -34,9 +34,7 @@ def tiles(filepath, tile_ids):
             # the old rows are indexed by the higher
             # resolution tile numbers
             higher_xpos = 2 ** extra_zoom * xpos + j
-            old_rows = get_1D_tiles(filepath,
-                                    zoom + extra_zoom,
-                                    higher_xpos)
+            old_rows = get_1D_tiles(filepath, zoom + extra_zoom, higher_xpos)
             new_rows[xpos] += old_rows[higher_xpos]
 
         to_return += [(tile_id, new_rows)]
@@ -45,7 +43,7 @@ def tiles(filepath, tile_ids):
 
 
 def get_1D_tiles(db_file, zoom, tile_x_pos, numx=1, numy=1):
-    '''
+    """
     Retrieve a contiguous set of tiles from a 2D db tile file.
 
     Parameters
@@ -63,18 +61,18 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx=1, numy=1):
     -------
     tiles: {pos: tile_value}
         A set of tiles, indexed by position
-    '''
+    """
     tileset_info = get_2d_tileset_info(db_file)
 
     conn = sqlite3.connect(db_file)
 
     c = conn.cursor()
-    tile_width = tileset_info['max_width'] / 2 ** zoom
+    tile_width = tileset_info["max_width"] / 2 ** zoom
 
     tile_x_start_pos = tile_width * tile_x_pos
     tile_x_end_pos = tile_x_start_pos + (numx * tile_width)
 
-    query = '''
+    query = """
     SELECT fromX, toX, fromY, toY, chrOffset, importance, fields, uid
     FROM intervals,position_index
     WHERE
@@ -82,15 +80,13 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx=1, numy=1):
         zoomLevel <= {} AND
         rToX >= {} AND
         rFromX <= {} ORDER BY importance
-    '''.format(
-        zoom,
-        tile_x_start_pos,
-        tile_x_end_pos,
+    """.format(
+        zoom, tile_x_start_pos, tile_x_end_pos,
     )
 
     rows = c.execute(query).fetchall()
 
-    query1 = '''
+    query1 = """
     SELECT fromX, toX, fromY, toY, chrOffset, importance, fields, uid
     FROM intervals,position_index
     WHERE
@@ -98,10 +94,8 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx=1, numy=1):
         zoomLevel <= {} AND
         rToY >= {} AND
         rFromY <= {} ORDER BY importance
-    '''.format(
-        zoom,
-        tile_x_start_pos,
-        tile_x_end_pos,
+    """.format(
+        zoom, tile_x_start_pos, tile_x_end_pos,
     )
 
     rows1 = c.execute(query1).fetchall()
@@ -117,7 +111,7 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx=1, numy=1):
         # fields = r[6].split('\t')
         # print('fields', sorted([fields[0], fields[3]]), r[5])
         try:
-            uid = r[7].decode('utf-8')
+            uid = r[7].decode("utf-8")
         except AttributeError:
             uid = r[7]
 
@@ -137,22 +131,22 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx=1, numy=1):
             tile_x_start = i * tile_width
             tile_x_end = (i + 1) * tile_width
 
-            if (
-                (x_start < tile_x_end and
-                 x_end >= tile_x_start) or
-                (y_start < tile_x_end and
-                    y_end >= tile_x_start)
+            if (x_start < tile_x_end and x_end >= tile_x_start) or (
+                y_start < tile_x_end and y_end >= tile_x_start
             ):
                 # add the position offset to the returned values
                 new_rows[i] += [
-                    {'xStart': r[0],
-                     'xEnd': r[1],
-                     'yStart': r[2],
-                     'yEnd': r[3],
-                     'chrOffset': r[4],
-                     'importance': r[5],
-                     'uid': uid,
-                     'fields': r[6].split('\t')}]
+                    {
+                        "xStart": r[0],
+                        "xEnd": r[1],
+                        "yStart": r[2],
+                        "yEnd": r[3],
+                        "chrOffset": r[4],
+                        "importance": r[5],
+                        "uid": uid,
+                        "fields": r[6].split("\t"),
+                    }
+                ]
     conn.close()
 
     return new_rows
@@ -164,16 +158,16 @@ def get_2d_tileset_info(db_file):
 
     row = c.execute("SELECT * from tileset_info").fetchone()
     tileset_info = {
-        'zoom_step': row[0],
-        'max_length': row[1],
-        'assembly': row[2],
-        'chrom_names': row[3],
-        'chrom_sizes': row[4],
-        'tile_size': row[5],
-        'max_zoom': row[6],
-        'max_width': row[7],
-        'min_pos': [1, 1],
-        'max_pos': [row[1], row[1]]
+        "zoom_step": row[0],
+        "max_length": row[1],
+        "assembly": row[2],
+        "chrom_names": row[3],
+        "chrom_sizes": row[4],
+        "tile_size": row[5],
+        "max_zoom": row[6],
+        "max_width": row[7],
+        "min_pos": [1, 1],
+        "max_pos": [row[1], row[1]],
     }
     conn.close()
 

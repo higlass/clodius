@@ -8,14 +8,16 @@ import argparse
 
 
 def main():
-    parser = argparse.ArgumentParser(description="""
+    parser = argparse.ArgumentParser(
+        description="""
 
     python get_hitile.py filename z x
-""")
+"""
+    )
 
-    parser.add_argument('filename')
-    parser.add_argument('z', type=int)
-    parser.add_argument('x', type=int)
+    parser.add_argument("filename")
+    parser.add_argument("z", type=int)
+    parser.add_argument("x", type=int)
     # parser.add_argument('argument', nargs=1)
     # parser.add_argument('-o', '--options', default='yo',
     # help="Some option", type='str')
@@ -24,11 +26,11 @@ def main():
 
     args = parser.parse_args()
 
-    with h5py.File(args.filename, 'r') as f:
+    with h5py.File(args.filename, "r") as f:
         tileset_info = hdft.get_tileset_info(f)
-        max_width = tileset_info['max_width']
-        max_pos = tileset_info['max_pos']
-        tile_size = tileset_info['tile_size']
+        max_width = tileset_info["max_width"]
+        max_pos = tileset_info["max_pos"]
+        tile_size = tileset_info["tile_size"]
 
         print("max_width", max_width)
         print("max_pos", max_pos)
@@ -39,5 +41,5 @@ def main():
         print("tile:", tile_data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -7,7 +7,7 @@ def tiles_wrapper(grid, tile_ids):
     tile_values = []
 
     for tile_id in tile_ids:
-        parts = tile_id.split('.')
+        parts = tile_id.split(".")
 
         if len(parts) < 4:
             raise IndexError("Not enough tile info present")
@@ -18,16 +18,15 @@ def tiles_wrapper(grid, tile_ids):
 
         ret_array = tiles(grid, z, x, y).reshape((-1))
 
-        tile_values += [(tile_id,
-                         hgfo.format_dense_tile(ret_array))]
+        tile_values += [(tile_id, hgfo.format_dense_tile(ret_array))]
 
     return tile_values
 
 
 def tileset_info(grid, bounds=None):
-    '''
+    """
     Get the tileset info for the grid
-    '''
+    """
     bin_size = 256
     max_dim = max(grid.shape)
     # print("grid.shape:", grid.shape)
@@ -52,8 +51,7 @@ def tileset_info(grid, bounds=None):
         max_pos = grid.shape
 
     if len(grid.shape) > 2:
-        raise ValueError(
-            "Grid's shape is not conducive to plotting", grid.shape)
+        raise ValueError("Grid's shape is not conducive to plotting", grid.shape)
     return {
         "max_width": max_width,
         "max_width1": max_width1,
@@ -61,12 +59,12 @@ def tileset_info(grid, bounds=None):
         "max_pos": max_pos,
         "max_zoom": max_zoom,
         "mirror_tiles": "false",
-        "bins_per_dimension": bin_size
+        "bins_per_dimension": bin_size,
     }
 
 
 def tiles(grid, z, x, y, nan_grid=None, bin_size=256):
-    '''
+    """
     Return tiles at the given positions.
 
     Parameters
@@ -81,7 +79,7 @@ def tiles(grid, z, x, y, nan_grid=None, bin_size=256):
         The y tile position
     bin_size: int
         The number of values per bin
-    '''
+    """
     max_dim = max(grid.shape)
     # print("max_dim", max_dim)
 
@@ -120,12 +118,16 @@ def tiles(grid, z, x, y, nan_grid=None, bin_size=256):
     # print("divisible_x_pad:", divisible_x_pad)
     # print("divisible_y_pad:", divisible_y_pad)
 
-    a = np.pad(data, ((0, divisible_x_pad), (0, divisible_y_pad)), 'constant',
-               constant_values=(np.nan, np.nan))
+    a = np.pad(
+        data,
+        ((0, divisible_x_pad), (0, divisible_y_pad)),
+        "constant",
+        constant_values=(np.nan, np.nan),
+    )
 
     b = np.nansum(a.reshape((a.shape[0], -1, num_to_sum)), axis=2)
     ret_array = np.nansum(b.T.reshape(b.shape[1], -1, num_to_sum), axis=2).T
-    ret_array[ret_array == 0.] = np.nan
+    ret_array[ret_array == 0.0] = np.nan
     # print('ret_array:', ret_array)
 
     # print("sum:", np.nansum(ret_array))
@@ -137,11 +139,14 @@ def tiles(grid, z, x, y, nan_grid=None, bin_size=256):
         # NOTE: In the line below, "nan_grid" was originally "not_nan_grid",
         # which is undefined. This is my best guess of the desired behavior.
         not_nan_data = nan_grid[x_start:x_end, y_start:y_end]
-        na = np.pad(not_nan_data, ((0, divisible_x_pad), (0, divisible_y_pad)), 'constant',
-                    constant_values=(np.nan, np.nan))
+        na = np.pad(
+            not_nan_data,
+            ((0, divisible_x_pad), (0, divisible_y_pad)),
+            "constant",
+            constant_values=(np.nan, np.nan),
+        )
         nb = np.nansum(na.reshape((na.shape[1], -1, num_to_sum)), axis=2)
-        norm_array = np.nansum(nb.T.reshape(
-            nb.shape[1], -1, num_to_sum), axis=2).T
+        norm_array = np.nansum(nb.T.reshape(nb.shape[1], -1, num_to_sum), axis=2).T
 
         ret_array = ret_array / norm_array
 
@@ -152,4 +157,9 @@ def tiles(grid, z, x, y, nan_grid=None, bin_size=256):
     # print("ret_array:", ret_array.shape)
     # print("x_pad:", x_pad, "y_pad:", y_pad)
 
-    return np.pad(ret_array, ((0, x_pad), (0, y_pad)), 'constant', constant_values=(np.nan, np.nan))
+    return np.pad(
+        ret_array,
+        ((0, x_pad), (0, y_pad)),
+        "constant",
+        constant_values=(np.nan, np.nan),
+    )

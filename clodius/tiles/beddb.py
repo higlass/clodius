@@ -12,17 +12,17 @@ def tileset_info(db_file):
         header = ""
 
     ts_info = {
-        'zoom_step': row[0],
-        'max_length': row[1],
-        'assembly': row[2],
-        'chrom_names': row[3],
-        'chrom_sizes': row[4],
-        'tile_size': row[5],
-        'max_zoom': row[6],
-        'max_width': row[7],
+        "zoom_step": row[0],
+        "max_length": row[1],
+        "assembly": row[2],
+        "chrom_names": row[3],
+        "chrom_sizes": row[4],
+        "tile_size": row[5],
+        "max_zoom": row[6],
+        "max_width": row[7],
         "min_pos": [1],
         "max_pos": [row[1]],
-        "header": header
+        "header": header,
     }
     conn.close()
 
@@ -30,7 +30,7 @@ def tileset_info(db_file):
 
 
 def tiles(filepath, tile_ids):
-    '''
+    """
     Generate tiles from this dataset.
 
     Parameters
@@ -44,13 +44,13 @@ def tiles(filepath, tile_ids):
     -------
     tiles: [(tile_id, tile_value),...]
         A list of values indexed by the tile position
-    '''
+    """
     to_return = []
 
     for tile_id in tile_ids:
         # tile_option_parts = tile_id.split('|')[1:]
-        tile_no_options = tile_id.split('|')[0]
-        parts = tile_no_options.split('.')
+        tile_no_options = tile_id.split("|")[0]
+        parts = tile_no_options.split(".")
 
         zoom = int(parts[1])
         xpos = int(parts[2])
@@ -63,9 +63,7 @@ def tiles(filepath, tile_ids):
             # the old rows are indexed by the higher
             # resolution tile numbers
             higher_xpos = 2 ** extra_zoom * xpos + j
-            old_rows = get_1D_tiles(filepath,
-                                    zoom + extra_zoom,
-                                    higher_xpos)
+            old_rows = get_1D_tiles(filepath, zoom + extra_zoom, higher_xpos)
             new_rows += old_rows
 
         # print("new_rows length", len(new_rows))
@@ -75,7 +73,7 @@ def tiles(filepath, tile_ids):
 
 
 def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
-    '''
+    """
     Retrieve a contiguous set of tiles from a db tile file.
 
     Parameters
@@ -93,18 +91,18 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
     -------
     tiles: {pos: tile_value}
         A set of tiles, indexed by position
-    '''
+    """
     ts_info = tileset_info(db_file)
     conn = sqlite3.connect(db_file)
 
     c = conn.cursor()
 
-    tile_width = ts_info['max_width'] / 2 ** zoom
+    tile_width = ts_info["max_width"] / 2 ** zoom
 
     tile_start_pos = tile_width * tile_x_pos
     tile_end_pos = tile_start_pos + num_tiles * tile_width
 
-    query = '''
+    query = """
     SELECT startPos, endPos, chrOffset, importance, fields, uid
     FROM intervals,position_index
     WHERE
@@ -112,7 +110,9 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
         zoomLevel <= {} AND
         rEndPos >= {} AND
         rStartPos <= {}
-    '''.format(zoom, tile_start_pos, tile_end_pos)
+    """.format(
+        zoom, tile_start_pos, tile_end_pos
+    )
 
     # import time
     # t1 = time.time()
@@ -123,7 +123,7 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
 
     for r in rows:
         try:
-            uid = r[5].decode('utf-8')
+            uid = r[5].decode("utf-8")
         except AttributeError:
             uid = r[5]
 
@@ -137,19 +137,22 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
             if x_start < tile_x_end and x_end >= tile_x_start:
                 new_rows += [
                     # add the position offset to the returned values
-                    {'xStart': r[0],
-                     'xEnd': r[1],
-                     'chrOffset': r[2],
-                     'importance': r[3],
-                     'uid': uid,
-                     'fields': r[4].split('\t')}]
+                    {
+                        "xStart": r[0],
+                        "xEnd": r[1],
+                        "chrOffset": r[2],
+                        "importance": r[3],
+                        "uid": uid,
+                        "fields": r[4].split("\t"),
+                    }
+                ]
     conn.close()
 
     return new_rows
 
 
 def list_items(db_file, start, end, max_entries=None):
-    '''
+    """
     List the entries between start and end
 
     Parameters
@@ -162,7 +165,7 @@ def list_items(db_file, start, end, max_entries=None):
         The end position to get data
     max_entries: int
         The maximum number of results to return
-    '''
+    """
 
     conn = sqlite3.connect(db_file)
 
@@ -171,7 +174,7 @@ def list_items(db_file, start, end, max_entries=None):
     # some large number because we want to extract all entries
     zoom = 100000
 
-    query = '''
+    query = """
     SELECT startPos, endPos, chrOffset, importance, fields, uid
     FROM intervals,position_index
     WHERE
@@ -179,10 +182,12 @@ def list_items(db_file, start, end, max_entries=None):
         zoomLevel <= {} AND
         rEndPos >= {} AND
         rStartPos <= {}
-    '''.format(zoom, start, end)
+    """.format(
+        zoom, start, end
+    )
 
     if max_entries is not None:
-        query += ' LIMIT {}'.format(max_entries)
+        query += " LIMIT {}".format(max_entries)
 
     rows = c.execute(query).fetchall()
 
@@ -190,18 +195,21 @@ def list_items(db_file, start, end, max_entries=None):
 
     for r in rows:
         try:
-            uid = r[5].decode('utf-8')
+            uid = r[5].decode("utf-8")
         except AttributeError:
             uid = r[5]
 
         new_rows += [
             # add the position offset to the returned values
-            {'xStart': r[0],
-             'xEnd': r[1],
-             'chrOffset': r[2],
-             'importance': r[3],
-             'uid': uid,
-             'fields': r[4].split('\t')}]
+            {
+                "xStart": r[0],
+                "xEnd": r[1],
+                "chrOffset": r[2],
+                "importance": r[3],
+                "uid": uid,
+                "fields": r[4].split("\t"),
+            }
+        ]
     conn.close()
 
     return new_rows

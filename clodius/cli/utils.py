@@ -16,13 +16,13 @@ def get_lng_lat_from_tile_pos(zoom, x, y):
     (lng, lat) of top-left corner of tile"""
 
     # "map-centric" latitude, in radians:
-    lat_rad = math.pi - 2 * math.pi * y / (2**zoom)
+    lat_rad = math.pi - 2 * math.pi * y / (2 ** zoom)
     # true latitude:
     lat_rad = gudermannian(lat_rad)
     lat = lat_rad * 180.0 / math.pi
 
     # longitude maps linearly to map, so we simply scale:
-    lng = -180.0 + 360.0 * x / (2**zoom)
+    lng = -180.0 + 360.0 * x / (2 ** zoom)
 
     return (lng, lat)
 
@@ -35,8 +35,8 @@ def get_tile_pos_from_lng_lat(lng, lat, zoom):
     # "map-centric" latitude, in radians:
     lat_rad = inv_gudermannian(lat_rad)
 
-    x = 2**zoom * (lng + 180.0) / 360.0
-    y = 2**zoom * (math.pi - lat_rad) / (2 * math.pi)
+    x = 2 ** zoom * (lng + 180.0) / 360.0
+    y = 2 ** zoom * (math.pi - lat_rad) / (2 * math.pi)
 
     return (x, y)
 

@@ -23,9 +23,9 @@ class ParallelData:
         return 1
 
     def countByKey(self):
-        '''
+        """
         Count the number of elements with a particular key.
-        '''
+        """
         counts = col.defaultdict(int)
 
         for d in self.data:
@@ -37,9 +37,9 @@ class ParallelData:
         return self
 
     def groupByKey(self):
-        '''
+        """
         When called on a dataset of (K, V) pairs, returns a dataset of (K, Iterable<V>) pairs.
-        '''
+        """
         buckets = col.defaultdict(list)
 
         for d in self.data:
@@ -48,10 +48,10 @@ class ParallelData:
         return ParallelData(buckets.items())
 
     def flatMap(self, func):
-        '''
+        """
         Flatten a list of results mapped to the data
         and return as one large list.
-        '''
+        """
         result = map(func, self.data)
 
         return ParallelData(list(it.chain.from_iterable(result)))
@@ -64,13 +64,13 @@ class ParallelData:
         func(self.data)
 
     def reduceByKey(self, func):
-        '''
+        """
         When called on a dataset of (K, V) pairs, returns a dataset of (K, V)
         pairs where the values for each key are aggregated using the given
         reduce function func, which must be of type (V,V) => V. Like in
         groupByKey, the number of reduce tasks is configurable through an
         optional second argument.
-        '''
+        """
         buckets = col.defaultdict(list)
         for d in self.data:
             buckets[d[0]].append(d[1])
@@ -106,9 +106,9 @@ class ParallelData:
 
 
 class FakeSparkContext:
-    '''
+    """
     Emulate a SparkContext for local processing.
-    '''
+    """
 
     def __init__(self):
         pass
@@ -119,27 +119,27 @@ class FakeSparkContext:
 
     @staticmethod
     def singleTextFile(filename):
-        '''
+        """
         Load a single file as a ParallelData set.
 
         :param filename: A file to be loaded line by line
         @return: A ParallelData object wrapping the lines in the file.
-        '''
-        with open(filename, 'r') as f:
+        """
+        with open(filename, "r") as f:
             return ParallelData(list(map(lambda x: x.strip(), f.readlines())))
 
     @staticmethod
     def textFile(filename):
-        '''
+        """
         Load a filename as a text file. Filename can be either a single file
         or a directory containing a multitude of 'part-*' files.
 
         :param filename: The name of the file (or directory) containing the data which
                          we want to load one by one
         :return: A ParallelData object containing all of the lines of the file or files
-        '''
+        """
         if op.isdir(filename):
-            parts_files = glob.glob(op.join(filename, 'part-*'))
+            parts_files = glob.glob(op.join(filename, "part-*"))
             p = FakeSparkContext.parallelize([])
 
             for filename in parts_files:

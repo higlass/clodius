@@ -11,16 +11,18 @@ import time
 
 
 def main():
-    parser = argparse.ArgumentParser(description="""
+    parser = argparse.ArgumentParser(
+        description="""
 
     python read.py hdf_file
-""")
+"""
+    )
 
-    parser.add_argument('filepath')
-    parser.add_argument('-z', default=None, type=int)
-    parser.add_argument('-x', default=None, type=int)
+    parser.add_argument("filepath")
+    parser.add_argument("-z", default=None, type=int)
+    parser.add_argument("-x", default=None, type=int)
 
-    parser.add_argument('-n', '--num-trials', default=1, type=int)
+    parser.add_argument("-n", "--num-trials", default=1, type=int)
     # parser.add_argument('argument', nargs=1)
     # parser.add_argument('-o', '--options', default='yo',
     # help="Some option", type='str')
@@ -29,7 +31,7 @@ def main():
 
     args = parser.parse_args()
 
-    f = h5py.File(args.filepath, 'r')
+    f = h5py.File(args.filepath, "r")
 
     t1 = time.time()
 
@@ -42,8 +44,8 @@ def main():
         return
 
     for i in range(args.num_trials):
-        z = random.randint(0, int(f['meta'].attrs['max-zoom']))
-        x = random.randint(0, 2**z)
+        z = random.randint(0, int(f["meta"].attrs["max-zoom"]))
+        x = random.randint(0, 2 ** z)
 
         d = ch.get_data(f, z, x)
         print("z:", z, "x:", x, "len:", len(d), d)
@@ -53,7 +55,7 @@ def main():
     t2 = time.time()
     print("avg time:", (t2 - t1) / args.num_trials)
 
-    '''
+    """
     print "max_zoom:", max_zoom
 
     values = f['values_0']
@@ -65,8 +67,8 @@ def main():
     assert(f['values_16'][0] == (256**2 * (256**2 + 1) / 2))
 
     print "1953:", f['values_8'][1952]
-    '''
+    """
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

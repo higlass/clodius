@@ -5,9 +5,9 @@ import pysam
 
 def abs2genomic(chromsizes, start_pos, end_pos):
     abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
-    cid_lo, cid_hi = np.searchsorted(abs_chrom_offsets,
-                                     [start_pos, end_pos],
-                                     side='right') - 1
+    cid_lo, cid_hi = (
+        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
+    )
     rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
     rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
     start = rel_pos_lo
@@ -18,7 +18,7 @@ def abs2genomic(chromsizes, start_pos, end_pos):
 
 
 def load_reads(samfile, start_pos, end_pos, chrom_order=None):
-    '''
+    """
     Sample reads from the specified region, assuming that the chromosomes
     are ordered in some fashion. Returns an list of pysam reads
 
@@ -37,7 +37,7 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
     -------
     reads: [read1, read2...]
         The list of in the sampled regions
-    '''
+    """
     # if chromorder is not None...
     # specify the chromosome order for the fetched reads
 
@@ -47,25 +47,23 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
 
     if chrom_order:
         chrom_order = np.array(chrom_order)
-        chrom_order_ixs = np.nonzero(
-            np.in1d(references, chrom_order)
-        )
+        chrom_order_ixs = np.nonzero(np.in1d(references, chrom_order))
         lengths = lengths[chrom_order_ixs]
 
     results = {
-        'id': [],
-        'from': [],
-        'to': [],
-        'md': [],
-        'chrName': [],
-        'chrOffset': [],
-        'cigar': [],
+        "id": [],
+        "from": [],
+        "to": [],
+        "md": [],
+        "chrName": [],
+        "chrOffset": [],
+        "cigar": [],
     }
 
     for cid, start, end in abs2genomic(lengths, start_pos, end_pos):
         chr_offset = int(abs_chrom_offsets[cid])
 
-        seq_name = f'{references[cid]}'
+        seq_name = f"{references[cid]}"
         reads = samfile.fetch(seq_name, start, end)
 
         for read in reads:
@@ -92,26 +90,26 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
             #     # probably lacked an MD string
             #     pass
             try:
-                results['id'] += [read.query_name]
-                results['from'] += [int(read.reference_start + chr_offset)]
-                results['to'] += [int(read.reference_end + chr_offset)]
-                results['chrName'] += [read.reference_name]
-                results['chrOffset'] += [chr_offset]
-                results['cigar'] += [read.cigarstring]
+                results["id"] += [read.query_name]
+                results["from"] += [int(read.reference_start + chr_offset)]
+                results["to"] += [int(read.reference_end + chr_offset)]
+                results["chrName"] += [read.reference_name]
+                results["chrOffset"] += [chr_offset]
+                results["cigar"] += [read.cigarstring]
             except:
                 raise
 
             try:
-                results['md'] += [read.get_tag('MD')]
+                results["md"] += [read.get_tag("MD")]
             except KeyError:
-                results['md'] += ['']
+                results["md"] += [""]
                 continue
 
     return results
 
 
 def tileset_info(filename):
-    '''
+    """
     Get the tileset info for a bam file
 
     Parameters
@@ -126,7 +124,7 @@ def tileset_info(filename):
                     'tile_size': 1024,
                     'max_zoom': 7
                     }
-    '''
+    """
     samfile = pysam.AlignmentFile(filename)
     total_length = sum(samfile.lengths)
 
@@ -134,18 +132,18 @@ def tileset_info(filename):
     max_zoom = math.ceil(math.log(total_length / tile_size) / math.log(2))
 
     tileset_info = {
-        'min_pos': [0],
-        'max_pos': [total_length],
-        'max_width': tile_size * 2 ** max_zoom,
-        'tile_size': tile_size,
-        'max_zoom': max_zoom
+        "min_pos": [0],
+        "max_pos": [total_length],
+        "max_width": tile_size * 2 ** max_zoom,
+        "tile_size": tile_size,
+        "max_zoom": max_zoom,
     }
 
     return tileset_info
 
 
 def tiles(filename, tile_ids, index_filename=None, max_tile_width=None):
-    '''
+    """
     Generate tiles from a bigwig file.
 
     Parameters
@@ -165,23 +163,27 @@ def tiles(filename, tile_ids, index_filename=None, max_tile_width=None):
     -------
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
-    '''
+    """
     generated_tiles = []
     tsinfo = tileset_info(filename)
-    samfile = pysam.AlignmentFile(
-        filename,
-        index_filename=index_filename
-    )
+    samfile = pysam.AlignmentFile(filename, index_filename=index_filename)
 
     for tile_id in tile_ids:
-        tile_id_parts = tile_id.split('|')[0].split('.')
+        tile_id_parts = tile_id.split("|")[0].split(".")
         tile_position = list(map(int, tile_id_parts[1:3]))
 
-        tile_width = tsinfo['max_width'] / 2 ** int(tile_position[0])
+        tile_width = tsinfo["max_width"] / 2 ** int(tile_position[0])
 
         if max_tile_width and tile_width >= max_tile_width:
             # this tile is larger than the max allowed
-            return [(tile_id, {'error': f'Tile too large, no data returned. Max tile size: {max_tile_width}'})]
+            return [
+                (
+                    tile_id,
+                    {
+                        "error": f"Tile too large, no data returned. Max tile size: {max_tile_width}"
+                    },
+                )
+            ]
         else:
             start_pos = int(tile_position[1]) * tile_width
             end_pos = start_pos + tile_width

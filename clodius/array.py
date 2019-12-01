@@ -5,7 +5,7 @@ def aggregate(x, k):
     x = np.asarray(x)
 
     if len(x) % k != 0:
-        extend = (k - len(x) % k)
+        extend = k - len(x) % k
         x = np.r_[x, [np.nan] * extend]
 
     xr = x.reshape((-1, k))
