@@ -1,7 +1,8 @@
-** Next Release
+v0.13.0
 
 - Ran black on the entire code base
-
+- Introduced versions to beddb and bed2ddb files
+- Added zoom level to the r-tree index
 
 v0.12.0
 
