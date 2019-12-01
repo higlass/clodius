@@ -3,17 +3,17 @@ import h5py
 
 
 def test_tiles():
-    filename = 'data/labels.h5'
-    f = h5py.File(filename, 'r')
+    filename = "data/labels.h5"
+    f = h5py.File(filename, "r")
 
-    array = f['labels']
+    array = f["labels"]
 
     tiles = ctn.tiles(array, 0, 0, None)
 
-    assert(tiles[0]['x'] == 0)
-    assert(tiles[-1]['x'] == 86992)
+    assert tiles[0]["x"] == 0
+    assert tiles[-1]["x"] == 86992
 
     tiles = ctn.tiles(array, 2, 1, None)
 
-    assert(tiles[0]['x'] == 32768)
-    assert(tiles[-1]['x'] == 65535)
+    assert tiles[0]["x"] == 32768
+    assert tiles[-1]["x"] == 65535

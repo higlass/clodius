@@ -4,9 +4,10 @@ What was changed in this pull request?
 
 Why is it necessary?
 
-Fixes #___
+Fixes #\_\_\_
 
 ## Checklist
 
-- [ ] Unit tests added or updated
-- [ ] Updated CHANGELOG.md
+-   [ ] Unit tests added or updated
+-   [ ] Updated CHANGELOG.md
+-   [ ] Run `black .`

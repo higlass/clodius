@@ -12,19 +12,26 @@ import sys
 logger = logging.getLogger(__name__)
 
 
-def bedfile_to_multivec(input_filenames, f_out,
-                        bedline_to_chrom_start_end_vector, base_resolution,
-                        has_header, chunk_size, num_rows, row_infos=None):
-    '''
+def bedfile_to_multivec(
+    input_filenames,
+    f_out,
+    bedline_to_chrom_start_end_vector,
+    base_resolution,
+    has_header,
+    chunk_size,
+    num_rows,
+    row_infos=None,
+):
+    """
     Convert an epilogos bedfile to multivec format.
-    '''
+    """
 
     files = []
     for input_filename in input_filenames:
-        if op.splitext(input_filename)[1] == '.gz':
-            files += [gzip.open(input_filename, 'rt')]
+        if op.splitext(input_filename)[1] == ".gz":
+            files += [gzip.open(input_filename, "rt")]
         else:
-            files += [open(input_filename, 'r')]
+            files += [open(input_filename, "r")]
 
     FILL_VALUE = np.nan
 
@@ -42,22 +49,24 @@ def bedfile_to_multivec(input_filenames, f_out,
 
     prev_chrom = None
 
-    print('base_resolution:', base_resolution)
+    print("base_resolution:", base_resolution)
     for _, lines in enumerate(zip(*files)):
 
         # Identifies bedfile headers and ignore them
-        if lines[0].startswith('browser') or lines[0].startswith('track'):
+        if lines[0].startswith("browser") or lines[0].startswith("track"):
             continue
 
-        chrom, start, end, vector = bedline_to_chrom_start_end_vector(
-            lines, row_infos)
+        chrom, start, end, vector = bedline_to_chrom_start_end_vector(lines, row_infos)
         # if vector[0] > 0 or vector[1] > 0:
         if len(vector) < len(lines) * num_rows:
-            logger.warn('Lines contain fewer columns than expected: %s', lines)
+            logger.warn("Lines contain fewer columns than expected: %s", lines)
             vector += [np.nan] * (len(lines) * num_rows - len(vector))
 
         if start % base_resolution != 0:
-            logger.error('The start coordinate is not a multiple of the resolution in line: %s', lines)
+            logger.error(
+                "The start coordinate is not a multiple of the resolution in line: %s",
+                lines,
+            )
             sys.exit(1)
 
         if prev_chrom is not None and chrom != prev_chrom:
@@ -65,8 +74,9 @@ def bedfile_to_multivec(input_filenames, f_out,
             # the previous values
             # print("len(batch:", len(batch),
             #       "batch_start_index", batch_start_index)
-            f_out[prev_chrom][batch_start_index:batch_start_index +
-                              len(batch)] = np.array(batch)
+            f_out[prev_chrom][
+                batch_start_index : batch_start_index + len(batch)
+            ] = np.array(batch)
 
             # we're starting a new chromosome so we start from the beginning
             curr_index = 0
@@ -86,13 +96,13 @@ def bedfile_to_multivec(input_filenames, f_out,
             batch += [[FILL_VALUE] * len(vector)]
             curr_index += 1
 
-        '''
+        """
         if curr_index != data_start_index:
             print("curr_index:", curr_index, data_start_index)
             print("line:", line)
-        '''
+        """
 
-        assert(curr_index == data_start_index)
+        assert curr_index == data_start_index
         # print('vector', vector)
 
         # When the binsize is not equal to the base_resolution
@@ -110,27 +120,31 @@ def bedfile_to_multivec(input_filenames, f_out,
         if len(batch) >= batch_length:
             # dump batch
             try:
-                f_out[chrom][batch_start_index:batch_start_index +
-                             len(batch)] = np.array(batch)
+                f_out[chrom][
+                    batch_start_index : batch_start_index + len(batch)
+                ] = np.array(batch)
             except TypeError as ex:
                 print("Error:", ex, file=sys.stderr)
-                print("Probably need to set the --num-rows parameter",
-                      file=sys.stderr)
+                print("Probably need to set the --num-rows parameter", file=sys.stderr)
                 return
 
             batch = []
             batch_start_index = curr_index
             print("dumping batch:", chrom, batch_start_index)
 
-    f_out[chrom][batch_start_index:batch_start_index +
-                 len(batch)] = np.array(batch)
+    f_out[chrom][batch_start_index : batch_start_index + len(batch)] = np.array(batch)
 
 
-def create_multivec_multires(array_data, chromsizes,
-                             agg, starting_resolution=1,
-                             tile_size=1024, output_file='/tmp/my_file.multires',
-                             row_infos=None):
-    '''
+def create_multivec_multires(
+    array_data,
+    chromsizes,
+    agg,
+    starting_resolution=1,
+    tile_size=1024,
+    output_file="/tmp/my_file.multires",
+    row_infos=None,
+):
+    """
     Create a multires file containing the array data
     aggregated at multiple resolutions.
 
@@ -149,7 +163,7 @@ def create_multivec_multires(array_data, chromsizes,
         The tile size that we want higlass to use. This should
         depend on the size of the data but when in doubt, just use
         256.
-    '''
+    """
     filename = output_file
 
     # this is just so we can run this code
@@ -158,14 +172,14 @@ def create_multivec_multires(array_data, chromsizes,
         os.remove(filename)
 
     # this will be the file that contains our multires data
-    f = h5py.File(filename, 'w')
+    f = h5py.File(filename, "w")
 
     # store some metadata
-    f.create_group('info')
-    f['info'].attrs['tile-size'] = tile_size
+    f.create_group("info")
+    f["info"].attrs["tile-size"] = tile_size
 
-    f.create_group('resolutions')
-    f.create_group('chroms')
+    f.create_group("resolutions")
+    f.create_group("chroms")
 
     # start with a resolution of 1 element per pixel
     curr_resolution = starting_resolution
@@ -173,31 +187,42 @@ def create_multivec_multires(array_data, chromsizes,
     # this will be our sample highest-resolution array
     # and it will be stored under the resolutions['1']
     # dataset
-    f['resolutions'].create_group(str(curr_resolution))
+    f["resolutions"].create_group(str(curr_resolution))
 
     chroms, lengths = zip(*chromsizes)
-    chrom_array = np.array(chroms, dtype='S')
+    chrom_array = np.array(chroms, dtype="S")
 
     # row_infos = None
-    if 'row_infos' in array_data.attrs:
-        row_infos = array_data.attrs['row_infos']
+    if "row_infos" in array_data.attrs:
+        row_infos = array_data.attrs["row_infos"]
 
     # add the chromosome information
     if row_infos is not None:
-        f['resolutions'][str(curr_resolution)].attrs.create(
-            'row_infos', row_infos)
+        f["resolutions"][str(curr_resolution)].attrs.create("row_infos", row_infos)
 
-    f['resolutions'][str(curr_resolution)].create_group('chroms')
-    f['resolutions'][str(curr_resolution)].create_group('values')
-    f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('name', shape=(
-        len(chroms),), dtype=chrom_array.dtype, data=chrom_array, compression='gzip')
-    f['resolutions'][str(curr_resolution)]['chroms'].create_dataset(
-        'length', shape=(len(chroms),), data=lengths, compression='gzip')
+    f["resolutions"][str(curr_resolution)].create_group("chroms")
+    f["resolutions"][str(curr_resolution)].create_group("values")
+    f["resolutions"][str(curr_resolution)]["chroms"].create_dataset(
+        "name",
+        shape=(len(chroms),),
+        dtype=chrom_array.dtype,
+        data=chrom_array,
+        compression="gzip",
+    )
+    f["resolutions"][str(curr_resolution)]["chroms"].create_dataset(
+        "length", shape=(len(chroms),), data=lengths, compression="gzip"
+    )
 
-    f['chroms'].create_dataset('name', shape=(
-        len(chroms),), dtype=chrom_array.dtype, data=chrom_array, compression='gzip')
-    f['chroms'].create_dataset('length', shape=(
-        len(chroms),), data=lengths, compression='gzip')
+    f["chroms"].create_dataset(
+        "name",
+        shape=(len(chroms),),
+        dtype=chrom_array.dtype,
+        data=chrom_array,
+        compression="gzip",
+    )
+    f["chroms"].create_dataset(
+        "length", shape=(len(chroms),), data=lengths, compression="gzip"
+    )
 
     # add the data
     for chrom, length in zip(chroms, lengths):
@@ -206,21 +231,22 @@ def create_multivec_multires(array_data, chromsizes,
             continue
 
         # print("creating new dataset")
-        f['resolutions'][str(curr_resolution)]['values'].create_dataset(
-            str(chrom), array_data[chrom].shape, compression='gzip')
+        f["resolutions"][str(curr_resolution)]["values"].create_dataset(
+            str(chrom), array_data[chrom].shape, compression="gzip"
+        )
         standard_chunk_size = 1e5
         start = 0
-        chrom_data = f['resolutions'][str(curr_resolution)]['values'][chrom]
+        chrom_data = f["resolutions"][str(curr_resolution)]["values"][chrom]
 
         chunk_size = int(min(standard_chunk_size, len(chrom_data)))
         # print("array_data.shape", array_data[chrom].shape)
 
         while start < len(chrom_data):
             # see above section
-            chrom_data[start:start +
-                       chunk_size] = array_data[chrom][start:start + chunk_size]
-            start += int(min(standard_chunk_size,
-                             len(array_data[chrom]) - start))
+            chrom_data[start : start + chunk_size] = array_data[chrom][
+                start : start + chunk_size
+            ]
+            start += int(min(standard_chunk_size, len(array_data[chrom]) - start))
 
     # the maximum zoom level corresponds to the number of aggregations
     # that need to be performed so that the entire extent of
@@ -228,7 +254,8 @@ def create_multivec_multires(array_data, chromsizes,
     total_length = sum(lengths)
     # print("total_length:", total_length, "tile_size:", tile_size, "starting_resolution:", starting_resolution)
     max_zoom = math.ceil(
-        math.log(total_length / (tile_size * starting_resolution)) / math.log(2))
+        math.log(total_length / (tile_size * starting_resolution)) / math.log(2)
+    )
 
     # we're going to go through and create the data for the different
     # zoom levels by summing adjacent data points
@@ -238,22 +265,27 @@ def create_multivec_multires(array_data, chromsizes,
         # each subsequent zoom level will have half as much data
         # as the previous
         curr_resolution = prev_resolution * 2
-        f['resolutions'].create_group(str(curr_resolution))
+        f["resolutions"].create_group(str(curr_resolution))
 
         # add information about each of the rows
         if row_infos is not None:
-            f['resolutions'][str(curr_resolution)].attrs.create(
-                'row_infos', row_infos)
+            f["resolutions"][str(curr_resolution)].attrs.create("row_infos", row_infos)
 
-        f['resolutions'][str(curr_resolution)].create_group('chroms')
-        f['resolutions'][str(curr_resolution)].create_group('values')
-        f['resolutions'][str(curr_resolution)]['chroms'].create_dataset('name', shape=(
-            len(chroms),), dtype=chrom_array.dtype, data=chrom_array, compression='gzip')
-        f['resolutions'][str(curr_resolution)]['chroms'].create_dataset(
-            'length', shape=(len(chroms),), data=lengths, compression='gzip')
+        f["resolutions"][str(curr_resolution)].create_group("chroms")
+        f["resolutions"][str(curr_resolution)].create_group("values")
+        f["resolutions"][str(curr_resolution)]["chroms"].create_dataset(
+            "name",
+            shape=(len(chroms),),
+            dtype=chrom_array.dtype,
+            data=chrom_array,
+            compression="gzip",
+        )
+        f["resolutions"][str(curr_resolution)]["chroms"].create_dataset(
+            "length", shape=(len(chroms),), data=lengths, compression="gzip"
+        )
 
         for chrom, length in zip(chroms, lengths):
-            if chrom not in f['resolutions'][str(prev_resolution)]['values']:
+            if chrom not in f["resolutions"][str(prev_resolution)]["values"]:
                 continue
 
             # next_level_length = math.ceil(
@@ -261,8 +293,7 @@ def create_multivec_multires(array_data, chromsizes,
 
             start = 0
 
-            chrom_data = f['resolutions'][str(
-                prev_resolution)]['values'][chrom]
+            chrom_data = f["resolutions"][str(prev_resolution)]["values"][chrom]
 
             standard_chunk_size = 1e5
             chunk_size = int(min(standard_chunk_size, len(chrom_data)))
@@ -271,12 +302,14 @@ def create_multivec_multires(array_data, chromsizes,
             new_shape[0] = math.ceil(new_shape[0] / 2)
             new_shape = tuple(new_shape)
 
-            f['resolutions'][str(curr_resolution)]['values'].create_dataset(chrom,
-                                                                            new_shape, compression='gzip')
+            f["resolutions"][str(curr_resolution)]["values"].create_dataset(
+                chrom, new_shape, compression="gzip"
+            )
 
             while start < len(chrom_data):
-                old_data = f['resolutions'][str(
-                    prev_resolution)]['values'][chrom][start:start + chunk_size]
+                old_data = f["resolutions"][str(prev_resolution)]["values"][chrom][
+                    start : start + chunk_size
+                ]
                 # print("prev_resolution:", prev_resolution)
                 # print("old_data.shape", old_data.shape)
 
@@ -298,13 +331,14 @@ def create_multivec_multires(array_data, chromsizes,
                 # print("old_data.shape", old_data.shape)
                 new_data = agg(old_data)
 
-                '''
+                """
                 print("zoom_level:", max_zoom - 1 - i,
                       "resolution:", curr_resolution,
                       "new_data length", len(new_data))
-                '''
-                f['resolutions'][str(curr_resolution)]['values'][chrom][int(
-                    start / 2):int(start / 2 + chunk_size / 2)] = new_data
+                """
+                f["resolutions"][str(curr_resolution)]["values"][chrom][
+                    int(start / 2) : int(start / 2 + chunk_size / 2)
+                ] = new_data
                 start += int(min(standard_chunk_size, len(chrom_data) - start))
 
         prev_resolution = curr_resolution

@@ -149,6 +149,7 @@ def test_random_importance():
     # check to make sure that tiles in the higher zoom levels
     # are all present in lower zoom levels
     found = {}
+
     for rect in ctb.tiles(f.name, ["x.5.15"])[0][1]:
         found[rect["xStart"]] = False
 

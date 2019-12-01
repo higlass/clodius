@@ -7,4 +7,4 @@ def test_numpy_matrix():
     # print('grid:', grid)
 
     tile = hgnp.tiles(grid, 0, 0, 0)
-    assert(tile.shape == (256, 256))
+    assert tile.shape == (256, 256)

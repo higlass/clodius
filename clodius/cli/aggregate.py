@@ -196,6 +196,7 @@ def _bedpe(
     max_zoom=None,
 ):
     BED2DDB_VERSION = 1
+
     print("output_file:", output_file)
 
     if filepath == "-":
