@@ -45,6 +45,7 @@ def store_meta_data(
     tile_size,
     max_zoom,
     max_width,
+    version,
     header=[],
 ):
     cursor.execute(
@@ -59,13 +60,14 @@ def store_meta_data(
             tile_size REAL,
             max_zoom INT,
             max_width REAL,
-            header text
+            header text,
+            version text
         )
         """
     )
 
     cursor.execute(
-        "INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO tileset_info VALUES (?,?,?,?,?,?,?,?,?,?)",
         (
             zoom_step,
             max_length,
@@ -76,6 +78,7 @@ def store_meta_data(
             max_zoom,
             max_width,
             "\t".join(header),
+            version,
         ),
     )
 
@@ -192,7 +195,7 @@ def _bedpe(
     to2_col=6,
     max_zoom=None,
 ):
-
+    BED2DDB_VERSION = 1
     print("output_file:", output_file)
 
     if filepath == "-":
@@ -316,6 +319,7 @@ def _bedpe(
         tile_size=tile_size,
         max_zoom=max_zoom,
         max_width=tile_size * 2 ** max_zoom,
+        version=BED2DDB_VERSION,
     )
 
     # max_width = tile_size * 2 ** max_zoom
@@ -436,6 +440,8 @@ def _bedfile(
     chromsizes_filename,
     offset,
 ):
+    BEDDB_VERSION = 2
+
     if output_file is None:
         output_file = filepath + ".beddb"
     else:
@@ -588,6 +594,7 @@ def _bedfile(
         max_zoom=max_zoom,
         max_width=tile_size * 2 ** max_zoom,
         header=header,
+        version=BEDDB_VERSION,
     )
 
     # max_width = tile_size * 2 ** max_zoom
