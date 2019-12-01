@@ -16,7 +16,7 @@ def tileset_info(db_file):
     if "version" not in colnames:
         version = 1
     else:
-        version = row[colnames.indexof("version")]
+        version = int(row[colnames.index("version")])
 
     ts_info = {
         "zoom_step": row[0],
