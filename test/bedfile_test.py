@@ -145,6 +145,7 @@ def test_random_importance():
 
     tsinfo = ctb.tileset_info(f.name)
     assert "version" in tsinfo
+    assert len(tsinfo["header"]) > 0
 
     # check to make sure that tiles in the higher zoom levels
     # are all present in lower zoom levels
