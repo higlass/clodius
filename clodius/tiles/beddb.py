@@ -6,10 +6,6 @@ def tileset_info(db_file):
     cursor = conn.cursor()
 
     row = cursor.execute("SELECT * from tileset_info").fetchone()
-    if row is not None and len(row) == 9:
-        header = row[8]
-    else:
-        header = ""
 
     colnames = next(zip(*cursor.description))
 
@@ -17,6 +13,11 @@ def tileset_info(db_file):
         version = 1
     else:
         version = int(row[colnames.index("version")])
+
+    if "header" not in colnames:
+        header = ""
+    else:
+        header = row[colnames.index("header")]
 
     ts_info = {
         "zoom_step": row[0],

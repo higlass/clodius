@@ -1,3 +1,7 @@
+v0.13.1
+
+- Fix returned header values
+
 v0.13.0
 
 - Ran black on the entire code base
