@@ -580,7 +580,7 @@ def _bedfile(
     import sqlite3
 
     sqlite3.register_adapter(np.int64, lambda val: int(val))
-    print("output_file:", output_file)
+    print("output_file:", output_file, "header:", header)
     conn = sqlite3.connect(output_file)
 
     # store some meta data
