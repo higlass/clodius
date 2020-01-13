@@ -11,11 +11,7 @@ def get_tileset_info(tileset):
 
     res = db.execute("SELECT * FROM tileset_info").fetchone()
 
-    o = {
-        "tile_size": res[5],
-        "max_zoom": res[6],
-        "max_size": res[7],
-    }
+    o = {"tile_size": res[5], "max_zoom": res[6], "max_size": res[7]}
 
     try:
         o["width"] = res[8]
@@ -64,13 +60,9 @@ def get_tiles(filename, tile_ids, raw):
             image_blob = res[0]
 
             if generate_image:
-                tile_data = {
-                    "image": image_blob,
-                }
+                tile_data = {"image": image_blob}
             else:
-                tile_data = {
-                    "dense": base64.b64encode(image_blob).decode("latin-1"),
-                }
+                tile_data = {"dense": base64.b64encode(image_blob).decode("latin-1")}
 
             generate_tiles.append((tile_id, tile_data))
 

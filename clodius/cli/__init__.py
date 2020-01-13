@@ -7,9 +7,7 @@ import click
 click.core._verify_python3_env = lambda: None
 
 
-CONTEXT_SETTINGS = {
-    "help_option_names": ["-h", "--help"],
-}
+CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
