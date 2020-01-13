@@ -1260,8 +1260,8 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
     "--output-file",
     "-o",
     default=None,
-    help="The default output file name to use. If this isn't"
-    "specified, clodius will replace the current extension"
+    help="The default output file name to use. If this isn't "
+    "specified, clodius will replace the current extension "
     "with .hitile",
 )
 @click.option(
@@ -1274,22 +1274,22 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
 @click.option(
     "--chromosome",
     default=None,
-    help="Only extract values for a particular chromosome."
+    help="Only extract values for a particular chromosome. "
     "Use all chromosomes if not set.",
 )
 @click.option(
     "--tile-size",
     "-t",
     default=1024,
-    help="The number of data points in each tile."
-    "Used to determine the number of zoom levels"
+    help="The number of data points in each tile. "
+    "Used to determine the number of zoom levels "
     "to create.",
 )
 @click.option(
     "--chunk-size",
     "-c",
-    help="How many values to aggregate at once."
-    "Specified as a power of two multiplier of the tile"
+    help="How many values to aggregate at once. "
+    "Specified as a power of two multiplier of the tile "
     "size",
     default=14,
 )
@@ -1305,12 +1305,12 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
 )
 @click.option(
     "--to-pos-col",
-    help="The column number (1-based) which contains the ending" "position",
+    help="The column number (1-based) which contains the ending " "position",
     default=3,
 )
 @click.option(
     "--value-col",
-    help="The column number (1-based) which contains the actual value" "position",
+    help="The column number (1-based) which contains the actual value " "position",
     default=4,
 )
 @click.option(
@@ -1349,7 +1349,7 @@ def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
 @click.option(
     "--zoom-step",
     "-z",
-    help="The number of intermediate aggregation levels to" "omit",
+    help="The number of intermediate aggregation levels to " "omit",
     default=8,
 )
 def bedgraph(
@@ -1400,8 +1400,8 @@ def bedgraph(
     "--output-file",
     "-o",
     default=None,
-    help="The default output file name to use. If this isn't"
-    "specified, clodius will replace the current extension"
+    help="The default output file name to use. If this isn't "
+    "specified, clodius will replace the current extension "
     "with .multires.bed",
 )
 @click.option(
@@ -1412,9 +1412,9 @@ def bedgraph(
 )
 @click.option(
     "--importance-column",
-    help="The column (1-based) containing information about how important"
-    "that row is. If it's absent, then use the length of the region."
-    "If the value is equal to `random`, then a random value will be"
+    help="The column (1-based) containing information about how important "
+    "that row is. If it's absent, then use the length of the region. "
+    "If the value is equal to `random`, then a random value will be "
     "used for the importance (effectively leading to random sampling)",
 )
 @click.option(
@@ -1425,7 +1425,7 @@ def bedgraph(
 @click.option(
     "--chromosome",
     default=None,
-    help="Only extract values for a particular chromosome."
+    help="Only extract values for a particular chromosome. "
     "Use all chromosomes if not set.",
 )
 @click.option(
@@ -1486,8 +1486,8 @@ def bedfile(
     "--output-file",
     "-o",
     default=None,
-    help="The default output file name to use. If this isn't"
-    "specified, clodius will replace the current extension"
+    help="The default output file name to use. If this isn't "
+    "specified, clodius will replace the current extension "
     "with .bed2db",
 )
 @click.option(
@@ -1498,9 +1498,9 @@ def bedfile(
 )
 @click.option(
     "--importance-column",
-    help="The column (1-based) containing information about how important"
-    "that row is. If it's absent, then use the length of the region."
-    "If the value is equal to `random`, then a random value will be"
+    help="The column (1-based) containing information about how important "
+    "that row is. If it's absent, then use the length of the region. "
+    "If the value is equal to `random`, then a random value will be "
     "used for the importance (effectively leading to random sampling)",
     default="random",
 )
@@ -1524,7 +1524,7 @@ def bedfile(
 @click.option(
     "--chromosome",
     default=None,
-    help="Only extract values for a particular chromosome."
+    help="Only extract values for a particular chromosome. "
     "Use all chromosomes if not set.",
 )
 @click.option(
@@ -1593,15 +1593,15 @@ def bedpe(
     "-o",
     "--output-file",
     default=None,
-    help="The default output file name to use. If this isn't"
-    "specified, clodius will replace the current extension"
+    help="The default output file name to use. If this isn't "
+    "specified, clodius will replace the current extension "
     "with .gjdb",
 )
 @click.option(
     "-a",
     "--assembly",
     default=None,
-    help="The assembly that this data comes from. This parameter is"
+    help="The assembly that this data comes from. This parameter is "
     "unnecessary and/or overwritten if --chromsizes-filename is specified",
 )
 @click.option(
@@ -1662,8 +1662,8 @@ def multivec(
     "-o",
     "--output-file",
     default=None,
-    help="The default output file name to use. If this isn't"
-    "specified, clodius will replace the current extension"
+    help="The default output file name to use. If this isn't "
+    "specified, clodius will replace the current extension "
     "with .gjdb",
 )
 @click.option("-m", "--max-per-tile", default=20, type=int)
