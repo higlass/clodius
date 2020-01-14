@@ -65,7 +65,7 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx):
         rToX >= {} AND
         rFromX <= {}
     """.format(
-        zoom, tile_x_start_pos, tile_x_end_pos,
+        zoom, tile_x_start_pos, tile_x_end_pos
     )
 
     rows = c.execute(query).fetchall()

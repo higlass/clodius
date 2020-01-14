@@ -81,7 +81,7 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx=1, numy=1):
         rToX >= {} AND
         rFromX <= {} ORDER BY importance
     """.format(
-        zoom, tile_x_start_pos, tile_x_end_pos,
+        zoom, tile_x_start_pos, tile_x_end_pos
     )
 
     rows = c.execute(query).fetchall()
@@ -95,7 +95,7 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, numx=1, numy=1):
         rToY >= {} AND
         rFromY <= {} ORDER BY importance
     """.format(
-        zoom, tile_x_start_pos, tile_x_end_pos,
+        zoom, tile_x_start_pos, tile_x_end_pos
     )
 
     rows1 = c.execute(query1).fetchall()

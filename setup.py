@@ -19,9 +19,7 @@ def get_requirements(path):
     return [req for req in content.split("\n") if req != "" and not req.startswith("#")]
 
 
-setup_requires = [
-    "numpy",
-]
+setup_requires = ["numpy"]
 
 install_requires = get_requirements("requirements.txt")
 
