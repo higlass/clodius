@@ -209,7 +209,6 @@ def list_items(db_file, start, end, max_entries=None):
     """
     ts_info = tileset_info(db_file)
     version = ts_info["version"]
-    print("version:", version)
 
     conn = sqlite3.connect(db_file)
 
