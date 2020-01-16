@@ -12,4 +12,5 @@ wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/SRR1770413.sorted.short.
 wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/SRR1770413.different_index_filename.bai
 wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/SRR1770413.sorted.short.bam.bai
 wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/SRR1770413.mismatched_bai.bam
+wget -q -NP data/ https://s3.amazonaws.com/pkerp/public/geneAnnotationsExonUnions.1000.bed.v3.beddb
 wget -q -NP data/ https://s3.amazonaws.com/areynolds/public/masterlist_DHSs_733samples_WM20180608_all_mean_signal_colorsMax.bed.bb
