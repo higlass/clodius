@@ -125,9 +125,23 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
         zoom, tile_start_pos, tile_end_pos
     )
 
-    if version > 1:
+    if version == 2:
         query = """
         SELECT startPos, endPos, chrOffset, importance, fields, uid
+        FROM intervals,position_index
+        WHERE
+            intervals.id=position_index.id AND
+            rStartZoomLevel <= {} AND
+            rEndZoomLevel >= 0 AND
+            rEndPos >= {} AND
+            rStartPos <= {}
+        """.format(
+            zoom, tile_start_pos, tile_end_pos
+        )
+
+    if version == 3:
+        query = """
+        SELECT startPos, endPos, chrOffset, importance, fields, uid, name
         FROM intervals,position_index
         WHERE
             intervals.id=position_index.id AND
@@ -160,17 +174,19 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
             tile_x_end = (i + 1) * tile_width
 
             if x_start < tile_x_end and x_end >= tile_x_start:
-                new_rows += [
-                    # add the position offset to the returned values
-                    {
-                        "xStart": r[0],
-                        "xEnd": r[1],
-                        "chrOffset": r[2],
-                        "importance": r[3],
-                        "uid": uid,
-                        "fields": r[4].split("\t"),
-                    }
-                ]
+                to_add = {
+                    "xStart": r[0],
+                    "xEnd": r[1],
+                    "chrOffset": r[2],
+                    "importance": r[3],
+                    "uid": uid,
+                    "fields": r[4].split("\t"),
+                }
+
+                if version == 3:
+                    to_add["name"] = r[6]
+
+                new_rows += [to_add]
     conn.close()
 
     return new_rows
@@ -191,6 +207,8 @@ def list_items(db_file, start, end, max_entries=None):
     max_entries: int
         The maximum number of results to return
     """
+    ts_info = tileset_info(db_file)
+    version = ts_info["version"]
 
     conn = sqlite3.connect(db_file)
 
@@ -211,6 +229,33 @@ def list_items(db_file, start, end, max_entries=None):
         zoom, start, end
     )
 
+    if version == 2:
+        query = """
+        SELECT startPos, endPos, chrOffset, importance, fields, uid
+        FROM intervals,position_index
+        WHERE
+            intervals.id=position_index.id AND
+            rStartZoomLevel <= {} AND
+            rEndZoomLevel >= 0 AND
+            rEndPos >= {} AND
+            rStartPos <= {}
+        """.format(
+            zoom, start, end
+        )
+
+    if version == 3:
+        query = """
+        SELECT startPos, endPos, chrOffset, importance, fields, uid, name
+        FROM intervals,position_index
+        WHERE
+            intervals.id=position_index.id AND
+            rStartZoomLevel <= {} AND
+            rEndZoomLevel >= 0 AND
+            rEndPos >= {} AND
+            rStartPos <= {}
+        """.format(
+            zoom, start, end
+        )
     if max_entries is not None:
         query += " LIMIT {}".format(max_entries)
 
@@ -224,17 +269,19 @@ def list_items(db_file, start, end, max_entries=None):
         except AttributeError:
             uid = r[5]
 
-        new_rows += [
-            # add the position offset to the returned values
-            {
-                "xStart": r[0],
-                "xEnd": r[1],
-                "chrOffset": r[2],
-                "importance": r[3],
-                "uid": uid,
-                "fields": r[4].split("\t"),
-            }
-        ]
+        to_add = {
+            "xStart": r[0],
+            "xEnd": r[1],
+            "chrOffset": r[2],
+            "importance": r[3],
+            "uid": uid,
+            "fields": r[4].split("\t"),
+        }
+
+        if version == 3:
+            to_add["name"] = r[6]
+
+        new_rows += [to_add]
     conn.close()
 
     return new_rows

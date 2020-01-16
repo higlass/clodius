@@ -1,3 +1,7 @@
+v0.14.0
+
+- Add "name" field to `beddb` format
+
 v0.13.1
 
 - Fix returned header values
