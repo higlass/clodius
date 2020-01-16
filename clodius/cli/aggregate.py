@@ -441,7 +441,7 @@ def _bedfile(
     chromsizes_filename,
     offset,
 ):
-    BEDDB_VERSION = 2
+    BEDDB_VERSION = 3
 
     if output_file is None:
         output_file = filepath + ".beddb"
@@ -501,6 +501,10 @@ def _bedfile(
 
             start, stop = stop, start
 
+        if len(line) > 3:
+            bedline_name = line[3]
+        else:
+            bedline_name = ""
         # convert chromosome coordinates to genome coordinates
         genome_start = chrom_info.cum_chrom_lengths[chrom] + start + offset
         genome_end = chrom_info.cum_chrom_lengths[chrom] + stop + offset
@@ -510,6 +514,7 @@ def _bedfile(
             "startPos": genome_start,
             "endPos": genome_end,
             "uid": slugid.nice(),
+            "name": bedline_name,
             "chrOffset": pos_offset,
             "fields": "\t".join(line),
             "importance": importance,
@@ -623,6 +628,7 @@ def _bedfile(
             endPos int,
             chrOffset int,
             uid text,
+            name text,
             fields text
         )
         """
@@ -707,7 +713,7 @@ def _bedfile(
                 value = uid_to_entry[interval[-1]]
 
                 # one extra question mark for the primary key
-                exec_statement = "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?)"
+                exec_statement = "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?)"
 
                 c.execute(
                     exec_statement,
@@ -720,6 +726,7 @@ def _bedfile(
                         value["endPos"],
                         value["chrOffset"],
                         value["uid"],
+                        value["name"],
                         value["fields"],
                     ),
                 )
