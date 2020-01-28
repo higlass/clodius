@@ -1,3 +1,7 @@
+**Next**
+
+- Natural ordering of bam file chromosomes
+
 v0.14.0
 
 - Add "name" field to `beddb` format

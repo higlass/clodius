@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import pysam
+import clodius.tiles.bigwig as ctbw
 
 
 def abs2genomic(chromsizes, start_pos, end_pos):
@@ -43,6 +44,14 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
 
     references = np.array(samfile.references)
     lengths = np.array(samfile.lengths)
+
+    ref_lengths = dict(zip(references, lengths))
+
+    # we're going to create a natural ordering for references
+    # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
+    references = ctbw.natsorted(references)
+    lengths = [ref_lengths[r] for r in references]
+
     abs_chrom_offsets = np.r_[0, np.cumsum(lengths)]
 
     if chrom_order:
@@ -128,6 +137,12 @@ def tileset_info(filename):
     samfile = pysam.AlignmentFile(filename)
     total_length = sum(samfile.lengths)
 
+    references = np.array(samfile.references)
+    lengths = np.array(samfile.lengths)
+
+    ref_lengths = dict(zip(references, lengths))
+    lengths = [ref_lengths[r] for r in references]
+
     tile_size = 256
     max_zoom = math.ceil(math.log(total_length / tile_size) / math.log(2))
 
@@ -136,6 +151,7 @@ def tileset_info(filename):
         "max_pos": [total_length],
         "max_width": tile_size * 2 ** max_zoom,
         "tile_size": tile_size,
+        "chromsizes": list(zip(references, lengths)),
         "max_zoom": max_zoom,
     }
 
