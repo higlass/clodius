@@ -1,3 +1,7 @@
+v0.14.2
+
+- Make sure that chromsizes are serialized as ints
+
 v0.14.1
 
 - Natural ordering of bam file chromosomes
