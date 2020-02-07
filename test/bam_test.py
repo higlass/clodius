@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import json
+
 import clodius.tiles.bam as ctb
 import os.path as op
 import unittest
@@ -16,6 +18,13 @@ class MyTestCase(unittest.TestCase):
 
         tsinfo = ctb.tileset_info(filename_mismatched)
         assert "max_zoom" in tsinfo
+
+        assert "chromsizes" in tsinfo
+
+        # the following is in here to make sure no error
+        # gets thrown when dumping to JSON (e.g. from int64)
+        json_str = json.dumps(tsinfo)
+        assert len(json_str)
 
     def test_tiles(self):
         filename_matched = op.join("data", "SRR1770413.sorted.short.bam")
