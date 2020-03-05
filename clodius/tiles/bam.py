@@ -72,6 +72,9 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
     for cid, start, end in abs2genomic(lengths, start_pos, end_pos):
         chr_offset = int(abs_chrom_offsets[cid])
 
+        if cid >= len(references):
+            continue
+
         seq_name = f"{references[cid]}"
         reads = samfile.fetch(seq_name, start, end)
 
