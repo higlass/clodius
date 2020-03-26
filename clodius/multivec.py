@@ -59,7 +59,7 @@ def bedfile_to_multivec(
         chrom, start, end, vector = bedline_to_chrom_start_end_vector(lines, row_infos)
         # if vector[0] > 0 or vector[1] > 0:
         if len(vector) < len(lines) * num_rows:
-            logger.warn("Lines contain fewer columns than expected: %s", lines)
+            logger.warning("Lines contain fewer columns than expected: %s", lines)
             vector += [np.nan] * (len(lines) * num_rows - len(vector))
 
         if start % base_resolution != 0:

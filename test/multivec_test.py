@@ -192,3 +192,29 @@ def test_retain_lines():
         assert f["resolutions"]["1000"]["values"]["chr1"][10][0] == 0.0
         assert f["resolutions"]["1000"]["values"]["chr1"][10][1] == 1.0
         assert f["resolutions"]["1000"]["values"]["chr1"][10][2] == 0.0
+
+
+def test_chr_boundaries_states():
+
+    data_file = op.join(testdir, "sample_data", "chrm_boundaries_test.multires.mv5")
+    f = h5py.File(data_file, "r")
+
+    chromsizes = list(zip(f["chroms"]["name"], f["chroms"]["length"]))
+
+    # Tile that contains the boundary of chr1 and chr2 at highest resultion
+    tile1 = ctv.get_tile(f, chromsizes, 200, 248934400, 248985600, [256, 4])
+
+    assert (tile1[110][0] == 1.0 and tile1[110][1] == 0.0)
+    assert (tile1[111][0] == 0.0 and tile1[111][1] == 1.0)
+
+    # Tile that contains the boundary of chr2 and chr3 at highest resultion
+    tile2 = ctv.get_tile(f, chromsizes, 200, 491110400, 491161600, [256, 4])
+
+    assert (tile2[197][0] == 0.0 and tile2[197][1] == 1.0)
+    assert (tile2[198][0] == 1.0 and tile2[198][1] == 0.0)
+
+    # Tile that contains the boundary of chr5 and chr6 at highest resultion
+    tile3 = ctv.get_tile(f, chromsizes, 200, 1061171200, 1061222400, [256, 4])
+
+    assert (tile3[135][0] == 1.0 and tile3[135][1] == 0.0)
+    assert (tile3[136][0] == 0.0 and tile3[136][1] == 1.0)

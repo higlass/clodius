@@ -1,3 +1,5 @@
+- More accurate generation of multivec tiles that span across chromosomes
+
 v0.14.2
 
 - Make sure that chromsizes are serialized as ints
