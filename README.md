@@ -16,10 +16,12 @@ Install the clodius package:
 pip install clodius
 ```
 
-And use it aggregate a bedfile file:
+And use it aggregate a BED file:
 
 ```shell
-clodius aggregate bedfile ~/Downloads/E116-DNase.fc.signal.bedfile
+curl https://raw.githubusercontent.com/hms-dbmi/clodius/develop/test/sample_data/geneAnnotationsExonsUnions.short.bed \
+  > /tmp/sample.short.bed
+clodius aggregate bedfile /tmp/sample.short.bed
 ```
 
 The output files can then be displayed using the [higlass-docker container](https://github.com/hms-dbmi/higlass-docker). For more information about viewing these types of files take a look at the [higlass wiki](https://github.com/hms-dbmi/higlass/wiki#bigwig-files).
@@ -50,19 +52,4 @@ install `clodius` with develop mode:
 
 ```shell
 pip install -e .
-```
-
-## Testing
-
-The unit tests for clodius can be run using [pytest](https://docs.pytest.org/en/latest/):
-
-```shell
-pytest
-```
-
-Individual unit tests can be specified by indicating the file and function
-they are defined in:
-
-```shell
-pytest test/cli_test.py:test_clodius_aggregate_bedgraph
 ```
