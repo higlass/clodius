@@ -1,6 +1,7 @@
 v0.14.3
 
 - Small bug when retrieving tile 0.0 from bam files
+- More accurate generation of multivec tiles that span across chromosomes
 
 v0.14.2
 
