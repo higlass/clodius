@@ -16,7 +16,7 @@ Install the clodius package:
 pip install clodius
 ```
 
-And use it aggregate a BED file:
+And use it aggregate a bigWig file:
 
 ```shell
 curl https://raw.githubusercontent.com/hms-dbmi/clodius/develop/test/sample_data/geneAnnotationsExonsUnions.short.bed \
@@ -52,4 +52,20 @@ install `clodius` with develop mode:
 
 ```shell
 pip install -e .
+```
+
+## Testing
+
+
+The unit tests for clodius can be run using [pytest](https://docs.pytest.org/en/latest/):
+
+```shell
+pytest
+```
+
+Individual unit tests can be specified by indicating the file and function
+they are defined in:
+
+```shell
+pytest test/cli_test.py:test_clodius_aggregate_bedgraph
 ```
