@@ -24,7 +24,7 @@ curl https://raw.githubusercontent.com/hms-dbmi/clodius/develop/test/sample_data
 clodius aggregate bedfile /tmp/sample.short.bed
 ```
 
-The output files can then be displayed using [higlass-manage](https://github.com/higlass/higlass-manage). For more information about viewing these types of files take a look at the [higlass docs](https://docs.higlass.io/track_types.html).
+The output files can then be displayed using [higlass-manage](https://github.com/higlass/higlass-manage). For more information about viewing these types of files take a look at the [higlass docs](https://docs.higlass.io).
 
 [More examples](COMMANDS.md) are available.
 
