@@ -1,3 +1,80 @@
+v0.14.3
+
+- Small bug when retrieving tile 0.0 from bam files
+- More accurate generation of multivec tiles that span across chromosomes
+
+v0.14.2
+
+- Make sure that chromsizes are serialized as ints
+
+v0.14.1
+
+- Natural ordering of bam file chromosomes
+
+v0.14.0
+
+- Add "name" field to `beddb` format
+
+v0.13.1
+
+- Fix returned header values
+
+v0.13.0
+
+- Ran black on the entire code base
+- Introduced versions to beddb and bed2ddb files
+- Added zoom level to the r-tree index
+
+v0.12.0
+
+- Added tile queries for bigBed files, using score data (if available) to threshold those elements returned, based on a specified or default maximum.
+
+v0.11.5
+
+- Add tiles function and test for multivec. It can be used in higlass-python and higlass server.
+
+v0.11.4
+
+- Modified bedfile_to_multivec conversion to retain lines in which the end coordinate is not a multiple of the resolution.
+  It adds an extra bin for the remainder. It also displays an error when start coordinate is not multiple of resolution
+- Fix bug to handle headers.
+- Modified create_multivec_multires for states files to show only the contents of the first column of the row_infos file as the name of the state.
+
+v0.11.3
+
+- Maintenance: Switched from nose to pytest and added coverage reporting.
+- Use columnar format for BAM reads return values
+
+v0.11.2
+
+- Added `max_tile_width` parameter to ct.bam.tiles() so that users can set a
+  limit on how large of a region data is returned for
+
+v0.11.0
+
+- Added bamfile support
+
+v0.10.12
+
+- Simplified density tiles generator.
+- Fix error with `npvector` tileset_info.
+- Add `__version__`.
+
+v0.10.11
+
+- Calculate np.nan on the fly if not available for npvector tracks
+
+v0.10.10
+
+- Fix error in bedfile_to_multivec conversion when encountering value-less files
+- Update the bedpe aggregator to fix the error in using a chromsizes file
+- Make tsv_to_mrmatrix more flexible and add it to the exported scripts.
+- Display more meaningful error messages when encountering unknown chromosomes or assemblies
+- Removed redundant multivec function
+- Removed obsolete bigwig function
+- Make tsv_to_mrmatrix more flexible and add it to the exported
+- Detect non-symmetric square coolers using the storage-mode metadata. Support for the symmetric property is retained for the legacy mcool format.
+
 v0.10.7
 
 - Changed bins_per_dimension in npvector.tileset_info to match the value in

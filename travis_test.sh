@@ -16,5 +16,5 @@ start download
 end download
 
 start test
-nosetests test
+pytest
 end test

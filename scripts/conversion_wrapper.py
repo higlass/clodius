@@ -2,17 +2,22 @@ from __future__ import print_function
 
 import argparse
 import clodius.cli.aggregate as cca
-import os
 import os.path as op
 import sys
 
+
 def set_postmortem_hook():
-    import sys, traceback, ipdb
+    import sys
+    import traceback
+    import ipdb
+
     def _excepthook(exc_type, value, tb):
         traceback.print_exception(exc_type, value, tb)
         print()
         ipdb.pm()
+
     sys.excepthook = _excepthook
+
 
 set_postmortem_hook()
 
@@ -20,29 +25,45 @@ set_postmortem_hook()
 # the appropriate aggregation modules will be imported in their time and
 # place
 
+
 def main():
 
     parser = argparse.ArgumentParser(
-        description="Wrapper around conversion tools available for higlass")
+        description="Wrapper around conversion tools available for higlass"
+    )
+    parser.add_argument("-i", "--input-file", help="Path to input file", required=True)
     parser.add_argument(
-        '-i', '--input-file', help="Path to input file", required=True)
+        "-o", "--output-file", help="Path of output file", required=False
+    )
     parser.add_argument(
-        '-o', '--output-file', help="Path of output file", required=False)
+        "-d",
+        "--filetype",
+        choices=["bigwig", "cooler", "gene_annotation", "hitile"],
+        help="Data Type of input file.",
+        required=True,
+    )
     parser.add_argument(
-        '-d', '--filetype', choices=[
-            "bigwig", "cooler", "gene_annotation", "hitile"],
-        help='Data Type of input file.', required=True)
+        "-a",
+        "--assembly",
+        choices=["hg19", "mm9"],
+        help="Genome assembly to use",
+        required=False,
+        default="hg19",
+    )
     parser.add_argument(
-        '-a', '--assembly', choices=["hg19", "mm9"],
-        help='Genome assembly to use', required=False, default="hg19")
+        "-n",
+        "--n-cpus",
+        help="Number of cpus to use for converting cooler files",
+        required=False,
+        default="1",
+    )
     parser.add_argument(
-        '-n', '--n-cpus',
-        help='Number of cpus to use for converting cooler files',
-        required=False, default="1")
-    parser.add_argument(
-        '-c', '--chunk-size',
-        help='Number of records each worker handles at a time',
-        required=False, default=str(int(10e6)))
+        "-c",
+        "--chunk-size",
+        help="Number of records each worker handles at a time",
+        required=False,
+        default=str(int(10e6)),
+    )
 
     args = vars(parser.parse_args())
 
@@ -52,7 +73,6 @@ def main():
     output_file = args["output_file"]
     n_cpus = args["n_cpus"]
     chunk_size = args["chunk_size"]
-
 
     if output_file is None:
         output_file = format_output_filename(input_file, filetype)
@@ -66,13 +86,23 @@ def main():
 
     if filetype == "cooler":
         from cooler.contrib import recursive_agg_onefile
-        sys.argv = ["fake.py", input_file, "-o", output_file,
-                    "-c", chunk_size, "-n", n_cpus]
+
+        sys.argv = [
+            "fake.py",
+            input_file,
+            "-o",
+            output_file,
+            "-c",
+            chunk_size,
+            "-n",
+            n_cpus,
+        ]
         recursive_agg_onefile.main()
 
     if filetype == "gene_annotation":
         sys.argv = ["fake.py", input_file, output_file, "-a", assembly]
         import tileBedFileByImportance
+
         tileBedFileByImportance.main()
 
 
@@ -83,18 +113,17 @@ def format_output_filename(input_file, filetype):
     :param input_file: String
     :param filetype: String
     """
-
-    input_file_basename = os.path.basename(input_file)
-
     file_extentions = {
-        "gene_annotation" : "bed",
-        "hitile" : "hitile",
-        "cooler" : "cool",
-        "bigwig": "bw"
+        "gene_annotation": "bed",
+        "hitile": "hitile",
+        "cooler": "cool",
+        "bigwig": "bw",
     }
 
-    return "{}.multires.{}".format(op.splitext(input_file)[0], file_extentions[filetype])
+    return "{}.multires.{}".format(
+        op.splitext(input_file)[0], file_extentions[filetype]
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

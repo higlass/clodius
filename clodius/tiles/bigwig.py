@@ -14,14 +14,15 @@ TILE_SIZE = 1024
 logger = logging.getLogger(__name__)
 
 aggregation_modes = {}
-aggregation_modes['mean'] = {'name': 'Mean', 'value': 'mean'}
-aggregation_modes['min'] = {'name': 'Min', 'value': 'min'}
-aggregation_modes['max'] = {'name': 'Max', 'value': 'max'}
-aggregation_modes['std'] = {'name': 'Standard Deviation', 'value': 'std'}
+aggregation_modes["mean"] = {"name": "Mean", "value": "mean"}
+aggregation_modes["min"] = {"name": "Min", "value": "min"}
+aggregation_modes["max"] = {"name": "Max", "value": "max"}
+aggregation_modes["std"] = {"name": "Standard Deviation", "value": "std"}
 
 range_modes = {}
-range_modes['minMax'] = {'name': 'Min-Max', 'value': 'minMax'}
-range_modes['whisker'] = {'name': 'Whisker', 'value': 'whisker'}
+range_modes["minMax"] = {"name": "Min-Max", "value": "minMax"}
+range_modes["whisker"] = {"name": "Whisker", "value": "whisker"}
+
 
 def get_quadtree_depth(chromsizes):
     tile_size_bp = TILE_SIZE
@@ -30,43 +31,37 @@ def get_quadtree_depth(chromsizes):
 
 
 def get_zoom_resolutions(chromsizes):
-    return [2**x for x in range(get_quadtree_depth(chromsizes) + 1)][::-1]
+    return [2 ** x for x in range(get_quadtree_depth(chromsizes) + 1)][::-1]
 
 
-def natsort_key(s, _NS_REGEX=re.compile(r'(\d+)', re.U)):
-    return tuple(
-        [int(x) if x.isdigit() else x for x in _NS_REGEX.split(s) if x]
-    )
-
+def natsort_key(s, _NS_REGEX=re.compile(r"(\d+)", re.U)):
+    return tuple([int(x) if x.isdigit() else x for x in _NS_REGEX.split(s) if x])
 
 
 def natcmp(x, y):
-    if x.find('_') >= 0:
-        x_parts = x.split('_')
-        if y.find('_') >= 0:
+    if x.find("_") >= 0:
+        x_parts = x.split("_")
+        if y.find("_") >= 0:
             # chr_1 vs chr_2
-            y_parts = y.split('_')
+            y_parts = y.split("_")
 
             return natcmp(x_parts[1], y_parts[1])
         else:
             # chr_1 vs chr1
             # chr1 comes first
             return 1
-    if y.find('_') >= 0:
+    if y.find("_") >= 0:
         # chr1 vs chr_1
         # y comes second
         return -1
 
-    _NS_REGEX = re.compile(r'(\d+)', re.U)
-    x_parts = tuple(
-        [int(a) if a.isdigit() else a for a in _NS_REGEX.split(x) if a]
-    )
-    y_parts = tuple(
-        [int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a]
-    )
+    _NS_REGEX = re.compile(r"(\d+)", re.U)
+    x_parts = tuple([int(a) if a.isdigit() else a for a in _NS_REGEX.split(x) if a])
+    y_parts = tuple([int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a])
 
-
-    for key in ['m', 'y', 'x']: # order of these parameters is purposefully reverse how they should be ordered
+    # order of these parameters is purposefully reverse how they should be
+    # ordered
+    for key in ["m", "y", "x"]:
         if key in y.lower():
             return -1
         if key in x.lower():
@@ -102,9 +97,9 @@ def get_chromsizes(bwpath):
 
 def abs2genomic(chromsizes, start_pos, end_pos):
     abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes.values)]
-    cid_lo, cid_hi = np.searchsorted(abs_chrom_offsets,
-                                     [start_pos, end_pos],
-                                     side='right') - 1
+    cid_lo, cid_hi = (
+        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
+    )
     rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
     rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
     start = rel_pos_lo
@@ -115,7 +110,7 @@ def abs2genomic(chromsizes, start_pos, end_pos):
 
 
 def tileset_info(bwpath, chromsizes=None):
-    '''
+    """
     Get the tileset info for a bigWig file
 
     Parameters
@@ -134,7 +129,7 @@ def tileset_info(bwpath, chromsizes=None):
                     'tile_size': 1024,
                     'max_zoom': 7
                     }
-    '''
+    """
     TILE_SIZE = 1024
 
     if chromsizes is None:
@@ -146,42 +141,31 @@ def tileset_info(bwpath, chromsizes=None):
     else:
         chromsizes_list = chromsizes
 
-    min_tile_cover = np.ceil(
-        sum([int(c[1]) for c in chromsizes_list]) / TILE_SIZE
-    )
+    min_tile_cover = np.ceil(sum([int(c[1]) for c in chromsizes_list]) / TILE_SIZE)
     max_zoom = int(np.ceil(np.log2(min_tile_cover)))
 
     tileset_info = {
-        'min_pos': [0],
-        'max_pos': [TILE_SIZE * 2 ** max_zoom],
-        'max_width': TILE_SIZE * 2 ** max_zoom,
-        'tile_size': TILE_SIZE,
-        'max_zoom': max_zoom,
-        'chromsizes': chromsizes_list,
-        'aggregation_modes': aggregation_modes,
-        'range_modes': range_modes
+        "min_pos": [0],
+        "max_pos": [TILE_SIZE * 2 ** max_zoom],
+        "max_width": TILE_SIZE * 2 ** max_zoom,
+        "tile_size": TILE_SIZE,
+        "max_zoom": max_zoom,
+        "chromsizes": chromsizes_list,
+        "aggregation_modes": aggregation_modes,
+        "range_modes": range_modes,
     }
     return tileset_info
 
 
 def fetch_data(a):
-    (
-        bwpath,
-        binsize,
-        chromsizes,
-        aggregation_mode,
-        range_mode,
-        cid,
-        start,
-        end
-    ) = a
+    (bwpath, binsize, chromsizes, aggregation_mode, range_mode, cid, start, end) = a
     n_bins = int(np.ceil((end - start) / binsize))
     n_dim = 1
 
-    if range_mode == 'minMax':
+    if range_mode == "minMax":
         n_dim = 2
 
-    if range_mode == 'whisker':
+    if range_mode == "whisker":
         n_dim = 4
 
     x = np.zeros((n_bins, n_dim)) if n_dim > 1 else np.zeros(n_bins)
@@ -193,15 +177,15 @@ def fetch_data(a):
         args = [bwpath, chrom, start, end]
         kwargs = {"bins": n_bins, "missing": np.nan}
 
-        if range_mode == 'minMax':
-            x[:, 0] = bbi.fetch(*args, **dict(kwargs, summary='min'))
-            x[:, 1] = bbi.fetch(*args, **dict(kwargs, summary='max'))
+        if range_mode == "minMax":
+            x[:, 0] = bbi.fetch(*args, **dict(kwargs, summary="min"))
+            x[:, 1] = bbi.fetch(*args, **dict(kwargs, summary="max"))
 
-        elif range_mode == 'whisker':
-            x[:, 0] = bbi.fetch(*args, **dict(kwargs, summary='min'))
-            x[:, 1] = bbi.fetch(*args, **dict(kwargs, summary='max'))
-            x[:, 2] = bbi.fetch(*args, **dict(kwargs, summary='mean'))
-            x[:, 3] = bbi.fetch(*args, **dict(kwargs, summary='std'))
+        elif range_mode == "whisker":
+            x[:, 0] = bbi.fetch(*args, **dict(kwargs, summary="min"))
+            x[:, 1] = bbi.fetch(*args, **dict(kwargs, summary="max"))
+            x[:, 2] = bbi.fetch(*args, **dict(kwargs, summary="mean"))
+            x[:, 3] = bbi.fetch(*args, **dict(kwargs, summary="std"))
 
         else:
             x[:] = bbi.fetch(*args, **dict(kwargs, summary=aggregation_mode))
@@ -227,10 +211,9 @@ def get_bigwig_tile(
     start_pos,
     end_pos,
     chromsizes=None,
-    aggregation_mode='mean',
-    range_mode=None
-    ):
-
+    aggregation_mode="mean",
+    range_mode=None,
+):
     if chromsizes is None:
         chromsizes = get_chromsizes(bwpath)
 
@@ -241,24 +224,22 @@ def get_bigwig_tile(
     with ThreadPoolExecutor(max_workers=16) as e:
         arrays = list(
             e.map(
-                fetch_data, [
-                    tuple([
-                        bwpath,
-                        binsize,
-                        chromsizes,
-                        aggregation_mode,
-                        range_mode
-                    ] + list(c)) for c in cids_starts_ends
-                ]
+                fetch_data,
+                [
+                    tuple(
+                        [bwpath, binsize, chromsizes, aggregation_mode, range_mode]
+                        + list(c)
+                    )
+                    for c in cids_starts_ends
+                ],
             )
         )
-
 
     return np.concatenate(arrays)
 
 
 def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
-    '''
+    """
     Generate tiles from a bigwig file.
 
     Parameters
@@ -280,22 +261,20 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
     -------
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
-    '''
+    """
     TILE_SIZE = 1024
     generated_tiles = []
     for tile_id in tile_ids:
-        tile_option_parts = tile_id.split('|')[1:]
-        tile_no_options = tile_id.split('|')[0]
-        tile_id_parts = tile_no_options.split('.')
+        tile_option_parts = tile_id.split("|")[1:]
+        tile_no_options = tile_id.split("|")[0]
+        tile_id_parts = tile_no_options.split(".")
         tile_position = list(map(int, tile_id_parts[1:3]))
-        return_value = tile_id_parts[3] if len(tile_id_parts) > 3 else 'mean'
+        return_value = tile_id_parts[3] if len(tile_id_parts) > 3 else "mean"
 
-        aggregation_mode = (
-            return_value if return_value in aggregation_modes else 'mean'
-        )
+        aggregation_mode = return_value if return_value in aggregation_modes else "mean"
         range_mode = return_value if return_value in range_modes else None
 
-        tile_options = dict([o.split(':') for o in tile_option_parts])
+        tile_options = dict([o.split(":") for o in tile_option_parts])
 
         if chromsizes:
             chromnames = [c[0] for c in chromsizes]
@@ -303,8 +282,8 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
             chromsizes_to_use = pd.Series(chromlengths, index=chromnames)
         else:
             chromsizes_id = None
-            if 'cos' in tile_options:
-                chromsizes_id = tile_options['cos']
+            if "cos" in tile_options:
+                chromsizes_id = tile_options["cos"]
             if chromsizes_id in chromsizes_map:
                 chromsizes_to_use = chromsizes_map[chromsizes_id]
             else:
@@ -339,7 +318,7 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
 
 
 def chromsizes(filename):
-    '''
+    """
     Get a list of chromosome sizes from this [presumably] bigwig
     file.
 
@@ -352,7 +331,7 @@ def chromsizes(filename):
     -------
     chromsizes: [(name:string, size:int), ...]
         An ordered list of chromosome names and sizes
-    '''
+    """
     try:
         chrom_series = get_chromsizes(filename)
         data = []
@@ -361,6 +340,4 @@ def chromsizes(filename):
         return data
     except Exception as ex:
         logger.error(ex)
-        raise Exception(
-            'Error loading chromsizes from bigwig file: {}'.format(ex)
-        )
+        raise Exception("Error loading chromsizes from bigwig file: {}".format(ex))
