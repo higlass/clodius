@@ -176,6 +176,7 @@ def _multivec(
         row_infos=row_infos,
     )
 
+
 def _bedpe(
     filepath,
     output_file=None,
@@ -193,6 +194,8 @@ def _bedpe(
     from2_col=5,
     to2_col=6,
     max_zoom=None,
+    sqlite_cache_size=500,  # 500 MB
+    sqlite_batch_size=100000,
 ):
     BED2DDB_VERSION = 1
 
@@ -290,7 +293,9 @@ def _bedpe(
     entries += [line_to_dict(line) for line in [line.strip() for line in f] if line]
 
     if chromosome is not None:
-        entries = [d for d in entries if d["chrom1"] == chromosome or d["chrom2"] == chromosome]
+        entries = [
+            d for d in entries if d["chrom1"] == chromosome or d["chrom2"] == chromosome
+        ]
 
     # We need chromosome information as well as the assembly size to properly
     # tile this data
@@ -319,9 +324,9 @@ def _bedpe(
     # uid_to_entry = {}
 
     c = conn.cursor()
-    c.execute('PRAGMA synchronous = OFF;');
-    c.execute('PRAGMA journal_mode = OFF;');
-    c.execute('PRAGMA cache_size = 2000000;'); # 2 GB
+    c.execute("PRAGMA synchronous = OFF;")
+    c.execute("PRAGMA journal_mode = OFF;")
+    c.execute(f"PRAGMA cache_size = {int(sqlite_cache_size * 1000)};")
 
     c.execute(
         """
@@ -357,21 +362,16 @@ def _bedpe(
     tile_counts = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
     entries = sorted(entries, key=lambda x: -x["importance"])
 
-    print('@@@@@@@@@@@@@@@@@@@ START')
-
     interval_inserts = []
     position_index_inserts = []
 
-    batch_size = 100000
     def batch_insert(conn, c, interval_inserts, position_index_inserts):
         with transaction(conn):
             c.executemany(
-                "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?,?)",
-                interval_inserts
+                "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?,?)", interval_inserts
             )
             c.executemany(
-                "INSERT INTO position_index VALUES (?,?,?,?,?)",
-                position_index_inserts
+                "INSERT INTO position_index VALUES (?,?,?,?,?)", position_index_inserts
             )
 
         interval_inserts.clear()
@@ -382,7 +382,9 @@ def _bedpe(
 
         while curr_zoom <= max_zoom:
             tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
-            tile_from = list(map(lambda x: int(x / tile_width), [d["xs"][0], d["ys"][0]]))
+            tile_from = list(
+                map(lambda x: int(x / tile_width), [d["xs"][0], d["ys"][0]])
+            )
             tile_to = list(map(lambda x: int(x / tile_width), [d["xs"][1], d["ys"][1]]))
 
             empty_tiles = True
@@ -422,13 +424,7 @@ def _bedpe(
                 )
 
                 position_index_inserts.append(
-                    (
-                        counter,
-                        d["xs"][0],
-                        d["xs"][1],
-                        d["ys"][0],
-                        d["ys"][1],
-                    )
+                    (counter, d["xs"][0], d["xs"][1], d["ys"][0], d["ys"][1])
                 )
 
                 counter += 1
@@ -436,8 +432,7 @@ def _bedpe(
 
             curr_zoom += 1
 
-        if len(interval_inserts) >= batch_size:
-            print('Batch Insert', counter, entry_num)
+        if len(interval_inserts) >= sqlite_batch_size:
             batch_insert(conn, c, interval_inserts, position_index_inserts)
 
     c.close()
@@ -1616,6 +1611,22 @@ def bedfile(
     default=6,
     show_default=True,
 )
+@click.option(
+    "--sqlite-batch-size",
+    help="The number of entries inserted into SQLite at once. The higher "
+    + "the faster the aggregation gets but more memory will be required",
+    type=int,
+    default=100000,
+    show_default=True,
+)
+@click.option(
+    "--sqlite-cache-size",
+    help="The SQLite cache size in MB. The higher "
+    + "the faster the aggregation gets but more memory will be required",
+    type=int,
+    default=500,
+    show_default=True,
+)
 def bedpe(
     filepath,
     output_file,
@@ -1632,6 +1643,8 @@ def bedpe(
     chr2_col,
     from2_col,
     to2_col,
+    sqlite_batch_size,
+    sqlite_cache_size,
 ):
     """Aggregate bedpe files"""
     _bedpe(
@@ -1650,6 +1663,8 @@ def bedpe(
         chr2_col=chr2_col,
         from2_col=from2_col,
         to2_col=to2_col,
+        sqlite_batch_size=sqlite_batch_size,
+        sqlite_cache_size=sqlite_cache_size,
     )
 
 
