@@ -160,8 +160,8 @@ def _multivec(
 
     print("agg:", agg)
     if row_infos_filename is not None:
-        with open(row_infos_filename, "r") as fr:
-            row_infos = [l.strip().encode("utf8") for l in fr]
+        with open(row_infos_filename, "r") as f:
+            row_infos = [line.strip().encode("utf8") for line in f]
     else:
         row_infos = None
     print("row_infos:", row_infos)

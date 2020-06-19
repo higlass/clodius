@@ -154,7 +154,7 @@ def tileset_info(filename):
         "max_pos": [total_length],
         "max_width": tile_size * 2 ** max_zoom,
         "tile_size": tile_size,
-        "chromsizes": list(zip(references, [int(l) for l in lengths])),
+        "chromsizes": list(zip(references, map(int, lengths)),
         "max_zoom": max_zoom,
     }
 
