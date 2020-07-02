@@ -19,7 +19,6 @@ import signal
 import slugid
 import sys
 import time
-import itertools
 import traceback
 
 from time import gmtime, strftime

@@ -18,7 +18,7 @@ def test_bedfile_to_multivec():
     with tempfile.TemporaryDirectory() as tmp_dir:
         out_file = op.join(tmp_dir, "out.multivec")
 
-        _ = runner.invoke(
+        runner.invoke(
             ccc.bedfile_to_multivec,
             [
                 input_file,
