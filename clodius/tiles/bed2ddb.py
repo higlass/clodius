@@ -1,6 +1,5 @@
 import collections as col
 import sqlite3
-import time
 
 from .utils import tiles_wrapper_2d
 
