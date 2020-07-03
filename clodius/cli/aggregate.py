@@ -201,7 +201,7 @@ def _bedpe(
     BED2DDB_VERSION = 1
 
     if verbose > 0:
-        print(f'BEDPEDB Version {BED2DDB_VERSION}')
+        print(f"BEDPEDB Version {BED2DDB_VERSION}")
 
     if filepath == "-":
         f = sys.stdin
@@ -302,7 +302,7 @@ def _bedpe(
         ]
 
     if verbose > 0:
-        print(f'Found {len(entries)} entries')
+        print(f"Found {len(entries)} entries")
 
     # We need chromosome information as well as the assembly size to properly
     # tile this data
@@ -375,7 +375,7 @@ def _bedpe(
 
     def batch_insert(conn, c, interval_inserts, position_index_inserts):
         if verbose > 0:
-            print(f'Insert batch ({counter})')
+            print(f"Insert batch ({counter})")
 
         with transaction(conn):
             c.executemany(
@@ -1640,7 +1640,7 @@ def bedfile(
     default=500,
     show_default=True,
 )
-@click.option('-v', '--verbose', count=True, help="Increase log statements")
+@click.option("-v", "--verbose", count=True, help="Increase log statements")
 def bedpe(
     filepath,
     output_file,
