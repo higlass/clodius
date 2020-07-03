@@ -18,7 +18,7 @@ def transaction(conn):
         Nothing
     """
     # We must issue a "BEGIN" explicitly when running in auto-commit mode.
-    conn.execute('BEGIN')
+    conn.execute("BEGIN")
     try:
         # Yield control back to the caller.
         yield
