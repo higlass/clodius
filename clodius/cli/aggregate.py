@@ -23,7 +23,7 @@ import time
 import gzip
 import json
 
-from .utils import get_tile_pos_from_lng_lat
+from .utils import get_tile_pos_from_lng_lat, transaction
 
 
 @cli.group()
@@ -160,8 +160,8 @@ def _multivec(
 
     print("agg:", agg)
     if row_infos_filename is not None:
-        with open(row_infos_filename, "r") as fr:
-            row_infos = [l.strip().encode("utf8") for l in fr]
+        with open(row_infos_filename, "r") as f:
+            row_infos = [line.strip().encode("utf8") for line in f]
     else:
         row_infos = None
     print("row_infos:", row_infos)
@@ -179,12 +179,12 @@ def _multivec(
 
 def _bedpe(
     filepath,
-    output_file,
-    assembly,
-    importance_column,
-    has_header,
-    max_per_tile,
-    tile_size,
+    output_file=None,
+    assembly="hg19",
+    importance_column="random",
+    has_header=False,
+    max_per_tile=100,
+    tile_size=1024,
     chromosome=None,
     chromsizes_filename=None,
     chr1_col=1,
@@ -194,28 +194,32 @@ def _bedpe(
     from2_col=5,
     to2_col=6,
     max_zoom=None,
+    sqlite_cache_size=500,  # 500 MB
+    sqlite_batch_size=100000,
+    verbose=0,
 ):
     BED2DDB_VERSION = 1
 
-    print("output_file:", output_file)
+    if verbose > 0:
+        print(f"BEDPEDB Version {BED2DDB_VERSION}")
 
     if filepath == "-":
         f = sys.stdin
     elif filepath.endswith(".gz"):
         f = gzip.open(filepath, "rt")
     else:
-        print("plain")
         f = open(filepath, "r")
 
     if output_file is None:
-        output_file = filepath + ".multires.db"
-    else:
-        output_file = output_file
+        output_file = filepath
+        if filepath.endswith(".gz"):
+            output_file = os.path.splitext(output_file)[0]
+        output_file = os.path.splitext(output_file)[0] + ".bedpedb"
 
     if op.exists(output_file):
         os.remove(output_file)
 
-    (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(
+    chrom_info, chrom_names, chrom_sizes = cch.load_chromsizes(
         chromsizes_filename, assembly
     )
 
@@ -223,17 +227,18 @@ def _bedpe(
         parts = line.split()
         d = {}
         try:
+            chrom1 = parts[chr1_col - 1]
+            chrom2 = parts[chr2_col - 1]
+            chrom1_offset = chrom_info.cum_chrom_lengths[chrom1]
+            chrom2_offset = chrom_info.cum_chrom_lengths[chrom2]
+
             d["xs"] = [
-                chrom_info.cum_chrom_lengths[parts[chr1_col - 1]]
-                + int(parts[from1_col - 1]),
-                chrom_info.cum_chrom_lengths[parts[chr1_col - 1]]
-                + int(parts[to1_col - 1]),
+                chrom1_offset + int(parts[from1_col - 1]),
+                chrom1_offset + int(parts[to1_col - 1]),
             ]
             d["ys"] = [
-                chrom_info.cum_chrom_lengths[parts[chr2_col - 1]]
-                + int(parts[from2_col - 1]),
-                chrom_info.cum_chrom_lengths[parts[chr2_col - 1]]
-                + int(parts[to2_col - 1]),
+                chrom2_offset + int(parts[from2_col - 1]),
+                chrom2_offset + int(parts[to2_col - 1]),
             ]
         except KeyError:
             error_str = (
@@ -250,6 +255,8 @@ def _bedpe(
         d["uid"] = slugid.nice()
 
         d["chrOffset"] = d["xs"][0] - int(parts[from1_col - 1])
+        d["chrom1"] = str(chrom1)
+        d["chrom2"] = str(chrom2)
 
         if importance_column is None:
             d["importance"] = max(d["xs"][1] - d["xs"][0], d["ys"][1] - d["ys"][0])
@@ -272,12 +279,6 @@ def _bedpe(
         try:
             parts = first_line.split()
 
-            """
-            print("chr1_col", chr1_col, "chr2_col", chr2_col,
-                  "from1_col:", from1_col, "from2_col", from2_col,
-                  "to1_col", to1_col, "to2_col", to2_col)
-            """
-
             int(parts[from1_col - 1])
             int(parts[to1_col - 1])
             int(parts[from2_col - 1])
@@ -295,19 +296,22 @@ def _bedpe(
 
     entries += [line_to_dict(line) for line in [line.strip() for line in f] if line]
 
-    # We neeed chromosome information as well as the assembly size to properly
+    if chromosome is not None:
+        entries = [
+            d for d in entries if d["chrom1"] == chromosome or d["chrom2"] == chromosome
+        ]
+
+    if verbose > 0:
+        print(f"Found {len(entries)} entries")
+
+    # We need chromosome information as well as the assembly size to properly
     # tile this data
-    tile_size = tile_size
     assembly_size = chrom_info.total_length + 1
     max_zoom = int(math.ceil(math.log(assembly_size / tile_size) / math.log(2)))
-    """
-    if max_zoom is not None and max_zoom < max_zoom:
-        max_zoom = max_zoom
-    """
 
     # this script stores data in a sqlite database
     sqlite3.register_adapter(np.int64, lambda val: int(val))
-    conn = sqlite3.connect(output_file)
+    conn = sqlite3.connect(output_file, isolation_level=None)
 
     # store some meta data
     store_meta_data(
@@ -327,6 +331,10 @@ def _bedpe(
     # uid_to_entry = {}
 
     c = conn.cursor()
+    c.execute("PRAGMA synchronous = OFF;")
+    c.execute("PRAGMA journal_mode = OFF;")
+    c.execute(f"PRAGMA cache_size = {int(sqlite_cache_size * 1000)};")
+
     c.execute(
         """
         CREATE TABLE intervals
@@ -359,27 +367,47 @@ def _bedpe(
     counter = 0
 
     tile_counts = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
+    # Sort from high to low importance
     entries = sorted(entries, key=lambda x: -x["importance"])
 
-    counter = 0
-    for d in entries:
+    interval_inserts = []
+    position_index_inserts = []
+
+    def batch_insert(conn, c, interval_inserts, position_index_inserts):
+        if verbose > 0:
+            print(f"Insert batch ({counter})")
+
+        with transaction(conn):
+            c.executemany(
+                "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?,?)", interval_inserts
+            )
+            c.executemany(
+                "INSERT INTO position_index VALUES (?,?,?,?,?)", position_index_inserts
+            )
+
+        interval_inserts.clear()
+        position_index_inserts.clear()
+
+    for entry_num, d in enumerate(entries):
         curr_zoom = 0
 
         while curr_zoom <= max_zoom:
             tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
-            tile_from = list(map(lambda x: x / tile_width, [d["xs"][0], d["ys"][0]]))
-            tile_to = list(map(lambda x: x / tile_width, [d["xs"][1], d["ys"][1]]))
+            tile_from = list(
+                map(lambda x: int(x / tile_width), [d["xs"][0], d["ys"][0]])
+            )
+            tile_to = list(map(lambda x: int(x / tile_width), [d["xs"][1], d["ys"][1]]))
 
             empty_tiles = True
 
             # go through and check if any of the tiles at this zoom level are
             # full
 
-            for i in range(int(tile_from[0]), int(tile_to[0]) + 1):
+            for i in range(tile_from[0], tile_to[0] + 1):
                 if not empty_tiles:
                     break
 
-                for j in range(int(tile_from[1]), int(tile_to[1]) + 1):
+                for j in range(tile_from[1], tile_to[1] + 1):
                     if tile_counts[curr_zoom][i][j] > max_per_tile:
 
                         empty_tiles = False
@@ -387,12 +415,11 @@ def _bedpe(
 
             if empty_tiles:
                 # they're all empty so add this interval to this zoom level
-                for i in range(int(tile_from[0]), int(tile_to[0]) + 1):
-                    for j in range(int(tile_from[1]), int(tile_to[1]) + 1):
+                for i in range(tile_from[0], tile_to[0] + 1):
+                    for j in range(tile_from[1], tile_to[1] + 1):
                         tile_counts[curr_zoom][i][j] += 1
 
-                c.execute(
-                    "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?,?)",
+                interval_inserts.append(
                     (
                         counter,
                         curr_zoom,
@@ -404,26 +431,24 @@ def _bedpe(
                         d["chrOffset"],
                         d["uid"],
                         d["fields"],
-                    ),
+                    )
                 )
-                conn.commit()
 
-                c.execute(
-                    "INSERT INTO position_index VALUES (?,?,?,?,?)",
-                    (
-                        counter,
-                        d["xs"][0],
-                        d["xs"][1],
-                        d["ys"][0],
-                        d["ys"][1],
-                    ),  # add counter as a primary key
+                position_index_inserts.append(
+                    (counter, d["xs"][0], d["xs"][1], d["ys"][0], d["ys"][1])
                 )
-                conn.commit()
 
                 counter += 1
                 break
 
             curr_zoom += 1
+
+        if len(interval_inserts) >= sqlite_batch_size:
+            batch_insert(conn, c, interval_inserts, position_index_inserts)
+
+    batch_insert(conn, c, interval_inserts, position_index_inserts)
+
+    c.close()
 
     return
 
@@ -1492,71 +1517,130 @@ def bedfile(
 @click.option(
     "--output-file",
     "-o",
-    default=None,
     help="The default output file name to use. If this isn't "
     "specified, clodius will replace the current extension "
-    "with .bed2db",
+    "with .bedpedb",
+    type=str,
+    default=None,
 )
 @click.option(
     "--assembly",
     "-a",
     help="The genome assembly that this file was created against",
+    type=str,
     default="hg19",
+    show_default=True,
 )
 @click.option(
     "--importance-column",
+    "-i",
     help="The column (1-based) containing information about how important "
     "that row is. If it's absent, then use the length of the region. "
     "If the value is equal to `random`, then a random value will be "
     "used for the importance (effectively leading to random sampling)",
+    type=str,
     default="random",
+    show_default=True,
 )
 @click.option(
     "--has-header/--no-header",
     help="Does this file have a header that we should ignore",
+    type=bool,
     default=False,
+    show_default=True,
 )
 @click.option(
     "--max-per-tile",
-    default=100,
-    type=int,
+    "-m",
     help="The maximum number of entries to include per tile",
+    type=int,
+    default=100,
+    show_default=True,
 )
 @click.option(
     "--tile-size",
-    default=1024,
+    "-s",
     help="The number of nucleotides that the highest resolution tiles "
     "should span. This determines the maximum zoom level",
+    type=int,
+    default=1024,
+    show_default=True,
 )
 @click.option(
     "--chromosome",
-    default=None,
+    "-c",
     help="Only extract values for a particular chromosome. "
     "Use all chromosomes if not set.",
+    type=str,
+    default=None,
+    show_default=True,
 )
 @click.option(
     "--chromsizes-filename",
     help="A file containing chromosome sizes and order",
+    type=str,
     default=None,
+    show_default=True,
 )
 @click.option(
-    "--chr1-col", default=1, help="The column containing the first chromosome"
+    "--chr1-col",
+    help="The column containing the first chromosome",
+    type=int,
+    default=1,
+    show_default=True,
 )
 @click.option(
-    "--chr2-col", default=4, help="The column containing the second chromosome"
+    "--chr2-col",
+    help="The column containing the second chromosome",
+    type=int,
+    default=4,
+    show_default=True,
 )
 @click.option(
-    "--from1-col", default=2, help="The column containing the first start position"
+    "--from1-col",
+    help="The column containing the first start position",
+    type=int,
+    default=2,
+    show_default=True,
 )
 @click.option(
-    "--from2-col", default=5, help="The column containing the second start position"
+    "--from2-col",
+    help="The column containing the second start position",
+    type=int,
+    default=5,
+    show_default=True,
 )
 @click.option(
-    "--to1-col", default=3, help="The column containing the first end position"
+    "--to1-col",
+    help="The column containing the first end position",
+    type=int,
+    default=3,
+    show_default=True,
 )
 @click.option(
-    "--to2-col", default=6, help="The column containing the second end position"
+    "--to2-col",
+    help="The column containing the second end position",
+    type=int,
+    default=6,
+    show_default=True,
 )
+@click.option(
+    "--sqlite-batch-size",
+    help="The number of entries inserted into SQLite at once. The higher "
+    + "the faster the aggregation gets but more memory will be required",
+    type=int,
+    default=100000,
+    show_default=True,
+)
+@click.option(
+    "--sqlite-cache-size",
+    help="The SQLite cache size in MB. The higher "
+    + "the faster the aggregation gets but more memory will be required",
+    type=int,
+    default=500,
+    show_default=True,
+)
+@click.option("-v", "--verbose", count=True, help="Increase log statements")
 def bedpe(
     filepath,
     output_file,
@@ -1573,24 +1657,30 @@ def bedpe(
     chr2_col,
     from2_col,
     to2_col,
+    sqlite_batch_size,
+    sqlite_cache_size,
+    verbose,
 ):
     """Aggregate bedpe files"""
     _bedpe(
         filepath,
-        output_file,
-        assembly,
-        importance_column,
-        has_header,
-        max_per_tile,
-        tile_size,
-        chromosome,
-        chromsizes_filename,
+        output_file=output_file,
+        assembly=assembly,
+        importance_column=importance_column,
+        has_header=has_header,
+        max_per_tile=max_per_tile,
+        tile_size=tile_size,
+        chromosome=chromosome,
+        chromsizes_filename=chromsizes_filename,
         chr1_col=chr1_col,
         from1_col=from1_col,
         to1_col=to1_col,
         chr2_col=chr2_col,
         from2_col=from2_col,
         to2_col=to2_col,
+        sqlite_batch_size=sqlite_batch_size,
+        sqlite_cache_size=sqlite_cache_size,
+        verbose=verbose,
     )
 
 

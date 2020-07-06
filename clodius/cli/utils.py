@@ -1,4 +1,32 @@
 import math
+from contextlib import contextmanager
+
+
+@contextmanager
+def transaction(conn):
+    """Contextify SQLite transactions. Use with auto-commit mode. E.g.:
+    conn = sqlite3.connect("my.db", isolation_level=None)
+
+    Parameters
+    ----------
+    conn : SQLite connection
+        SQLite connection
+
+    Yields
+    ------
+    None
+        Nothing
+    """
+    # We must issue a "BEGIN" explicitly when running in auto-commit mode.
+    conn.execute("BEGIN")
+    try:
+        # Yield control back to the caller.
+        yield
+    except:
+        conn.rollback()  # Roll back all changes if an exception occurs.
+        raise
+    else:
+        conn.commit()
 
 
 def get_tile_box(zoom, x, y):
