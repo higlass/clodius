@@ -1,3 +1,5 @@
+- Added support for multivec `row_infos` stored under `/info/row_infos` as an hdf5 utf-8 string dataset.
+
 v0.14.3
 
 - Small bug when retrieving tile 0.0 from bam files
