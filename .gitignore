@@ -1,3 +1,6 @@
+notebooks/Scratch.ipynb
+notebooks/VCF.ipynb
+
 *.py[cod]
 __pycache__
 *~

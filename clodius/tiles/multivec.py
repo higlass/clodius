@@ -163,12 +163,11 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
 
             chrom = chromsizes[cid][0]
 
-            offset = current_binned_data_position - current_data_position
             current_data_position += end - start
 
             count += 1
 
-            start_pos = math.floor((start + offset) / binsize)
+            start_pos = math.floor(start / binsize)
             end_pos = math.ceil(end / binsize)
 
             if start_pos >= end_pos:
@@ -197,6 +196,11 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
             current_binned_data_position += binsize * (end_pos - start_pos)
 
             # print("x:", x.shape)
+
+            # If the offset is larger than the binsize, drop the last bin
+            offset = current_binned_data_position - current_data_position
+            if offset > binsize:
+                x = x[:-1]
 
             # drop the very last bin if it is smaller than the binsize
             """

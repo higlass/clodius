@@ -19,10 +19,12 @@ pip install clodius
 And use it aggregate a bigWig file:
 
 ```shell
-clodius aggregate bigwig ~/Downloads/E116-DNase.fc.signal.bigwig
+curl https://raw.githubusercontent.com/hms-dbmi/clodius/develop/test/sample_data/geneAnnotationsExonsUnions.short.bed \
+  > /tmp/sample.short.bed
+clodius aggregate bedfile /tmp/sample.short.bed
 ```
 
-The output files can then be displayed using the [higlass-docker container](https://github.com/hms-dbmi/higlass-docker). For more information about viewing these types of files take a look at the [higlass wiki](https://github.com/hms-dbmi/higlass/wiki#bigwig-files).
+The output files can then be displayed using [higlass-manage](https://github.com/higlass/higlass-manage). For more information about viewing these types of files take a look at the [higlass docs](https://docs.higlass.io).
 
 [More examples](COMMANDS.md) are available.
 
@@ -67,30 +69,3 @@ they are defined in:
 ```shell
 pytest test/cli_test.py:test_clodius_aggregate_bedgraph
 ```
-
-## Quick start with Docker
-
-If you don't have your own, get some sample data:
-```shell
-mkdir -p /tmp/clodius/input
-mkdir -p /tmp/clodius/output
-curl https://raw.githubusercontent.com/hms-dbmi/clodius/develop/test/sample_data/geneAnnotationsExonsUnions.short.bed \
-  > /tmp/clodius/input/sample.short.bed
-```
-Then install Docker, and pull and run the Clodius image:
-```shell
-docker stop clodius;
-docker rm clodius;
-
-docker pull gehlenborglab/clodius # Ensure that you have the latest.
-
-docker run -v /tmp/clodius/:/tmp/ \
-           gehlenborglab/clodius \
-           clodius aggregate bigwig /tmp/input/file.bigwig
-
-ls /tmp/clodius/output # Should contain the output file
-```
-
-If you already have a good location for your input and output files,
-reference that in the `-v` arguments above, instead of `/tmp/clodius`.
-The other scripts referenced below can be wrapped similarly.
