@@ -31,8 +31,13 @@ def get_2d_tileset_info(filepath):
     return tileset_info(filepath)
 
 
-def tiles(filepath, tile_ids, query_as_1d: bool = False):
-    if query_as_1d:
+def tiles(filepath, tile_ids):
+    if len(tile_ids) == 0:
+        return []
+
+    is_1d = len(tile_ids[0].split(".")) < 4
+
+    if is_1d:
         return tiles_1d(filepath, tile_ids)
 
     return tiles_2d(filepath, tile_ids)
