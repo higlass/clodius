@@ -1,5 +1,6 @@
 # Clodius
 
+[![Python](https://img.shields.io/pypi/v/clodius)](https://pypi.org/project/clodius)
 [![Build Status](https://travis-ci.org/higlass/clodius.svg?branch=develop)](https://travis-ci.org/higlass/clodius)
 [![Docs](https://img.shields.io/badge/docs-📖-red.svg?colorB=6680ff)](https://docs.higlass.io/data_preparation.html)
 
