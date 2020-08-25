@@ -48,6 +48,7 @@ output.tar
 profile.dat
 profile.png
 aws_keys.py
+.envrc
 
 #test related
 a.out
