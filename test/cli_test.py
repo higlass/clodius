@@ -10,6 +10,8 @@ import numpy as np
 import os.path as op
 import sys
 
+from clodius.tiles import bed2ddb
+
 sys.path.append("scripts")
 
 testdir = op.realpath(op.dirname(__file__))
@@ -231,6 +233,14 @@ def test_clodius_aggregate_bedpe():
     tiles = cdt.get_2d_tiles(output_file, 0, 0, 0, numx=1, numy=1)
 
     assert "\n" not in tiles[(0, 0)][0]["fields"][2]
+
+    tiles_2d = bed2ddb.tiles(output_file, ['x.0.0.0'])
+
+    assert len(tiles_2d[0][1][0]["fields"]) == 3
+
+    tiles_1d = bed2ddb.tiles(output_file, ['x.0.0'])
+
+    assert len(tiles_1d[0][1][0]["fields"]) == 3
 
 
 testdir = op.realpath(op.dirname(__file__))
