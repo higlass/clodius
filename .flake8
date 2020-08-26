@@ -53,4 +53,5 @@ ignore =
   W292 # no newline at end of file
   W293 # blank line contains whitespace
   W391 # blank line at end of file
+  W503 # line break after binary operator
   W504 # line break after binary operator
