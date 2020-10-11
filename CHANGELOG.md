@@ -1,3 +1,7 @@
+v0.16.0
+
+- No default assembly
+
 v0.15.2
 
 - More informative error message when doing bedfile_to_multivec conversion
