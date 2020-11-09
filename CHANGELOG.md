@@ -1,3 +1,7 @@
+v0.15.4
+
+- Remove type=bool from bedpe aggregate function to fix "Got secondary option for non-boolean flag" error
+
 v0.15.2
 
 - More informative error message when doing bedfile_to_multivec conversion

@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 
-from . import cli
-
-import click
-import clodius.chromosomes as cch
-import clodius.multivec as cmv
-import clodius.array as ct
 import collections as col
-import h5py
+import gzip
+import json
 import math
-import negspy.coordinates as nc
-import numpy as np
 import os
 import os.path as op
 import random
-import scipy.misc as sm
-import slugid
 import sqlite3
 import sys
 import time
-import gzip
-import json
 
+import h5py
+import numpy as np
+
+import click
+import clodius.array as ct
+import clodius.chromosomes as cch
+import clodius.multivec as cmv
+import negspy.coordinates as nc
+import scipy.misc as sm
+import slugid
+
+from . import cli
 from .utils import get_tile_pos_from_lng_lat, transaction
 
 
@@ -1545,7 +1546,6 @@ def bedfile(
 @click.option(
     "--has-header/--no-header",
     help="Does this file have a header that we should ignore",
-    type=bool,
     default=False,
     show_default=True,
 )
