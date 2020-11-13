@@ -1,13 +1,14 @@
-import unittest
-from tempfile import TemporaryDirectory
 import csv
+import unittest
 from math import nan
+from tempfile import TemporaryDirectory
 
+import h5py
 import numpy as np
 from numpy.testing import assert_array_equal
-import h5py
 
 from scripts.tsv_to_mrmatrix import coarsen, parse
+
 
 class CoarsenTest(unittest.TestCase):
     def test_5_layer_pyramid(self):
@@ -125,7 +126,7 @@ class ParseTest(unittest.TestCase):
 
             hdf5 = h5py.File(hdf5_path, 'r')
             self.assertEqual(list(hdf5.keys()), ['labels', 'resolutions'])
-            self.assertEqual(list(hdf5['labels']), labels[1:])
+            self.assertEqual([h.decode('utf8') for h in hdf5['labels']], labels[1:])
 
             self.assertEqual(list(hdf5['resolutions'].keys()), ['1', '2'])
 

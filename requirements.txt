@@ -3,7 +3,7 @@ negspy
 pysam
 dask
 requests
-h5py
+h5py>=3.0.0
 pandas
 slugid
 sortedcontainers
