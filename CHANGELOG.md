@@ -1,3 +1,15 @@
+v0.16.0
+
+- No default assembly
+
+v0.15.2
+
+- More informative error message when doing bedfile_to_multivec conversion
+
+v0.15.1
+
+- Added support for multivec `row_infos` stored under `/info/row_infos` as an hdf5 utf-8 string dataset.
+
 v0.15.0
 
 - Improve performance of `clodius aggregate bedpe` using sqlite batch inserts, transactions, and PRAGMAs

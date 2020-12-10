@@ -1,17 +1,19 @@
-import click
-from . import cli
-import clodius.chromosomes as cch
-import clodius.multivec as cmv
-import h5py
+import ast
 import math
-import negspy.coordinates as nc
-import numpy as np
 import os
 import os.path as op
-import scipy.misc as sm
 import tempfile
 
-import ast
+import h5py
+import numpy as np
+
+import click
+import clodius.chromosomes as cch
+import clodius.multivec as cmv
+import negspy.coordinates as nc
+import scipy.misc as sm
+
+from . import cli
 
 
 def epilogos_bedline_to_vector(bedlines, row_infos=None):
@@ -308,7 +310,6 @@ def _bedgraph_to_multivec(
     "-a",
     help="The genome assembly that this file was created against",
     type=click.Choice(nc.available_chromsizes()),
-    default="hg19",
 )
 @click.option(
     "--chromosome-col",
