@@ -468,13 +468,13 @@ def _bedfile(
     offset,
     sqlite_cache_size=500,  # 500 MB
     sqlite_batch_size=100000,
-    index_strategy='range-index',
+    index_strategy="range-index",
     verbose=False,
 ):
     BEDDB_VERSION = 3
 
     if verbose:
-        print(f'BEDDB VERSION: {BEDDB_VERSION}')
+        print(f"BEDDB VERSION: {BEDDB_VERSION}")
 
     if output_file is None:
         output_file = filepath + ".beddb"
@@ -682,7 +682,7 @@ def _bedfile(
 
     tile_counts = col.defaultdict(int)
 
-    if index_strategy == 'tile-index':
+    if index_strategy == "tile-index":
         _bedfile_tile_index(
             conn,
             c,
@@ -739,7 +739,7 @@ def _bedfile_range_index(
     """
 
     if verbose:
-        print('Indexing strategy: range-based (default)')
+        print("Indexing strategy: range-based (default)")
 
     c.execute(
         """
@@ -841,17 +841,11 @@ def _bedfile_range_index(
                         value["uid"],
                         value["name"],
                         value["fields"],
-                    ),
+                    )
                 )
 
                 position_index_inserts.append(
-                    (
-                        counter,
-                        curr_zoom,
-                        curr_zoom,
-                        value["startPos"],
-                        value["endPos"]
-                    ),
+                    (counter, curr_zoom, curr_zoom, value["startPos"], value["endPos"])
                 )
 
                 counter += 1
@@ -879,7 +873,7 @@ def _bedfile_tile_index(
     verbose=False,
 ):
     if verbose:
-        print('Indexing strategy: tile-based')
+        print("Indexing strategy: tile-based")
 
     row = c.execute("SELECT * from tileset_info").fetchone()
     version = row[next(zip(*c.description)).index("version")]
@@ -904,7 +898,7 @@ def _bedfile_tile_index(
     )
 
     # I.e., tiles_cumsum[3] is the number of tiles with zoomlevels lower than 3
-    tiles_cumsum = np.cumsum([0] + [2**x for x in range(max_zoom + 1)])
+    tiles_cumsum = np.cumsum([0] + [2 ** x for x in range(max_zoom + 1)])
 
     interval_inserts = []
     tile_inserts = []
@@ -917,9 +911,7 @@ def _bedfile_tile_index(
             c.executemany(
                 "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?)", interval_inserts
             )
-            c.executemany(
-                "INSERT INTO tiles VALUES (?,?)", tile_inserts
-            )
+            c.executemany("INSERT INTO tiles VALUES (?,?)", tile_inserts)
 
         interval_inserts.clear()
         tile_inserts.clear()
@@ -977,10 +969,10 @@ def _bedfile_tile_index(
                             value["uid"],
                             value["name"],
                             value["fields"],
-                        ),
+                        )
                     )
                     if verbose and interval_idx == 0:
-                        print(f'Interval 0 first appears at zoom level {curr_zoom}')
+                        print(f"Interval 0 first appears at zoom level {curr_zoom}")
 
                 curr_pos = interval[0]
                 while curr_pos < interval[1]:
@@ -990,7 +982,7 @@ def _bedfile_tile_index(
                     tile_inserts.append((tile_idx, interval_idx))
 
                     if verbose and interval_idx == 0:
-                        print(f'Interval 0 is added to {curr_zoom}.{curr_tile_x}')
+                        print(f"Interval 0 is added to {curr_zoom}.{curr_tile_x}")
 
                     curr_pos += tile_width
 
@@ -1745,7 +1737,7 @@ def bedgraph(
 @click.option(
     "--tile-index/--no-tile-index",
     help="Tile-based indexing speeds up interval queries by up to 20x at "
-    +"the expensive of a 2.5x larger filesize",
+    + "the expensive of a 2.5x larger filesize",
     type=bool,
     default=False,
     show_default=True,
@@ -1766,9 +1758,9 @@ def bedfile(
     sqlite_cache_size,
     sqlite_batch_size,
     tile_index,
-    verbose
+    verbose,
 ):
-    index_strategy = 'tile-index' if tile_index else 'range-index'
+    index_strategy = "tile-index" if tile_index else "range-index"
     _bedfile(
         filepath,
         output_file,
@@ -1784,7 +1776,7 @@ def bedfile(
         sqlite_cache_size,
         sqlite_batch_size,
         index_strategy,
-        verbose
+        verbose,
     )
 
 

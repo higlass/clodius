@@ -156,8 +156,8 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
             zoom, tile_start_pos, tile_end_pos
         )
 
-    if version == '3t':
-        tile_id = sum([2**x for x in range(zoom)]) + tile_x_pos
+    if version == "3t":
+        tile_id = sum([2 ** x for x in range(zoom)]) + tile_x_pos
         query = f"""
         SELECT startPos, endPos, chrOffset, importance, fields, uid, name
         FROM intervals, tiles
