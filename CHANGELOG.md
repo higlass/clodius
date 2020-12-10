@@ -1,5 +1,9 @@
 v0.16.0
 
+- Added a tile-based indexing strategy for `.beddb` files, which can speed up queries by up to 20x at the expense of increasing the file size by a factor of 2.5x
+
+v0.16.0
+
 - No default assembly
 
 v0.15.2
