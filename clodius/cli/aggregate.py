@@ -943,7 +943,11 @@ def _bedfile_tile_index(
 
                     curr_pos += tile_width
 
-            # if there is, then increment the tile counters
+            # If there is, then increment the tile counters
+            # Note, the tile count should only be incremented when space is
+            # available and we have not yet inserted the interval. In other
+            # words, only the first instance of where an interval is inserted
+            # counts!
             if not inserted and space_available:
                 curr_pos = interval[0]
                 while curr_pos < interval[1]:
@@ -955,7 +959,10 @@ def _bedfile_tile_index(
                     curr_pos += tile_width
 
             if inserted or space_available:
-                # there's available space
+                # If there's available space, we will insert the interval
+                # Note, that we only want to insert the interval exactly once
+                # and skip subsequent inserts by checking if `inserted` is
+                # false
                 if not inserted:
                     value = uid_to_interval[interval[-1]]
                     interval_inserts.append(
@@ -971,18 +978,15 @@ def _bedfile_tile_index(
                             value["fields"],
                         )
                     )
-                    if verbose and interval_idx == 0:
-                        print(f"Interval 0 first appears at zoom level {curr_zoom}")
 
+                # The following while-loop is necessary to ensure that tiles at
+                # higher zoom level also contain the interval
                 curr_pos = interval[0]
                 while curr_pos < interval[1]:
                     curr_tile_x = math.floor(curr_pos / tile_width)
                     tile_idx = tiles_cumsum[curr_zoom] + curr_tile_x
 
                     tile_inserts.append((tile_idx, interval_idx))
-
-                    if verbose and interval_idx == 0:
-                        print(f"Interval 0 is added to {curr_zoom}.{curr_tile_x}")
 
                     curr_pos += tile_width
 
