@@ -108,6 +108,8 @@ def test_gene_annotations():
     rows = ctb.tiles(f.name, ["x.11.112"])[0][1]
     assert rows[0]["fields"][3] == "Lrp1b"
 
+    os.remove(f.name)
+
 
 def test_random_importance():
     # check that when aggregating using random importance, all values that
@@ -165,6 +167,7 @@ def test_random_importance():
     for key, value in found.items():
         assert value
 
+    os.remove(f.name)
     pass
 
 
@@ -272,3 +275,100 @@ def test_float_importance():
         ],
     )
     # TODO: Make assertions about result
+
+    os.remove(f.name)
+
+
+def test_tile_index():
+    f = tempfile.NamedTemporaryFile(delete=False)
+
+    runner = clt.CliRunner()
+    input_file = op.join(testdir, "sample_data", "test_float_importance.bed")
+
+    runner.invoke(
+        cca.bedfile,
+        [
+            input_file,
+            "--max-per-tile",
+            "2",
+            "--importance-column",
+            "4",
+            "--assembly",
+            "hg38",
+            "--no-header",
+            "--tile-index",
+            "--output-file",
+            f.name,
+        ],
+    )
+
+    rows = ctb.tiles(f.name, ["x.0.0"])[0][1]
+
+    for row in rows:
+        assert row["fields"][0] == "chr20"
+
+    conn = sqlite3.connect(f.name)
+    c = conn.cursor()
+
+    rows = c.execute("SELECT * from tiles;").fetchall()
+    assert len(rows) == 2 * 39 + 2 * 38 + 37
+
+    rows = c.execute("SELECT * from intervals;").fetchall()
+    assert len(rows) == 5
+
+    os.remove(f.name)
+
+
+
+def test_compare_tile_vs_range_index():
+    f_tile = tempfile.NamedTemporaryFile(delete=False)
+    f_range = tempfile.NamedTemporaryFile(delete=False)
+
+    runner = clt.CliRunner()
+    input_file = op.join(testdir, "sample_data", "test_float_importance.bed")
+
+    runner.invoke(
+        cca.bedfile,
+        [
+            input_file,
+            "--max-per-tile",
+            "2",
+            "--importance-column",
+            "4",
+            "--assembly",
+            "hg38",
+            "--no-header",
+            "--tile-index",
+            "--output-file",
+            f_tile.name,
+        ],
+    )
+
+    runner.invoke(
+        cca.bedfile,
+        [
+            input_file,
+            "--max-per-tile",
+            "2",
+            "--importance-column",
+            "4",
+            "--assembly",
+            "hg38",
+            "--no-header",
+            "--output-file",
+            f_range.name,
+        ],
+    )
+
+    rows_tile = ctb.tiles(f_tile.name, ["x.1.1"])[0][1]
+    assert len(rows_tile) == 4
+    rows_range = ctb.tiles(f_tile.name, ["x.1.1"])[0][1]
+    assert len(rows_range) == 4
+
+    rows_tile = ctb.tiles(f_tile.name, ["x.2.2"])[0][1]
+    assert len(rows_tile) == 5
+    rows_range = ctb.tiles(f_tile.name, ["x.2.2"])[0][1]
+    assert len(rows_range) == 5
+
+    os.remove(f_tile.name)
+    os.remove(f_range.name)
