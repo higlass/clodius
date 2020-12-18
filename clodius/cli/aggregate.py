@@ -466,8 +466,15 @@ def _bedfile(
     delimiter,
     chromsizes_filename,
     offset,
+    sqlite_cache_size=500,  # 500 MB
+    sqlite_batch_size=100000,
+    index_strategy="range-index",
+    verbose=False,
 ):
     BEDDB_VERSION = 3
+
+    if verbose:
+        print(f"BEDDB VERSION: {BEDDB_VERSION}")
 
     if output_file is None:
         output_file = filepath + ".beddb"
@@ -551,7 +558,9 @@ def _bedfile(
 
     dset = []
 
-    print("delimiter:", delimiter)
+    if verbose:
+        print("delimiter:", delimiter)
+
     if has_header:
         line = bed_file.readline()
         header = line.strip().split(delimiter)
@@ -611,7 +620,9 @@ def _bedfile(
     import sqlite3
 
     sqlite3.register_adapter(np.int64, lambda val: int(val))
-    print("output_file:", output_file, "header:", header)
+    if verbose:
+        print("output_file:", output_file, "header:", header)
+
     conn = sqlite3.connect(output_file)
 
     # store some meta data
@@ -630,19 +641,21 @@ def _bedfile(
     )
 
     # max_width = tile_size * 2 ** max_zoom
-    uid_to_entry = {}
+    uid_to_interval = {}
 
     intervals = []
 
     # store each bed file entry as an interval
     for d in dset:
         uid = d["uid"]
-        uid_to_entry[uid] = d
+        uid_to_interval[uid] = d
         intervals += [(d["startPos"], d["endPos"], uid)]
 
-    tile_width = tile_size
-
     c = conn.cursor()
+    c.execute("PRAGMA synchronous = OFF;")
+    c.execute("PRAGMA journal_mode = OFF;")
+    c.execute(f"PRAGMA cache_size = {int(sqlite_cache_size * 1000)};")
+
     c.execute(
         """
         CREATE TABLE intervals
@@ -660,6 +673,74 @@ def _bedfile(
         """
     )
 
+    sorted_intervals = sorted(
+        intervals, key=lambda x: -uid_to_interval[x[-1]]["importance"]
+    )
+
+    if verbose:
+        print("max_per_tile:", max_per_tile)
+
+    tile_counts = col.defaultdict(int)
+
+    if index_strategy == "tile-index":
+        _bedfile_tile_index(
+            conn,
+            c,
+            sorted_intervals,
+            uid_to_interval,
+            max_zoom,
+            tile_size,
+            tile_counts,
+            max_per_tile,
+            sqlite_cache_size,
+            sqlite_batch_size,
+            verbose,
+        )
+    else:
+        _bedfile_range_index(
+            conn,
+            c,
+            sorted_intervals,
+            uid_to_interval,
+            max_zoom,
+            tile_size,
+            tile_counts,
+            max_per_tile,
+            sqlite_cache_size,
+            sqlite_batch_size,
+            verbose,
+        )
+
+    conn.commit()
+
+    c.execute("ANALYZE;")
+
+    conn.commit()
+
+    c.close()
+
+    return True
+
+
+def _bedfile_range_index(
+    conn,
+    c,
+    sorted_intervals,
+    uid_to_interval,
+    max_zoom,
+    tile_size,
+    tile_counts,
+    max_per_tile,
+    sqlite_cache_size=500,  # 500 MB
+    sqlite_batch_size=100000,
+    verbose=False,
+):
+    """Traditional beddb format
+    """
+
+    if verbose:
+        print("Indexing strategy: range-based (default)")
+
     c.execute(
         """
         CREATE VIRTUAL TABLE position_index USING rtree(
@@ -669,25 +750,36 @@ def _bedfile(
         """
     )
 
-    curr_zoom = 0
     counter = 0
 
-    max_viewable_zoom = max_zoom
-
-    if max_zoom is not None and max_zoom < max_zoom:
-        max_viewable_zoom = max_zoom
-
-    sorted_intervals = sorted(
-        intervals, key=lambda x: -uid_to_entry[x[-1]]["importance"]
-    )
-    # print('si:', sorted_intervals[:10])
-    print("max_per_tile:", max_per_tile)
+    if verbose:
+        print("max_per_tile:", max_per_tile)
 
     tile_counts = col.defaultdict(int)
 
+    interval_inserts = []
+    position_index_inserts = []
+
+    def batch_insert(conn, c, interval_inserts, position_index_inserts):
+        if verbose > 0:
+            print(f"Insert batch ({counter})")
+
+        with transaction(conn):
+            c.executemany(
+                "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?)", interval_inserts
+            )
+            c.executemany(
+                "INSERT INTO position_index VALUES (?,?,?,?,?)", position_index_inserts
+            )
+
+        interval_inserts.clear()
+        position_index_inserts.clear()
+
     for interval in sorted_intervals:
+        curr_zoom = 0
+
         # go through each interval from most important to least
-        while curr_zoom <= max_viewable_zoom:
+        while curr_zoom <= max_zoom:
             # try to place it in the highest zoom level and go down from there
             tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
 
@@ -736,14 +828,9 @@ def _bedfile(
 
             if space_available:
                 # there's available space
-                value = uid_to_entry[interval[-1]]
+                value = uid_to_interval[interval[-1]]
 
-                # one extra question mark for the primary key
-                exec_statement = "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?)"
-
-                c.execute(
-                    exec_statement,
-                    # primary key, zoomLevel, startPos, endPos, chrOffset, line
+                interval_inserts.append(
                     (
                         counter,
                         curr_zoom,
@@ -754,17 +841,11 @@ def _bedfile(
                         value["uid"],
                         value["name"],
                         value["fields"],
-                    ),
+                    )
                 )
 
-                if counter % 1000 == 0:
-                    print("counter:", counter, value["endPos"] - value["startPos"])
-
-                exec_statement = "INSERT INTO position_index VALUES (?,?,?,?,?)"
-                c.execute(
-                    exec_statement,
-                    # add counter as a primary key
-                    (counter, curr_zoom, curr_zoom, value["startPos"], value["endPos"]),
+                position_index_inserts.append(
+                    (counter, curr_zoom, curr_zoom, value["startPos"], value["endPos"])
                 )
 
                 counter += 1
@@ -772,9 +853,151 @@ def _bedfile(
 
             curr_zoom += 1
 
-        curr_zoom = 0
+        if len(interval_inserts) >= sqlite_batch_size:
+            batch_insert(conn, c, interval_inserts, position_index_inserts)
+
+    batch_insert(conn, c, interval_inserts, position_index_inserts)
+
+
+def _bedfile_tile_index(
+    conn,
+    c,
+    sorted_intervals,
+    uid_to_interval,
+    max_zoom,
+    tile_size,
+    tile_counts,
+    max_per_tile,
+    sqlite_cache_size=500,  # 500 MB
+    sqlite_batch_size=100000,
+    verbose=False,
+):
+    if verbose:
+        print("Indexing strategy: tile-based")
+
+    row = c.execute("SELECT * from tileset_info").fetchone()
+    version = row[next(zip(*c.description)).index("version")]
+    c.execute(
+        f"""
+        UPDATE tileset_info
+        SET version = '{version}t'
+        WHERE version = '{version}'
+        """
+    )
     conn.commit()
-    return True
+
+    c.execute(
+        """
+        CREATE TABLE tiles
+        (
+            id int,
+            intervalId int,
+            PRIMARY KEY (id, intervalId)
+        )
+        """
+    )
+
+    # I.e., tiles_cumsum[3] is the number of tiles with zoomlevels lower than 3
+    tiles_cumsum = np.cumsum([0] + [2 ** x for x in range(max_zoom + 1)])
+
+    interval_inserts = []
+    tile_inserts = []
+
+    def batch_insert(conn, c, interval_inserts, tile_inserts, counter):
+        if verbose > 0:
+            print(f"Insert batch ({counter})")
+
+        with transaction(conn):
+            c.executemany(
+                "INSERT INTO intervals VALUES (?,?,?,?,?,?,?,?,?)", interval_inserts
+            )
+            c.executemany("INSERT INTO tiles VALUES (?,?)", tile_inserts)
+
+        interval_inserts.clear()
+        tile_inserts.clear()
+
+    for interval_idx, interval in enumerate(sorted_intervals):
+        curr_zoom = 0
+        inserted = False
+        # go through each interval from most important to least
+        while curr_zoom <= max_zoom:
+            # try to place it in the highest zoom level and go down from there
+            tile_width = tile_size * 2 ** (max_zoom - curr_zoom)
+
+            curr_pos = interval[0]
+            space_available = True
+
+            # if we have not yet inserted the interval somewhere
+            if not inserted:
+                # check if there's space at this zoom level
+                while curr_pos < interval[1]:
+                    curr_tile = math.floor(curr_pos / tile_width)
+                    tile_id = f"{curr_zoom}.{curr_tile}"
+
+                    # if any of the overlapping tiles is already filled up,
+                    # lets go to the next zoom level by setting `space_available`
+                    # to false
+                    if tile_counts[tile_id] >= max_per_tile:
+                        space_available = False
+                        break
+
+                    curr_pos += tile_width
+
+            # If there is, then increment the tile counters
+            # Note, the tile count should only be incremented when space is
+            # available and we have not yet inserted the interval. In other
+            # words, only the first instance of where an interval is inserted
+            # counts!
+            if not inserted and space_available:
+                curr_pos = interval[0]
+                while curr_pos < interval[1]:
+                    curr_tile = math.floor(curr_pos / tile_width)
+                    tile_id = "{}.{}".format(curr_zoom, curr_tile)
+
+                    tile_counts[tile_id] += 1
+
+                    curr_pos += tile_width
+
+            if inserted or space_available:
+                # If there's available space, we will insert the interval
+                # Note, that we only want to insert the interval exactly once
+                # and skip subsequent inserts by checking if `inserted` is
+                # false
+                if not inserted:
+                    value = uid_to_interval[interval[-1]]
+                    interval_inserts.append(
+                        (
+                            interval_idx,
+                            curr_zoom,
+                            value["importance"],
+                            value["startPos"],
+                            value["endPos"],
+                            value["chrOffset"],
+                            value["uid"],
+                            value["name"],
+                            value["fields"],
+                        )
+                    )
+
+                # The following while-loop is necessary to ensure that tiles at
+                # higher zoom level also contain the interval
+                curr_pos = interval[0]
+                while curr_pos < interval[1]:
+                    curr_tile_x = math.floor(curr_pos / tile_width)
+                    tile_idx = tiles_cumsum[curr_zoom] + curr_tile_x
+
+                    tile_inserts.append((tile_idx, interval_idx))
+
+                    curr_pos += tile_width
+
+                inserted = True
+
+            curr_zoom += 1
+
+        if len(interval_inserts) >= sqlite_batch_size:
+            batch_insert(conn, c, interval_inserts, tile_inserts, interval_idx)
+
+    batch_insert(conn, c, interval_inserts, tile_inserts, len(sorted_intervals))
 
 
 ###############################################################################
@@ -1432,58 +1655,98 @@ def bedgraph(
 @click.option(
     "--output-file",
     "-o",
-    default=None,
     help="The default output file name to use. If this isn't "
     "specified, clodius will replace the current extension "
     "with .multires.bed",
+    default=None,
+    show_default=True,
 )
 @click.option(
     "--assembly",
     "-a",
     help="The genome assembly that this file was created against",
+    default="hg19",
+    show_default=True,
 )
 @click.option(
     "--importance-column",
+    "-i",
     help="The column (1-based) containing information about how important "
     "that row is. If it's absent, then use the length of the region. "
     "If the value is equal to `random`, then a random value will be "
     "used for the importance (effectively leading to random sampling)",
+    default="random",
+    show_default=True,
 )
 @click.option(
     "--has-header/--no-header",
     help="Does this file have a header that we should ignore",
     default=False,
+    show_default=True,
 )
 @click.option(
     "--chromosome",
-    default=None,
+    "-c",
     help="Only extract values for a particular chromosome. "
     "Use all chromosomes if not set.",
+    default=None,
+    show_default=True,
 )
 @click.option(
     "--max-per-tile",
-    default=100,
+    "-m",
     type=int,
+    default=100,
+    show_default=True,
     help="The maximum number of entries to store per tile",
 )
 @click.option(
     "--tile-size",
-    default=1024,
+    "-s",
     help="The number of nucleotides that the highest resolution tiles "
     "should span. This determines the maximum zoom level",
+    default=1024,
+    show_default=True,
 )
 @click.option("--delimiter", default=None, type=str)
 @click.option(
     "--chromsizes-filename",
     help="A file containing chromosome sizes and order",
     default=None,
+    show_default=True,
 )
 @click.option(
     "--offset",
     help="Apply an offset to all the coordinates in this file",
     type=int,
     default=0,
+    show_default=True,
 )
+@click.option(
+    "--sqlite-cache-size",
+    help="The SQLite cache size in MB. The higher "
+    + "the faster the aggregation gets but more memory will be required",
+    type=int,
+    default=500,
+    show_default=True,
+)
+@click.option(
+    "--sqlite-batch-size",
+    help="The number of entries inserted into SQLite at once. The higher "
+    + "the faster the aggregation gets but more memory will be required",
+    type=int,
+    default=100000,
+    show_default=True,
+)
+@click.option(
+    "--tile-index/--no-tile-index",
+    help="Tile-based indexing speeds up interval queries by up to 20x at "
+    + "the expensive of a 2.5x larger filesize",
+    type=bool,
+    default=False,
+    show_default=True,
+)
+@click.option("-v", "--verbose", count=True, help="Increase log statements")
 def bedfile(
     filepath,
     output_file,
@@ -1496,7 +1759,12 @@ def bedfile(
     delimiter,
     chromsizes_filename,
     offset,
+    sqlite_cache_size,
+    sqlite_batch_size,
+    tile_index,
+    verbose,
 ):
+    index_strategy = "tile-index" if tile_index else "range-index"
     _bedfile(
         filepath,
         output_file,
@@ -1509,6 +1777,10 @@ def bedfile(
         delimiter,
         chromsizes_filename,
         offset,
+        sqlite_cache_size,
+        sqlite_batch_size,
+        index_strategy,
+        verbose,
     )
 
 

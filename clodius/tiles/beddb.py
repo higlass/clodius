@@ -12,7 +12,10 @@ def tileset_info(db_file):
     if "version" not in colnames:
         version = 1
     else:
-        version = int(row[colnames.index("version")])
+        try:
+            version = int(row[colnames.index("version")])
+        except ValueError:
+            version = row[colnames.index("version")]
 
     if "header" not in colnames:
         header = ""
@@ -153,10 +156,17 @@ def get_1D_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
             zoom, tile_start_pos, tile_end_pos
         )
 
-    # import time
-    # t1 = time.time()
+    if version == "3t":
+        tile_id = sum([2 ** x for x in range(zoom)]) + tile_x_pos
+        query = f"""
+        SELECT startPos, endPos, chrOffset, importance, fields, uid, name
+        FROM intervals, tiles
+        WHERE
+            tiles.id = {tile_id} AND
+            tiles.intervalId = intervals.id
+        """
+
     rows = c.execute(query).fetchall()
-    # t2 = time.time()
 
     new_rows = []
 
