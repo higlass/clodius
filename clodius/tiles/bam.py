@@ -1,24 +1,53 @@
 import math
+
 import numpy as np
-import pysam
+
 import clodius.tiles.bigwig as ctbw
+import pysam
+from clodius.tiles.utils import abs2genomic
 
 
-def abs2genomic(chromsizes, start_pos, end_pos):
-    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
-    cid_lo, cid_hi = (
-        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
-    )
-    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
-    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
-    start = rel_pos_lo
-    for cid in range(cid_lo, cid_hi):
-        yield cid, start, chromsizes[cid]
-        start = 0
-    yield cid_hi, start, rel_pos_hi
+def get_cigar_substitutions(read):
+    subs = []
+    curr_pos = 0
+
+    cigartuples = read.cigartuples
+    readstart = read.pos
+    readend = read.pos + read.query_length
+
+    for ctuple in cigartuples:
+        if ctuple[0] == pysam.CDIFF:
+            subs.append((readstart + curr_pos, "X", ctuple[1]))
+            curr_pos += ctuple[1]
+        elif ctuple[0] == pysam.CINS:
+            subs.append((readstart + curr_pos, "I", ctuple[1]))
+        elif ctuple[0] == pysam.CDEL:
+            subs.append((readstart + curr_pos, "D", ctuple[1]))
+            curr_pos += ctuple[1]
+        elif ctuple[0] == pysam.CREF_SKIP:
+            subs.append((readstart + curr_pos, "N", ctuple[1]))
+            curr_pos += ctuple[1]
+        elif ctuple[0] == pysam.CEQUAL or ctuple[0] == pysam.CMATCH:
+            curr_pos += ctuple[1]
+
+    if len(cigartuples):
+        first_ctuple = cigartuples[0]
+        last_ctuple = cigartuples[-1]
+
+        if first_ctuple[0] == pysam.CSOFT_CLIP:
+            subs.append((readstart - first_ctuple[1], "S", first_ctuple[1]))
+        if first_ctuple[0] == pysam.CHARD_CLIP:
+            subs.append((readstart - first_ctuple[1], "H", first_ctuple[1]))
+
+        if last_ctuple[0] == pysam.CSOFT_CLIP:
+            subs.append((readend - last_ctuple[1], "S", last_ctuple[1]))
+        if last_ctuple[0] == pysam.CHARD_CLIP:
+            subs.append((readend, "H", last_ctuple[1]))
+
+    return subs
 
 
-def load_reads(samfile, start_pos, end_pos, chrom_order=None):
+def load_reads(samfile, start_pos, end_pos, chromsizes=None):
     """
     Sample reads from the specified region, assuming that the chromosomes
     are ordered in some fashion. Returns an list of pysam reads
@@ -31,8 +60,9 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
         The start position of the sampled region
     end_pos: int
         The end position of the sampled region
-    chrom_order: ['chr1', 'chr2',...]
-        A listing of chromosome names to use as the order
+    chromsize: pandas.Series
+        A listing of chromosome sizes. If not provided, the chromosome
+        list will be extracted from the the bam file header
 
     Returns
     -------
@@ -42,22 +72,25 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
     # if chromorder is not None...
     # specify the chromosome order for the fetched reads
 
-    references = np.array(samfile.references)
-    lengths = np.array(samfile.lengths)
+    if chromsizes is not None:
+        chromsizes_list = []
 
-    ref_lengths = dict(zip(references, lengths))
+        for chrom, size in chromsizes.iteritems():
+            chromsizes_list += [[chrom, int(size)]]
+    else:
+        references = np.array(samfile.references)
+        lengths = np.array(samfile.lengths)
 
-    # we're going to create a natural ordering for references
-    # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
-    references = ctbw.natsorted(references)
-    lengths = [ref_lengths[r] for r in references]
+        ref_lengths = dict(zip(references, lengths))
 
+        # we're going to create a natural ordering for references
+        # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
+        references = ctbw.natsorted(references)
+        lengths = [ref_lengths[r] for r in references]
+        chromsizes_list = list(zip(references, [int(l) for l in lengths]))
+
+    lengths = [r[1] for r in chromsizes_list]
     abs_chrom_offsets = np.r_[0, np.cumsum(lengths)]
-
-    if chrom_order:
-        chrom_order = np.array(chrom_order)
-        chrom_order_ixs = np.nonzero(np.in1d(references, chrom_order))
-        lengths = lengths[chrom_order_ixs]
 
     results = {
         "id": [],
@@ -67,17 +100,27 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
         "chrName": [],
         "chrOffset": [],
         "cigar": [],
+        "m1From": [],
+        "m1To": [],
+        "m2From": [],
+        "m2To": [],
+        "mapq": [],
+        "tags.HP": [],
+        "strand": [],
+        "variants": [],
+        "cigars": [],
     }
+
+    strands = {True: "-", False: "+"}
 
     for cid, start, end in abs2genomic(lengths, start_pos, end_pos):
         chr_offset = int(abs_chrom_offsets[cid])
 
-        if cid >= len(references):
+        if cid >= len(chromsizes_list):
             continue
 
-        seq_name = f"{references[cid]}"
+        seq_name = f"{chromsizes_list[cid][0]}"
         reads = samfile.fetch(seq_name, start, end)
-
         for read in reads:
             if read.is_unmapped:
                 continue
@@ -102,12 +145,38 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
             #     # probably lacked an MD string
             #     pass
             try:
-                results["id"] += [read.query_name]
+                id_suffix = ""
+                if read.is_paired:
+                    if read.is_read1:
+                        id_suffix = "_1"
+                    if read.is_read2:
+                        id_suffix = "_2"
+
+                results["id"] += [read.query_name + id_suffix]
                 results["from"] += [int(read.reference_start + chr_offset)]
                 results["to"] += [int(read.reference_end + chr_offset)]
                 results["chrName"] += [read.reference_name]
                 results["chrOffset"] += [chr_offset]
                 results["cigar"] += [read.cigarstring]
+                results["mapq"] += [read.mapq]
+                if read.query_sequence:
+                    try:
+                        variants = [
+                            (r[0], r[1], read.query_sequence[r[0]])
+                            for r in read.get_aligned_pairs(with_seq=True)
+                            if r[2] is not None and r[2].islower()
+                        ]
+                    except ValueError:
+                        # Probably MD tag not present
+                        variants = []
+
+                    results["variants"] += [variants]
+                else:
+                    results["variants"] += []
+                results["cigars"] += [get_cigar_substitutions(read)]
+                tags = dict(read.tags)
+                results["tags.HP"] += [tags.get("HP", 0)]
+                results["strand"] += [strands[read.is_reverse]]
             except:
                 raise
 
@@ -120,7 +189,7 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
     return results
 
 
-def tileset_info(filename):
+def alignment_tileset_info(samfile, chromsizes):
     """
     Get the tileset info for a bam file
 
@@ -137,31 +206,47 @@ def tileset_info(filename):
                     'max_zoom': 7
                     }
     """
-    samfile = pysam.AlignmentFile(filename)
-    total_length = sum(samfile.lengths)
+    if chromsizes is not None:
+        chromsizes_list = []
 
-    references = np.array(samfile.references)
-    lengths = np.array(samfile.lengths)
+        for chrom, size in chromsizes.iteritems():
+            chromsizes_list += [[chrom, int(size)]]
 
-    ref_lengths = dict(zip(references, lengths))
-    lengths = [ref_lengths[r] for r in references]
+        total_length = sum([c[1] for c in chromsizes_list])
+    else:
+        total_length = sum(samfile.lengths)
+
+        references = np.array(samfile.references)
+        lengths = np.array(samfile.lengths)
+
+        ref_lengths = dict(zip(references, lengths))
+        references = ctbw.natsorted(references)
+
+        lengths = [ref_lengths[r] for r in references]
+        chromsizes_list = list(zip(references, [int(l) for l in lengths]))
 
     tile_size = 256
     max_zoom = math.ceil(math.log(total_length / tile_size) / math.log(2))
+
+    # this should eventually be a configurable option
+    MAX_TILE_WIDTH = 100000
 
     tileset_info = {
         "min_pos": [0],
         "max_pos": [total_length],
         "max_width": tile_size * 2 ** max_zoom,
         "tile_size": tile_size,
-        "chromsizes": list(zip(references, map(int, lengths))),
+        "chromsizes": chromsizes_list,
         "max_zoom": max_zoom,
+        "max_tile_width": MAX_TILE_WIDTH,
     }
 
     return tileset_info
 
 
-def tiles(filename, tile_ids, index_filename=None, max_tile_width=None):
+def alignment_tiles(
+    samfile, tile_ids, index_filename=None, chromsizes=None, max_tile_width=None
+):
     """
     Generate tiles from a bigwig file.
 
@@ -184,8 +269,7 @@ def tiles(filename, tile_ids, index_filename=None, max_tile_width=None):
         A list of tile_id, tile_data tuples
     """
     generated_tiles = []
-    tsinfo = tileset_info(filename)
-    samfile = pysam.AlignmentFile(filename, index_filename=index_filename)
+    tsinfo = alignment_tileset_info(samfile, chromsizes)
 
     for tile_id in tile_ids:
         tile_id_parts = tile_id.split("|")[0].split(".")
@@ -207,7 +291,25 @@ def tiles(filename, tile_ids, index_filename=None, max_tile_width=None):
             start_pos = int(tile_position[1]) * tile_width
             end_pos = start_pos + tile_width
 
-            tile_value = load_reads(samfile, start_pos=start_pos, end_pos=end_pos)
+            tile_value = load_reads(
+                samfile, start_pos=start_pos, end_pos=end_pos, chromsizes=chromsizes
+            )
             generated_tiles += [(tile_id, tile_value)]
 
     return generated_tiles
+
+
+def tileset_info(filename, chromsizes=None):
+    samfile = pysam.AlignmentFile(filename)
+
+    return alignment_tileset_info(samfile, chromsizes)
+
+
+def tiles(
+    filename, tile_ids, index_filename=None, chromsizes=None, max_tile_width=None
+):
+    samfile = pysam.AlignmentFile(filename, index_filename=index_filename)
+
+    return alignment_tiles(
+        samfile, tile_ids, index_filename=None, chromsizes=None, max_tile_width=None
+    )
