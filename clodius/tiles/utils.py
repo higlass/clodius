@@ -1,5 +1,17 @@
 import os.path as op
 
+def abs2genomic(chromsizes, start_pos, end_pos):
+    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
+    cid_lo, cid_hi = (
+        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
+    )
+    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
+    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
+    start = rel_pos_lo
+    for cid in range(cid_lo, cid_hi):
+        yield cid, start, chromsizes[cid]
+        start = 0
+    yield cid_hi, start, rel_pos_hi
 
 def partition_by_adjacent_tiles(tile_ids, dimension=2):
     """
