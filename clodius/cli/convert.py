@@ -1,17 +1,24 @@
-import click
-from . import cli
-import clodius.chromosomes as cch
-import clodius.multivec as cmv
-import h5py
+import ast
+import logging
 import math
-import negspy.coordinates as nc
-import numpy as np
 import os
 import os.path as op
-import scipy.misc as sm
 import tempfile
+from tempfile import TemporaryDirectory
 
-import ast
+import h5py
+import numpy as np
+
+import click
+import clodius.chromosomes as cch
+import clodius.multivec as cmv
+import negspy.coordinates as nc
+import scipy.misc as sm
+from clodius.tiles.bam import get_cigar_substitutions
+
+from . import cli
+
+logger = logging.getLogger(__name__)
 
 
 def epilogos_bedline_to_vector(bedlines, row_infos=None):
@@ -426,3 +433,121 @@ def bedfile_to_multivec(
         tile_size,
         method,
     )
+
+
+def reads_to_array(f_in, h_out, ref, chrom_len):
+    """Convert BAM file reads to an HDF5 array.
+
+    Arguments:
+
+    f_in: The pysam AlignmentFile handle
+    h_out: An hdf5 file handle to store the output arrays
+    ref: The chromosome name
+    chrom_len: The length of the chromosome
+
+    """
+    logger.info("Creating array for chrom: %s with length: %d", ref, chrom_len)
+    reads = list(f_in.fetch(ref, 0, chrom_len))
+
+    subs = {
+        "A": np.zeros((chrom_len,)),
+        "C": np.zeros((chrom_len,)),
+        "G": np.zeros((chrom_len,)),
+        "T": np.zeros((chrom_len,)),
+        "S": np.zeros((chrom_len,)),
+        "M": np.zeros((chrom_len,)),
+        "I": np.zeros((chrom_len,)),
+        "D": np.zeros((chrom_len,)),
+        "H": np.zeros((chrom_len,)),
+        "N": np.zeros((chrom_len,)),
+    }
+
+    for read in reads:
+        ap = [
+            p
+            for p in read.get_aligned_pairs(with_seq=True, matches_only=True)
+            if p[2].islower()
+        ]
+        #     print("read", read.reference_start)
+        subs["M"][read.reference_start + 1 : read.reference_end + 1] += 1
+
+        for start, op, oplen in get_cigar_substitutions(read):
+            if op == "I":
+                subs[op][start + 1] += 1
+            else:
+                subs[op][start + 1 : start + 1 + oplen] += 1
+
+        for p in ap:
+            subs["M"][p[1] + 1] -= 1
+            subs[read.query_sequence[p[0]]][p[1] + 1] += 1
+
+    arr = np.array(
+        [
+            subs["A"],
+            subs["T"],
+            subs["G"],
+            subs["C"],
+            subs["S"],
+            subs["M"],
+            subs["I"],
+            subs["D"],
+        ]
+    ).T
+    logger.info("Dumping array with shape: %s", str(arr.shape))
+
+    h_out.create_dataset(ref, data=arr, compression="gzip")
+    pass
+
+
+def sum_agg(x):
+    return np.nansum(x.T.reshape((x.shape[1], -1, 2)), axis=2).T
+
+
+@convert.command()
+@click.argument("filepath")
+@click.option("--index-filepath", "-i", default=None)
+@click.option(
+    "--output-file",
+    "-o",
+    default=None,
+    help="The default output file name to use. If this isn't"
+    "specified, clodius will replace the current extension"
+    "with .bam.mv5",
+)
+def bamfile_to_multivec(filepath, index_filepath, output_file):
+    """Convert a BAM file to a multivec representation."""
+    import pysam
+
+    logging.basicConfig(level=logging.INFO)
+
+    if index_filepath is None:
+        index_filepath = filepath + ".bai"
+
+    if output_file is None:
+        output_file = op.splitext(filepath)[0] + ".bam.mv5"
+    logger.info("Output file: %s", output_file)
+
+    import numpy as np
+    from clodius.tiles.bam import get_cigar_substitutions
+
+    f = pysam.AlignmentFile(filepath, index_filename=index_filepath)
+
+    logger.info("Loaded alignment file")
+
+    with TemporaryDirectory() as tmp_dir:
+        h_mid = h5py.File(op.join(tmp_dir, "mid.h5"), "w")
+
+        for ref, chrom_len in zip(f.references, f.lengths):
+            reads_to_array(f, h_mid, ref, chrom_len)
+
+        logger.info("Creating multivec array")
+        cmv.create_multivec_multires(
+            h_mid,
+            zip(f.references, f.lengths),
+            agg=sum_agg,
+            #     agg=log_sum_exp_agg,
+            starting_resolution=1,
+            row_infos=["a", "t", "g", "c", "s", "m", "i", "d", "h", "n"],
+            output_file=output_file,
+            tile_size=256,
+        )
