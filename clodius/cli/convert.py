@@ -463,8 +463,14 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
     }
 
     logger.info("Finished allocating arrays")
+    counter = 0
 
     for read in reads:
+        counter += 1
+
+        if counter % 5000 = 0:
+            logger.info("Processed %d reads", counter)
+
         ap = [
             p
             for p in read.get_aligned_pairs(with_seq=True, matches_only=True)
