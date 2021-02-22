@@ -447,7 +447,7 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
 
     """
     logger.info("Creating array for chrom: %s with length: %d", ref, chrom_len)
-    reads = list(f_in.fetch(ref, 0, chrom_len))
+    reads = f_in.fetch(ref, 0, chrom_len)
 
     subs = {
         "A": np.zeros((chrom_len,)),
@@ -461,6 +461,8 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
         "H": np.zeros((chrom_len,)),
         "N": np.zeros((chrom_len,)),
     }
+
+    logger.info("Finished allocating arrays")
 
     for read in reads:
         ap = [
