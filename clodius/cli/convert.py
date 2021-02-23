@@ -449,17 +449,19 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
     logger.info("Creating array for chrom: %s with length: %d", ref, chrom_len)
     reads = f_in.fetch(ref, 0, chrom_len)
 
+    arr = np.zeros((10, chrom_len))
+
     subs = {
-        "A": np.zeros((chrom_len,)),
-        "C": np.zeros((chrom_len,)),
-        "G": np.zeros((chrom_len,)),
-        "T": np.zeros((chrom_len,)),
-        "S": np.zeros((chrom_len,)),
-        "M": np.zeros((chrom_len,)),
-        "I": np.zeros((chrom_len,)),
-        "D": np.zeros((chrom_len,)),
-        "H": np.zeros((chrom_len,)),
-        "N": np.zeros((chrom_len,)),
+        "A": 0,
+        "C": 1,
+        "G": 2,
+        "T": 3,
+        "S": 4,
+        "M": 5,
+        "I": 6,
+        "D": 7,
+        "H": 8,
+        "N": 9
     }
 
     logger.info("Finished allocating arrays")
@@ -482,33 +484,21 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
             logger.error("Read: %s", str(read))
             continue
         #     print("read", read.reference_start)
-        subs["M"][read.reference_start + 1 : read.reference_end + 1] += 1
+        arr[subs["M"]][read.reference_start + 1 : read.reference_end + 1] += 1
 
         for start, op, oplen in get_cigar_substitutions(read):
             if op == "I":
-                subs[op][start + 1] += 1
+                arr[subs[op]][start + 1] += 1
             else:
-                subs[op][start + 1 : start + 1 + oplen] += 1
+                arr[subs[op]][start + 1 : start + 1 + oplen] += 1
 
         for p in ap:
-            subs["M"][p[1] + 1] -= 1
-            subs[read.query_sequence[p[0]]][p[1] + 1] += 1
+            arr[subs["M"]][p[1] + 1] -= 1
+            arr[subs[read.query_sequence[p[0]]]][p[1] + 1] += 1
 
-    arr = np.array(
-        [
-            subs["A"],
-            subs["T"],
-            subs["G"],
-            subs["C"],
-            subs["S"],
-            subs["M"],
-            subs["I"],
-            subs["D"],
-        ]
-    ).T
-    logger.info("Dumping array with shape: %s", str(arr.shape))
+    logger.info("Dumping array with shape: %s", str(arr.T.shape))
 
-    h_out.create_dataset(ref, data=arr, compression="gzip")
+    h_out.create_dataset(ref, data=arr.T, compression="gzip")
     pass
 
 
