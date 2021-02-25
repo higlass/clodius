@@ -503,6 +503,25 @@ def sum_agg(x):
     return np.nansum(x.T.reshape((x.shape[1], -1, 2)), axis=2).T
 
 
+def min_agg(x):
+    return np.min(x.T.reshape((x.shape[1], -1, 2)), axis=2).T
+
+
+def max_agg(x):
+    return np.max(x.T.reshape((x.shape[1], -1, 2)), axis=2).T
+
+
+def min_max_agg(x, min_cols, max_cols, combine):
+    """Aggregate using min on some columns, max on others."""
+    mins = min_agg(x[:, min_cols])
+    maxs = max_agg(x[:, max_cols])
+
+    new_arr = np.array([[]])
+
+    new_arr = np.hstack(combine(mins, maxs))
+    return new_arr
+
+
 @convert.command()
 @click.argument("filepath")
 @click.option("--index-filepath", "-i", default=None)
@@ -534,6 +553,13 @@ def bamfile_to_multivec(filepath, index_filepath, output_file):
 
     logger.info("Loaded alignment file")
 
+    bam_min_max_agg = lambda arr: min_max_agg(
+        arr,
+        min_cols=[0],
+        max_cols=all_cols[1:],
+        combine=lambda mins, maxs: [mins[:, [0]], maxs[:, all_cols[:-1]]],
+    )
+
     with TemporaryDirectory() as tmp_dir:
         h_mid = h5py.File(op.join(tmp_dir, "mid.h5"), "w")
 
@@ -544,7 +570,7 @@ def bamfile_to_multivec(filepath, index_filepath, output_file):
         cmv.create_multivec_multires(
             h_mid,
             zip(f.references, f.lengths),
-            agg=sum_agg,
+            agg=bam_min_max_agg,
             #     agg=log_sum_exp_agg,
             starting_resolution=1,
             row_infos=["a", "t", "g", "c", "s", "m", "i", "d", "h", "n"],
