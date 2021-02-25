@@ -461,7 +461,7 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
         "I": 6,
         "D": 7,
         "H": 8,
-        "N": 9
+        "N": 9,
     }
 
     logger.info("Finished allocating arrays")
@@ -473,16 +473,17 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
         if counter % 5000 == 0:
             logger.info("Processed %d reads", counter)
 
-        try:
+        if read.query_sequence:
             ap = [
                 p
                 for p in read.get_aligned_pairs(with_seq=True, matches_only=True)
                 if p[2].islower()
             ]
-        except TypeError as te:
-            logger.error("Type error: %s", str(te))
-            logger.error("Read: %s", str(read))
-            continue
+
+            for p in ap:
+                arr[subs["M"]][p[1] + 1] -= 1
+                arr[subs[read.query_sequence[p[0]]]][p[1] + 1] += 1
+
         #     print("read", read.reference_start)
         arr[subs["M"]][read.reference_start + 1 : read.reference_end + 1] += 1
 
@@ -491,10 +492,6 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
                 arr[subs[op]][start + 1] += 1
             else:
                 arr[subs[op]][start + 1 : start + 1 + oplen] += 1
-
-        for p in ap:
-            arr[subs["M"]][p[1] + 1] -= 1
-            arr[subs[read.query_sequence[p[0]]]][p[1] + 1] += 1
 
     logger.info("Dumping array with shape: %s", str(arr.T.shape))
 
