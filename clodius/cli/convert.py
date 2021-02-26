@@ -474,15 +474,19 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
             logger.info("Processed %d reads", counter)
 
         if read.query_sequence:
-            ap = [
-                p
-                for p in read.get_aligned_pairs(with_seq=True, matches_only=True)
-                if p[2].islower()
-            ]
+            try:
+                ap = [
+                    p
+                    for p in read.get_aligned_pairs(with_seq=True, matches_only=True)
+                    if p[2].islower()
+                ]
 
-            for p in ap:
-                arr[subs["M"]][p[1] + 1] -= 1
-                arr[subs[read.query_sequence[p[0]]]][p[1] + 1] += 1
+                for p in ap:
+                    arr[subs["M"]][p[1] + 1] -= 1
+                    arr[subs[read.query_sequence[p[0]]]][p[1] + 1] += 1
+            except ValueError:
+                # Probably MD tag not present
+                pass
 
         #     print("read", read.reference_start)
         arr[subs["M"]][read.reference_start + 1 : read.reference_end + 1] += 1
