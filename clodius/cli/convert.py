@@ -452,12 +452,12 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
     arr = np.zeros((10, chrom_len))
 
     subs = {
-        "A": 0,
-        "C": 1,
-        "G": 2,
-        "T": 3,
-        "S": 4,
-        "M": 5,
+        "M": 0,
+        "A": 1,
+        "C": 2,
+        "G": 3,
+        "T": 4,
+        "S": 5,
         "I": 6,
         "D": 7,
         "H": 8,
@@ -553,6 +553,8 @@ def bamfile_to_multivec(filepath, index_filepath, output_file):
 
     logger.info("Loaded alignment file")
 
+    all_cols = list(range(10))
+
     bam_min_max_agg = lambda arr: min_max_agg(
         arr,
         min_cols=[0],
@@ -573,7 +575,7 @@ def bamfile_to_multivec(filepath, index_filepath, output_file):
             agg=bam_min_max_agg,
             #     agg=log_sum_exp_agg,
             starting_resolution=1,
-            row_infos=["a", "t", "g", "c", "s", "m", "i", "d", "h", "n"],
+            row_infos=["m", "a", "c", "g", "t", "s", "i", "d", "h", "n"],
             output_file=output_file,
             tile_size=256,
         )
