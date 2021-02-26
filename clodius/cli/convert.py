@@ -473,6 +473,9 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
         if counter % 5000 == 0:
             logger.info("Processed %d reads", counter)
 
+        if read.reference_start is None or read.reference_end is None:
+            continue
+
         if read.query_sequence:
             try:
                 ap = [
@@ -488,7 +491,6 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
                 # Probably MD tag not present
                 pass
 
-        #     print("read", read.reference_start)
         arr[subs["M"]][read.reference_start + 1 : read.reference_end + 1] += 1
 
         for start, op, oplen in get_cigar_substitutions(read):
