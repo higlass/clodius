@@ -449,7 +449,7 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
     logger.info("Creating array for chrom: %s with length: %d", ref, chrom_len)
     reads = f_in.fetch(ref, 0, chrom_len)
 
-    arr = np.zeros((10, chrom_len))
+    arr = np.zeros((10, chrom_len + 1))
 
     subs = {
         "M": 0,
