@@ -1,13 +1,15 @@
 from __future__ import print_function
 
 import gzip
-import h5py
-import math
-import numpy as np
+import json
 import logging
+import math
 import os
 import os.path as op
 import sys
+
+import h5py
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +108,9 @@ def bedfile_to_multivec(
             message = """
 The expected position location does not match the observed location at entry {}:{}-{}
 This is probably because the bedfile is not sorted. Please sort and try again.
-            """.format(chrom, start, end)
+            """.format(
+                chrom, start, end
+            )
             raise ValueError(message)
         # assert curr_index == data_start_index, message
         # print('vector', vector)
@@ -198,14 +202,18 @@ def create_multivec_multires(
     chroms, lengths = zip(*chromsizes)
     chrom_array = np.array(chroms, dtype="S")
 
-    # row_infos = None
-    if "row_infos" in array_data.attrs:
-        row_infos = array_data.attrs["row_infos"]
+    try:
+        if "row_infos" in array_data.attrs:
+            row_infos = array_data.attrs["row_infos"]
+    except AttributeError:
+        # array data probably isn't an HDF5 file
+        pass
+
+    # add the row_info information
+    if row_infos is not None:
+        f["info"].create_dataset("row_infos", data=json.dumps(row_infos))
 
     # add the chromosome information
-    if row_infos is not None:
-        f["resolutions"][str(curr_resolution)].attrs.create("row_infos", row_infos)
-
     f["resolutions"][str(curr_resolution)].create_group("chroms")
     f["resolutions"][str(curr_resolution)].create_group("values")
     f["resolutions"][str(curr_resolution)]["chroms"].create_dataset(
@@ -272,10 +280,6 @@ def create_multivec_multires(
         # as the previous
         curr_resolution = prev_resolution * 2
         f["resolutions"].create_group(str(curr_resolution))
-
-        # add information about each of the rows
-        if row_infos is not None:
-            f["resolutions"][str(curr_resolution)].attrs.create("row_infos", row_infos)
 
         f["resolutions"][str(curr_resolution)].create_group("chroms")
         f["resolutions"][str(curr_resolution)].create_group("values")
