@@ -568,6 +568,19 @@ def bamfile_to_multivec(filepath, index_filepath, output_file):
         combine=lambda mins, maxs: [mins[:, [0]], maxs[:, all_cols[:-1]]],
     )
 
+    row_infos = [
+        {"name": "M", "color": "#DCDCDC"},  # M
+        {"name": "A", "color": "#08519c"},  # A
+        {"name": "C", "color": "#fe9929"},  # C
+        {"name": "G", "color": "#993404"},  # G
+        {"name": "T", "color": "#6baed6"},  # T
+        {"name": "S", "color": "#808080"},  # S
+        {"name": "I", "color": "rgba(255, 0, 255, 0.5)"},  # I
+        {"name": "D", "color": "rgba(255, 128, 128, 0.5)"},  # D
+        {"name": "H", "color": "rgba(40, 40, 40, 0.5)"},  # H
+        {"name": "N", "color": "rgba(10, 10, 10, 0.5)"},  # N
+    ]
+
     with TemporaryDirectory() as tmp_dir:
         h_mid = h5py.File(op.join(tmp_dir, "mid.h5"), "w")
 
@@ -581,7 +594,7 @@ def bamfile_to_multivec(filepath, index_filepath, output_file):
             agg=bam_min_max_agg,
             #     agg=log_sum_exp_agg,
             starting_resolution=1,
-            row_infos=["m", "a", "c", "g", "t", "s", "i", "d", "h", "n"],
+            row_infos=row_infos,
             output_file=output_file,
             tile_size=256,
         )
