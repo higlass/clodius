@@ -5,6 +5,7 @@ v0.16.0
 v0.15.4
 
 - Remove type=bool from bedpe aggregate function to fix "Got secondary option for non-boolean flag" error
+- No default assembly
 
 v0.15.2
 
