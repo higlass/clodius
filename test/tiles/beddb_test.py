@@ -31,5 +31,4 @@ def test_tileset_info():
 
     tsinfo = hgbe.tileset_info(filename)
 
-    print("tsinfo", tsinfo)
     assert "chromsizes" in tsinfo
