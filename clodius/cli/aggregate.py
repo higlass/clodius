@@ -181,7 +181,7 @@ def _multivec(
 def _bedpe(
     filepath,
     output_file=None,
-    assembly="hg19",
+    assembly=None,
     importance_column="random",
     has_header=False,
     max_per_tile=100,
@@ -1441,7 +1441,6 @@ def bedgraph(
     "--assembly",
     "-a",
     help="The genome assembly that this file was created against",
-    default="hg19",
 )
 @click.option(
     "--importance-column",
@@ -1529,7 +1528,6 @@ def bedfile(
     "-a",
     help="The genome assembly that this file was created against",
     type=str,
-    default="hg19",
     show_default=True,
 )
 @click.option(
