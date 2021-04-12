@@ -33,6 +33,7 @@ def tileset_info(db_file):
         "chromsizes": list(
             zip(row[3].split("\t"), [int(cs) for cs in row[4].split("\t")])
         ),
+        "info_version": "2"
     }
     conn.close()
 
