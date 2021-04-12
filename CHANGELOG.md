@@ -1,3 +1,8 @@
+v0.16.0
+
+- Return `chromsizes` as a single array in beddb `tileset_info`
+- [BREAKING] Remove the `chrom_names` and `chrom_sizes` fields in the beddb tileset info
+
 v0.15.4
 
 - Remove type=bool from bedpe aggregate function to fix "Got secondary option for non-boolean flag" error

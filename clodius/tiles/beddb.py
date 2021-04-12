@@ -23,8 +23,6 @@ def tileset_info(db_file):
         "zoom_step": row[0],
         "max_length": row[1],
         "assembly": row[2],
-        "chrom_names": row[3],
-        "chrom_sizes": row[4],
         "tile_size": row[5],
         "max_zoom": row[6],
         "max_width": row[7],
@@ -32,6 +30,10 @@ def tileset_info(db_file):
         "max_pos": [row[1]],
         "header": header,
         "version": version,
+        "chromsizes": list(
+            zip(row[3].split("\t"), [int(cs) for cs in row[4].split("\t")])
+        ),
+        "info_version": "2"
     }
     conn.close()
 
