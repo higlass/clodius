@@ -301,8 +301,8 @@ def _bedgraph_to_multivec(
     "--output-file",
     "-o",
     default=None,
-    help="The default output file name to use. If this isn't"
-    "specified, clodius will replace the current extension"
+    help="The default output file name to use. If this isn't "
+    "specified, clodius will replace the current extension "
     "with .hitile",
 )
 @click.option(
@@ -313,25 +313,25 @@ def _bedgraph_to_multivec(
 )
 @click.option(
     "--chromosome-col",
-    help="The column number (1-based) which contains the chromosome " "name",
+    help="The column number (1-based) which contains the chromosome name",
     default=1,
     type=int,
 )
 @click.option(
     "--from-pos-col",
-    help="The column number (1-based) which contains the starting " "position",
+    help="The column number (1-based) which contains the starting position",
     default=2,
     type=int,
 )
 @click.option(
     "--to-pos-col",
-    help="The column number (1-based) which contains the ending" "position",
+    help="The column number (1-based) which contains the ending position",
     default=3,
     type=int,
 )
 @click.option(
     "--value-col",
-    help="The column number (1-based) which contains the actual value" "position",
+    help="The column number (1-based) which contains the actual value",
     default=4,
     type=int,
 )
@@ -365,8 +365,8 @@ def _bedgraph_to_multivec(
 @click.option(
     "--format",
     type=click.Choice(["default", "epilogos", "states"]),
-    help="'default':chr start end state1_value state2_value, etc;"
-    "'epilogos': chr start end [[state1_value, state1_num],[state2_value, state2_num],[etc]];"
+    help="'default':chr start end state1_value state2_value, etc; "
+    "'epilogos': chr start end [[state1_value, state1_num],[state2_value, state2_num],[etc]]; "
     "'states': chr start end state_name",
     default="default",
 )
