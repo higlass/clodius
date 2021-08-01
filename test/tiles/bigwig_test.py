@@ -1,4 +1,5 @@
 import clodius.tiles.bigwig as hgbi
+import clodius.tiles.utils as hgut
 import os.path as op
 import numpy as np
 import base64
@@ -138,7 +139,7 @@ def test_natsorted():
     ]
 
     for test in chromname_tests:
-        sorted_output = hgbi.natsorted(test["input"])
+        sorted_output = hgut.natsorted(test["input"])
         assert (
             sorted_output == test["expected"]
         ), "Sorted output was %s\nExpected: %s" % (sorted_output, test["expected"])

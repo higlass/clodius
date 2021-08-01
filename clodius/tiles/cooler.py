@@ -215,21 +215,9 @@ def _get_info_multi_v1(file_path):
     return info
 
 
-def get_quadtree_depth(chromsizes, binsize):
-    """
-    Depth of quad tree necessary to tesselate the concatenated genome with quad
-    tiles such that linear dimension of the tiles is a preset multiple of the
-    genomic resolution.
-
-    """
-    tile_size_bp = TILE_SIZE * binsize
-    min_tile_cover = np.ceil(sum(chromsizes) / tile_size_bp)
-    return int(np.ceil(np.log2(min_tile_cover)))
-
-
 def get_zoom_resolutions(chromsizes, base_res):
     return [
-        base_res * 2 ** x for x in range(get_quadtree_depth(chromsizes, base_res) + 1)
+        base_res * 2 ** x for x in range(hgut.get_quadtree_depth(chromsizes, base_res * TILE_SIZE) + 1)
     ]
 
 

@@ -1,21 +1,7 @@
 import math
 import numpy as np
 import pysam
-import clodius.tiles.bigwig as ctbw
-
-
-def abs2genomic(chromsizes, start_pos, end_pos):
-    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
-    cid_lo, cid_hi = (
-        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
-    )
-    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
-    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
-    start = rel_pos_lo
-    for cid in range(cid_lo, cid_hi):
-        yield cid, start, chromsizes[cid]
-        start = 0
-    yield cid_hi, start, rel_pos_hi
+from .utils import abs2genomic, natsorted
 
 
 def load_reads(samfile, start_pos, end_pos, chrom_order=None):
@@ -49,7 +35,7 @@ def load_reads(samfile, start_pos, end_pos, chrom_order=None):
 
     # we're going to create a natural ordering for references
     # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
-    references = ctbw.natsorted(references)
+    references = natsorted(references)
     lengths = [ref_lengths[r] for r in references]
 
     abs_chrom_offsets = np.r_[0, np.cumsum(lengths)]

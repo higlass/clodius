@@ -1,5 +1,7 @@
 import os.path as op
-
+import numpy as np
+import re
+import functools as ft
 
 def partition_by_adjacent_tiles(tile_ids, dimension=2):
     """
@@ -180,3 +182,92 @@ def tile_bounds(tsinfo, z, x, y, width=1, height=1):
     to_y = min_pos[1] + (y + height) * tile_width
 
     return [from_x, from_y, to_x, to_y]
+
+def abs2genomic(chromsizes, start_pos, end_pos):
+    """
+    Convert absolute coordinates to genomic coordinates
+
+    Parameters:
+    -----------
+    chromsizes: [[chrom, size],...]
+        A list of chromosome sizes associated with this tileset
+    start_pos: int
+        The absolute start coordinate
+    end_pos: int
+        The absolute end coordinate
+    """
+    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
+    cid_lo, cid_hi = (
+        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
+    )
+    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
+    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
+    start = rel_pos_lo
+    for cid in range(cid_lo, cid_hi):
+        yield cid, start, chromsizes[cid]
+        start = 0
+    yield cid_hi, start, rel_pos_hi
+
+
+def get_quadtree_depth(chromsizes, tile_size_bp):
+    """
+    Depth of quad tree necessary to tesselate the concatenated genome with quad
+    tiles such that linear dimension of the tiles is a preset multiple of the
+    genomic resolution.
+
+    Parameters:
+    -----------
+    chromsizes: pandas.Series
+        A series representation of the chromosome sizes
+    tile_size_bp: int
+        The size of each tile in the tileset
+    """
+    min_tile_cover = np.ceil(sum(chromsizes) / tile_size_bp)
+    return int(np.ceil(np.log2(min_tile_cover)))
+
+
+def natcmp(x, y):
+    if x.find("_") >= 0:
+        x_parts = x.split("_")
+        if y.find("_") >= 0:
+            # chr_1 vs chr_2
+            y_parts = y.split("_")
+
+            return natcmp(x_parts[1], y_parts[1])
+        else:
+            # chr_1 vs chr1
+            # chr1 comes first
+            return 1
+    if y.find("_") >= 0:
+        # chr1 vs chr_1
+        # y comes second
+        return -1
+
+    _NS_REGEX = re.compile(r"(\d+)", re.U)
+    x_parts = tuple([int(a) if a.isdigit() else a for a in _NS_REGEX.split(x) if a])
+    y_parts = tuple([int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a])
+
+    # order of these parameters is purposefully reverse how they should be
+    # ordered
+    for key in ["m", "y", "x"]:
+        if key in y.lower():
+            return -1
+        if key in x.lower():
+            return 1
+
+    try:
+        if x_parts < y_parts:
+            return -1
+        elif y_parts > x_parts:
+            return 1
+        else:
+            return 0
+    except TypeError:
+        return 1
+
+
+def natsorted(iterable):
+    """
+    Sort an iterable by natural genomic order
+    """
+    return sorted(iterable, key=ft.cmp_to_key(natcmp))

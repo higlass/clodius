@@ -4,7 +4,8 @@ import logging
 import numpy as np
 import pandas as pd
 import random
-import clodius.tiles.bigwig as hgbw
+import clodius.tiles.bigwig as hgbi
+from .utils import abs2genomic, get_quadtree_depth
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -20,7 +21,7 @@ range_modes["significant"] = {"name": "Significant", "value": "significant"}
 
 
 def tileset_info(bbpath, chromsizes=None):
-    ti = hgbw.tileset_info(bbpath, chromsizes)
+    ti = hgbi.tileset_info(bbpath, chromsizes)
     ti["range_modes"] = range_modes
     return ti
 
@@ -186,17 +187,17 @@ def get_bigbed_tile(
     max_elements=None,
 ):
     if chromsizes is None:
-        chromsizes = hgbw.get_chromsizes(bbpath)
+        chromsizes = hgbi.get_chromsizes(bbpath)
 
     if min_elements is None:
         min_elements = MIN_ELEMENTS
     if max_elements is None:
         max_elements = MAX_ELEMENTS
 
-    resolutions = hgbw.get_zoom_resolutions(chromsizes)
+    resolutions = hgbi.get_zoom_resolutions(chromsizes)
     binsize = resolutions[zoom_level]
 
-    cids_starts_ends = list(hgbw.abs2genomic(chromsizes, start_pos, end_pos))
+    cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
 
     with ThreadPoolExecutor(max_workers=16) as e:
         arrays = list(
@@ -302,10 +303,10 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
         # this doesn't combine multiple consequetive ids, which
         # would speed things up
         if chromsizes_to_use is None:
-            chromsizes_to_use = hgbw.get_chromsizes(bbpath)
+            chromsizes_to_use = hgbi.get_chromsizes(bbpath)
 
-        max_depth = hgbw.get_quadtree_depth(chromsizes_to_use)
-        tile_size = hgbw.TILE_SIZE * 2 ** (max_depth - zoom_level)
+        max_depth = get_quadtree_depth(chromsizes_to_use, hgbi.TILE_SIZE)
+        tile_size = hgbi.TILE_SIZE * 2 ** (max_depth - zoom_level)
         start_pos = tile_pos * tile_size
         end_pos = start_pos + tile_size
 
@@ -326,4 +327,4 @@ def tiles(bbpath, tile_ids, chromsizes_map={}, chromsizes=None):
 
 
 def chromsizes(filename):
-    return hgbw.chromsizes(filename)
+    return hgbi.chromsizes(filename)

@@ -4,32 +4,7 @@ import json
 
 import h5py
 import numpy as np
-
-
-def abs2genomic(chromsizes, start_pos, end_pos):
-    """
-    Convert absolute genomic sizes to genomic
-
-    Parameters:
-    -----------
-    chromsizes: [1000,...]
-        An array of the lengths of the chromosomes
-    start_pos: int
-        The starting genomic position
-    end_pos: int
-        The ending genomic position
-    """
-    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
-    cid_lo, cid_hi = (
-        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
-    )
-    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
-    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
-    start = rel_pos_lo
-    for cid in range(cid_lo, cid_hi):
-        yield cid, start, chromsizes[cid]
-        start = 0
-    yield cid_hi, start, rel_pos_hi
+from .utils import abs2genomic
 
 
 def tiles(filename, tile_ids):

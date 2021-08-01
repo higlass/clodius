@@ -1,69 +1,12 @@
 from pyfaidx import Fasta
-import re
 import numpy as np
-import functools as ft
 import pandas as pd
 import logging
-import base64
+from .utils import abs2genomic, natsorted, get_quadtree_depth
 
 logger = logging.getLogger(__name__)
 
 TILE_SIZE = 1024
-
-
-def get_quadtree_depth(chromsizes):
-    tile_size_bp = TILE_SIZE
-    min_tile_cover = np.ceil(sum(chromsizes) / tile_size_bp)
-    return int(np.ceil(np.log2(min_tile_cover)))
-
-
-
-def natsort_key(s, _NS_REGEX=re.compile(r"(\d+)", re.U)):
-    return tuple([int(x) if x.isdigit() else x for x in _NS_REGEX.split(s) if x])
-
-
-def natcmp(x, y):
-    if x.find("_") >= 0:
-        x_parts = x.split("_")
-        if y.find("_") >= 0:
-            # chr_1 vs chr_2
-            y_parts = y.split("_")
-
-            return natcmp(x_parts[1], y_parts[1])
-        else:
-            # chr_1 vs chr1
-            # chr1 comes first
-            return 1
-    if y.find("_") >= 0:
-        # chr1 vs chr_1
-        # y comes second
-        return -1
-
-    _NS_REGEX = re.compile(r"(\d+)", re.U)
-    x_parts = tuple([int(a) if a.isdigit() else a for a in _NS_REGEX.split(x) if a])
-    y_parts = tuple([int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a])
-
-    # order of these parameters is purposefully reverse how they should be
-    # ordered
-    for key in ["m", "y", "x"]:
-        if key in y.lower():
-            return -1
-        if key in x.lower():
-            return 1
-
-    try:
-        if x_parts < y_parts:
-            return -1
-        elif y_parts > x_parts:
-            return 1
-        else:
-            return 0
-    except TypeError:
-        return 1
-
-
-def natsorted(iterable):
-    return sorted(iterable, key=ft.cmp_to_key(natcmp))
 
 
 def get_chromsizes(fapath):
@@ -94,8 +37,6 @@ def tileset_info(fapath, chromsizes=None):
                     'max_zoom': 7
                     }
     """
-    TILE_SIZE = 1024
-
     if chromsizes is None:
         chromsizes = get_chromsizes(fapath)
         chromsizes_list = []
@@ -105,12 +46,11 @@ def tileset_info(fapath, chromsizes=None):
     else:
         chromsizes_list = chromsizes
 
-    min_tile_cover = np.ceil(sum([int(c[1]) for c in chromsizes_list]) / TILE_SIZE)
-    max_zoom = int(np.ceil(np.log2(min_tile_cover)))
+    max_zoom = get_quadtree_depth(chromsizes, TILE_SIZE)
 
     tileset_info = {
         "min_pos": [0],
-        "max_pos": [TILE_SIZE * 2 ** max_zoom],
+        "max_pos": [sum(int(c[1]) for c in chromsizes_list)],
         "max_width": TILE_SIZE * 2 ** max_zoom,
         "tile_size": TILE_SIZE,
         "max_zoom": max_zoom,
@@ -162,7 +102,7 @@ def get_fasta_tile(
     return ''.join(arrays)
 
 
-def tiles(fapath, tile_ids, chromsizes_map={}, chromsizes=None):
+def tiles(fapath, tile_ids, chromsizes_map={}, chromsizes=None, max_tile_width=None):
     """
     Generate tiles from a FASTA file.
 
@@ -180,7 +120,9 @@ def tiles(fapath, tile_ids, chromsizes_map={}, chromsizes=None):
     chromsizes: [[chrom, size],...]
         A 2d array containing chromosome names and sizes. Overrides the
         chromsizes in chromsizes_map
-
+    max_tile_width: int
+        How wide can each tile be before we return no data. This
+        can be used to limit the amount of data returned.
     Returns
     -------
     tile_list: [(tile_id, tile_data),...]
@@ -216,8 +158,15 @@ def tiles(fapath, tile_ids, chromsizes_map={}, chromsizes=None):
         if chromsizes_to_use is None:
             chromsizes_to_use = get_chromsizes(fapath)
 
-        max_depth = get_quadtree_depth(chromsizes_to_use)
+        max_depth = get_quadtree_depth(chromsizes_to_use, TILE_SIZE)
         tile_size = TILE_SIZE * 2 ** (max_depth - zoom_level)
+        if max_tile_width and tile_size > max_tile_width:
+            return [(
+                tile_id,
+                {
+                    "error": f"Tile too large, no data returned. Max tile size: {max_tile_width}"
+                },
+            )]
         start_pos = tile_pos * tile_size
         end_pos = start_pos + tile_size
         tile = get_fasta_tile(
@@ -227,7 +176,6 @@ def tiles(fapath, tile_ids, chromsizes_map={}, chromsizes=None):
             end_pos,
             chromsizes_to_use
         )
-
         generated_tiles += [(tile_id, {
             "sequence": tile
         })]
