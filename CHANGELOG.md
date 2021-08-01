@@ -1,3 +1,7 @@
+v0.16.1
+
+- Add FASTA tileset
+
 v0.16.0
 
 - Return `chromsizes` as a single array in beddb `tileset_info`

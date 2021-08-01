@@ -61,8 +61,6 @@ def tileset_info(bwpath, chromsizes=None):
                     'max_zoom': 7
                     }
     """
-    TILE_SIZE = 1024
-
     if chromsizes is None:
         chromsizes = get_chromsizes(bwpath)
         chromsizes_list = []
@@ -71,12 +69,13 @@ def tileset_info(bwpath, chromsizes=None):
             chromsizes_list += [[chrom, int(size)]]
     else:
         chromsizes_list = chromsizes
+        chromsizes = [int(c[1]) for c in chromsizes_list]
 
     max_zoom = get_quadtree_depth(chromsizes, TILE_SIZE)
 
     tileset_info = {
         "min_pos": [0],
-        "max_pos": [sum(int(c[1]) for c in chromsizes_list)],
+        "max_pos": [sum(chromsizes)],
         "max_width": TILE_SIZE * 2 ** max_zoom,
         "tile_size": TILE_SIZE,
         "max_zoom": max_zoom,
@@ -192,7 +191,6 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
     """
-    TILE_SIZE = 1024
     generated_tiles = []
     for tile_id in tile_ids:
         tile_option_parts = tile_id.split("|")[1:]
