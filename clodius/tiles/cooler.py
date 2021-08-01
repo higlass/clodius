@@ -217,7 +217,8 @@ def _get_info_multi_v1(file_path):
 
 def get_zoom_resolutions(chromsizes, base_res):
     return [
-        base_res * 2 ** x for x in range(hgut.get_quadtree_depth(chromsizes, base_res * TILE_SIZE) + 1)
+        base_res * 2 ** x
+        for x in range(hgut.get_quadtree_depth(chromsizes, base_res * TILE_SIZE) + 1)
     ]
 
 
@@ -571,8 +572,7 @@ def add_transform_type(tile_id):
 
 
 def tiles(filepath, tile_ids):
-    """
-    """
+    """ """
     transform_id_to_original_id = {}
 
     new_tile_ids = []

@@ -53,7 +53,7 @@ def tileset_info(fapath, chromsizes=None):
         "max_width": TILE_SIZE * 2 ** max_zoom,
         "tile_size": TILE_SIZE,
         "max_zoom": max_zoom,
-        "chromsizes": chromsizes_list
+        "chromsizes": chromsizes_list,
     }
     return tileset_info
 
@@ -97,8 +97,10 @@ def get_fasta_tile(
     cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
     with Fasta(fapath, one_based_attributes=False) as fa:
         # investigate using 4 bits per character (only 16 possible chars)
-        arrays = [fa[chrom_names[cid]][start:end].seq for cid, start, end in cids_starts_ends]
-    return ''.join(arrays)
+        arrays = [
+            fa[chrom_names[cid]][start:end].seq for cid, start, end in cids_starts_ends
+        ]
+    return "".join(arrays)
 
 
 def tiles(fapath, tile_ids, chromsizes_map={}, chromsizes=None, max_tile_width=None):
@@ -160,24 +162,18 @@ def tiles(fapath, tile_ids, chromsizes_map={}, chromsizes=None, max_tile_width=N
         max_depth = get_quadtree_depth(chromsizes_to_use, TILE_SIZE)
         tile_size = TILE_SIZE * 2 ** (max_depth - zoom_level)
         if max_tile_width and tile_size > max_tile_width:
-            return [(
-                tile_id,
-                {
-                    "error": f"Tile too large, no data returned. Max tile size: {max_tile_width}"
-                },
-            )]
+            return [
+                (
+                    tile_id,
+                    {
+                        "error": f"Tile too large, no data returned. Max tile size: {max_tile_width}"
+                    },
+                )
+            ]
         start_pos = tile_pos * tile_size
         end_pos = start_pos + tile_size
-        tile = get_fasta_tile(
-            fapath,
-            zoom_level,
-            start_pos,
-            end_pos,
-            chromsizes_to_use
-        )
-        generated_tiles += [(tile_id, {
-            "sequence": tile
-        })]
+        tile = get_fasta_tile(fapath, zoom_level, start_pos, end_pos, chromsizes_to_use)
+        generated_tiles += [(tile_id, {"sequence": tile})]
     return generated_tiles
 
 

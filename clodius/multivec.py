@@ -106,7 +106,9 @@ def bedfile_to_multivec(
             message = """
 The expected position location does not match the observed location at entry {}:{}-{}
 This is probably because the bedfile is not sorted. Please sort and try again.
-            """.format(chrom, start, end)
+            """.format(
+                chrom, start, end
+            )
             raise ValueError(message)
         # assert curr_index == data_start_index, message
         # print('vector', vector)

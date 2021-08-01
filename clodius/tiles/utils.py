@@ -3,6 +3,7 @@ import numpy as np
 import re
 import functools as ft
 
+
 def partition_by_adjacent_tiles(tile_ids, dimension=2):
     """
     Partition a set of tile ids into sets of adjacent tiles. For example,
@@ -182,6 +183,7 @@ def tile_bounds(tsinfo, z, x, y, width=1, height=1):
     to_y = min_pos[1] + (y + height) * tile_width
 
     return [from_x, from_y, to_x, to_y]
+
 
 def abs2genomic(chromsizes, start_pos, end_pos):
     """
