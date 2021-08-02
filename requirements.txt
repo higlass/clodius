@@ -11,3 +11,4 @@ nose
 cooler>=0.8.5
 pybbi>=0.2.0
 Click>=7
+pyfaidx

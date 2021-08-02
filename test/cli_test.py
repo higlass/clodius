@@ -282,11 +282,11 @@ def test_clodius_aggregate_bedpe():
 
     assert "\n" not in tiles[(0, 0)][0]["fields"][2]
 
-    tiles_2d = bed2ddb.tiles(output_file, ['x.0.0.0'])
+    tiles_2d = bed2ddb.tiles(output_file, ["x.0.0.0"])
 
     assert len(tiles_2d[0][1][0]["fields"]) == 3
 
-    tiles_1d = bed2ddb.tiles(output_file, ['x.0.0'])
+    tiles_1d = bed2ddb.tiles(output_file, ["x.0.0"])
 
     assert len(tiles_1d[0][1][0]["fields"]) == 3
 
