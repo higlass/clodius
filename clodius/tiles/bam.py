@@ -95,7 +95,7 @@ def load_reads(
         # we're going to create a natural ordering for references
         # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
         references = ctbw.natsorted(references)
-        chromsizes_list = list(zip(references, [int(l) for l in lengths]))
+        chromsizes_list = list(zip(references, [int(length) for length in lengths]))
 
     lengths = [r[1] for r in chromsizes_list]
     abs_chrom_offsets = np.r_[0, np.cumsum(lengths)]
@@ -288,7 +288,7 @@ def alignment_tileset_info(samfile, chromsizes):
         references = ctbw.natsorted(references)
 
         lengths = [ref_lengths[r] for r in references]
-        chromsizes_list = list(zip(references, [int(l) for l in lengths]))
+        chromsizes_list = list(zip(references, [int(length) for length in lengths]))
 
     tile_size = 256
     max_zoom = math.ceil(math.log(total_length / tile_size) / math.log(2))
