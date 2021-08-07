@@ -1,3 +1,9 @@
+v0.17.0
+
+- Updated the BAM file fetcher to do more efficient substitution loading
+- Include strand, cigars, and other metadata from reads
+- Added tabix loader that can be estimated to estimate the size of data in a region of a BAM file
+
 v0.16.0
 
 - Return `chromsizes` as a single array in beddb `tileset_info`

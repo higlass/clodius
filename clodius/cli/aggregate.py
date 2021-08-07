@@ -1438,9 +1438,7 @@ def bedgraph(
     "with .multires.bed",
 )
 @click.option(
-    "--assembly",
-    "-a",
-    help="The genome assembly that this file was created against",
+    "--assembly", "-a", help="The genome assembly that this file was created against",
 )
 @click.option(
     "--importance-column",
