@@ -1,7 +1,12 @@
-import os.path as op
-import numpy as np
-import re
 import functools as ft
+import os.path as op
+import re
+from typing import List, Optional
+
+import numpy as np
+from pydantic import BaseModel, validator
+
+from clodius.chromosomes import load_chromsizes
 
 
 def partition_by_adjacent_tiles(tile_ids, dimension=2):
@@ -185,6 +190,67 @@ def tile_bounds(tsinfo, z, x, y, width=1, height=1):
     return [from_x, from_y, to_x, to_y]
 
 
+class TilesetInfo(BaseModel):
+    max_zoom: int
+    max_width: int
+    max_pos: List[int]
+    min_pos: List[int]
+
+    @validator("max_zoom")
+    def max_zoom_zero_or_greater(cls, v):
+        """Check to make sure the zoom level is 0 or greater."""
+        if v < 0:
+            raise ValueError("The zoom level must be greater than or equal to 0")
+        return int(v)
+
+    @validator("max_width")
+    def max_width_greater_than_zero(cls, v):
+        """Check to make sure the max_width is greater than 0"""
+        if v <= 0:
+            raise ValueError("The max_width must be greater than 0")
+        return int(v)
+
+
+class TileInfo(BaseModel):
+    zoom: int
+    position: List[int]
+    width: Optional[int]
+    start: List[int]
+    end: List[int]
+
+    @validator("zoom")
+    def zoom_zero_or_greater(cls, v):
+        """Check to make sure the zoom level is 0 or greater."""
+        if v < 0:
+            raise ValueError("The zoom level must be greater than 0")
+        return int(v)
+
+
+def parse_tile_id(tile_id, tsinfo):
+    tile_id_parts = tile_id.split("|")[0].split(".")
+    tile_position = list(map(int, tile_id_parts[1:3]))
+    zoom_level = int(tile_id_parts[1])
+
+    tile_width = tsinfo.max_width / 2 ** int(tile_position[0])
+
+    starts = [
+        pos * (tsinfo.max_width / 2 ** zoom_level) + tsinfo.min_pos[i]
+        for (i, pos) in enumerate(tile_position[1:])
+    ]
+    ends = [
+        (pos * (tsinfo.max_width / 2 ** zoom_level) + tsinfo.min_pos[i] + tile_width)
+        for (i, pos) in enumerate(tile_position[1:])
+    ]
+
+    return TileInfo(
+        zoom=zoom_level,
+        position=tile_position[1:],
+        width=tile_width,
+        start=starts,
+        end=ends,
+    )
+
+
 def abs2genomic(chromsizes, start_pos, end_pos):
     """
     Convert absolute coordinates to genomic coordinates
@@ -208,6 +274,31 @@ def abs2genomic(chromsizes, start_pos, end_pos):
     for cid in range(cid_lo, cid_hi):
         yield cid, start, chromsizes[cid]
         start = 0
+    yield cid_hi, int(start), int(rel_pos_hi)
+
+
+class ChromosomeInterval(BaseModel):
+    cid: int
+    name: str
+    start: int
+    end: int
+
+
+def abs2genome_fn(chromsizes_filename, start, end):
+    """Convert an absolute genomic range to sections of genomic ranges.
+
+    E.g. (1000,2000) => [('chr1', 1000, 1500), ('chr2', 1500, 2000)]
+    """
+    (chrom_info, chrom_names, chrom_sizes) = load_chromsizes(chromsizes_filename)
+
+    for cid, start, end in abs2genomic(chrom_sizes, start, end):
+        try:
+            yield ChromosomeInterval(
+                cid=cid, name=chrom_names[cid], start=start, end=end
+            )
+        except IndexError:
+            # we've gone beyond the last chromosome so stop iterating
+            return
     yield cid_hi, start, rel_pos_hi
 
 

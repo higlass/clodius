@@ -1,5 +1,8 @@
-v0.16.1
+v0.17.0
 
+- Updated the BAM file fetcher to do more efficient substitution loading
+- Include strand, cigars, and other metadata from reads
+- Added tabix loader that can be estimated to estimate the size of data in a region of a BAM file
 - Add FASTA tileset
 
 v0.16.0
