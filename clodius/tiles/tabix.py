@@ -119,7 +119,7 @@ def reg2bins(begin, end, n_lvls=5, min_shift=14):
     """
     begin, end = begin, end
     t, s = 0, min_shift + (n_lvls << 1) + n_lvls
-    for l in range(n_lvls + 1):
+    for l in range(n_lvls + 1):  # noqa ignore ambiguous variable name
         b, e = t + (begin >> s), t + (end >> s)
         n = e - b + 1
         for k in range(b, e + 1):
