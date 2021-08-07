@@ -1,10 +1,9 @@
 import bbi
 import clodius.tiles.format as hgfo
-import functools as ft
 import logging
 import numpy as np
 import pandas as pd
-import re
+from .utils import get_quadtree_depth, abs2genomic, natsorted
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -24,62 +23,8 @@ range_modes["minMax"] = {"name": "Min-Max", "value": "minMax"}
 range_modes["whisker"] = {"name": "Whisker", "value": "whisker"}
 
 
-def get_quadtree_depth(chromsizes):
-    tile_size_bp = TILE_SIZE
-    min_tile_cover = np.ceil(sum(chromsizes) / tile_size_bp)
-    return int(np.ceil(np.log2(min_tile_cover)))
-
-
 def get_zoom_resolutions(chromsizes):
-    return [2 ** x for x in range(get_quadtree_depth(chromsizes) + 1)][::-1]
-
-
-def natsort_key(s, _NS_REGEX=re.compile(r"(\d+)", re.U)):
-    return tuple([int(x) if x.isdigit() else x for x in _NS_REGEX.split(s) if x])
-
-
-def natcmp(x, y):
-    if x.find("_") >= 0:
-        x_parts = x.split("_")
-        if y.find("_") >= 0:
-            # chr_1 vs chr_2
-            y_parts = y.split("_")
-
-            return natcmp(x_parts[1], y_parts[1])
-        else:
-            # chr_1 vs chr1
-            # chr1 comes first
-            return 1
-    if y.find("_") >= 0:
-        # chr1 vs chr_1
-        # y comes second
-        return -1
-
-    _NS_REGEX = re.compile(r"(\d+)", re.U)
-    x_parts = tuple([int(a) if a.isdigit() else a for a in _NS_REGEX.split(x) if a])
-    y_parts = tuple([int(a) if a.isdigit() else a for a in _NS_REGEX.split(y) if a])
-
-    # order of these parameters is purposefully reverse how they should be
-    # ordered
-    for key in ["m", "y", "x"]:
-        if key in y.lower():
-            return -1
-        if key in x.lower():
-            return 1
-
-    try:
-        if x_parts < y_parts:
-            return -1
-        elif y_parts > x_parts:
-            return 1
-        else:
-            return 0
-    except TypeError:
-        return 1
-
-
-def natsorted(iterable):
-    return sorted(iterable, key=ft.cmp_to_key(natcmp))
+    return [2 ** x for x in range(get_quadtree_depth(chromsizes, TILE_SIZE) + 1)][::-1]
 
 
 def get_chromsizes(bwpath):
@@ -93,20 +38,6 @@ def get_chromsizes(bwpath):
     chromosomes = natsorted(chromsizes.keys())
     chrom_series = pd.Series(chromsizes)[chromosomes]
     return chrom_series
-
-
-def abs2genomic(chromsizes, start_pos, end_pos):
-    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes.values)]
-    cid_lo, cid_hi = (
-        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
-    )
-    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
-    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
-    start = rel_pos_lo
-    for cid in range(cid_lo, cid_hi):
-        yield cid, start, chromsizes[cid]
-        start = 0
-    yield cid_hi, start, rel_pos_hi
 
 
 def tileset_info(bwpath, chromsizes=None):
@@ -130,8 +61,6 @@ def tileset_info(bwpath, chromsizes=None):
                     'max_zoom': 7
                     }
     """
-    TILE_SIZE = 1024
-
     if chromsizes is None:
         chromsizes = get_chromsizes(bwpath)
         chromsizes_list = []
@@ -140,13 +69,13 @@ def tileset_info(bwpath, chromsizes=None):
             chromsizes_list += [[chrom, int(size)]]
     else:
         chromsizes_list = chromsizes
+        chromsizes = [int(c[1]) for c in chromsizes_list]
 
-    min_tile_cover = np.ceil(sum([int(c[1]) for c in chromsizes_list]) / TILE_SIZE)
-    max_zoom = int(np.ceil(np.log2(min_tile_cover)))
+    max_zoom = get_quadtree_depth(chromsizes, TILE_SIZE)
 
     tileset_info = {
         "min_pos": [0],
-        "max_pos": [TILE_SIZE * 2 ** max_zoom],
+        "max_pos": [sum(chromsizes)],
         "max_width": TILE_SIZE * 2 ** max_zoom,
         "tile_size": TILE_SIZE,
         "max_zoom": max_zoom,
@@ -262,7 +191,6 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
     tile_list: [(tile_id, tile_data),...]
         A list of tile_id, tile_data tuples
     """
-    TILE_SIZE = 1024
     generated_tiles = []
     for tile_id in tile_ids:
         tile_option_parts = tile_id.split("|")[1:]
@@ -297,7 +225,7 @@ def tiles(bwpath, tile_ids, chromsizes_map={}, chromsizes=None):
         if chromsizes_to_use is None:
             chromsizes_to_use = get_chromsizes(bwpath)
 
-        max_depth = get_quadtree_depth(chromsizes_to_use)
+        max_depth = get_quadtree_depth(chromsizes_to_use, TILE_SIZE)
         tile_size = TILE_SIZE * 2 ** (max_depth - zoom_level)
         start_pos = tile_pos * tile_size
         end_pos = start_pos + tile_size

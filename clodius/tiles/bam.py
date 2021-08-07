@@ -8,6 +8,8 @@ import pysam
 from clodius.tiles.tabix import est_query_size_ix, load_bai_index
 from clodius.tiles.utils import abs2genomic
 
+from .utils import abs2genomic, natsorted
+
 
 def get_cigar_substitutions(read):
     subs = []
@@ -93,7 +95,6 @@ def load_reads(
         # we're going to create a natural ordering for references
         # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
         references = ctbw.natsorted(references)
-        lengths = [ref_lengths[r] for r in references]
         chromsizes_list = list(zip(references, [int(l) for l in lengths]))
 
     lengths = [r[1] for r in chromsizes_list]
