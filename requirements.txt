@@ -11,8 +11,5 @@ nose
 cooler>=0.8.5
 pybbi>=0.2.0
 Click>=7
-<<<<<<< HEAD
 pydantic
-=======
 pyfaidx
->>>>>>> 6eee95826c5af009c96d30031cfd6b0a7d7c7de8
