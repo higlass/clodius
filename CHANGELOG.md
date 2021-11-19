@@ -1,3 +1,7 @@
+v0.17.1
+
+- Fix narrow npmatrix tile fetching bug
+
 v0.17.0
 
 - Updated the BAM file fetcher to do more efficient substitution loading
@@ -112,7 +116,7 @@ v0.10.10
 v0.10.7
 
 - Changed bins_per_dimension in npvector.tileset_info to match the value in
-in npvector.tiles (1024)
+  in npvector.tiles (1024)
 
 v0.10.5
 
@@ -122,7 +126,7 @@ v0.10.2 (2019-02-06)
 
 - new option to import a "states" file format, a bed file with categorical data, e.g. from chromHMM to multivec format.
 - while converting a bed file to multivec, each segment can now be a multiple of base_resolution,
-rather than exactly match the base_resolution
+  rather than exactly match the base_resolution
 
 v0.10.1 (2019-01-22)
 
@@ -189,4 +193,4 @@ v0.4.6
 v0.4.3
 
 - When extracting a certain chromosome, place features at the position of the
-chromosome
+  chromosome
