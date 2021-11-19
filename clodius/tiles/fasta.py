@@ -85,11 +85,7 @@ def abs2genomic(chromsizes, start_pos, end_pos):
 
 
 def get_fasta_tile(
-    fapath,
-    zoom_level,
-    start_pos,
-    end_pos,
-    chromsizes=None,
+    fapath, zoom_level, start_pos, end_pos, chromsizes=None,
 ):
     if chromsizes is None:
         chromsizes = get_chromsizes(fapath)
