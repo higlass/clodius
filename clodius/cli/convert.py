@@ -6,7 +6,9 @@ import tempfile
 
 import h5py
 import numpy as np
+from tqdm import tqdm
 
+import bbi
 import click
 import clodius.chromosomes as cch
 import clodius.multivec as cmv
@@ -427,3 +429,115 @@ def bedfile_to_multivec(
         tile_size,
         method,
     )
+
+
+@convert.command()
+@click.argument("filepaths", metavar="FILEPATHS", nargs=-1)
+@click.option(
+    "--output-file",
+    "-o",
+    default=None,
+    help="The default output file name to use. If this isn't "
+    "specified, clodius will replace the current extension "
+    "with .hitile",
+)
+@click.option(
+    "--assembly",
+    "-a",
+    help="The genome assembly that this file was created against",
+    type=click.Choice(nc.available_chromsizes()),
+)
+@click.option(
+    "--chromsizes-filename",
+    help="A file containing chromosome sizes and order",
+    default=None,
+)
+@click.option(
+    "--row-infos-filename",
+    help="A file containing the names of the rows in the multivec file",
+    default=None,
+)
+@click.option(
+    "--tile-size",
+    "-t",
+    default=256,
+    help="The number of data points in each tile."
+    "Used to determine the number of zoom levels"
+    "to create.",
+)
+def bigwigs_to_multivec(
+    filepaths,
+    output_file,
+    assembly,
+    chromsizes_filename,
+    row_infos_filename,
+    tile_size,
+):
+    with tempfile.TemporaryDirectory() as td:
+        print("temporary dir:", td)
+
+        temp_file = op.join(td, "temp.mv5")
+        f_out = h5py.File(temp_file, "w")
+
+        (chrom_info, chrom_names, chrom_lengths) = cch.load_chromsizes(
+            chromsizes_filename, assembly
+        )
+
+        if row_infos_filename is not None:
+            with open(row_infos_filename, "r") as f:
+                row_infos = [line.strip().encode("utf8") for line in f]
+
+        else:
+            row_infos = None
+
+        starting_resolution = 1
+        resolution = starting_resolution
+        for chrom in chrom_info.chrom_order:
+            f_out.create_dataset(
+                chrom,
+                (
+                    math.ceil(chrom_info.chrom_lengths[chrom] / starting_resolution),
+                    len(filepaths),
+                ),
+                fillvalue=np.nan,
+                compression="gzip",
+            )
+
+        # Fill in data for each bigwig file.
+        for bw_index, bw_file in tqdm(list(enumerate(filepaths)), desc="bigwigs"):
+            if bbi.is_bigwig(bw_file):
+                chromsizes = bbi.chromsizes(bw_file)
+                matching_chromosomes = set(chromsizes.keys()).intersection(
+                    set(chrom_names)
+                )
+
+                # Fill in data for each resolution of a bigwig file.
+                for chr_name in matching_chromosomes:
+                    print("chr_name:", chr_name, resolution)
+                    chr_len = chrom_info.chrom_lengths[chr_name]
+                    chr_shape = (math.ceil(chr_len / resolution), len(filepaths))
+                    arr = bbi.fetch(
+                        bw_file, chr_name, 0, chr_len, chr_shape[0], summary="sum"
+                    )
+                    f_out[chr_name][:, bw_index] = arr
+            else:
+                print(f"{bw_file} not is_bigwig")
+
+        f_out.flush()
+
+        f_out.close()
+        tf = temp_file
+        f_in = h5py.File(tf, "r")
+
+        def agg(x):
+            return x.T.reshape((x.shape[1], -1, 2)).sum(axis=2).T
+
+        cmv.create_multivec_multires(
+            f_in,
+            chromsizes=zip(chrom_names, chrom_lengths),
+            agg=agg,
+            starting_resolution=starting_resolution,
+            tile_size=tile_size,
+            output_file=output_file,
+            row_infos=row_infos,
+        )

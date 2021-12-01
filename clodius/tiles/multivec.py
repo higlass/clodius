@@ -1,9 +1,10 @@
-import math
 import base64
 import json
+import math
 
 import h5py
 import numpy as np
+
 from .utils import abs2genomic
 
 
