@@ -1,10 +1,10 @@
 numpy
 negspy
 pysam
-dask
+dask==2021.10.0
 requests
 h5py>=3.0.0
-pandas
+pandas==1.0.4
 slugid
 sortedcontainers
 nose
