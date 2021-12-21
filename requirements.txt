@@ -1,10 +1,10 @@
 numpy
 negspy
 pysam
-dask
+dask==2021.12.0
 requests
 h5py>=3.0.0
-pandas
+pandas==1.0.4
 slugid
 sortedcontainers
 nose
@@ -13,3 +13,4 @@ pybbi>=0.2.0
 Click>=7
 pydantic
 pyfaidx
+tqdm==4.62.3

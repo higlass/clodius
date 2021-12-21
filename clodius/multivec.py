@@ -1,13 +1,14 @@
 from __future__ import print_function
 
 import gzip
-import h5py
-import math
-import numpy as np
 import logging
+import math
 import os
 import os.path as op
 import sys
+
+import h5py
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
