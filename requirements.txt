@@ -13,3 +13,4 @@ pybbi>=0.2.0
 Click>=7
 pydantic
 pyfaidx
+tqdm==4.62.3
