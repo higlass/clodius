@@ -1,3 +1,9 @@
+v0.18.0
+
+- Added bigwigs_to_multivec command
+- Bumped dask version
+- Bumped pandas version
+
 v0.17.1
 
 - Fix narrow npmatrix tile fetching bug
