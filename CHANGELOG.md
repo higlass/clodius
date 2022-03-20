@@ -1,3 +1,7 @@
+v0.18.1
+
+- Don't pin versions in requirements.txt
+
 v0.18.0
 
 - Added bigwigs_to_multivec command
