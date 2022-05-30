@@ -43,7 +43,7 @@ def test_multivec():
 
 def test_states():
     filename = op.join(
-        "test/sample_data", "states_format_input_testfile.100.bed.multires.mv5"
+        "data", "states_format_input_testfile.100.bed.multires.mv5"
     )
 
     # make sure we can retrieve the tileset info
