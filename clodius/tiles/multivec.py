@@ -260,7 +260,20 @@ def tileset_info(filename):
 
     if "row_infos" in f["resolutions"][str(resolutions[0])].attrs:
         row_infos = f["resolutions"][str(resolutions[0])].attrs["row_infos"]
-        tileset_info["row_infos"] = [r.decode("utf8") for r in row_infos]
+
+        if type(row_infos[0]) == str:
+            try:
+                tileset_info["row_infos"] = [json.loads(r) for r in row_infos]
+            except json.JSONDecodeError:
+                tileset_info["row_infos"] = [r for r in row_infos]
+        else:
+            try:
+                tileset_info["row_infos"] = [
+                    json.loads(r.decode("utf8")) for r in row_infos
+                ]
+            except json.JSONDecodeError:
+                tileset_info["row_infos"] = [r.decode("utf8") for r in row_infos]
+
     elif "row_infos" in f["info"]:
         row_infos_encoded = f["info"]["row_infos"][()]
         tileset_info["row_infos"] = json.loads(row_infos_encoded)
