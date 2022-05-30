@@ -1,3 +1,8 @@
+v0.19.0
+
+- Fix decoding error in multivec tileset info
+- Allow JSON in multivec tileset info
+
 v0.18.1
 
 - Don't pin versions in requirements.txt
