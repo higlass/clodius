@@ -40,12 +40,15 @@ def test_multivec():
             base64.b64encode(single_tile.ravel()).decode("utf-8") == tile_value["dense"]
         )
 
+
 def test_states():
-    filename = op.join("test/sample_data", "states_format_input_testfile.100.bed.multires.mv5")
+    filename = op.join(
+        "test/sample_data", "states_format_input_testfile.100.bed.multires.mv5"
+    )
 
     # make sure we can retrieve the tileset info
     tsinfo = hgmu.tileset_info(filename)
-    assert 10000000 in tsinfo['resolutions']
+    assert 10000000 in tsinfo["resolutions"]
 
-    tiles = hgmu.tiles(filename, ['x.0.0'])
-    assert 'shape' in tiles[0][1]
+    tiles = hgmu.tiles(filename, ["x.0.0"])
+    assert "shape" in tiles[0][1]
