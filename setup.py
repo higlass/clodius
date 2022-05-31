@@ -2,9 +2,10 @@ import io
 import os
 
 from setuptools import setup
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-
+long_description = (Path(HERE) / "README.md").read_text()
 
 def read(*parts, **kwargs):
     filepath = os.path.join(HERE, *parts)
@@ -35,4 +36,6 @@ setup(
     install_requires=install_requires,
     scripts=["scripts/tsv_to_mrmatrix.py"],
     entry_points={"console_scripts": ["clodius = clodius.cli.aggregate:cli"]},
+    long_description=long_description,
+    long_description_content_type='text/markdown'
 )
