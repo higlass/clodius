@@ -1,3 +1,7 @@
+In progress
+
+- Use builtin `warnings` module instead of relying on alias from `numpy`.
+
 v0.19.0
 
 - Fix decoding error in multivec tileset info
