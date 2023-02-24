@@ -1,3 +1,7 @@
+In progress
+
+- remove `numpy` from setup requires
+
 v0.19.0
 
 - Fix decoding error in multivec tileset info
