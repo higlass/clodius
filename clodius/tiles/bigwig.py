@@ -65,7 +65,7 @@ def tileset_info(bwpath, chromsizes=None):
         chromsizes = get_chromsizes(bwpath)
         chromsizes_list = []
 
-        for chrom, size in chromsizes.iteritems():
+        for chrom, size in chromsizes.items():
             chromsizes_list += [[chrom, int(size)]]
     else:
         chromsizes_list = chromsizes
@@ -263,7 +263,7 @@ def chromsizes(filename):
     try:
         chrom_series = get_chromsizes(filename)
         data = []
-        for chrom, size in chrom_series.iteritems():
+        for chrom, size in chrom_series.items():
             data.append([chrom, size])
         return data
     except Exception as ex:
