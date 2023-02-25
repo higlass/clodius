@@ -44,29 +44,6 @@ dev = [
     "bumpversion",
 ]
 
-[tool.flake8]
-exclude = [
-  "__init__.py",
-  "src/*", # src directory is generated during build, and then cleared.
-  "src/**/*",
-]
-max-line-length = 80
-ignore = [
-  "E203", # whitespace before ':' (conflict with black)
-  "E501", # Line too long
-  "E722", # do not use bare 'except'
-  "W503", # line break before binary operator
-  "W504", # line break after binary operator
-]
-select = [
-  "C", # mccabe code complexity
-  "E", # pycodestyle error
-  "W", # pycodestyle warning
-  "F", # pyflakes fatals
-  # "B", # bugbear default checks
-  # "B950", # bugbear opinonated warning (Line too long: max-line-length + 10%)
-]
-
 [tool.pytest.ini_options]
 addopts = "--cov=clodius --tb=native"
 testpaths = ["test"]
