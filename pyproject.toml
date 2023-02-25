@@ -33,7 +33,7 @@ urls = { homepage = "https://github.com/higlass/clodius" }
 
 [project.scripts]
 clodius = "clodius.cli.aggregate:cli"
-tsv_to_mrmatrix = "clodius.cli._tsv_to_mrmatrix:main"
+tsv_to_mrmatrix = "clodius._tsv_to_mrmatrix:main"
 
 [project.optional-dependencies]
 dev = [
