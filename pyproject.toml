@@ -41,6 +41,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "autopep8",
+    "bumpversion",
 ]
 
 [tool.flake8]
