@@ -51,16 +51,16 @@ def parse(input_handle, output_hdf5, top_n=None):
         # TODO: So if it's taller than it is wide, it will be truncated to a square,
         # unless an explicit top_n is provided? That doesn't seem right.
 
-    # labels = parts[1 : top_n + 1]
+    labels = parts[1 : top_n + 1]
     tile_size = 256
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
 
-    # labels_dset = output_hdf5.create_dataset(
-    #     "labels",
-    #     data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
-    #     compression="lzf",
-    # )
+    output_hdf5.create_dataset(
+        "labels",
+        data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
+        compression="lzf",
+    )
 
     g = output_hdf5.create_group("resolutions")
     g1 = g.create_group("1")
@@ -71,9 +71,9 @@ def parse(input_handle, output_hdf5, top_n=None):
         compression="lzf",
         fillvalue=np.nan,
     )
-    # ds1 = g1.create_dataset(
-    #     "nan_values", (max_width, max_width), dtype="f4", compression="lzf", fillvalue=0
-    # )
+    g1.create_dataset(
+        "nan_values", (max_width, max_width), dtype="f4", compression="lzf", fillvalue=0
+    )
     # TODO: We don't write to this... Is it necessary?
 
     start_time = time.time()
