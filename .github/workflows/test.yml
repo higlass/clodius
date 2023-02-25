@@ -21,7 +21,7 @@ jobs:
         cache: 'pip'
         cache-dependency-path: "**/pyproject.toml"
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -e .[dev]
@@ -53,17 +53,17 @@ jobs:
       if: steps.cache-fixtures.outputs.cache-hit != 'true'
       run: ./get_test_data.sh
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set Up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: "**/pyproject.toml"
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -e .[dev]
 
-    - name: Run unit tests
+    - name: Run Unit Tests
       run: pytest
