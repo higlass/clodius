@@ -7,7 +7,7 @@ import h5py
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from scripts.tsv_to_mrmatrix import coarsen, parse
+from clodius._tsv_to_mrmatrix import coarsen, parse
 
 
 class CoarsenTest(unittest.TestCase):

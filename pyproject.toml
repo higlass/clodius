@@ -1,0 +1,81 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "clodius"
+version = "0.19.0"
+description = "Tile generation for big data"
+authors = [
+    { name = "Peter Kerpedjiev", email = "pkerpedjiev@gmail.com" },
+]
+dependencies = [
+    "numpy<=1.23.0",
+    "negspy",
+    "pysam",
+    "dask",
+    "requests",
+    "h5py>=3.0.0",
+    "pandas>=1.0",
+    "slugid",
+    "sortedcontainers",
+    "nose",
+    "cooler>=0.8.5, <0.9.0",
+    "pybbi>=0.2.0",
+    "Click>=7",
+    "pydantic",
+    "pyfaidx",
+    "tqdm",
+]
+license = { text = "MIT" }
+readme = "README.md"
+urls = { homepage = "https://github.com/higlass/clodius" }
+
+[project.scripts]
+clodius = "clodius.cli.aggregate:cli"
+tsv_to_mrmatrix = "clodius.cli._tsv_to_mrmatrix:main"
+
+[project.optional-dependencies]
+dev = [
+    "flake8",
+    "pytest",
+    "pytest-cov",
+    "autopep8",
+]
+
+[tool.flake8]
+exclude = [
+  "__init__.py",
+  "src/*", # src directory is generated during build, and then cleared.
+  "src/**/*",
+]
+max-line-length = 80
+ignore = [
+  "E203", # whitespace before ':' (conflict with black)
+  "E501", # Line too long
+  "E722", # do not use bare 'except'
+  "W503", # line break before binary operator
+  "W504", # line break after binary operator
+]
+select = [
+  "C", # mccabe code complexity
+  "E", # pycodestyle error
+  "W", # pycodestyle warning
+  "F", # pyflakes fatals
+  # "B", # bugbear default checks
+  # "B950", # bugbear opinonated warning (Line too long: max-line-length + 10%)
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=clodius --tb=native"
+testpaths = ["test"]
+
+[tool.hatch.envs.default]
+features = ["dev"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "return NotImplemented",
+    "raise NotImplementedError",
+]
