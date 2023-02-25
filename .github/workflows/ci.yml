@@ -25,7 +25,7 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        flake8 clodius scripts test
+        flake8 clodius scripts test --show-source
 
   Test:
     runs-on: ubuntu-latest
