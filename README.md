@@ -52,7 +52,7 @@ The recommended way to develop `clodius` is to use a [conda](https://conda.io/do
 install `clodius` with develop mode:
 
 ```shell
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ## Testing
