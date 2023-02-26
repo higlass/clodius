@@ -19,7 +19,6 @@ dependencies = [
     "pandas>=1.0",
     "slugid",
     "sortedcontainers",
-    "nose",
     "cooler>=0.8.5, <0.9.0",
     "pybbi>=0.2.0",
     "Click>=7",
