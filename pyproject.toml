@@ -10,20 +10,20 @@ authors = [
     { name = "Peter Kerpedjiev", email = "pkerpedjiev@gmail.com" },
 ]
 dependencies = [
-    "numpy<=1.23.0",
-    "negspy",
-    "pysam",
-    "dask",
-    "requests",
-    "h5py>=3.0.0",
-    "pandas>=1.0",
-    "slugid",
-    "sortedcontainers",
-    "cooler>=0.8.5, <0.9.0",
-    "pybbi>=0.2.0",
     "Click>=7",
+    "cooler>=0.8.5, <0.9.0",
+    "dask",
+    "h5py>=3.0.0",
+    "negspy",
+    "numpy<=1.23.0",
+    "pandas>=1.0",
+    "pybbi>=0.2.0",
     "pydantic",
     "pyfaidx",
+    "pysam",
+    "requests",
+    "slugid",
+    "sortedcontainers",
     "tqdm",
 ]
 license = { text = "MIT" }
@@ -36,19 +36,16 @@ tsv_to_mrmatrix = "clodius._tsv_to_mrmatrix:main"
 
 [project.optional-dependencies]
 dev = [
+    "autopep8",
+    "bumpversion",
     "flake8",
     "pytest",
     "pytest-cov",
-    "autopep8",
-    "bumpversion",
 ]
 
 [tool.pytest.ini_options]
 addopts = "--cov=clodius --tb=native"
 testpaths = ["test"]
-
-[tool.hatch.envs.default]
-features = ["dev"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -56,3 +53,6 @@ exclude_lines = [
     "return NotImplemented",
     "raise NotImplementedError",
 ]
+
+[tool.hatch.envs.default]
+features = ["dev"]
