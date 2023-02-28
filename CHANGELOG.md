@@ -1,6 +1,7 @@
 In progress
 
 - Use builtin `warnings` module instead of relying on alias from `numpy`.
+- Replace instances of `.iteritems()` with `.items()`
 
 v0.19.0
 

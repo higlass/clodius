@@ -501,7 +501,7 @@ def make_mats(filepath):
         info["min_pos"] = [1, 1]
 
         c = cooler.Cooler(f["resolutions"][resolution])
-        info["chromsizes"] = [[x[0], int(x[1])] for x in c.chromsizes.iteritems()]
+        info["chromsizes"] = [[x[0], int(x[1])] for x in c.chromsizes.items()]
         if "storage-mode" in c.info and c.info["storage-mode"] == "square":
             info["mirror_tiles"] = "false"
     else:
@@ -509,7 +509,7 @@ def make_mats(filepath):
 
         c = cooler.Cooler(f["0"])
 
-        info["chromsizes"] = [[x[0], int(x[1])] for x in c.chromsizes.iteritems()]
+        info["chromsizes"] = [[x[0], int(x[1])] for x in c.chromsizes.items()]
         info["min_pos"] = [int(m) for m in info["min_pos"]]
         info["max_pos"] = [int(m) for m in info["max_pos"]]
         info["max_zoom"] = int(info["max_zoom"])
