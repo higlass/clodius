@@ -84,7 +84,7 @@ def load_reads(
     if chromsizes is not None:
         chromsizes_list = []
 
-        for chrom, size in chromsizes.iteritems():
+        for chrom, size in chromsizes.items():
             chromsizes_list += [[chrom, int(size)]]
     else:
         references = np.array(samfile.references)
@@ -274,7 +274,7 @@ def alignment_tileset_info(samfile, chromsizes):
     if chromsizes is not None:
         chromsizes_list = []
 
-        for chrom, size in chromsizes.iteritems():
+        for chrom, size in chromsizes.items():
             chromsizes_list += [[chrom, int(size)]]
 
         total_length = sum([c[1] for c in chromsizes_list])
