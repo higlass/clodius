@@ -1,3 +1,7 @@
+In progress
+
+- Replace instances of `.iteritems()` with `.items()`
+
 v0.19.0
 
 - Fix decoding error in multivec tileset info
