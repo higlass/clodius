@@ -1,5 +1,6 @@
 In progress
 
+- remove `numpy` from setup requires
 - Use builtin `warnings` module instead of relying on alias from `numpy`.
 - Replace instances of `.iteritems()` with `.items()`
 

@@ -18,9 +18,6 @@ def get_requirements(path):
     content = read(path)
     return [req for req in content.split("\n") if req != "" and not req.startswith("#")]
 
-
-setup_requires = ["numpy"]
-
 install_requires = get_requirements("requirements.txt")
 
 setup(
@@ -31,7 +28,6 @@ setup(
     author_email="pkerpedjiev@gmail.com",
     url="",
     packages=["clodius", "clodius.cli", "clodius.tiles"],
-    setup_requires=setup_requires,
     install_requires=install_requires,
     scripts=["scripts/tsv_to_mrmatrix.py"],
     entry_points={"console_scripts": ["clodius = clodius.cli.aggregate:cli"]},
