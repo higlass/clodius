@@ -299,7 +299,6 @@ def abs2genome_fn(chromsizes_filename, start, end):
         except IndexError:
             # we've gone beyond the last chromosome so stop iterating
             return
-    yield cid_hi, start, rel_pos_hi
 
 
 def get_quadtree_depth(chromsizes, tile_size_bp):
