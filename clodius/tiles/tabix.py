@@ -1,10 +1,6 @@
 import collections as col
 import gzip
-import math
-import random
 import struct
-
-import numpy as np
 
 from clodius.tiles.bigwig import abs2genomic
 
@@ -178,7 +174,7 @@ def single_indexed_tile(
     start_pos = x * tsinfo["max_width"] / 2 ** z
     end_pos = (x + 1) * tsinfo["max_width"] / 2 ** z
 
-    css = chromsizes.cumsum().shift().fillna(0).to_dict()
+    # css = chromsizes.cumsum().shift().fillna(0).to_dict()
 
     cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
     ret_vals = []

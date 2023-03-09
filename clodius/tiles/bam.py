@@ -2,13 +2,11 @@ import json
 import math
 
 import numpy as np
+import pysam
 
 import clodius.tiles.bigwig as ctbw
-import pysam
 from clodius.tiles.tabix import est_query_size_ix, load_bai_index
 from clodius.tiles.utils import abs2genomic
-
-from .utils import abs2genomic, natsorted
 
 
 def get_cigar_substitutions(read):
@@ -69,7 +67,7 @@ def load_reads(
     chromsize: pandas.Series
         A listing of chromosome sizes. If not provided, the chromosome
         list will be extracted from the the bam file header
-    cache: 
+    cache:
         An object that implements the `get`, `set` and `exists` methods
         for caching data
 
@@ -89,8 +87,6 @@ def load_reads(
     else:
         references = np.array(samfile.references)
         lengths = np.array(samfile.lengths)
-
-        ref_lengths = dict(zip(references, lengths))
 
         # we're going to create a natural ordering for references
         # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
@@ -120,7 +116,6 @@ def load_reads(
     }
 
     strands = {True: "-", False: "+"}
-    import time
 
     idx = load_bai_index(index_filename)
 
@@ -332,7 +327,7 @@ def alignment_tiles(
     max_tile_width: int
         How wide can each tile be before we return no data. This
         can be used to limit the amount of data returned.
-    cache: 
+    cache:
         An object that implements the `get`, `set` and `exists` methods
         for caching data
     Returns

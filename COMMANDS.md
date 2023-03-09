@@ -1,7 +1,7 @@
 ### Converting tsv files to mrmatrix
 
 ```
-python scripts/tsv-to-mrmatrix.py data/dense.tsv data/dense.mrmatrix
+tsv_to_mrmatrix data/dense.tsv data/dense.mrmatrix
 ```
 
 ### Calculating gene coverage
@@ -49,6 +49,4 @@ for file in $(ls ~/projects/francesco-tad-calls/TADcalls/Rao/IMR90/*.txt); do cl
 ```
 cat ~/Dropbox/paper-data/Danielles-data/drosophila.chromSizes.orig | awk '{print $1 "\t" $NF}'  > ~/Dropbox/paper-data/Danielles-data/drosophila.chromSizes
 clodius aggregate multivec --output-file ~/Dropbox/paper-data/Danielles-data/drosophila.multivec.hdf5 --chromsizes-filename ~/Dropbox/paper-data/Danielles-data/drosophila.chromSizes ~/Dropbox/paper-data/Danielles-data/drosophila.hdf5
-
-python setup.py sdist upload -r pypi
 ```

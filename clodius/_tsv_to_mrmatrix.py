@@ -4,8 +4,6 @@ import dask.array as da
 import h5py
 import math
 import numpy as np
-import os
-import os.path as op
 import sys
 import argparse
 import time
@@ -19,7 +17,6 @@ def coarsen(f, tile_size=256):
     top_n = grid.shape[0]
 
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
-    max_width = tile_size * 2 ** max_zoom
 
     chunk_size = tile_size * 16
     curr_size = grid.shape
@@ -45,7 +42,6 @@ def coarsen(f, tile_size=256):
 
 
 def parse(input_handle, output_hdf5, top_n=None):
-    input_handle
     first_line = next(input_handle)
     parts = first_line.strip().split("\t")
     # TODO: Use the python built-in csv module, instead of parsing by hand?
@@ -60,7 +56,7 @@ def parse(input_handle, output_hdf5, top_n=None):
     max_zoom = math.ceil(math.log(top_n / tile_size) / math.log(2))
     max_width = tile_size * 2 ** max_zoom
 
-    labels_dset = output_hdf5.create_dataset(
+    output_hdf5.create_dataset(
         "labels",
         data=np.array(labels, dtype=h5py.special_dtype(vlen=str)),
         compression="lzf",
@@ -75,7 +71,7 @@ def parse(input_handle, output_hdf5, top_n=None):
         compression="lzf",
         fillvalue=np.nan,
     )
-    ds1 = g1.create_dataset(
+    g1.create_dataset(
         "nan_values", (max_width, max_width), dtype="f4", compression="lzf", fillvalue=0
     )
     # TODO: We don't write to this... Is it necessary?
@@ -131,7 +127,6 @@ def main():
 
     args = parser.parse_args()
 
-    count = 0
     top_n = args.first_n
 
     if args.input_file == "-":

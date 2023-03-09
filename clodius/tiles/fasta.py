@@ -2,7 +2,7 @@ from pyfaidx import Fasta
 import numpy as np
 import pandas as pd
 import logging
-from .utils import abs2genomic, natsorted, get_quadtree_depth
+from .utils import natsorted, get_quadtree_depth
 
 logger = logging.getLogger(__name__)
 

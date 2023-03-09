@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "clodius"
+version = "0.19.0"
+description = "Tile generation for big data"
+authors = [
+    { name = "Peter Kerpedjiev", email = "pkerpedjiev@gmail.com" },
+]
+dependencies = [
+    "Click>=7",
+    "cooler>=0.8.5, <0.9.0",
+    "dask",
+    "h5py>=3.0.0",
+    "negspy",
+    "numpy<=1.23.0",
+    "pandas>=1.0",
+    "pybbi>=0.2.0",
+    "pydantic",
+    "pyfaidx",
+    "pysam",
+    "requests",
+    "slugid",
+    "sortedcontainers",
+    "tqdm",
+]
+license = { text = "MIT" }
+readme = "README.md"
+urls = { homepage = "https://github.com/higlass/clodius" }
+
+[project.scripts]
+clodius = "clodius.cli.aggregate:cli"
+tsv_to_mrmatrix = "clodius._tsv_to_mrmatrix:main"
+
+[project.optional-dependencies]
+dev = [
+    "autopep8",
+    "bumpversion",
+    "flake8",
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=clodius --tb=native"
+testpaths = ["test"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "return NotImplemented",
+    "raise NotImplementedError",
+]
+
+[tool.hatch.envs.default]
+features = ["dev"]
