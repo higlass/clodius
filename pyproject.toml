@@ -11,7 +11,7 @@ authors = [
 ]
 dependencies = [
     "Click>=7",
-    "cooler>=0.8.5, <0.9.0",
+    "cooler>0.9.0",
     "dask",
     "h5py>=3.0.0",
     "negspy",
