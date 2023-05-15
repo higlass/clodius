@@ -95,7 +95,7 @@ def get_data(
     j0 = abs_coord_2_bin(c, start_pos_2, chroms, chrom_cum_lengths, chrom_sizes)
     j1 = abs_coord_2_bin(c, end_pos_2, chroms, chrom_cum_lengths, chrom_sizes)
 
-    matrix = c.matrix(as_pixels=True, balance=False, max_chunk=np.inf)
+    matrix = c.matrix(as_pixels=True, balance=False)
 
     if i0 >= matrix.shape[0] or j0 >= matrix.shape[1]:
         # query beyond the bounds of the matrix
