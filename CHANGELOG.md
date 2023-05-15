@@ -1,4 +1,8 @@
-In progress
+v0.20.1
+
+- Remove use of deprecated `max_chunk` argument from cooler tile fetcher.
+
+v0.20.0
 
 - remove `numpy` from setup requires
 - Use builtin `warnings` module instead of relying on alias from `numpy`.
