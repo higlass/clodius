@@ -369,7 +369,7 @@ def _bedpe(
 
     tile_counts = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
     # Sort from high to low importance
-    entries = sorted(entries, key=lambda x: -x["importance"])
+    entries.sort(key=lambda x: -x["importance"])
 
     interval_inserts = []
     position_index_inserts = []
