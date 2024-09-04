@@ -261,7 +261,7 @@ def tileset_info(filename):
     if "row_infos" in f["resolutions"][str(resolutions[0])].attrs:
         row_infos = f["resolutions"][str(resolutions[0])].attrs["row_infos"]
 
-        if type(row_infos[0]) == str:
+        if type(row_infos[0]) is str:
             try:
                 tileset_info["row_infos"] = [json.loads(r) for r in row_infos]
             except json.JSONDecodeError:
