@@ -57,7 +57,7 @@ def get_chromosome_names_cumul_lengths(c):
     (names, sizes, lengths) -> (list(string), dict, np.array(int))
     """
     chrom_names = c.chromnames
-    chrom_sizes = dict(c.chromsizes)
+    chrom_sizes = dict(c.chromsizes.astype(np.int64))
     chrom_cum_lengths = np.r_[0, np.cumsum(c.chromsizes.values)]
     return chrom_names, chrom_sizes, chrom_cum_lengths
 
