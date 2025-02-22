@@ -1,3 +1,7 @@
+v0.20.2
+
+- Convert cooler chromsizes to int64 to prevent overflow error with recent versions of h5py and numpy
+
 v0.20.1
 
 - Remove use of deprecated `max_chunk` argument from cooler tile fetcher.
