@@ -14,7 +14,7 @@ def test_get_tileset_info():
     assert len(tsinfo.chromsizes) > 2
     # TODO: Do something with the return value
 
-    with open(filename, "r") as f:
+    with open(filename, "rb") as f:
         # Test loading using a file-like object
         tsinfo = TilesetInfo(**ctcs.tileset_info(f))
 
