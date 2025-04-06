@@ -4,7 +4,18 @@ from smart_open import open
 logger = logging.getLogger(__name__)
 
 
-def tileset_info(filename):
+def tileset_info(filename: str) -> dict:
+    """Return a standard higlass tileset info object that contains
+    chromsizes as an element.
+
+    The chromsizes in the returned object will be a list of [name, size]
+    tuples.
+
+    [
+        ['chr1', 1000],
+        ['chr2', 2000]
+    ]
+    """
     chromsizes = get_tsv_chromsizes(filename)
 
     max_width = sum([int(c[1]) for c in chromsizes])
