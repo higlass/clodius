@@ -25,6 +25,7 @@ dependencies = [
     "slugid",
     "sortedcontainers",
     "tqdm",
+    "smart_open"
 ]
 license = { text = "MIT" }
 readme = "README.md"
