@@ -12,7 +12,6 @@ def test_get_tileset_info():
 
     assert tsinfo.max_width > 100
     assert len(tsinfo.chromsizes) > 2
-    # TODO: Do something with the return value
 
     with open(filename, "rb") as f:
         # Test loading using a file-like object
