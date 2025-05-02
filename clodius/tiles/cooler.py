@@ -495,7 +495,7 @@ def make_mats(filepath):
 
         # get the genome size
         resolution = list(f["resolutions"].keys())[0]
-        genome_length = int(sum(f["resolutions"][resolution]["chroms"]["length"]))
+        genome_length = int(np.sum(f["resolutions"][resolution]["chroms"]["length"]))
 
         info["max_pos"] = [genome_length, genome_length]
         info["min_pos"] = [1, 1]
