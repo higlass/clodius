@@ -36,8 +36,8 @@ def format_dense_tile(data):
     tile_data["min_value"] = min_dense if not np.isnan(min_dense) else "NaN"
     tile_data["max_value"] = max_dense if not np.isnan(max_dense) else "NaN"
 
-    min_f16 = np.finfo("float16").min
-    max_f16 = np.finfo("float16").max
+    min_f16 = np.finfo("float16").min.item()
+    max_f16 = np.finfo("float16").max.item()
 
     has_nan = np.sum(np.isnan(data)) > 0
     n_dim = len(data.shape)
