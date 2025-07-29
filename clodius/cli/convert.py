@@ -194,9 +194,9 @@ def _bedgraph_to_multivec(
                 num_rows,
             )
         elif format == "states":
-            assert (
-                row_infos is not None
-            ), "A row_infos file must be provided for --format = 'states' "
+            assert row_infos is not None, (
+                "A row_infos file must be provided for --format = 'states' "
+            )
             states_names = [lne.decode("utf8").split("\t")[0] for lne in row_infos]
             states_dic = {states_names[x]: x for x in range(len(row_infos))}
 
@@ -541,3 +541,34 @@ def bigwigs_to_multivec(
             output_file=output_file,
             row_infos=row_infos,
         )
+
+
+@convert.command()
+@click.argument("input_file", metavar="INPUT_FILE")
+@click.argument("output_file", metavar="OUTPUT_FILE")
+@click.option(
+    "--tile-size",
+    "-t",
+    type=int,
+    help=(
+        "The number of data points in each tile. "
+        "Used to determine the number of zoom levels to create. "
+        "Will try to use the tile size from the input file if it's available, "
+        "otherwise defaults to 65536"
+    ),
+)
+def hdf5_multivec_to_zarr(input_file, output_file, tile_size):
+    """
+    Convert an HDF5 multivec file to Zarr format.
+
+    INPUT_FILE: Path to the input HDF5 multivec file (.mv5)
+    OUTPUT_FILE: Path to the output Zarr multivec file (.zarr)
+    """
+    if not op.exists(input_file):
+        raise click.FileError(input_file, hint="Input file does not exist")
+
+    try:
+        cmv.hdf5_multivec_to_zarr(input_file, output_file, tile_size=tile_size)
+        click.echo(f"Successfully converted {input_file} to {output_file}")
+    except Exception as e:
+        raise click.ClickException(f"Conversion failed: {str(e)}")
