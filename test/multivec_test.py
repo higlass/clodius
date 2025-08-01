@@ -3,9 +3,12 @@ from __future__ import print_function
 import click.testing as clt
 import clodius.cli.convert as ccc
 import clodius.tiles.multivec as ctv
+import clodius.multivec as cm
 import os.path as op
 import tempfile
 import h5py
+import zarr
+import numpy as np
 
 testdir = op.realpath(op.dirname(__file__))
 
@@ -195,7 +198,6 @@ def test_retain_lines():
 
 
 def test_chr_boundaries_states():
-
     data_file = op.join(testdir, "sample_data", "chrm_boundaries_test.multires.mv5")
     f = h5py.File(data_file, "r")
 
@@ -218,3 +220,42 @@ def test_chr_boundaries_states():
 
     assert tile3[135][0] == 1.0 and tile3[135][1] == 0.0
     assert tile3[136][0] == 0.0 and tile3[136][1] == 1.0
+
+
+def test_hdf5_multivec_to_zarr():
+    hdf5_file = op.join(
+        testdir, "sample_data", "3_header_100_testfile.bed.multires.mv5"
+    )
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        zarr_file = op.join(tmp_dir, "converted.zarr")
+
+        cm.hdf5_multivec_to_zarr(hdf5_file, zarr_file)
+
+        with h5py.File(hdf5_file, "r") as h5f:
+            zarr_store = zarr.open(zarr_file, mode="r")
+
+            assert "resolutions" in zarr_store
+            assert "chroms" in zarr_store
+
+            # Check that we have the same resolutions
+            h5_resolutions = set(h5f["resolutions"].keys())
+            zarr_resolutions = set(zarr_store["resolutions"].keys())
+            assert h5_resolutions == zarr_resolutions
+
+            # Check data integrity for one resolution
+            if "200" in h5f["resolutions"]:
+                resolution = "200"
+                h5_values = h5f["resolutions"][resolution]["values"]
+                zarr_values = zarr_store["resolutions"][resolution]["values"]
+
+                # Check that all chromosomes are present
+                h5_chroms = set(h5_values.keys())
+                zarr_chroms = set(zarr_values.keys())
+                assert h5_chroms == zarr_chroms
+
+                # Check data for each chromosome
+                for chrom in h5_chroms:
+                    np.testing.assert_array_equal(
+                        h5_values[chrom][:], zarr_values[chrom][:]
+                    )

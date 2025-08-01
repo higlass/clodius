@@ -9,6 +9,7 @@ import sys
 
 import h5py
 import numpy as np
+import zarr
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,6 @@ def bedfile_to_multivec(
 
     print("base_resolution:", base_resolution)
     for _, lines in enumerate(zip(*files)):
-
         # Identifies bedfile headers and ignore them
         if lines[0].startswith("browser") or lines[0].startswith("track"):
             continue
@@ -75,9 +75,9 @@ def bedfile_to_multivec(
             # the previous values
             # print("len(batch:", len(batch),
             #       "batch_start_index", batch_start_index)
-            f_out[prev_chrom][
-                batch_start_index : batch_start_index + len(batch)
-            ] = np.array(batch)
+            f_out[prev_chrom][batch_start_index : batch_start_index + len(batch)] = (
+                np.array(batch)
+            )
 
             # we're starting a new chromosome so we start from the beginning
             curr_index = 0
@@ -107,9 +107,7 @@ def bedfile_to_multivec(
             message = """
 The expected position location does not match the observed location at entry {}:{}-{}
 This is probably because the bedfile is not sorted. Please sort and try again.
-            """.format(
-                chrom, start, end
-            )
+            """.format(chrom, start, end)
             raise ValueError(message)
         # assert curr_index == data_start_index, message
         # print('vector', vector)
@@ -129,9 +127,9 @@ This is probably because the bedfile is not sorted. Please sort and try again.
         if len(batch) >= batch_length:
             # dump batch
             try:
-                f_out[chrom][
-                    batch_start_index : batch_start_index + len(batch)
-                ] = np.array(batch)
+                f_out[chrom][batch_start_index : batch_start_index + len(batch)] = (
+                    np.array(batch)
+                )
             except TypeError as ex:
                 print("Error:", ex, file=sys.stderr)
                 print("Probably need to set the --num-rows parameter", file=sys.stderr)
@@ -352,3 +350,111 @@ def create_multivec_multires(
 
         prev_resolution = curr_resolution
     return f
+
+
+def _convert_numpy_for_json(attr_value):
+    """
+    Convert numpy types to native Python types for JSON compatibility.
+
+    Parameters
+    ----------
+    attr_value : any
+        The attribute value to convert
+
+    Returns
+    -------
+    any
+        The converted value with native Python types
+    """
+    if isinstance(attr_value, np.integer):
+        return int(attr_value)
+    elif isinstance(attr_value, np.floating):
+        return float(attr_value)
+    elif isinstance(attr_value, np.ndarray):
+        return attr_value.tolist()
+    return attr_value
+
+
+def hdf5_multivec_to_zarr(hdf5_path, zarr_path, *, tile_size=None):
+    """
+    Convert an HDF5 multivec file to Zarr format.
+
+    Parameters
+    ----------
+    hdf5_path : str
+        Path to the input HDF5 multivec file
+    zarr_path : str
+        Path to the output Zarr multivec file
+    """
+    with h5py.File(hdf5_path, "r") as h5f:
+        zarr_store = zarr.open(zarr_path, mode="w")
+
+        if "info" in h5f:
+            if tile_size:
+                # Use specified tile size
+                pass
+            elif "tile-size" in h5f["info"].attrs:
+                tile_size = int(h5f["info"].attrs["tile-size"])
+            else:
+                # Default tile size if not specified nor defined by HDF5
+                tile_size = 2**16
+
+            info_group = zarr_store.create_group("info")
+            for attr_name, attr_value in h5f["info"].attrs.items():
+                info_group.attrs[attr_name] = _convert_numpy_for_json(attr_value)
+
+        if "chroms" in h5f:
+            chroms_group = zarr_store.create_group("chroms")
+            for dataset_name in h5f["chroms"]:
+                dataset = h5f["chroms"][dataset_name]
+                zarr_dataset = chroms_group.create_array(
+                    dataset_name,
+                    data=dataset[:],
+                    chunks=(tile_size,)
+                    if len(dataset.shape) == 1
+                    else (tile_size, dataset.shape[1]),
+                )
+                for attr_name, attr_value in dataset.attrs.items():
+                    zarr_dataset.attrs[attr_name] = _convert_numpy_for_json(attr_value)
+
+        if "resolutions" in h5f:
+            resolutions_group = zarr_store.create_group("resolutions")
+
+            for resolution_name in h5f["resolutions"]:
+                resolution_group = resolutions_group.create_group(resolution_name)
+                h5_resolution = h5f["resolutions"][resolution_name]
+
+                for attr_name, attr_value in h5_resolution.attrs.items():
+                    resolution_group.attrs[attr_name] = _convert_numpy_for_json(
+                        attr_value
+                    )
+
+                if "chroms" in h5_resolution:
+                    res_chroms_group = resolution_group.create_group("chroms")
+                    for dataset_name in h5_resolution["chroms"]:
+                        dataset = h5_resolution["chroms"][dataset_name]
+                        zarr_dataset = res_chroms_group.create_array(
+                            dataset_name,
+                            data=dataset[:],
+                            chunks=(tile_size,)
+                            if len(dataset.shape) == 1
+                            else (tile_size, dataset.shape[1]),
+                        )
+                        for attr_name, attr_value in dataset.attrs.items():
+                            zarr_dataset.attrs[attr_name] = _convert_numpy_for_json(
+                                attr_value
+                            )
+
+                if "values" in h5_resolution:
+                    values_group = resolution_group.create_group("values")
+                    for chrom_name in h5_resolution["values"]:
+                        dataset = h5_resolution["values"][chrom_name]
+                        zarr_dataset = values_group.create_array(
+                            chrom_name,
+                            data=dataset[:],
+                            chunks=(tile_size, dataset.shape[1]),
+                        )
+                        for attr_name, attr_value in dataset.attrs.items():
+                            zarr_dataset.attrs[attr_name] = _convert_numpy_for_json(
+                                attr_value
+                            )
