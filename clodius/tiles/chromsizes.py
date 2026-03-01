@@ -1,21 +1,11 @@
+import csv
 import logging
 from smart_open import open
 
 logger = logging.getLogger(__name__)
 
 
-def tileset_info(filename: str) -> dict:
-    """Return a standard higlass tileset info object that contains
-    chromsizes as an element.
-
-    The chromsizes in the returned object will be a list of [name, size]
-    tuples.
-
-    [
-        ['chr1', 1000],
-        ['chr2', 2000]
-    ]
-    """
+def tileset_info(filename):
     chromsizes = get_tsv_chromsizes(filename)
 
     max_width = sum([int(c[1]) for c in chromsizes])
@@ -30,11 +20,11 @@ def tileset_info(filename: str) -> dict:
 def get_tsv_chromsizes(file):
     """
     Get a list of chromosome sizes from this [presumably] tsv
-    chromsizes file.
+    chromsizes file file.
 
     Parameters:
     -----------
-    file: string or file-like object
+    file: string
         A file-like object
 
     Returns
@@ -51,7 +41,7 @@ def get_tsv_chromsizes(file):
         text_data = binary_data.decode("utf-8")
 
         lines = text_data.split("\n")
-        data = [line.strip().split("\t") for line in lines if line.strip()]
+        data = [l.strip().split("\t") for l in lines if l.strip()]
         return data
     except Exception as ex:
         logger.error(ex)

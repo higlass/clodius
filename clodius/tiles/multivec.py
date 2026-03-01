@@ -5,7 +5,31 @@ import math
 import h5py
 import numpy as np
 
-from .utils import abs2genomic
+
+def abs2genomic(chromsizes, start_pos, end_pos):
+    """
+    Convert absolute genomic sizes to genomic
+
+    Parameters:
+    -----------
+    chromsizes: [1000,...]
+        An array of the lengths of the chromosomes
+    start_pos: int
+        The starting genomic position
+    end_pos: int
+        The ending genomic position
+    """
+    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
+    cid_lo, cid_hi = (
+        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
+    )
+    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
+    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
+    start = rel_pos_lo
+    for cid in range(cid_lo, cid_hi):
+        yield cid, start, chromsizes[cid]
+        start = 0
+    yield cid_hi, start, rel_pos_hi
 
 
 def tiles(filename, tile_ids):
@@ -18,6 +42,10 @@ def tiles(filename, tile_ids):
         A list of tile_ids (e.g. xyx.0.0) identifying the tiles
         to be retrieved
     """
+    import time
+
+    t1 = time.time()
+    # print("getting tiles", tile_ids)
     f16 = np.finfo("float16")
     f16_min, f16_max = f16.min, f16.max
     generated_tiles = []
@@ -36,6 +64,7 @@ def tiles(filename, tile_ids):
             "shape": ma.shape,
         }
         generated_tiles.append((tile_id, tile_value))
+        t4 = time.time()
 
     return generated_tiles
 
@@ -113,7 +142,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
         the values for the portion of the genome that is visible.
     """
     binsize = resolution
-    # print('binsize:', binsize)
+    # print("binsize:", binsize)
     # print('start_pos:', start_pos, 'end_pos:', end_pos)
     # print("length:", end_pos - start_pos)
     # print('shape:', shape)
@@ -132,7 +161,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
     for cid, start, end in abs2genomic([c[1] for c in chromsizes], start_pos, end_pos):
         n_bins = int(np.ceil((end - start) / binsize))
         total_length += end - start
-        # print('cid', cid, start, end, 'tl:', total_length)
+        # print("cid", cid, start, end, "tl:", total_length)
 
         try:
             # t1 = time.time()
@@ -167,7 +196,7 @@ def get_tile(f, chromsizes, resolution, start_pos, end_pos, shape):
                     continue
             """
 
-            # print("offset:", offset, "start_pos", start_pos, end_pos)
+            # print("start_pos", start_pos, end_pos)
             x = f["resolutions"][str(resolution)]["values"][chrom][start_pos:end_pos]
             current_binned_data_position += binsize * (end_pos - start_pos)
 
@@ -258,10 +287,24 @@ def tileset_info(filename):
         "shape": shape,
     }
 
-    if "row_infos" in f["resolutions"][str(resolutions[0])].attrs:
+    if "info" in f:
+        if "category_infos" in f["info"]:
+            try:
+                tileset_info["category_infos"] = json.loads(
+                    f["info"]["category_infos"][()]
+                )
+            except:
+                tileset_info["category_infos"] = json.loads(
+                    f["info"]["category_infos"][()].decode("utf8")
+                )
+
+    if "row_infos" in f["info"]:
+        row_infos_encoded = f["info"]["row_infos"][()]
+        tileset_info["row_infos"] = json.loads(row_infos_encoded)
+    elif "row_infos" in f["resolutions"][str(resolutions[0])].attrs:
         row_infos = f["resolutions"][str(resolutions[0])].attrs["row_infos"]
 
-        if isinstance(row_infos[0], str):
+        if type(row_infos[0]) == str:
             try:
                 tileset_info["row_infos"] = [json.loads(r) for r in row_infos]
             except json.JSONDecodeError:
@@ -273,10 +316,6 @@ def tileset_info(filename):
                 ]
             except json.JSONDecodeError:
                 tileset_info["row_infos"] = [r.decode("utf8") for r in row_infos]
-
-    elif "row_infos" in f["info"]:
-        row_infos_encoded = f["info"]["row_infos"][()]
-        tileset_info["row_infos"] = json.loads(row_infos_encoded)
 
     f.close()
 

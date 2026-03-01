@@ -1,29 +1,42 @@
-from pyfaidx import Fasta
-import numpy as np
-import pandas as pd
-import logging
-from .utils import natsorted, get_quadtree_depth
+import math
+from typing import Any, List, Tuple
 
-logger = logging.getLogger(__name__)
+import numpy as np
+
+import clodius.tiles.chromsizes as cts
+from clodius.tiles.format import format_dense_tile
+from clodius.tiles.utils import TilesetInfo, abs2genome_fn, parse_tile_id
+
+# from pysam import FastaFile
 
 TILE_SIZE = 1024
 
 
-def get_chromsizes(fapath):
-    with Fasta(fapath, one_based_attributes=False) as fa:
-        chromsizes = dict((seq, len(fa.records[seq])) for seq in fa.keys())
-        chromosomes = natsorted(fa.keys())
-    return pd.Series(chromsizes)[chromosomes]
+def convert_bases_to_multivec(seq):
+    res = []
+
+    to_append = {
+        "a": [1, 0, 0, 0, 0, 0],
+        "t": [0, 1, 0, 0, 0, 0],
+        "g": [0, 0, 1, 0, 0, 0],
+        "c": [0, 0, 0, 1, 0, 0],
+        "n": [0, 0, 0, 0, 1, 0],
+    }
+
+    for c in seq:
+        res.append(to_append.get(c.lower(), [0, 0, 0, 0, 0, 1]))
+
+    return res
 
 
-def tileset_info(fapath, chromsizes=None):
+def tileset_info(fai_filename):
     """
     Get the tileset info for a FASTA file
 
     Parameters
     ----------
-    fapath: string
-        The path to the FASTA file from which to retrieve data
+    fai_filename: string
+        The path to the FASTA index file from which to retrieve data
     chromsizes: [[chrom, size],...]
         A list of chromosome sizes associated with this tileset.
         Typically passed in to specify in what order data from
@@ -37,163 +50,158 @@ def tileset_info(fapath, chromsizes=None):
                     'max_zoom': 7
                     }
     """
-    if chromsizes is None:
-        chromsizes = get_chromsizes(fapath)
-        chromsizes_list = []
 
-        for chrom, size in chromsizes.items():
-            chromsizes_list += [[chrom, int(size)]]
-    else:
-        chromsizes_list = chromsizes
-        chromsizes = [int(c[1]) for c in chromsizes_list]
-    max_zoom = get_quadtree_depth(chromsizes, TILE_SIZE)
-    tileset_info = {
-        "min_pos": [0],
-        "max_pos": [sum(chromsizes)],
-        "max_width": TILE_SIZE * 2 ** max_zoom,
-        "tile_size": TILE_SIZE,
-        "max_zoom": max_zoom,
-        "chromsizes": chromsizes_list,
-    }
-    return tileset_info
-
-
-def abs2genomic(chromsizes, start_pos, end_pos):
-    """
-    Convert absolute genomic sizes to genomic
-
-    Parameters:
-    -----------
-    chromsizes: [1000,...]
-        An array of the lengths of the chromosomes
-    start_pos: int
-        The starting genomic position
-    end_pos: int
-        The ending genomic position
-    """
-    abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
-    cid_lo, cid_hi = (
-        np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
+    tsinfo = cts.tileset_info(fai_filename)
+    tsinfo["max_zoom"] = math.ceil(
+        math.log(tsinfo["max_pos"][0] / TILE_SIZE) / math.log(2)
     )
-    rel_pos_lo = start_pos - abs_chrom_offsets[cid_lo]
-    rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
-    start = rel_pos_lo
-    for cid in range(cid_lo, cid_hi):
-        yield cid, start, chromsizes[cid]
-        start = 0
-    yield cid_hi, start, rel_pos_hi
+
+    tsinfo["max_width"] = TILE_SIZE * 2 ** tsinfo["max_zoom"]
+    # tsinfo['bins_per_dimension'] = TILE_SIZE
+    tsinfo["tile_size"] = TILE_SIZE
+    tsinfo["datatype"] = "multivec_singleres_sequence"
+    return tsinfo
 
 
-def get_fasta_tile(
-    fapath, zoom_level, start_pos, end_pos, chromsizes=None,
-):
-    if chromsizes is None:
-        chromsizes = get_chromsizes(fapath)
-    chrom_names = chromsizes.keys()
-    cids_starts_ends = list(abs2genomic(chromsizes, start_pos, end_pos))
-    with Fasta(fapath, one_based_attributes=False) as fa:
-        # investigate using 4 bits per character (only 16 possible chars)
-        arrays = [
-            fa[chrom_names[cid]][start:end].seq for cid, start, end in cids_starts_ends
-        ]
-    return "".join(arrays)
+def sequence_tiles_to_multivec(tiles):
+    """Convert sequence tiles to multivec representation."""
+    new_tiles = []
+    for tile_id, tile in tiles:
+        seq = tile["sequence"]
+        res = convert_bases_to_multivec(seq)
+        tile = format_dense_tile(np.array(res).T)
+        tile["shape"] = [6, len(seq)]
+
+        new_tiles += [(tile_id, tile)]
+    return new_tiles
 
 
-def tiles(fapath, tile_ids, chromsizes_map={}, chromsizes=None, max_tile_width=None):
+def multivec_tiles(*args, **kwargs):
+    seq_tiles = sequence_tiles(*args, **kwargs)
+    return sequence_tiles_to_multivec(seq_tiles)
+
+
+def read_fai(fai_file):
+    if isinstance(fai_file, str):
+        fai_file = open(fai_file, "rb")
+
+    fai_index = {}
+    fai_file.seek(0)
+    binary_data = fai_file.read()
+    text_data = binary_data.decode("utf-8")
+
+    for line in [l.strip() for l in text_data.split("\n") if l.strip()]:
+        fields = line.strip().split("\t")
+        seq_name = fields[0]
+        seq_length = int(fields[1])
+        offset = int(fields[2])
+        line_blen = int(fields[3])
+        line_len = int(fields[4])
+        fai_index[seq_name] = (seq_length, offset, line_blen, line_len)
+    return fai_index
+
+
+def fetch_sequence(fasta_file, fai_index, seq_name, start, end):
+    if isinstance(fasta_file, str):
+        fasta_file = open(fasta_file, "rb")
+
+    if seq_name not in fai_index:
+        raise ValueError(f"Sequence {seq_name} not found in index")
+
+    seq_length, offset, line_blen, line_len = fai_index[seq_name]
+
+    if start < 0 or end > seq_length or start >= end:
+        raise ValueError(f"Invalid range: {start}-{end} for sequence {seq_name}")
+
+    # Calculate the byte range to read
+    lines_to_skip = start // line_blen
+    f = fasta_file
+    # Move to the start of the sequence in the FASTA file
+    f.seek(offset + lines_to_skip * line_len + (start % line_blen))
+
+    # print("seq_name", seq_name)
+    # print("line_blen", line_blen)
+    # print("line_len", line_len)
+    # print("start", start)
+    # print("end", end)
+
+    # Read the required lines
+    total_read = 0
+    sequence = []
+    to_read = end - start
+    while total_read < to_read:
+        # print("end - start", end - start)
+        chunk = f.read(min(end - start, line_blen - (start % line_blen)))
+        # print("chunk", len(chunk))
+        sequence.append(chunk.strip().decode("utf8"))
+        start += len(chunk)
+        total_read += len(chunk)
+        f.seek(f.tell() + (line_len - line_blen))  # Skip to the next line
+
+    full_seq = "".join(sequence)
+    # print("len(full_seq):", len(full_seq))
+    return full_seq
+
+
+def sequence_tiles(
+    fasta_filename: str,
+    tile_ids: List[str],
+    index_filename: str,
+    chromsizes_fn: str = None,
+) -> List[Tuple[str, Any]]:
+    """Retrieve higlass tiles.
+
+    Arguments:
+        fasta_filename: The name of the fasta file to load
+        tile_ids: The incoming tile ids (e.g. 'x.0.0')
+        fai_filename: The name of the fasta index file (`samtools faidx`)
+        chromsizes_filename: The chromsizes filename to use in case we
+            want a specific chromosome order.
+    Returns:
+        Tile data
     """
-    Generate tiles from a FASTA file.
-
-    Parameters
-    ----------
-    fapath: str
-        The filepath of the FASTA file
-    tile_ids: [str,...]
-        A list of tile_ids (e.g. xyx.0.0) identifying the tiles
-        to be retrieved
-    chromsizes_map: {uid: []}
-        A set of chromsizes listings corresponding to the parameters of the
-        tile_ids. To be used if a chromsizes id is passed in with the tile id
-        with the `|cos:id` tag in the tile id
-    chromsizes: [[chrom, size],...]
-        A 2d array containing chromosome names and sizes. Overrides the
-        chromsizes in chromsizes_map
-    max_tile_width: int
-        How wide can each tile be before we return no data. This
-        can be used to limit the amount of data returned.
-    Returns
-    -------
-    tile_list: [(tile_id, tile_data),...]
-        A list of tile_id, tile_data tuples
-    """
+    tsinfo = tileset_info(index_filename)
+    tsinfo = TilesetInfo(**tsinfo)
     generated_tiles = []
+
+    fa_index = read_fai(index_filename)
+
+    if not chromsizes_fn:
+        chromsizes_fn = index_filename
+
     for tile_id in tile_ids:
-        tile_option_parts = tile_id.split("|")[1:]
-        tile_no_options = tile_id.split("|")[0]
-        tile_id_parts = tile_no_options.split(".")
-        tile_position = list(map(int, tile_id_parts[1:3]))
+        tile_info = parse_tile_id(tile_id, tsinfo)
 
-        tile_options = dict([o.split(":") for o in tile_option_parts])
-
-        if chromsizes:
-            chromnames = [c[0] for c in chromsizes]
-            chromlengths = [int(c[1]) for c in chromsizes]
-            chromsizes_to_use = pd.Series(chromlengths, index=chromnames)
-        else:
-            chromsizes_id = None
-            if "cos" in tile_options:
-                chromsizes_id = tile_options["cos"]
-            if chromsizes_id in chromsizes_map:
-                chromsizes_to_use = chromsizes_map[chromsizes_id]
-            else:
-                chromsizes_to_use = None
-
-        zoom_level = tile_position[0]
-        tile_pos = tile_position[1]
-
-        # this doesn't combine multiple consequetive ids, which
-        # would speed things up
-        if chromsizes_to_use is None:
-            chromsizes_to_use = get_chromsizes(fapath)
-
-        max_depth = get_quadtree_depth(chromsizes_to_use, TILE_SIZE)
-        tile_size = TILE_SIZE * 2 ** (max_depth - zoom_level)
-        if max_tile_width and tile_size > max_tile_width:
-            return [
+        zoom_diff = tsinfo.max_zoom - tile_info.zoom
+        if zoom_diff > 3:
+            generated_tiles += [
                 (
                     tile_id,
                     {
-                        "error": f"Tile too large, no data returned. Max tile size: {max_tile_width}"
+                        "error": f"Tile too wide (zoom level {tile_info.zoom}). Please zoom in."
                     },
                 )
             ]
-        start_pos = tile_pos * tile_size
-        end_pos = start_pos + tile_size
-        tile = get_fasta_tile(fapath, zoom_level, start_pos, end_pos, chromsizes_to_use)
-        generated_tiles += [(tile_id, {"sequence": tile})]
+            continue
+
+        seq = ""
+
+        for chr_interval in abs2genome_fn(
+            chromsizes_fn, tile_info.start[0], tile_info.end[0]
+        ):
+            fs = fetch_sequence(
+                fasta_filename,
+                fa_index,
+                chr_interval.name,
+                chr_interval.start,
+                chr_interval.end,
+            )
+            # fas = fa_file.fetch(chr_interval.name, chr_interval.start, chr_interval.end)
+
+            # assert fs == fas
+
+            seq += fs
+
+        generated_tiles += [(tile_id, {"sequence": seq})]
+
     return generated_tiles
-
-
-def chromsizes(filename):
-    """
-    Get a list of chromosome sizes from this [presumably] fasta
-    file.
-
-    Parameters:
-    -----------
-    filename: string
-        The filename of the fasta file
-
-    Returns
-    -------
-    chromsizes: [(name:string, size:int), ...]
-        An ordered list of chromosome names and sizes
-    """
-    try:
-        chrom_series = get_chromsizes(filename)
-        data = []
-        for chrom, size in chrom_series.items():
-            data.append([chrom, size])
-        return data
-    except Exception as ex:
-        logger.error(ex)
-        raise Exception("Error loading chromsizes from bigwig file: {}".format(ex))

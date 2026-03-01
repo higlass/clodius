@@ -1,29 +1,28 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 
+from . import cli
+
+import click
+import clodius.chromosomes as cch
+import clodius.multivec as cmv
+import clodius.array as ct
 import collections as col
-import gzip
-import json
+import h5py
 import math
+import negspy.coordinates as nc
+import numpy as np
 import os
 import os.path as op
 import random
+import scipy.misc as sm
+import slugid
 import sqlite3
 import sys
 import time
+import json
+from smart_open import open
 
-import h5py
-import numpy as np
-
-import click
-import clodius.array as ct
-import clodius.chromosomes as cch
-import clodius.multivec as cmv
-import negspy.coordinates as nc
-import scipy.misc as sm
-import slugid
-
-from . import cli
 from .utils import get_tile_pos_from_lng_lat, transaction
 
 
@@ -181,7 +180,7 @@ def _multivec(
 def _bedpe(
     filepath,
     output_file=None,
-    assembly=None,
+    assembly="hg19",
     importance_column="random",
     has_header=False,
     max_per_tile=100,
@@ -206,8 +205,6 @@ def _bedpe(
 
     if filepath == "-":
         f = sys.stdin
-    elif filepath.endswith(".gz"):
-        f = gzip.open(filepath, "rt")
     else:
         f = open(filepath, "r")
 
@@ -324,7 +321,7 @@ def _bedpe(
         chrom_sizes=chrom_sizes,
         tile_size=tile_size,
         max_zoom=max_zoom,
-        max_width=tile_size * 2 ** max_zoom,
+        max_width=tile_size * 2**max_zoom,
         version=BED2DDB_VERSION,
     )
 
@@ -369,7 +366,7 @@ def _bedpe(
 
     tile_counts = col.defaultdict(lambda: col.defaultdict(lambda: col.defaultdict(int)))
     # Sort from high to low importance
-    entries.sort(key=lambda x: -x["importance"])
+    entries = sorted(entries, key=lambda x: -x["importance"])
 
     interval_inserts = []
     position_index_inserts = []
@@ -466,7 +463,11 @@ def _bedfile(
     delimiter,
     chromsizes_filename,
     offset,
+    print_freq=1000,
 ):
+    """
+    :param print_freq: Print a status every print_freq lines. If 0, turn off status printing.
+    """
     BEDDB_VERSION = 3
 
     if output_file is None:
@@ -477,12 +478,7 @@ def _bedfile(
     if op.exists(output_file):
         os.remove(output_file)
 
-    if filepath.endswith(".gz"):
-        import gzip
-
-        bed_file = gzip.open(filepath, "rt")
-    else:
-        bed_file = open(filepath, "r")
+    bed_file = open(filepath, "r")
 
     try:
         (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(
@@ -624,7 +620,7 @@ def _bedfile(
         chrom_sizes=chrom_sizes,
         tile_size=tile_size,
         max_zoom=max_zoom,
-        max_width=tile_size * 2 ** max_zoom,
+        max_width=tile_size * 2**max_zoom,
         header=header,
         version=BEDDB_VERSION,
     )
@@ -757,8 +753,9 @@ def _bedfile(
                     ),
                 )
 
-                if counter % 1000 == 0:
-                    print("counter:", counter, value["endPos"] - value["startPos"])
+                if print_freq:
+                    if counter % print_freq == 0:
+                        print("counter:", counter, value["endPos"] - value["startPos"])
 
                 exec_statement = "INSERT INTO position_index VALUES (?,?,?,?,?)"
                 c.execute(
@@ -827,7 +824,7 @@ def _bedgraph(
 
     tile_size = tile_size
     # how many values to read in at once while tiling
-    chunk_size = tile_size * 2 ** chunk_size
+    chunk_size = tile_size * 2**chunk_size
 
     dsets = []  # data sets at each zoom level
     nan_dsets = []  # store nan values
@@ -839,8 +836,8 @@ def _bedgraph(
     data_buffers = [[]]
     nan_data_buffers = [[]]
 
-    while assembly_size / 2 ** z > tile_size:
-        dset_length = math.ceil(assembly_size / 2 ** z)
+    while assembly_size / 2**z > tile_size:
+        dset_length = math.ceil(assembly_size / 2**z)
         dsets += [
             f.create_dataset(
                 "values_" + str(z), (dset_length,), dtype="f", compression="gzip"
@@ -873,7 +870,7 @@ def _bedgraph(
     d.attrs["max-zoom"] = max_zoom = math.ceil(
         math.log(d.attrs["max-length"] / tile_size) / math.log(2)
     )
-    d.attrs["max-width"] = tile_size * 2 ** max_zoom
+    d.attrs["max-width"] = tile_size * 2**max_zoom
     d.attrs["max-position"] = 0
 
     print("assembly size (max-length)", d.attrs["max-length"])
@@ -889,12 +886,7 @@ def _bedgraph(
     if filepath == "-":
         f = sys.stdin
     else:
-        if filepath.endswith(".gz"):
-            import gzip
-
-            f = gzip.open(filepath, "rt")
-        else:
-            f = open(filepath, "r")
+        f = open(filepath, "r")
 
     curr_zoom = 0
 
@@ -935,11 +927,9 @@ def _bedgraph(
 
             # aggregate and store aggregated values in the next zoom_level's
             # data
-            data_buffers[curr_zoom + 1] += list(
-                ct.aggregate(curr_chunk, 2 ** zoom_step)
-            )
+            data_buffers[curr_zoom + 1] += list(ct.aggregate(curr_chunk, 2**zoom_step))
             nan_data_buffers[curr_zoom + 1] += list(
-                ct.aggregate(nan_curr_chunk, 2 ** zoom_step)
+                ct.aggregate(nan_curr_chunk, 2**zoom_step)
             )
 
             data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
@@ -1050,9 +1040,9 @@ def _bedgraph(
         nan_dsets[curr_zoom][curr_pos : curr_pos + chunk_size] = nan_curr_chunk
 
         # aggregate and store aggregated values in the next zoom_level's data
-        data_buffers[curr_zoom + 1] += list(ct.aggregate(curr_chunk, 2 ** zoom_step))
+        data_buffers[curr_zoom + 1] += list(ct.aggregate(curr_chunk, 2**zoom_step))
         nan_data_buffers[curr_zoom + 1] += list(
-            ct.aggregate(nan_curr_chunk, 2 ** zoom_step)
+            ct.aggregate(nan_curr_chunk, 2**zoom_step)
         )
 
         data_buffers[curr_zoom] = data_buffers[curr_zoom][chunk_size:]
@@ -1074,8 +1064,6 @@ def _bedgraph(
 def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
     if filepath == "-":
         f = sys.stdin
-    elif filepath.endswith(".gz"):
-        f = gzip.open(filepath, "rt")
     else:
         f = open(filepath, "r")
 
@@ -1438,7 +1426,10 @@ def bedgraph(
     "with .multires.bed",
 )
 @click.option(
-    "--assembly", "-a", help="The genome assembly that this file was created against",
+    "--assembly",
+    "-a",
+    help="The genome assembly that this file was created against",
+    default="hg19",
 )
 @click.option(
     "--importance-column",
@@ -1526,6 +1517,7 @@ def bedfile(
     "-a",
     help="The genome assembly that this file was created against",
     type=str,
+    default="hg19",
     show_default=True,
 )
 @click.option(
@@ -1542,6 +1534,7 @@ def bedfile(
 @click.option(
     "--has-header/--no-header",
     help="Does this file have a header that we should ignore",
+    type=bool,
     default=False,
     show_default=True,
 )

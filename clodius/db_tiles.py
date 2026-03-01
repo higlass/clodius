@@ -1,54 +1,67 @@
 import collections as col
 import math
-import sqlite3
+import s3sqlite
+import apsw
+
+sovfs = s3sqlite.SmartOpenVFS(name="so-vfs")
 
 
 def get_tileset_info(db_file):
-    conn = sqlite3.connect(db_file)
-    c = conn.cursor()
+    with apsw.Connection(
+        db_file, vfs=sovfs.name, flags=apsw.SQLITE_OPEN_READONLY
+    ) as conn:
+        c = conn.cursor()
 
-    row = c.execute("SELECT * from tileset_info").fetchone()
-    if row is not None and len(row) == 9:
-        header = row[8]
-    else:
-        header = ""
+        row = c.execute("SELECT * from tileset_info").fetchone()
+        if row is not None and len(row) == 9:
+            header = row[8]
+        else:
+            header = ""
 
-    tileset_info = {
-        "zoom_step": row[0],
-        "max_length": row[1],
-        "assembly": row[2],
-        "chrom_names": row[3],
-        "chrom_sizes": row[4],
-        "tile_size": row[5],
-        "max_zoom": row[6],
-        "max_width": row[7],
-        "min_pos": [1],
-        "max_pos": [row[1]],
-        "header": header,
-    }
-    conn.close()
+        tileset_info = {
+            "zoom_step": row[0],
+            "max_length": row[1],
+            "assembly": row[2],
+            "chrom_names": row[3],
+            "chrom_sizes": row[4],
+            "tile_size": row[5],
+            "max_zoom": row[6],
+            "max_width": row[7],
+            "min_pos": [1],
+            "max_pos": [row[1]],
+            "header": header,
+        }
 
-    return tileset_info
+        return tileset_info
 
 
 def get_2d_tileset_info(db_file):
-    conn = sqlite3.connect(db_file)
-    c = conn.cursor()
+    with apsw.Connection(
+        db_file, vfs=sovfs.name, flags=apsw.SQLITE_OPEN_READONLY
+    ) as conn:
+        c = conn.cursor()
 
-    row = c.execute("SELECT * from tileset_info").fetchone()
-    tileset_info = {
-        "zoom_step": row[0],
-        "max_length": row[1],
-        "assembly": row[2],
-        "chrom_names": row[3],
-        "chrom_sizes": row[4],
-        "tile_size": row[5],
-        "max_zoom": row[6],
-        "max_width": row[7],
-        "min_pos": [1, 1],
-        "max_pos": [row[1], row[1]],
-    }
-    conn.close()
+        row = c.execute("SELECT * from tileset_info").fetchone()
+        if row is not None and len(row) == 9:
+            header = row[8]
+        else:
+            header = ""
+
+        tileset_info = {
+            "zoom_step": row[0],
+            "max_length": row[1],
+            "assembly": row[2],
+            "chrom_names": row[3],
+            "chrom_sizes": row[4],
+            "tile_size": row[5],
+            "max_zoom": row[6],
+            "max_width": row[7],
+            "min_pos": [1, 1],
+            "max_pos": [row[1], row[1]],
+            "header": header,
+        }
+
+        return tileset_info
 
     return tileset_info
 
@@ -74,62 +87,62 @@ def get_tiles(db_file, zoom, tile_x_pos, num_tiles=1):
         A set of tiles, indexed by position
     """
     tileset_info = get_tileset_info(db_file)
-    conn = sqlite3.connect(db_file)
+    with apsw.Connection(
+        db_file, vfs=sovfs.name, flags=apsw.SQLITE_OPEN_READONLY
+    ) as conn:
+        c = conn.cursor()
 
-    c = conn.cursor()
+        tile_width = tileset_info["max_width"] / 2 ** zoom
 
-    tile_width = tileset_info["max_width"] / 2 ** zoom
+        tile_start_pos = tile_width * tile_x_pos
+        tile_end_pos = tile_start_pos + num_tiles * tile_width
 
-    tile_start_pos = tile_width * tile_x_pos
-    tile_end_pos = tile_start_pos + num_tiles * tile_width
+        query = """
+        SELECT startPos, endPos, chrOffset, importance, fields, uid
+        FROM intervals,position_index
+        WHERE
+            intervals.id=position_index.id AND
+            zoomLevel <= {} AND
+            rEndPos >= {} AND
+            rStartPos <= {}
+        """.format(
+            zoom, tile_start_pos, tile_end_pos
+        )
 
-    query = """
-    SELECT startPos, endPos, chrOffset, importance, fields, uid
-    FROM intervals,position_index
-    WHERE
-        intervals.id=position_index.id AND
-        zoomLevel <= {} AND
-        rEndPos >= {} AND
-        rStartPos <= {}
-    """.format(
-        zoom, tile_start_pos, tile_end_pos
-    )
+        rows = c.execute(query).fetchall()
 
-    rows = c.execute(query).fetchall()
+        new_rows = col.defaultdict(list)
 
-    new_rows = col.defaultdict(list)
+        for r in rows:
+            try:
+                uid = r[5].decode("utf-8")
+            except AttributeError:
+                uid = r[5]
 
-    for r in rows:
-        try:
-            uid = r[5].decode("utf-8")
-        except AttributeError:
-            uid = r[5]
+            tile_pos = tile_x_pos + math.floor((r[0] - tile_start_pos) / tile_width)
 
-        tile_pos = tile_x_pos + math.floor((r[0] - tile_start_pos) / tile_width)
+            x_start = r[0]
+            x_end = r[1]
 
-        x_start = r[0]
-        x_end = r[1]
+            for i in range(tile_x_pos, tile_x_pos + num_tiles):
+                tile_x_start = i * tile_width
+                tile_x_end = (i + 1) * tile_width
+                tile_pos = i
 
-        for i in range(tile_x_pos, tile_x_pos + num_tiles):
-            tile_x_start = i * tile_width
-            tile_x_end = (i + 1) * tile_width
-            tile_pos = i
+                if x_start < tile_x_end and x_end >= tile_x_start:
+                    new_rows[tile_pos] += [
+                        # add the position offset to the returned values
+                        {
+                            "xStart": r[0],
+                            "xEnd": r[1],
+                            "chrOffset": r[2],
+                            "importance": r[3],
+                            "uid": uid,
+                            "fields": r[4].split("\t"),
+                        }
+                    ]
 
-            if x_start < tile_x_end and x_end >= tile_x_start:
-                new_rows[tile_pos] += [
-                    # add the position offset to the returned values
-                    {
-                        "xStart": r[0],
-                        "xEnd": r[1],
-                        "chrOffset": r[2],
-                        "importance": r[3],
-                        "uid": uid,
-                        "fields": r[4].split("\t"),
-                    }
-                ]
-    conn.close()
-
-    return new_rows
+        return new_rows
 
 
 def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
@@ -157,77 +170,76 @@ def get_2d_tiles(db_file, zoom, tile_x_pos, tile_y_pos, numx=1, numy=1):
         A set of tiles, indexed by position
     """
     tileset_info = get_tileset_info(db_file)
+    with apsw.Connection(
+        db_file, vfs=sovfs.name, flags=apsw.SQLITE_OPEN_READONLY
+    ) as conn:
+        c = conn.cursor()
+        tile_width = tileset_info["max_width"] / 2 ** zoom
 
-    conn = sqlite3.connect(db_file)
+        tile_x_start_pos = tile_width * tile_x_pos
+        tile_x_end_pos = tile_x_start_pos + (numx * tile_width)
 
-    c = conn.cursor()
-    tile_width = tileset_info["max_width"] / 2 ** zoom
+        tile_y_start_pos = tile_width * tile_y_pos
+        tile_y_end_pos = tile_y_start_pos + (numy * tile_width)
 
-    tile_x_start_pos = tile_width * tile_x_pos
-    tile_x_end_pos = tile_x_start_pos + (numx * tile_width)
+        query = """
+        SELECT
+            fromX, toX, fromY, toY, chrOffset, importance, fields, uid, intervals.id
+        FROM
+            intervals, position_index
+        WHERE
+            intervals.id=position_index.id AND
+            zoomLevel <= {} AND
+            rToX >= {} AND
+            rFromX <= {} AND
+            rToY >= {} AND
+            rFromY <= {}
+        """.format(
+            zoom, tile_x_start_pos, tile_x_end_pos, tile_y_start_pos, tile_y_end_pos
+        )
 
-    tile_y_start_pos = tile_width * tile_y_pos
-    tile_y_end_pos = tile_y_start_pos + (numy * tile_width)
+        rows = c.execute(query).fetchall()
 
-    query = """
-    SELECT
-        fromX, toX, fromY, toY, chrOffset, importance, fields, uid, intervals.id
-    FROM
-        intervals, position_index
-    WHERE
-        intervals.id=position_index.id AND
-        zoomLevel <= {} AND
-        rToX >= {} AND
-        rFromX <= {} AND
-        rToY >= {} AND
-        rFromY <= {}
-    """.format(
-        zoom, tile_x_start_pos, tile_x_end_pos, tile_y_start_pos, tile_y_end_pos
-    )
+        new_rows = col.defaultdict(list)
 
-    rows = c.execute(query).fetchall()
+        for r in rows:
+            try:
+                uid = r[7].decode("utf-8")
+            except AttributeError:
+                uid = r[7]
 
-    new_rows = col.defaultdict(list)
+            x_start = r[0]
+            x_end = r[1]
+            y_start = r[2]
+            y_end = r[3]
 
-    for r in rows:
-        try:
-            uid = r[7].decode("utf-8")
-        except AttributeError:
-            uid = r[7]
+            for i in range(tile_x_pos, tile_x_pos + numx):
+                for j in range(tile_y_pos, tile_y_pos + numy):
+                    tile_x_start = i * tile_width
+                    tile_x_end = (i + 1) * tile_width
 
-        x_start = r[0]
-        x_end = r[1]
-        y_start = r[2]
-        y_end = r[3]
+                    tile_y_start = j * tile_width
+                    tile_y_end = (j + 1) * tile_width
 
-        for i in range(tile_x_pos, tile_x_pos + numx):
-            for j in range(tile_y_pos, tile_y_pos + numy):
-                tile_x_start = i * tile_width
-                tile_x_end = (i + 1) * tile_width
+                    if (
+                        x_start < tile_x_end
+                        and x_end >= tile_x_start
+                        and y_start < tile_y_end
+                        and y_end >= tile_y_start
+                    ):
+                        # add the position offset to the returned values
+                        new_rows[(i, j)] += [
+                            {
+                                "xStart": r[0],
+                                "xEnd": r[1],
+                                "yStart": r[2],
+                                "yEnd": r[3],
+                                "chrOffset": r[4],
+                                "importance": r[5],
+                                "uid": uid,
+                                "id": r[8],
+                                "fields": r[6].split("\t"),
+                            }
+                        ]
 
-                tile_y_start = j * tile_width
-                tile_y_end = (j + 1) * tile_width
-
-                if (
-                    x_start < tile_x_end
-                    and x_end >= tile_x_start
-                    and y_start < tile_y_end
-                    and y_end >= tile_y_start
-                ):
-                    # add the position offset to the returned values
-                    new_rows[(i, j)] += [
-                        {
-                            "xStart": r[0],
-                            "xEnd": r[1],
-                            "yStart": r[2],
-                            "yEnd": r[3],
-                            "chrOffset": r[4],
-                            "importance": r[5],
-                            "uid": uid,
-                            "id": r[8],
-                            "fields": r[6].split("\t"),
-                        }
-                    ]
-    conn.close()
-
-    return new_rows
+        return new_rows
