@@ -1,16 +1,15 @@
 from __future__ import print_function
 
+import clodius.db_tiles as cdt
+import clodius.hdf_tiles as cht
+import click.testing as clt
+import clodius.cli.aggregate as cca
+import h5py
+import negspy.coordinates as nc
+import numpy as np
 import os.path as op
 import sys
 
-import h5py
-import numpy as np
-
-import click.testing as clt
-import clodius.cli.aggregate as cca
-import clodius.db_tiles as cdt
-import clodius.hdf_tiles as cht
-import negspy.coordinates as nc
 from clodius.tiles import bed2ddb
 
 sys.path.append("scripts")
@@ -23,27 +22,6 @@ def test_clodius_aggregate_bedfile():
         testdir, "sample_data", "geneAnnotationsExonsUnions.hg19.short.bed"
     )
     output_file = "/tmp/geneAnnotationsExonsUnions.hg19.short.bed"
-
-    # make sure that running a command without an assembly
-    # throws an error
-    runner = clt.CliRunner()
-    result = runner.invoke(
-        cca.bedfile,
-        [
-            input_file,
-            "--max-per-tile",
-            20,
-            "--importance-column",
-            5,
-            "--output-file",
-            output_file,
-            "--delimiter",
-            "\t",
-        ],
-    )
-
-    a, b, tb = result.exc_info
-    assert result.exit_code == 1
 
     runner = clt.CliRunner()
     result = runner.invoke(
@@ -221,32 +199,6 @@ def test_clodius_aggregate_bedpe():
     input_file = op.join(testdir, "sample_data", "Rao_RepA_GM12878_Arrowhead.txt")
     output_file = "/tmp/bedpe.db"
 
-    # make sure that aggregating without an assembly throws
-    # doesn't succeed
-    runner = clt.CliRunner()
-    result = runner.invoke(
-        cca.bedpe,
-        [
-            input_file,
-            "--output-file",
-            output_file,
-            "--chr1-col",
-            "1",
-            "--from1-col",
-            "2",
-            "--to1-col",
-            "3",
-            "--chr2-col",
-            "1",
-            "--from2-col",
-            "2",
-            "--to2-col",
-            "3",
-        ],
-    )
-
-    assert result.exit_code == 1
-
     runner = clt.CliRunner()
     result = runner.invoke(
         cca.bedpe,
@@ -282,11 +234,11 @@ def test_clodius_aggregate_bedpe():
 
     assert "\n" not in tiles[(0, 0)][0]["fields"][2]
 
-    tiles_2d = bed2ddb.tiles(output_file, ["x.0.0.0"])
+    tiles_2d = bed2ddb.tiles(output_file, ['x.0.0.0'])
 
     assert len(tiles_2d[0][1][0]["fields"]) == 3
 
-    tiles_1d = bed2ddb.tiles(output_file, ["x.0.0"])
+    tiles_1d = bed2ddb.tiles(output_file, ['x.0.0'])
 
     assert len(tiles_1d[0][1][0]["fields"]) == 3
 

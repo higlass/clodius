@@ -3,10 +3,11 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from clodius.tiles.mrmatrix import tiles, tileset_info
+from clodius.tiles.mrmatrix import tiles, tileset_info, single_tile
 
 
-class AttrDict(dict):
+class MockHdf5(dict):
+    # By wrapping a dict in our own class, we can add arbitrary attributes.
     pass
 
 
@@ -14,20 +15,20 @@ class TilesetInfoTest(unittest.TestCase):
     def setUp(self):
         tileset_stub = {"resolutions": {"1": {"values": np.array([[1, 2], [3, 4]])}}}
 
-        self.tileset = AttrDict(tileset_stub)
+        self.tileset = MockHdf5(tileset_stub)
         self.tileset.attrs = {}
 
-        self.tileset_min = AttrDict(tileset_stub)
+        self.tileset_min = MockHdf5(tileset_stub)
         self.tileset_min.attrs = {"min-pos": (1, 1)}
 
-        self.tileset_max = AttrDict(tileset_stub)
+        self.tileset_max = MockHdf5(tileset_stub)
         self.tileset_max.attrs = {"max-pos": (9, 9)}
 
         self.info = {
             "bins_per_dimension": 256,
-            "max_pos": (2, 2),  # TODO: Nothing uses these...
-            "min_pos": [0, 0],  # ...
-            "mirror_tiles": "false",  # Can we remove them?
+            "max_pos": (2, 2),
+            "min_pos": [0, 0],
+            "mirror_tiles": "false",
             "resolutions": [1],
         }
 
@@ -49,34 +50,35 @@ class TilesetInfoTest(unittest.TestCase):
 class TilesTest(unittest.TestCase):
     def test_zoom_out_of_bounds(self):
         def should_fail():
-            tileset_stub = AttrDict(
+            tileset_stub = MockHdf5(
                 {"resolutions": {"1": {"values": np.array([[1, 2], [3, 4]])}}}
             )
             tileset_stub.attrs = {}
-            tiles(tileset_stub, 2, 0, 0)
+            single_tile(tileset_stub, 2, 0, 0)
 
         self.assertRaisesRegex(ValueError, r"Zoom level out of bounds", should_fail)
 
     def test_padding(self):
-        tileset = AttrDict(
+        tileset = MockHdf5(
             {
                 "resolutions": {
                     "1": {
                         "values": np.array([[1.0, 2], [3, 4]])
                         # It's important that there is a float value:
-                        # If there isn't, np.nan will be converted to a large negative integer.
+                        # If there isn't, np.nan will be converted
+                        # to a large negative integer.
                     }
                 }
             }
         )
         tileset.attrs = {}
-        zoomed = tiles(tileset, 0, 0, 0)
+        zoomed = single_tile(tileset, 0, 0, 0)
         self.assertEqual(zoomed.shape, (256, 256))
         assert_array_equal(zoomed[0:2, 0:2], [[1, 2], [3, 4]])
         assert_array_equal(zoomed[2:256, 0], [np.nan for x in range(254)])
 
     def test_bins(self):
-        tileset = AttrDict(
+        tileset = MockHdf5(
             {
                 "resolutions": {
                     "1": {
@@ -89,13 +91,14 @@ class TilesTest(unittest.TestCase):
         )
         tileset.attrs = {}
 
-        zoomed_0 = tiles(tileset, 0, 0, 0)
+        zoomed_0 = single_tile(tileset, 0, 0, 0)
         self.assertEqual(zoomed_0.shape, (256, 256))
         self.assertEqual(zoomed_0[0, 0], 0)
 
-        zoomed_1 = tiles(tileset, 0, 1, 1)
+        zoomed_1 = single_tile(tileset, 0, 1, 1)
         self.assertEqual(zoomed_1.shape, (256, 256))
         self.assertEqual(zoomed_1[0, 0], 256)
+
         self.assertEqual(zoomed_1[1, 0], 256)  # Constant dimension
         self.assertEqual(zoomed_1[0, 1], 257)  # Changing dimension
         self.assertEqual(zoomed_1[0, 256 - 13], 499)
@@ -103,24 +106,22 @@ class TilesTest(unittest.TestCase):
         # Plain assertEqual gave: nan != nan
 
     def test_zoom(self):
-        tileset = AttrDict(
+        tileset = MockHdf5(
             {
                 "resolutions": {
-                    # TODO: It's not actually enforced that zoom levels be sequential integers?
-                    # TODO: Should we check that the sizes are reasonable during initialization?
-                    "1": {"values": np.array([[1.0, 2.0], [3.0, 4.0]])},
-                    "5": {"values": np.array([[3.0, 4.0], [5.0, 6.0]])},
-                    "11": {"values": np.array([[5.0, 6.0], [7.0, 8.0]])},
+                    "1": {"values": np.array([[1.0, 2], [3, 4]])},
+                    "5": {"values": np.array([[3.0, 4], [5, 6]])},
+                    "11": {"values": np.array([[5.0, 6], [7, 8]])},
                 }
             }
         )
         tileset.attrs = {}
 
-        zoomed_0 = tiles(tileset, 0, 0, 0)
+        zoomed_0 = single_tile(tileset, 0, 0, 0)
         assert_array_equal(zoomed_0[0:2, 0:2], [[5, 6], [7, 8]])
 
-        zoomed_1 = tiles(tileset, 1, 0, 0)
+        zoomed_1 = single_tile(tileset, 1, 0, 0)
         assert_array_equal(zoomed_1[0:2, 0:2], [[3, 4], [5, 6]])
 
-        zoomed_2 = tiles(tileset, 2, 0, 0)
+        zoomed_2 = single_tile(tileset, 2, 0, 0)
         assert_array_equal(zoomed_2[0:2, 0:2], [[1, 2], [3, 4]])
