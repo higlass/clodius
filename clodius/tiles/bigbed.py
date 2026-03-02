@@ -1,17 +1,10 @@
-import bbi
-import functools as ft
 import logging
-import numpy as np
 import numpy.random as nr
-import pandas as pd
 import random
 import clodius.tiles.bigwig as hgbw
 from clodius.utils import TILE_OPTIONS_CHAR
 import pybigtools
-import slugid
 from hashlib import md5
-
-from concurrent.futures import ThreadPoolExecutor
 
 DEFAULT_RANGE_MODE = "significant"
 MIN_ELEMENTS = 1
@@ -210,11 +203,7 @@ def get_bigbed_tile(
     if max_elements is None:
         max_elements = MAX_ELEMENTS
 
-    resolutions = hgbw.get_zoom_resolutions(chromsizes)
-    binsize = resolutions[zoom_level]
-
     cids_starts_ends = list(hgbw.abs2genomic(chromsizes, start_pos, end_pos))
-    results = []
 
     offset = 0
     offsetIdx = 0

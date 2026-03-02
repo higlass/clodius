@@ -2,8 +2,6 @@ import functools as ft
 import logging
 import math
 import re
-from concurrent.futures import ThreadPoolExecutor
-
 import numpy as np
 import pandas as pd
 import pybigtools
@@ -194,7 +192,6 @@ def fetch_data(a):
 
     try:
         chrom = chromsizes.index[cid]
-        clen = chromsizes.values[cid]
 
         args = [str(chrom), int(start), int(end), n_bins]
 
@@ -253,7 +250,7 @@ def get_bigwig_tile(
         )
         for c in cids_starts_ends
     ]
-    
+
     # with ThreadPoolExecutor(max_workers=1) as e:
     #     arrays = list(
     #         e.map(

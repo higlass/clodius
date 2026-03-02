@@ -494,8 +494,6 @@ def promote_tiles(tiled_lines, max_per_tile=5):
         if zoom_level == 0:
             continue
 
-        orig_zoom_level = zoom_level
-        orig_tile_pos = tile_pos
         line_found = False
 
         while (
@@ -530,7 +528,7 @@ def promote_tiles(tiled_lines, max_per_tile=5):
 
 
 def dump_chunk_to_file(root, chrom, zoom_level, chunk, max_per_tile):
-    logger.info(f"========= Dumping chunk: %d", zoom_level)
+    logger.info("========= Dumping chunk: %d", zoom_level)
 
     if chrom not in root["values"]:
         root["values"].create_group(chrom)
@@ -631,7 +629,7 @@ def _bedfile_to_hibed(
 
     root = h5py.File(output_file, mode="w")
     info = root.create_group("info")
-    values = root.create_group("values")
+    root.create_group("values")
 
     info.attrs["max_per_tile"] = max_per_tile
     info.attrs["max_zoom"] = max_zoom_level
@@ -784,11 +782,11 @@ def reads_to_array(f_in, h_out, ref, chrom_len):
         #     print("read", read.reference_start)
         subs["M"][read.reference_start + 1 : read.reference_end + 1] += 1
 
-        for start, op, oplen in get_cigar_substitutions(read):
-            if op == "I":
-                subs[op][start + 1] += 1
+        for start, cigar_op, oplen in get_cigar_substitutions(read):
+            if cigar_op == "I":
+                subs[cigar_op][start + 1] += 1
             else:
-                subs[op][start + 1 : start + 1 + oplen] += 1
+                subs[cigar_op][start + 1 : start + 1 + oplen] += 1
 
         for p in ap:
             subs["M"][p[1] + 1] -= 1
@@ -839,9 +837,6 @@ def bamfile_to_multivec(filepath, index_filepath, output_file):
     if output_file is None:
         output_file = op.splitext(filepath)[0] + ".bam.mv5"
     logger.info("Output file: %s", output_file)
-
-    import numpy as np
-    from clodius.tiles.bam import get_cigar_substitutions
 
     f = pysam.AlignmentFile(filepath, index_filename=index_filepath)
 

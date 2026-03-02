@@ -90,7 +90,7 @@ def read_fai(fai_file):
     binary_data = fai_file.read()
     text_data = binary_data.decode("utf-8")
 
-    for line in [l.strip() for l in text_data.split("\n") if l.strip()]:
+    for line in [row.strip() for row in text_data.split("\n") if row.strip()]:
         fields = line.strip().split("\t")
         seq_name = fields[0]
         seq_length = int(fields[1])

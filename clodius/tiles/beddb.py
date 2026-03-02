@@ -1,7 +1,4 @@
 from time import time
-
-t1 = time()
-
 import s3sqlite
 import apsw
 import logging
@@ -9,6 +6,8 @@ import logging
 from clodius.utils import TILE_OPTIONS_CHAR
 
 logger = logging.getLogger(__name__)
+
+t1 = time()
 
 sovfs = s3sqlite.SmartOpenVFS(name="so-vfs")
 
@@ -76,7 +75,6 @@ def tiles(filepath, tile_ids):
     to_return = []
 
     for tile_id in tile_ids:
-        tile_option_parts = tile_id.split(TILE_OPTIONS_CHAR)[1:]
         tile_no_options = tile_id.split(TILE_OPTIONS_CHAR)[0]
         parts = tile_no_options.split(".")
 

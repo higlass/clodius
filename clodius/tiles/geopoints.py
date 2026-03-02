@@ -1,5 +1,7 @@
 import math
 
+import clodius.tiles.geo as ctg
+
 
 def y2lat(a):
     return (
@@ -15,9 +17,6 @@ def lat2y(a):
         / math.pi
         * math.log(math.tan(math.pi / 4.0 + a * (math.pi / 180.0) / 2.0))
     )
-
-
-import clodius.tiles.geo as ctg
 
 
 def tileset_info(filepath):

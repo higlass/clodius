@@ -6,7 +6,11 @@ import pandas as pd
 import polars as pl
 
 from clodius.utils import get_file_compression
-from clodius.models.gff_models import *
+from clodius.models.gff_models import (
+    Gene, GeneModel, Pseudogene, PseudogeneModel,
+    mRNA, lnc_RNA, primary_transcript, antisense_RNA,
+    snoRNA, tRNA, miRNA, Exon, CDS,
+)
 from clodius.tiles.tabix import df_single_tile
 from clodius.utils import TILE_OPTIONS_CHAR
 from clodius.tiles.tabix import load_tbi_idx, single_indexed_tile
@@ -359,11 +363,9 @@ def tiles(filename, tile_ids, chromsizes=None, index_filename=None, settings=Non
         tbx_index = load_tbi_idx(index_filename)
 
     for tile_id in tile_ids:
-        tile_option_parts = tile_id.split(TILE_OPTIONS_CHAR)[1:]
         tile_no_options = tile_id.split(TILE_OPTIONS_CHAR)[0]
         tile_id_parts = tile_no_options.split(".")
         tile_position = list(map(int, tile_id_parts[1:3]))
-        tile_options = dict([o.split(":") for o in tile_option_parts])
 
         if len(tile_position) < 2:
             raise IndexError("Not enough tile info present")

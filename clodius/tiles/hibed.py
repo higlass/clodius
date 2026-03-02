@@ -1,5 +1,4 @@
 import hashlib
-import random
 import h5py
 import json
 
@@ -65,7 +64,7 @@ def single_chromosome_tile(
     items = []
     tile_pos = x
 
-    if not chrom in f["values"]:
+    if chrom not in f["values"]:
         # No entries for this chromosome
         return []
 

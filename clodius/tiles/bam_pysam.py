@@ -9,6 +9,7 @@ from clodius.tiles.tabix import est_query_size_ix, load_bai_index
 from clodius.tiles.utils import abs2genomic
 from clodius.utils import TILE_OPTIONS_CHAR
 
+
 def get_cigar_substitutions(read):
     subs = []
     curr_pos = 0
@@ -94,7 +95,7 @@ def load_reads(
         # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
         references = ctbw.natsorted(references)
         lengths = [ref_lengths[r] for r in references]
-        chromsizes_list = list(zip(references, [int(l) for l in lengths]))
+        chromsizes_list = list(zip(references, [int(length) for length in lengths]))
 
     lengths = [r[1] for r in chromsizes_list]
     abs_chrom_offsets = np.r_[0, np.cumsum(lengths)]
@@ -119,7 +120,6 @@ def load_reads(
     }
 
     strands = {True: "-", False: "+"}
-    import time
 
     idx = load_bai_index(open(index_filename, "rb"))
 
@@ -289,7 +289,7 @@ def alignment_tileset_info(samfile, chromsizes):
         references = ctbw.natsorted(references)
 
         lengths = [ref_lengths[r] for r in references]
-        chromsizes_list = list(zip(references, [int(l) for l in lengths]))
+        chromsizes_list = list(zip(references, [int(length) for length in lengths]))
 
     tile_size = 256
     max_zoom = math.ceil(math.log(total_length / tile_size) / math.log(2))
@@ -345,7 +345,7 @@ def alignment_tiles(
     tsinfo = alignment_tileset_info(samfile, chromsizes)
 
     for tile_id in tile_ids:
-        tile_id_parts = tile_id.split(TILE_OPTIONS_CHAR))[0].split(".")
+        tile_id_parts = tile_id.split(TILE_OPTIONS_CHAR)[0].split(".")
         tile_position = list(map(int, tile_id_parts[1:3]))
 
         tile_width = tsinfo["max_width"] // 2 ** int(tile_position[0])

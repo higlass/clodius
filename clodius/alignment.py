@@ -8,7 +8,6 @@ from typing import Literal, Optional
 import tempfile
 import os
 from Bio import Align
-from Bio.Seq import Seq
 import numpy as np
 
 DNA_ALPHABET = ["-", "A", "C", "G", "T"]

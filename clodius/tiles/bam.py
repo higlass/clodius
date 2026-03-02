@@ -74,12 +74,11 @@ def reconstruct_ref(seq, md, cigar):
     The reason we can't exclude the insertions is that they are encoded for in the CIGAR
     string so we would need to use that to remove them.
     """
-    ref = ""
     i_seq = 0
     i_md = 0
     match_count = 0
     deletion = False
-    l = 0
+    num = 0
 
     new_seq = ""
     ref_seq = []
@@ -88,32 +87,31 @@ def reconstruct_ref(seq, md, cigar):
     for i_cig in range(len(cigar)):
         if cigar[i_cig].isnumeric():
             # getting the number of bases the upcoming operation applies to
-            l = l * 10 + int(cigar[i_cig])
+            num = num * 10 + int(cigar[i_cig])
         else:
             op = cigar[i_cig]
-            # print("op", l, op, 'iseq:', i_seq)
+            # print("op", num, op, 'iseq:', i_seq)
             if op == 'S':
-                i_seq += l
+                i_seq += num
             elif op == "I":
-                ref_seq += ['-'] * l
-                new_seq += seq[i_seq : i_seq + l]
-                i_seq += l
+                ref_seq += ['-'] * num
+                new_seq += seq[i_seq : i_seq + num]
+                i_seq += num
             elif op == 'M':
-                new_seq += seq[i_seq : i_seq + l]
-                ref_seq += list(seq[i_seq : i_seq + l])
-                i_seq += l
+                new_seq += seq[i_seq : i_seq + num]
+                ref_seq += list(seq[i_seq : i_seq + num])
+                i_seq += num
             elif op == 'D':
-                ref_seq += ['N'] * l
-                new_seq += '-' * l
+                ref_seq += ['N'] * num
+                new_seq += '-' * num
 
-            l = 0
+            num = 0
             i_cig += 1
 
     # print(ref_seq)
     # print(new_seq)
 
     i_seq = 0
-
 
     i_ref = 0
 
@@ -192,9 +190,10 @@ def variants_list(ref, seq):
         ref_pos += 1
 
         if seq[i] != ref[i]:
-            variants += [(seq_pos-1, ref_pos-1, seq[i], ref[i])]
+            variants += [(seq_pos - 1, ref_pos - 1, seq[i], ref[i])]
 
     return variants
+
 
 def get_reads_df(file, index_file, chromosome, start, end):
     """Get reads in a chromosome range."""
@@ -211,9 +210,8 @@ def get_reads_df(file, index_file, chromosome, start, end):
     print("region", region)
     ipc = ox.read_bam(file, region, index=index_file)
     t2 = time()
-    logger.info(f"Reading BAM: %.2f", t2 - t1)
+    logger.info("Reading BAM: %.2f", t2 - t1)
     reads_df = pl.read_ipc(ipc).to_pandas()
-    t3 = time()
 
     # Exclude secondary and supplementary alignments
     # When we decide to handle them, we'll need to fetch
@@ -387,7 +385,7 @@ def load_reads(file, start_pos, end_pos, chromsizes=None, index_file=None, cache
         # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
         references = ctbw.natsorted(references)
         lengths = [ref_lengths[r] for r in references]
-        chromsizes_list = list(zip(references, [int(l) for l in lengths]))
+        chromsizes_list = list(zip(references, [int(length) for length in lengths]))
 
     lengths = [r[1] for r in chromsizes_list]
 
@@ -409,7 +407,6 @@ def load_reads(file, start_pos, end_pos, chromsizes=None, index_file=None, cache
     }
 
     strands = {True: "-", False: "+"}
-    import time
 
     index_file.seek(0)
     idx = load_bai_index(index_file)
@@ -459,9 +456,9 @@ def load_reads(file, start_pos, end_pos, chromsizes=None, index_file=None, cache
         results["chrName"] = list(reads_df["rname"])
         results["chrOffset"] = [chr_offset] * num_reads
         results["readName"] = list(reads_df["qname"])
-        results['mapq'] =list(reads_df['mapq'])
+        results['mapq'] = list(reads_df['mapq'])
         results['strand'] = [strands[x] for x in list(reads_df['flag'] & 16)]
-        
+
         results["id"] = [
             name if not is_paired else (f"{name}_1" if first else f"{name}_2")
             for name, first, is_paired in zip(
@@ -555,7 +552,7 @@ def alignment_tileset_info(file, chromsizes):
         references = ctbw.natsorted(references)
 
         lengths = [ref_lengths[r] for r in references]
-        chromsizes_list = list(zip(references, [int(l) for l in lengths]))
+        chromsizes_list = list(zip(references, [int(length) for length in lengths]))
 
     tile_size = 256
     max_zoom = math.ceil(math.log(total_length / tile_size) / math.log(2))

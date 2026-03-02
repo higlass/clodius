@@ -1,5 +1,3 @@
-import os.path as op
-from pydantic import BaseModel
 
 FILETYPES = {
     "bam": {

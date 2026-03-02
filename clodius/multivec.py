@@ -355,5 +355,5 @@ def create_multivec_multires(
                 start += int(min(standard_chunk_size, len(chrom_data) - start))
 
         prev_resolution = curr_resolution
-    
+
     return f

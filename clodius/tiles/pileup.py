@@ -1,8 +1,7 @@
 from Bio import Align
 import tempfile
-from clodius.alignment import align_sequences, alignment_to_subs, order_by_clustering
+from clodius.alignment import alignment_to_subs, order_by_clustering
 from clodius.tiles.csv import csv_sequence_tileset_functions
-from clodius.tiles.bam import parse_cigar_string, get_cigar_substitutions
 
 
 def get_subs(alignment):

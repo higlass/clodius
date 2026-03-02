@@ -8,7 +8,6 @@ from clodius.tiles import npvector
 from clodius.tiles.csv import csv_sequence_tileset_functions
 import numpy as np
 import base64
-from functools import lru_cache
 from typing import Optional
 
 

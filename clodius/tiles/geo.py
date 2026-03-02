@@ -1,7 +1,5 @@
 import json
 import math
-import os
-import sqlite3
 import collections as col
 import apsw
 import s3sqlite

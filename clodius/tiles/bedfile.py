@@ -194,11 +194,11 @@ def get_bedfile_values(filename, chromsizes, settings):
         val = json.loads(val) if val else None
 
     if val is None:
-        ## We have a file-like object, we need to rewing to the beginning
+        # We have a file-like object, we need to rewing to the beginning
         f.seek(0)
 
-        ## Then we have to figure out how it's compressed because we expect a
-        ## file pointer with no compression enabled
+        # Then we have to figure out how it's compressed because we expect a
+        # file pointer with no compression enabled
         compression = get_file_compression(filename)
 
         t = pd.read_csv(
@@ -297,11 +297,9 @@ def tiles(
         tbx_index = ctt.load_tbi_idx(index_filename)
 
     for tile_id in tile_ids:
-        tile_option_parts = tile_id.split(TILE_OPTIONS_CHAR)[1:]
         tile_no_options = tile_id.split(TILE_OPTIONS_CHAR)[0]
         tile_id_parts = tile_no_options.split(".")
         tile_position = list(map(int, tile_id_parts[1:3]))
-        tile_options = dict([o.split(":") for o in tile_option_parts])
 
         if len(tile_position) < 2:
             raise IndexError("Not enough tile info present")

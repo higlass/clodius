@@ -10,8 +10,6 @@ import clodius.tiles.format as hgfo
 import clodius.tiles.utils as hgut
 import pandas as pd
 
-import time
-
 logger = logging.getLogger(__name__)
 
 global mats

@@ -1,4 +1,3 @@
-import csv
 import logging
 from smart_open import open
 
@@ -41,7 +40,7 @@ def get_tsv_chromsizes(file):
         text_data = binary_data.decode("utf-8")
 
         lines = text_data.split("\n")
-        data = [l.strip().split("\t") for l in lines if l.strip()]
+        data = [line.strip().split("\t") for line in lines if line.strip()]
         return data
     except Exception as ex:
         logger.error(ex)

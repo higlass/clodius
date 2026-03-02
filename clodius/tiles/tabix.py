@@ -5,7 +5,6 @@ import polars as pl
 import pandas as pd
 from typing import Literal
 
-import numpy as np
 from smart_open import open
 
 from clodius.tiles.bigwig import abs2genomic
@@ -128,13 +127,13 @@ def reg2bins(begin, end, n_lvls=5, min_shift=14):
     """
     begin, end = begin, end
     t, s = 0, min_shift + (n_lvls << 1) + n_lvls
-    for l in range(n_lvls + 1):
+    for level in range(n_lvls + 1):
         b, e = t + (begin >> s), t + (end >> s)
         n = e - b + 1
         for k in range(b, e + 1):
             yield k
             n += 1
-        t += 1 << ((l << 1) + l)
+        t += 1 << ((level << 1) + level)
         s -= 3
 
 

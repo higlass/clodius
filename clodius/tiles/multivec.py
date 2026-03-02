@@ -42,9 +42,6 @@ def tiles(filename, tile_ids):
         A list of tile_ids (e.g. xyx.0.0) identifying the tiles
         to be retrieved
     """
-    import time
-
-    t1 = time.time()
     # print("getting tiles", tile_ids)
     f16 = np.finfo("float16")
     f16_min, f16_max = f16.min, f16.max
@@ -64,7 +61,6 @@ def tiles(filename, tile_ids):
             "shape": ma.shape,
         }
         generated_tiles.append((tile_id, tile_value))
-        t4 = time.time()
 
     return generated_tiles
 

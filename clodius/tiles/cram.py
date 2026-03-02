@@ -1,4 +1,4 @@
-# import pysam
+import pysam
 
 from clodius.tiles.bam import alignment_tileset_info
 from clodius.tiles.bam import alignment_tiles
