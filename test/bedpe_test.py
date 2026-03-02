@@ -1,6 +1,5 @@
 import os.path as op
 
-import numpy as np
 import pytest
 
 import clodius.chromosomes as cs
@@ -31,14 +30,13 @@ def test_bedpe_tileset_info(filename, header):
 
 
 @pytest.mark.parametrize(
-    "filename", [("hg19_myc.bedpe"), "hg19_myc.1.bedpe.gz",],
+    "filename", [("hg19_myc.bedpe"), "hg19_myc.1.bedpe.gz"],
 )
 def test_bedpe_tiles(filename):
     input_file = op.join(testdir, "sample_data", filename)
     chromsizes_fn = op.join(testdir, "sample_data", "b37.chrom.sizes")
 
     chromsizes = cs.chromsizes_as_series(chromsizes_fn)
-    tileset_info = ctbp.tileset_info(input_file, chromsizes)
 
     tiles = ctbp.tiles(input_file, ["x.0.0.0"], chromsizes)
     assert len(tiles) > 0

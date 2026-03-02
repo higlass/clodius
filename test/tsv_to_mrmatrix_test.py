@@ -20,8 +20,9 @@ class CoarsenTest(unittest.TestCase):
             hdf5 = h5py.File(tmp_dir + '/temp.hdf5', 'w')
             g = hdf5.create_group('resolutions')
             g1 = g.create_group('1')
-            ds = g1.create_dataset('values', (max_width, max_width),
-                    dtype='f4', compression='lzf', fillvalue=np.nan)
+            ds = g1.create_dataset(
+                'values', (max_width, max_width),
+                dtype='f4', compression='lzf', fillvalue=np.nan)
             for y in range(max_width):
                 a = np.array([float(x) for x in range(max_width)])
                 ds[y, :max_width] = a
@@ -51,7 +52,7 @@ class CoarsenTest(unittest.TestCase):
             }
             for (k, v) in shapes.items():
                 self.assertEqual(hdf5['resolutions'][k]['values'].shape, (v, v))
-            row = [1920,  6016, 10112, 14208]
+            row = [1920, 6016, 10112, 14208]
             self.assertEqual(
                 hdf5['resolutions']['16']['values'][:].tolist(),
                 [row, row, row, row])
@@ -66,8 +67,9 @@ class CoarsenTest(unittest.TestCase):
             hdf5 = h5py.File(tmp_dir + '/temp.hdf5', 'w')
             g = hdf5.create_group('resolutions')
             g1 = g.create_group('1')
-            ds = g1.create_dataset('values', (max_width, max_width),
-                    dtype='f4', compression='lzf', fillvalue=np.nan)
+            ds = g1.create_dataset(
+                'values', (max_width, max_width),
+                dtype='f4', compression='lzf', fillvalue=np.nan)
             for y in range(max_width):
                 a = np.array([float(x) for x in range(max_width)])
                 ds[y, :max_width] = a
@@ -100,6 +102,7 @@ class CoarsenTest(unittest.TestCase):
             assert_array_equal(
                 hdf5['resolutions']['4']['values'],
                 [row2 for _ in range(2)])
+
 
 class ParseTest(unittest.TestCase):
     def test_parse(self):
@@ -147,9 +150,9 @@ class ParseTest(unittest.TestCase):
             self.assertEqual(decode_if_possible(list(hdf5['resolutions']['2'].keys())), ['values'])
             res_2 = hdf5['resolutions']['2']['values']
             assert_array_equal(res_2[0], [0] * 256)
-            assert_array_equal(res_2[1], [2] * 256) # Stradles the 0 and 1 rows
+            assert_array_equal(res_2[1], [2] * 256)  # Stradles the 0 and 1 rows
             assert_array_equal(res_2[2], [4] * 256)
-            assert_array_equal(res_2[3], [0] * 256) # -1 and +1 cancel out
+            assert_array_equal(res_2[3], [0] * 256)  # -1 and +1 cancel out
             assert_array_equal(res_2[4], [0] * 256)
             assert_array_equal(res_2[5], [0] * 256)
             assert_array_equal(res_2[6], [0] * 256)

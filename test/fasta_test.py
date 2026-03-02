@@ -20,8 +20,6 @@ def test_multivec_tiles():
         fasta_filename, index_filename=fai_filename, tile_ids=["x.0.0"]
     )
 
-    tsinfo = ctf.tileset_info(fai_filename)
-
     assert "shape" in tiles[0][1]
 
 

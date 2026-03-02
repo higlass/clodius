@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from clodius.tiles.mrmatrix import tiles, tileset_info, single_tile
+from clodius.tiles.mrmatrix import tileset_info, single_tile
 
 
 class MockHdf5(dict):

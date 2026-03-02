@@ -3,8 +3,6 @@ import os.path as op
 import clodius.chromosomes as cc
 import clodius.tiles.bedfile as ctb
 
-from unittest.mock import MagicMock
-
 
 def test_gzip_tiles():
     valid_filename = op.join("data", "regions.valid.bed.1.gz")
@@ -61,7 +59,7 @@ def test_no_item_rgb():
     chromsizes = cc.chromsizes_as_series(chromsizes_fn)
     filename = op.join("data", "no_item_rgb.bed")
 
-    tiles = ctb.tiles(filename, ["x.0.0"], chromsizes, index_filename=None)
+    ctb.tiles(filename, ["x.0.0"], chromsizes, index_filename=None)
 
 
 def test_indexed_bedfile_tiles():

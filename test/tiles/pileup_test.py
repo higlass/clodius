@@ -4,8 +4,8 @@ import pytest
 
 pytest.importorskip("mappy")
 
-from clodius.tiles.pileup import get_local_tiles
-from clodius.alignment import align_sequences, alignment_to_subs, order_by_clustering
+from clodius.tiles.pileup import get_local_tiles  # noqa: E402
+from clodius.alignment import align_sequences, alignment_to_subs  # noqa: E402
 
 
 def test_alignment_to_subs():

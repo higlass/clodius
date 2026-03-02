@@ -14,7 +14,7 @@ from clodius.tiles.utils import (
 def test_infer_filetype():
     assert cu.infer_filetype("blah.gff") == "gff"
     assert cu.infer_filetype("blah.gff.gz") == "gff"
-    assert cu.infer_filetype("blah.xyz") == None
+    assert cu.infer_filetype("blah.xyz") is None
     assert cu.infer_filetype("blah.bam") == "bam"
     assert cu.infer_filetype("blah.bed.bgz") == "bedfile"
     assert cu.infer_filetype("blah.bed") == "bedfile"

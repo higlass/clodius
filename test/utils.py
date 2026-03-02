@@ -1,9 +1,6 @@
 import h5py
 import logging
 
-from pydantic import BaseModel
-from typing import Optional
-
 logger = logging.getLogger(__name__)
 
 

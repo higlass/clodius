@@ -1,6 +1,5 @@
 import unittest
-import numpy as np
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from clodius.tiles.sequence_logos import tile_functions
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
