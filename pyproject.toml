@@ -25,7 +25,15 @@ dependencies = [
     "slugid",
     "sortedcontainers",
     "tqdm",
-    "smart_open"
+    "smart_open",
+    "polars",
+    "oxbow",
+    "apsw",
+    "s3sqlite",
+    "biopython",
+    "shortuuid",
+    "pybigtools",
+    "scipy"
 ]
 license = { text = "MIT" }
 readme = "README.md"

@@ -12,7 +12,9 @@
       "Bash(pytest test/bam_test.py::MyTestCase::test_tiles test/tiles/bam_test.py::MyTestCase::test_tiles --tb=long -q)",
       "Bash(pytest test/tiles/pileup_test.py --tb=short -q)",
       "Bash(pytest test/tiles/pileup_test.py -q --no-header)",
-      "Bash(flake8 clodius scripts test --show-source)"
+      "Bash(flake8 clodius scripts test --show-source)",
+      "Bash(python -c \":*)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }
