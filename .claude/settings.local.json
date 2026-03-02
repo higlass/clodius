@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flake8 clodius)",
+      "Bash(flake8 clodius/tiles/bam_pysam.py)",
+      "Bash(pytest)",
+      "Bash(pytest --no-header -q)",
+      "Bash(pip install pytest-cov -q)",
+      "Bash(pytest --no-header -q --tb=short)",
+      "Bash(pytest test/bam_test.py::MyTestCase::test_tiles test/tiles/chromsizes_test.py::test_get_tileset_info -v --tb=long)",
+      "Bash(pytest test/bam_test.py::MyTestCase::test_tiles test/tiles/bam_test.py::MyTestCase::test_tiles --tb=short -q)",
+      "Bash(pytest test/bam_test.py::MyTestCase::test_tiles test/tiles/bam_test.py::MyTestCase::test_tiles --tb=long -q)",
+      "Bash(pytest test/tiles/pileup_test.py --tb=short -q)",
+      "Bash(pytest test/tiles/pileup_test.py -q --no-header)"
+    ]
+  }
+}

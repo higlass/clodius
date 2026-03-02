@@ -656,6 +656,7 @@ def tiles(
     file,
     tile_ids,
     index_file=None,
+    index_filename=None,
     chromsizes=None,
     max_tile_width=None,
     cache=None,
@@ -663,7 +664,7 @@ def tiles(
     return alignment_tiles(
         file,
         tile_ids,
-        index_file=index_file,
+        index_file=index_filename or index_file,
         chromsizes=chromsizes,
         max_tile_width=None,
         cache=cache,

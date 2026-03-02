@@ -52,7 +52,7 @@ CHROMSIZES_PATH = op.join("data", "pileup_chromsizes.tsv")
 def _assert_result_structure(result):
     assert "tilesetInfo" in result
     assert "tiles" in result
-    tsinfo = result["tilesetInfo"]
+    tsinfo = result["tilesetInfo"]["x"]
     assert "resolutions" in tsinfo
     assert "chromsizes" in tsinfo
     assert "columns" in tsinfo
@@ -71,7 +71,7 @@ def test_get_local_tiles_with_refrow():
     """get_local_tiles uses a CSV row as the reference sequence."""
     result = get_local_tiles(CSV_PATH, colname="seq", refrow=1)
     _assert_result_structure(result)
-    tsinfo = result["tilesetInfo"]
+    tsinfo = result["tilesetInfo"]["x"]
     assert tsinfo["chromsizes"] == [["row_1", 60]]
 
 
@@ -79,7 +79,7 @@ def test_get_local_tiles_with_reffile_path():
     """get_local_tiles accepts a string filepath for the reference FASTA."""
     result = get_local_tiles(CSV_PATH, colname="seq", reffile=REF_PATH)
     _assert_result_structure(result)
-    tsinfo = result["tilesetInfo"]
+    tsinfo = result["tilesetInfo"]["x"]
     assert tsinfo["chromsizes"] == [["ref1", 60]]
 
 
@@ -99,7 +99,7 @@ def test_get_local_tiles_with_chromsizes_path():
         chromsizes_file=CHROMSIZES_PATH,
     )
     _assert_result_structure(result)
-    tsinfo = result["tilesetInfo"]
+    tsinfo = result["tilesetInfo"]["x"]
     assert tsinfo["chromsizes"] == [["ref1", 60]]
 
 
@@ -113,7 +113,7 @@ def test_get_local_tiles_with_chromsizes_object():
             chromsizes_file=f,
         )
     _assert_result_structure(result)
-    tsinfo = result["tilesetInfo"]
+    tsinfo = result["tilesetInfo"]["x"]
     assert tsinfo["chromsizes"] == [["ref1", 60]]
 
 
