@@ -1,9 +1,9 @@
 import collections as col
 import math
-import s3sqlite
+import sosqlite
 import apsw
 
-sovfs = s3sqlite.SmartOpenVFS(name="so-vfs")
+sovfs = sosqlite.SmartOpenVFS(name="so-vfs")
 
 
 def get_tileset_info(db_file):

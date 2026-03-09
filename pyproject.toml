@@ -29,7 +29,7 @@ dependencies = [
     "polars",
     "oxbow",
     "apsw",
-    "s3sqlite",
+    "sosqlite",
     "biopython",
     "shortuuid",
     "pybigtools",

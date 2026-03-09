@@ -1,5 +1,5 @@
 from time import time
-import s3sqlite
+import sosqlite
 import apsw
 import logging
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 t1 = time()
 
-sovfs = s3sqlite.SmartOpenVFS(name="so-vfs")
+sovfs = sosqlite.SmartOpenVFS(name="so-vfs")
 
 
 def tileset_info(db_file):

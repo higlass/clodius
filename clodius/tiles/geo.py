@@ -2,9 +2,9 @@ import json
 import math
 import collections as col
 import apsw
-import s3sqlite
+import sosqlite
 
-sovfs = s3sqlite.SmartOpenVFS(name="so-vfs")
+sovfs = sosqlite.SmartOpenVFS(name="so-vfs")
 
 
 def get_tile_box(zoom, x, y):

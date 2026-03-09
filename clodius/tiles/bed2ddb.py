@@ -1,10 +1,10 @@
 import collections as col
-import s3sqlite
+import sosqlite
 import apsw
 
 from .utils import tiles_wrapper_2d
 
-sovfs = s3sqlite.SmartOpenVFS(name="so-vfs")
+sovfs = sosqlite.SmartOpenVFS(name="so-vfs")
 
 
 def tileset_info(filepath):
