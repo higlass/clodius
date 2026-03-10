@@ -21,3 +21,9 @@ wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/GCA_0
 wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/genomic.10k.gff.gz
 wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/chm13v1.chrom.sizes
 wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/hg38.chrom.sizes
+wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/test.1.vcf.gz
+wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/no_item_rgb.bed
+wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/regions.valid.bed.1.gz
+wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/regions.valid.bed
+wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/genomic.10k.gff.gz.tbi
+wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/GCA_000350705.1_Esch_coli_KTE11_V1_genomic.short.fna
