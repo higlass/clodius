@@ -22,5 +22,3 @@ wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/genom
 wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/chm13v1.chrom.sizes
 wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/hg38.chrom.sizes
 wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/test.1.vcf.gz
-wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/no_item_rgb.bed
-wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/regions.valid.bed.1.gz
