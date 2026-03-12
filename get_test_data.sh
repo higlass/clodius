@@ -18,3 +18,6 @@ wget -q -NP data/ https://s3.amazonaws.com/areynolds/public/masterlist_DHSs_733s
 wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/states_format_input_testfile.100.bed.multires.mv5
 wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/GCA_000350705.1_Esch_coli_KTE11_V1_genomic.short.fna.fai
 wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/GCA_002918705.1_ASM291870v1_genomic.gff.gz
+wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/genomic.10k.gff.gz
+wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/chm13v1.chrom.sizes
+wget -q -NP data/ https://resgen-public.s3.amazonaws.com/clodius/test-data/hg38.chrom.sizes
