@@ -63,6 +63,8 @@ data/*
 !data/no_item_rgb.bed
 !data/regions.valid.bed.1.gz
 !data/regions.valid.bed
+!data/regions.valid.bed.gz
+!data/regions.spaces.bed
 !data/genomic.10k.gff.gz.tbi
 !data/GCA_000350705.1_Esch_coli_KTE11_V1_genomic.short.fna
 output/
