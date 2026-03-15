@@ -57,6 +57,8 @@ def get_cigar_substitutions(pos, query_length, cigartuples):
 
 
 def parse_cigar_string(cigar):
+    if not cigar or not isinstance(cigar, str):
+        return []
     parts = []
     curr = 0
     for c in cigar:

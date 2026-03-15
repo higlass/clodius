@@ -114,7 +114,7 @@ def abs2genomic(chromsizes, start_pos, end_pos):
     rel_pos_hi = end_pos - abs_chrom_offsets[cid_hi]
     start = rel_pos_lo
     for cid in range(cid_lo, cid_hi):
-        yield cid, start, chromsizes[cid]
+        yield cid, start, chromsizes.iloc[cid]
         start = 0
     yield cid_hi, start, rel_pos_hi
 
