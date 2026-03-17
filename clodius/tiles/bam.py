@@ -375,17 +375,16 @@ def load_reads(file, start_pos, end_pos, chromsizes=None, index_file=None, cache
         for chrom, size in chromsizes.items():
             chromsizes_list += [[chrom, int(size)]]
     else:
-        file.seek(0)
-        ipc = ox.read_bam_references(file)
-        chroms = pl.read_ipc(ipc)
-        references = np.array(chroms["name"])
-        lengths = np.array(chroms["length"])
+        def _bam_src():
+            file.seek(0)
+            return file
 
-        ref_lengths = dict(zip(references, lengths))
+        chrom_sizes = ox.from_bam(_bam_src, tag_defs=[]).chrom_sizes
+        ref_lengths = dict(chrom_sizes)
 
         # we're going to create a natural ordering for references
         # e.g. (chr1, chr2,..., chr10, chr11...chr22,chrX, chrY, chrM...)
-        references = ctbw.natsorted(references)
+        references = ctbw.natsorted([name for name, _ in chrom_sizes])
         lengths = [ref_lengths[r] for r in references]
         chromsizes_list = list(zip(references, [int(length) for length in lengths]))
 
@@ -542,16 +541,14 @@ def alignment_tileset_info(file, chromsizes):
 
         total_length = sum([c[1] for c in chromsizes_list])
     else:
-        file.seek(0)
-        ipc = ox.read_bam_references(file)
-        chroms = pl.read_ipc(ipc)
-        total_length = sum(chroms["length"])
+        def _bam_src():
+            file.seek(0)
+            return file
 
-        references = np.array(chroms["name"])
-        lengths = np.array(chroms["length"])
-
-        ref_lengths = dict(zip(references, lengths))
-        references = ctbw.natsorted(references)
+        chrom_sizes = ox.from_bam(_bam_src, tag_defs=[]).chrom_sizes
+        total_length = sum(length for _, length in chrom_sizes)
+        ref_lengths = dict(chrom_sizes)
+        references = ctbw.natsorted([name for name, _ in chrom_sizes])
 
         lengths = [ref_lengths[r] for r in references]
         chromsizes_list = list(zip(references, [int(length) for length in lengths]))

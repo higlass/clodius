@@ -13,7 +13,7 @@ from clodius.models.gff_models import (
 )
 from clodius.tiles.tabix import df_single_tile
 from clodius.utils import TILE_OPTIONS_CHAR
-from clodius.tiles.tabix import load_tbi_idx, single_indexed_tile
+from clodius.tiles.tabix import load_tbi_idx, raw_tabix_fetcher, single_indexed_tile
 from smart_open import open
 from uuid import uuid4
 
@@ -382,6 +382,7 @@ def tiles(filename, tile_ids, chromsizes=None, index_filename=None, settings=Non
                     z=z,
                     x=x,
                     tbx_index=tbx_index,
+                    fetcher=raw_tabix_fetcher,
                 )
                 # for row in raw_data.iter_rows(named=True):
                 #     print(row)

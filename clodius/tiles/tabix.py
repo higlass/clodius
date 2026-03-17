@@ -162,7 +162,46 @@ def est_query_size(index, name, start, end):
 
 
 def dataframe_tabix_fetcher(file, index, ref, start, end):
-    """Fetch rows of a tabix indexed file into a dataframe."""
+    """Fetch rows of a tabix indexed BED file into a dataframe."""
+    import oxbow as ox
+
+    if isinstance(index, str):
+        index = open(index, "rb", compression="disable")
+
+    if start == 0:
+        start = 1
+    pos = f"{ref}:{start}-{end}"
+
+    def file_src():
+        file.seek(0)
+        return file
+
+    def index_src():
+        index.seek(0)
+        return index
+
+    try:
+        df = ox.from_bed(file_src, compression="bgzf", index=index_src).regions(pos).to_polars()
+    except (ValueError, KeyError) as ex:
+        if "missing reference sequence" in str(ex) or "not found in index" in str(ex):
+            return None
+        raise
+
+    # Reconstruct raw column (full tab-separated line) for downstream compatibility
+    rest_col = pl.col("rest").fill_null("")
+    return df.with_columns(
+        (
+            pl.concat_str(
+                [pl.col("chrom"), pl.col("start").cast(pl.String), pl.col("end").cast(pl.String)],
+                separator="\t",
+            )
+            + pl.when(rest_col != "").then(pl.lit("\t") + rest_col).otherwise(pl.lit(""))
+        ).alias("raw")
+    )
+
+
+def raw_tabix_fetcher(file, index, ref, start, end):
+    """Fetch rows of any tabix indexed file into a dataframe with a raw column."""
     import oxbow as ox
 
     if isinstance(index, str):
@@ -182,8 +221,7 @@ def dataframe_tabix_fetcher(file, index, ref, start, end):
             return None
         raise
 
-    df = pl.read_ipc(arrow_ipc)
-    return df
+    return pl.read_ipc(arrow_ipc)
 
 
 def single_indexed_tile(
