@@ -27,7 +27,7 @@ dependencies = [
     "tqdm",
     "smart_open",
     "polars",
-    "oxbow",
+    "oxbow>=0.3.1",
     "apsw",
     "sosqlite>=0.3.1",
     "biopython",
@@ -35,6 +35,7 @@ dependencies = [
     "pybigtools",
     "scipy"
 ]
+requires-python = ">=3.12"
 license = { text = "MIT" }
 readme = "README.md"
 urls = { homepage = "https://github.com/higlass/clodius" }
