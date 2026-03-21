@@ -50,6 +50,7 @@ data/*
 !data/corrected.geneListwithStrand.bed.multires
 !data/labels.h5
 !data/SRR1770413.sorted.short.bam
+!data/SRR1770413.sorted.short.bam.bai
 !data/SRR1770413.different_index_filename.bai
 !data/SRR1770413.mismatched_bai.bam
 !data/geneAnnotationsExonUnions.1000.bed.v3.beddb
@@ -64,6 +65,7 @@ data/*
 !data/regions.valid.bed.1.gz
 !data/regions.valid.bed
 !data/regions.valid.bed.gz
+!data/regions.valid.bed.gz.tbi
 !data/regions.spaces.bed
 !data/genomic.10k.gff.gz.tbi
 !data/GCA_000350705.1_Esch_coli_KTE11_V1_genomic.short.fna

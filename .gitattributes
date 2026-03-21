@@ -17,3 +17,4 @@ data/*.bed.1.gz filter=lfs diff=lfs merge=lfs -text
 data/*.gz.tbi filter=lfs diff=lfs merge=lfs -text
 data/*.multires filter=lfs diff=lfs merge=lfs -text
 data/*.gff filter=lfs diff=lfs merge=lfs -text
+data/SRR1770413.sorted.short.bam.bai filter=lfs diff=lfs merge=lfs -text
