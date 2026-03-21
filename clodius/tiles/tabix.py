@@ -201,7 +201,7 @@ def dataframe_tabix_fetcher(file, index, ref, start, end):
 
 
 def raw_tabix_fetcher(file, index, ref, start, end):
-    """Fetch rows of any tabix indexed file into a dataframe with a raw column."""
+    """Fetch rows of a tabix-indexed GFF file into a structured dataframe."""
     import oxbow as ox
 
     if isinstance(index, str):
@@ -215,13 +215,25 @@ def raw_tabix_fetcher(file, index, ref, start, end):
     index.seek(0)
 
     try:
-        arrow_ipc = ox.read_tabix(file, pos, index)
+        arrow_ipc = ox.read_gff(
+            file,
+            region=pos,
+            index=index,
+            compressed=True,
+            attr_defs=[
+                ("ID", "String"),
+                ("Name", "String"),
+                ("Parent", "String"),
+                ("gene_biotype", "String"),
+                ("pseudo", "String"),
+            ],
+        )
     except ValueError as ex:
         if "missing reference sequence" in str(ex):
             return None
         raise
 
-    return pl.read_ipc(arrow_ipc)
+    return pl.read_ipc(arrow_ipc).rename({"frame": "phase"})
 
 
 def single_indexed_tile(

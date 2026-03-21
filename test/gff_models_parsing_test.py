@@ -12,7 +12,7 @@ def test_load_and_parse_gff_positions():
     df = pl.read_csv(
         gff_file,
         separator='\t',
-        comment_char='#',
+        comment_prefix='#',
         has_header=False,
         new_columns=['seqid', 'source', 'type', 'start', 'end', 'score', 'strand', 'phase', 'attributes']
     )

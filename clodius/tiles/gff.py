@@ -175,6 +175,8 @@ def parse_gff_to_models(filtered_df, settings=None):
     def parse_attributes(attr_str):
         if attr_str is None:
             return {}
+        if isinstance(attr_str, dict):
+            return {k: v for k, v in attr_str.items() if v is not None}
         attrs = {}
         for item in attr_str.split(";"):
             if "=" in item:
@@ -384,10 +386,7 @@ def tiles(filename, tile_ids, chromsizes=None, index_filename=None, settings=Non
                     tbx_index=tbx_index,
                     fetcher=raw_tabix_fetcher,
                 )
-                # for row in raw_data.iter_rows(named=True):
-                #     print(row)
-                converted_df = convert_raw_to_gff_df(raw_data)
-                genes, transcripts = parse_gff_to_models(converted_df)
+                genes, transcripts = parse_gff_to_models(raw_data)
                 values = {"genes": genes, "transcripts": transcripts}
             except ValueError as ve:
                 values = {"error": str(ve)}

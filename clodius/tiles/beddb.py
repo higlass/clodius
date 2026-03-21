@@ -13,7 +13,6 @@ sovfs = sosqlite.SmartOpenVFS(name="so-vfs")
 
 
 def tileset_info(db_file):
-    print("db_file", db_file)
     with apsw.Connection(
         db_file, vfs=sovfs.name, flags=apsw.SQLITE_OPEN_READONLY
     ) as conn:
