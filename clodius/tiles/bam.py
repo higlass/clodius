@@ -1,3 +1,4 @@
+import io
 import json
 import math
 
@@ -210,10 +211,10 @@ def get_reads_df(file, index_file, chromosome, start, end):
     t1 = time()
 
     print("region", region)
-    ipc = ox.read_bam(file, region, index=index_file)
+    ipc = ox.read_bam(file, region, index=index_file, compressed=True)
     t2 = time()
     logger.info("Reading BAM: %.2f", t2 - t1)
-    reads_df = pl.read_ipc(ipc).to_pandas()
+    reads_df = pl.read_ipc(io.BytesIO(ipc)).to_pandas()
 
     # Exclude secondary and supplementary alignments
     # When we decide to handle them, we'll need to fetch

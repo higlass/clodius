@@ -202,7 +202,7 @@ def dataframe_tabix_fetcher(file, index, ref, start, end):
 
 def raw_tabix_fetcher(file, index, ref, start, end):
     """Fetch rows of a tabix-indexed GFF file into a structured dataframe."""
-    import oxbow as ox
+    from oxbow.oxbow import read_gff
 
     if isinstance(index, str):
         index = open(index, "rb", compression="disable")
@@ -215,7 +215,7 @@ def raw_tabix_fetcher(file, index, ref, start, end):
     index.seek(0)
 
     try:
-        arrow_ipc = ox.read_gff(
+        arrow_ipc = read_gff(
             file,
             region=pos,
             index=index,
@@ -233,7 +233,10 @@ def raw_tabix_fetcher(file, index, ref, start, end):
             return None
         raise
 
-    return pl.read_ipc(arrow_ipc).rename({"frame": "phase"})
+    df = pl.read_ipc(arrow_ipc)
+    if "frame" in df.columns:
+        df = df.rename({"frame": "phase"})
+    return df
 
 
 def single_indexed_tile(

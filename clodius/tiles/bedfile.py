@@ -250,7 +250,7 @@ def single_tile(filename, chromsizes, tsinfo, z, x, settings=None):
             "error": f"Key error: (bedfile tab separated? correct chromsizes?) {str(ke)}"
         }
 
-    t = pd.read_json(val["rows"])
+    t = pd.read_json(io.StringIO(val["rows"]))
     orig_columns = val["orig_columns"]
     css = val["css"]
 
@@ -346,7 +346,7 @@ def regions(filename, chromsizes, offset, limit, settings={}):
     vals = get_bedfile_values(filename, chromsizes, settings=settings)
 
     def row_iterator():
-        for ix, row in pd.read_json(vals["rows"]).iterrows():
+        for ix, row in pd.read_json(io.StringIO(vals["rows"])).iterrows():
             yield {
                 "uid": row["ix"],
                 "chrOffset": row["chromStart"],

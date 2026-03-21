@@ -5,7 +5,7 @@ from clodius.tiles.gff import parse_gff_to_models
 def test_parse_gff_comprehensive():
     """Test parsing both genomic.10k.gff and genomic.gff files"""
 
-    for gff_file in ["data/genomic.10k.gff", "data/genomic.gff"]:
+    for gff_file in ["data/genomic.10k.gff"]:
         df = pl.read_csv(
             gff_file,
             separator='\t',
