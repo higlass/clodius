@@ -27,7 +27,7 @@ dependencies = [
     "tqdm",
     "smart_open",
     "polars",
-    "oxbow>=0.3.1",
+    "oxbow>=0.7.0",
     "apsw",
     "sosqlite>=0.3.1",
     "biopython",

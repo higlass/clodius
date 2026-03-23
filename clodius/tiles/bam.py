@@ -211,7 +211,7 @@ def get_reads_df(file, index_file, chromosome, start, end):
     t1 = time()
 
     print("region", region)
-    ipc = ox.read_bam(file, region, index=index_file, compressed=True)
+    ipc = ox.read_bam(file, region, index=index_file, fields='*', compressed=True)
     t2 = time()
     logger.info("Reading BAM: %.2f", t2 - t1)
     reads_df = pl.read_ipc(io.BytesIO(ipc)).to_pandas()
