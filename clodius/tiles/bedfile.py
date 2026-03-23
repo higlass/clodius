@@ -251,6 +251,8 @@ def single_tile(filename, chromsizes, tsinfo, z, x, settings=None):
         }
 
     t = pd.read_json(io.StringIO(val["rows"]))
+    # pandas 2.x converts integer column names to strings during JSON round-trip
+    t.columns = [int(c) if isinstance(c, str) and c.isdigit() else c for c in t.columns]
     orig_columns = val["orig_columns"]
     css = val["css"]
 
@@ -346,7 +348,9 @@ def regions(filename, chromsizes, offset, limit, settings={}):
     vals = get_bedfile_values(filename, chromsizes, settings=settings)
 
     def row_iterator():
-        for ix, row in pd.read_json(io.StringIO(vals["rows"])).iterrows():
+        _df = pd.read_json(io.StringIO(vals["rows"]))
+        _df.columns = [int(c) if isinstance(c, str) and c.isdigit() else c for c in _df.columns]
+        for ix, row in _df.iterrows():
             yield {
                 "uid": row["ix"],
                 "chrOffset": row["chromStart"],
