@@ -386,7 +386,10 @@ def tiles(filename, tile_ids, chromsizes=None, index_filename=None, settings=Non
                     tbx_index=tbx_index,
                     fetcher=raw_tabix_fetcher,
                 )
-                genes, transcripts = parse_gff_to_models(raw_data)
+                if raw_data is None:
+                    genes, transcripts = {}, {}
+                else:
+                    genes, transcripts = parse_gff_to_models(raw_data)
                 values = {"genes": genes, "transcripts": transcripts}
             except ValueError as ve:
                 values = {"error": str(ve)}

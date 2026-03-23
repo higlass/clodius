@@ -1,6 +1,5 @@
 import collections as col
 import gzip
-import io
 import struct
 import polars as pl
 import pandas as pd
@@ -203,7 +202,7 @@ def dataframe_tabix_fetcher(file, index, ref, start, end):
 
 def raw_tabix_fetcher(file, index, ref, start, end):
     """Fetch rows of a tabix-indexed GFF file into a structured dataframe."""
-    from oxbow.oxbow import read_gff
+    import oxbow as ox
 
     if isinstance(index, str):
         index = open(index, "rb", compression="disable")
@@ -212,31 +211,36 @@ def raw_tabix_fetcher(file, index, ref, start, end):
         start = 1
     pos = f"{ref}:{start}-{end}"
 
-    file.seek(0)
-    index.seek(0)
+    def file_src():
+        file.seek(0)
+        return file
+
+    def index_src():
+        index.seek(0)
+        return index
 
     try:
-        arrow_ipc = read_gff(
-            file,
-            region=pos,
-            index=index,
-            compressed=True,
-            attr_defs=[
-                ("ID", "String"),
-                ("Name", "String"),
-                ("Parent", "String"),
-                ("gene_biotype", "String"),
-                ("pseudo", "String"),
-            ],
+        df = (
+            ox.from_gff(
+                file_src,
+                compression="bgzf",
+                index=index_src,
+                attribute_defs=[
+                    ("ID", "String"),
+                    ("Name", "String"),
+                    ("Parent", "String"),
+                    ("gene_biotype", "String"),
+                    ("pseudo", "String"),
+                ],
+            )
+            .regions(pos)
+            .to_polars()
         )
-    except ValueError as ex:
-        if "missing reference sequence" in str(ex):
+    except (ValueError, KeyError) as ex:
+        if "missing reference sequence" in str(ex) or "not found in index" in str(ex):
             return None
         raise
 
-    df = pl.read_ipc(io.BytesIO(arrow_ipc))
-    if "frame" in df.columns:
-        df = df.rename({"frame": "phase"})
     return df
 
 
@@ -291,7 +295,7 @@ def single_indexed_tile(
             else:
                 ret_vals = pl.concat([ret_vals, df])
 
-    if max_results and len(ret_vals) > max_results:
+    if ret_vals is not None and max_results and len(ret_vals) > max_results:
         raise ValueError(f"Too many values in tile {len(ret_vals)}")
 
     return ret_vals
