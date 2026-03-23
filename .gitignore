@@ -1,6 +1,8 @@
 notebooks/Scratch.ipynb
 notebooks/VCF.ipynb
 
+settings.local.json
+
 *.py[cod]
 __pycache__
 *~

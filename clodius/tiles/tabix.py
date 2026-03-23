@@ -1,5 +1,6 @@
 import collections as col
 import gzip
+import io
 import struct
 import polars as pl
 import pandas as pd
@@ -233,7 +234,7 @@ def raw_tabix_fetcher(file, index, ref, start, end):
             return None
         raise
 
-    df = pl.read_ipc(arrow_ipc)
+    df = pl.read_ipc(io.BytesIO(arrow_ipc))
     if "frame" in df.columns:
         df = df.rename({"frame": "phase"})
     return df
