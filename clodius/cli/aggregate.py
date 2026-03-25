@@ -20,6 +20,7 @@ import slugid
 import sqlite3
 import sys
 import time
+import gzip
 import json
 from smart_open import open
 
