@@ -180,7 +180,7 @@ def _multivec(
 def _bedpe(
     filepath,
     output_file=None,
-    assembly="hg19",
+    assembly=None,
     importance_column="random",
     has_header=False,
     max_per_tile=100,
@@ -205,6 +205,8 @@ def _bedpe(
 
     if filepath == "-":
         f = sys.stdin
+    elif filepath.endswith(".gz"):
+        f = gzip.open(filepath, "rt")
     else:
         f = open(filepath, "r")
 
@@ -478,7 +480,12 @@ def _bedfile(
     if op.exists(output_file):
         os.remove(output_file)
 
-    bed_file = open(filepath, "r")
+    if filepath.endswith(".gz"):
+        import gzip
+
+        bed_file = gzip.open(filepath, "rt")
+    else:
+        bed_file = open(filepath, "r")
 
     try:
         (chrom_info, chrom_names, chrom_sizes) = cch.load_chromsizes(
@@ -886,7 +893,12 @@ def _bedgraph(
     if filepath == "-":
         f = sys.stdin
     else:
-        f = open(filepath, "r")
+        if filepath.endswith(".gz"):
+            import gzip
+
+            f = gzip.open(filepath, "rt")
+        else:
+            f = open(filepath, "r")
 
     curr_zoom = 0
 
@@ -1064,6 +1076,8 @@ def _bedgraph(
 def _geojson(filepath, output_file, max_per_tile, tile_size, max_zoom):
     if filepath == "-":
         f = sys.stdin
+    elif filepath.endswith(".gz"):
+        f = gzip.open(filepath, "rt")
     else:
         f = open(filepath, "r")
 
