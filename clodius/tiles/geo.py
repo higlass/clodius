@@ -1,8 +1,10 @@
 import json
 import math
-import os
-import sqlite3
 import collections as col
+import apsw
+import sosqlite
+
+sovfs = sosqlite.SmartOpenVFS(name="so-vfs")
 
 
 def get_tile_box(zoom, x, y):
@@ -20,13 +22,13 @@ def get_lng_lat_from_tile_pos(zoom, x, y):
     (lng, lat) of top-left corner of tile"""
 
     # "map-centric" latitude, in radians:
-    lat_rad = math.pi - 2 * math.pi * y / (2 ** zoom)
+    lat_rad = math.pi - 2 * math.pi * y / (2**zoom)
     # true latitude:
     lat_rad = gudermannian(lat_rad)
     lat = lat_rad * 180.0 / math.pi
 
     # longitude maps linearly to map, so we simply scale:
-    lng = -180.0 + 360.0 * x / (2 ** zoom)
+    lng = -180.0 + 360.0 * x / (2**zoom)
 
     return (lng, lat)
 
@@ -39,8 +41,8 @@ def get_tile_pos_from_lng_lat(lng, lat, zoom):
     # "map-centric" latitude, in radians:
     lat_rad = inv_gudermannian(lat_rad)
 
-    x = 2 ** zoom * (lng + 180.0) / 360.0
-    y = 2 ** zoom * (math.pi - lat_rad) / (2 * math.pi)
+    x = 2**zoom * (lng + 180.0) / 360.0
+    y = 2**zoom * (math.pi - lat_rad) / (2 * math.pi)
 
     return (x, y)
 
@@ -54,21 +56,21 @@ def inv_gudermannian(y):
 
 
 def tileset_info(filepath):
-    if not os.path.isfile(filepath):
-        return {"error": "Tileset info is not available!"}
+    with apsw.Connection(
+        filepath, vfs=sovfs.name, flags=apsw.SQLITE_OPEN_READONLY
+    ) as conn:
+        c = conn.cursor()
+        c.execute("SELECT * FROM tileset_info")
+        res = c.fetchone()
 
-    db = sqlite3.connect(filepath)
-
-    res = db.execute("SELECT * FROM tileset_info").fetchone()
-
-    o = {
-        "zoom_step": res[0],
-        "tile_size": res[1],
-        "max_zoom": res[2],
-        "min_pos": [res[3], res[5]],
-        "max_pos": [res[4], res[6]],
-        "max_data_length": res[1] * 2 ** res[2],
-    }
+        o = {
+            "zoom_step": res[0],
+            "tile_size": res[1],
+            "max_zoom": res[2],
+            "min_pos": [res[3], res[5]],
+            "max_pos": [res[4], res[6]],
+            "max_data_length": res[1] * 2 ** res[2],
+        }
 
     return o
 
@@ -79,8 +81,8 @@ def get_tiles(db_file, zoom, x, y, width=1, height=1):
 
     Parameters
     ----------
-    db_file: str
-        The filename of the sqlite db file
+    db_file: str or file-like object
+        The filename of the sqlite db file or a file-like object
     zoom: int
         The zoom level
     x: int
@@ -97,10 +99,9 @@ def get_tiles(db_file, zoom, x, y, width=1, height=1):
     tiles: {pos: tile_value}
         A set of tiles, indexed by position
     """
-    conn = sqlite3.connect(db_file)
+    conn = apsw.Connection(db_file, vfs=sovfs.name, flags=apsw.SQLITE_OPEN_READONLY)
 
-    c = conn.cursor()
-
+    cursor = conn.cursor()
     lng_from, _, lat_from, _ = get_tile_box(zoom, x, y)
     _, lng_to, _, lat_to = get_tile_box(zoom, x + width - 1, y + height - 1)
 
@@ -125,7 +126,7 @@ def get_tiles(db_file, zoom, x, y, width=1, height=1):
         rMaxLat >= ?
     """
 
-    rows = c.execute(query, (zoom, lng_from, lng_to, lat_from, lat_to)).fetchall()
+    rows = cursor.execute(query, (zoom, lng_from, lng_to, lat_from, lat_to)).fetchall()
 
     new_rows = col.defaultdict(list)
 

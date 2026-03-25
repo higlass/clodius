@@ -55,6 +55,40 @@ install `clodius` with develop mode:
 pip install -e ".[dev]"
 ```
 
+## Test Fixtures (Git LFS)
+
+Test data files in `data/` are stored in [Git LFS](https://git-lfs.com/). They are downloaded automatically when you clone the repository with LFS enabled:
+
+```shell
+git lfs install  # once per machine
+git clone <repo>  # LFS files downloaded automatically
+# or, in an existing clone:
+git lfs pull
+```
+
+### Adding a new test fixture
+
+1. **Check if the file type is already tracked** — open [.gitattributes](.gitattributes) and look for a matching pattern (e.g. `data/*.gz`, `*.bam`). If not, add a new tracking rule:
+
+   ```shell
+   git lfs track "data/*.ext"   # adds a line to .gitattributes
+   git add .gitattributes
+   ```
+
+2. **Allow the file through `.gitignore`** — `data/*` is ignored by default. Add a negation line for your file:
+
+   ```
+   !data/your_new_file.ext
+   ```
+
+3. **Stage and commit as normal:**
+
+   ```shell
+   git add data/your_new_file.ext
+   git commit -m "Add test fixture: your_new_file.ext"
+   git push  # LFS objects are uploaded automatically
+   ```
+
 ## Testing
 
 

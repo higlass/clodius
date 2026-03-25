@@ -1,3 +1,11 @@
+v0.21.0
+
+- Huge set of changes to support file-pointer based tileset functions
+
+v0.20.4
+
+- Fix overflow issue in cooler files
+
 v0.20.3
 
 - Add chromsizes tileset_info function

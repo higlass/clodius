@@ -3,10 +3,12 @@ import os.path as op
 import re
 from typing import List, Optional
 
+import math
 import numpy as np
 from pydantic import BaseModel, validator
 
 from clodius.chromosomes import load_chromsizes
+from clodius.utils import TILE_OPTIONS_CHAR
 
 
 def partition_by_adjacent_tiles(tile_ids, dimension=2):
@@ -103,6 +105,22 @@ def infer_datatype(filetype):
         return "bedlike"
 
 
+def tiles_wrapper_1d(tile_ids, tiles_function):
+    tile_values = []
+
+    for tile_id in tile_ids:
+        parts = tile_id.split(".")
+
+        if len(parts) < 2:
+            raise IndexError("Not enough tile info present")
+
+        z, x = map(int, [parts[1], parts[2]])
+
+        tile_values += [(tile_id, tiles_function(z, x))]
+
+    return tile_values
+
+
 def tiles_wrapper_2d(tile_ids, tiles_function):
     tile_values = []
 
@@ -180,7 +198,7 @@ def tile_bounds(tsinfo, z, x, y, width=1, height=1):
 
     max_width = max(max_pos[0] - min_pos[0], max_pos[1] - min_pos[1])
 
-    tile_width = max_width / 2 ** z
+    tile_width = max_width / 2**z
     from_x = min_pos[0] + x * tile_width
     to_x = min_pos[0] + (x + width) * tile_width
 
@@ -195,6 +213,7 @@ class TilesetInfo(BaseModel):
     max_width: int
     max_pos: List[int]
     min_pos: List[int]
+    chromizes: Optional[List] = None
 
     @validator("max_zoom")
     def max_zoom_zero_or_greater(cls, v):
@@ -226,19 +245,17 @@ class TileInfo(BaseModel):
         return int(v)
 
 
-def parse_tile_id(tile_id, tsinfo):
-    tile_id_parts = tile_id.split("|")[0].split(".")
-    tile_position = list(map(int, tile_id_parts[1:3]))
-    zoom_level = int(tile_id_parts[1])
+def parse_tile_position(tile_position: List[int], tsinfo: TilesetInfo) -> TileInfo:
+    zoom_level = int(tile_position[0])
 
-    tile_width = tsinfo.max_width / 2 ** int(tile_position[0])
+    tile_width = tsinfo.max_width / 2**zoom_level
 
     starts = [
-        pos * (tsinfo.max_width / 2 ** zoom_level) + tsinfo.min_pos[i]
+        pos * (tsinfo.max_width / 2**zoom_level) + tsinfo.min_pos[i]
         for (i, pos) in enumerate(tile_position[1:])
     ]
     ends = [
-        (pos * (tsinfo.max_width / 2 ** zoom_level) + tsinfo.min_pos[i] + tile_width)
+        (pos * (tsinfo.max_width / 2**zoom_level) + tsinfo.min_pos[i] + tile_width)
         for (i, pos) in enumerate(tile_position[1:])
     ]
 
@@ -251,19 +268,14 @@ def parse_tile_id(tile_id, tsinfo):
     )
 
 
-def abs2genomic(chromsizes, start_pos, end_pos):
-    """
-    Convert absolute coordinates to genomic coordinates
+def parse_tile_id(tile_id: str, tsinfo: TilesetInfo) -> TileInfo:
+    tile_id_parts = tile_id.split(TILE_OPTIONS_CHAR)[0].split(".")
+    tile_position = list(map(int, tile_id_parts[1:3]))
 
-    Parameters:
-    -----------
-    chromsizes: [[chrom, size],...]
-        A list of chromosome sizes associated with this tileset
-    start_pos: int
-        The absolute start coordinate
-    end_pos: int
-        The absolute end coordinate
-    """
+    return parse_tile_position(tile_position, tsinfo)
+
+
+def abs2genomic(chromsizes, start_pos, end_pos):
     abs_chrom_offsets = np.r_[0, np.cumsum(chromsizes)]
     cid_lo, cid_hi = (
         np.searchsorted(abs_chrom_offsets, [start_pos, end_pos], side="right") - 1
@@ -290,7 +302,6 @@ def abs2genome_fn(chromsizes_filename, start, end):
     E.g. (1000,2000) => [('chr1', 1000, 1500), ('chr2', 1500, 2000)]
     """
     (chrom_info, chrom_names, chrom_sizes) = load_chromsizes(chromsizes_filename)
-
     for cid, start, end in abs2genomic(chrom_sizes, start, end):
         try:
             yield ChromosomeInterval(
@@ -363,3 +374,49 @@ def natsorted(iterable):
     Sort an iterable by natural genomic order
     """
     return sorted(iterable, key=ft.cmp_to_key(natcmp))
+
+
+def calc_max_width(length):
+    """Calculate the maximum width of a tileset assuming a max resolution of 1."""
+    return 2 ** (math.ceil(math.log(length) / math.log(2)))
+
+
+def interval_to_chrom_tiles(start, end, chrom_length):
+    """Convert a chromosome interval to chromosome tiles.
+
+    Assumes a base resolution of 1 base pairs.
+    """
+    max_width = calc_max_width(chrom_length)
+    interval_len = end - start
+    zoom_level = math.floor(math.log(max_width / interval_len) / math.log(2))
+    tile_size = int(max_width / 2**zoom_level)
+
+    tile_start = start // tile_size
+    tile_end = end // tile_size
+
+    return [(zoom_level, tile_pos) for tile_pos in range(tile_start, tile_end + 1)]
+
+
+def genome_tile_to_intervals(filename, chromsizes, tsinfo, z, x):
+    """Translate a genome tile into a set of chromosome intervals.
+
+    Genome / chromosome tiling
+
+        tile 0.0      1.0    1.1    0.0
+    |---------------|------|------|-------|
+        chr1           chr2        chr3
+    |---------------|-------------|-------|
+    |-------------------|-----------------|
+        tile 1.0             tile 1.1
+
+    Algorithm:
+
+    1. Given global [start, end] convert to [(chr, start, end), (chr, start, end)....] tuples
+    2. Convert (chr, start, end) convert to chrom tiles (chrom1, tile1), (chrom1, tile2), (chrom2, tile2)
+    3. Get data for each chrom tile
+    4. Downsample the whole dataset so that there's fewer than MAX_ENTRIES per tile
+    """
+    tile_info = parse_tile_position([z, x], tsinfo)
+    chrom_lengths = chromsizes.array
+    intervals = abs2genomic(chrom_lengths, tile_info.start[0], tile_info.end[0])
+    return intervals

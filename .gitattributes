@@ -1,0 +1,20 @@
+# Binary genomics data files tracked with Git LFS
+*.cool filter=lfs diff=lfs merge=lfs -text
+*.mv5 filter=lfs diff=lfs merge=lfs -text
+*.h5 filter=lfs diff=lfs merge=lfs -text
+*.hdf5 filter=lfs diff=lfs merge=lfs -text
+*.bam filter=lfs diff=lfs merge=lfs -text
+*.bai filter=lfs diff=lfs merge=lfs -text
+*.beddb filter=lfs diff=lfs merge=lfs -text
+*.bb filter=lfs diff=lfs merge=lfs -text
+*.bigWig filter=lfs diff=lfs merge=lfs -text
+*.hitile filter=lfs diff=lfs merge=lfs -text
+data/*.fna filter=lfs diff=lfs merge=lfs -text
+data/*.gff.gz filter=lfs diff=lfs merge=lfs -text
+data/*.vcf.gz filter=lfs diff=lfs merge=lfs -text
+data/*.bed.gz filter=lfs diff=lfs merge=lfs -text
+data/*.bed.1.gz filter=lfs diff=lfs merge=lfs -text
+data/*.gz.tbi filter=lfs diff=lfs merge=lfs -text
+data/*.multires filter=lfs diff=lfs merge=lfs -text
+data/*.gff filter=lfs diff=lfs merge=lfs -text
+data/SRR1770413.sorted.short.bam.bai filter=lfs diff=lfs merge=lfs -text

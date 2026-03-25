@@ -29,7 +29,6 @@ def absCoord2bin(c, pos):
 
 
 def getData(FILEPATH, zoomLevel, startPos1, endPos1, startPos2, endPos2):
-
     groupname = str(zoomLevel)
 
     with h5py.File(FILEPATH, "r") as f:
@@ -47,7 +46,6 @@ def getData(FILEPATH, zoomLevel, startPos1, endPos1, startPos2, endPos2):
 
 
 def getData2(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
-
     c = cooler_matrix["cooler"]
     matrix = cooler_matrix["matrix"]
 
@@ -81,7 +79,7 @@ def getData3(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
     if (i1 - i0) == 0 or (j1 - j0) == 0:
         return pd.DataFrame(columns=["genome_start", "genome_end", "balanced"])
 
-    pixels = c.matrix(as_pixels=True, max_chunk=np.inf)[i0:i1, j0:j1]
+    pixels = c.matrix(as_pixels=True)[i0:i1, j0:j1]
 
     if not len(pixels):
         return pd.DataFrame(columns=["genome_start", "genome_end", "balanced"])
@@ -99,7 +97,6 @@ def getData3(cooler_matrix, zoomLevel, startPos1, endPos1, startPos2, endPos2):
 
 
 def getInfo(FILEPATH):
-
     with h5py.File(FILEPATH, "r") as f:
         total_length = int(cumul_lengths[-1])
         binsize = int(f["0"].attrs["bin-size"])
@@ -107,7 +104,7 @@ def getInfo(FILEPATH):
         n_tiles = total_length / binsize / TILESIZE
         print("total_length:", total_length, binsize, TILESIZE)
         n_zooms = int(np.ceil(np.log2(n_tiles)))
-        max_width = binsize * TILESIZE * 2 ** n_zooms
+        max_width = binsize * TILESIZE * 2**n_zooms
 
         info = {
             "min_pos": [0.0, 0.0],

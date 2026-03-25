@@ -29,6 +29,6 @@ def test_name_in_tile():
 def test_tileset_info():
     filename = op.join("data", "geneAnnotationsExonUnions.1000.bed.v3.beddb")
 
-    tsinfo = hgbe.tileset_info(filename)
+    tileset_info = hgbe.tileset_info(filename)
 
-    assert "chromsizes" in tsinfo
+    assert len(tileset_info["chromsizes"]) > 4

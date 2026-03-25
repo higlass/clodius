@@ -1,12 +1,14 @@
 import collections as col
+import itertools as it
+import logging
+
 import cooler
+import h5py
+import numpy as np
+
 import clodius.tiles.format as hgfo
 import clodius.tiles.utils as hgut
-import h5py
-import itertools as it
-import numpy as np
 import pandas as pd
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -131,9 +133,14 @@ def get_data(
     bins = c.bins(convert_enum=False)[cols]
     pixels = cooler.annotate(pixels, bins)
 
+    # t1 = time.time()
     pixels["genome_start1"] = chrom_cum_lengths[pixels["chrom1"]] + pixels["start1"]
+    # t2 = time.time()
     pixels["genome_start2"] = chrom_cum_lengths[pixels["chrom2"]] + pixels["start2"]
+    # t3 = time.time()
 
+    # print(f"genome_start1: {t2 - t1:.2f}")
+    # print(f"genome_start: {t2 - t1:.2f}")
     bins1 = bins[i0 : i1 + 1]
     bins2 = bins[j0 : j1 + 1]
 
@@ -186,7 +193,7 @@ def _get_info_multi_v1(file_path):
         max_zoom = f.attrs["max-zoom"]
         bin_size = int(f[str(max_zoom)].attrs["bin-size"])
 
-        max_width = bin_size * TILE_SIZE * 2 ** max_zoom
+        max_width = bin_size * TILE_SIZE * 2**max_zoom
 
         # the list of available data transforms
         transforms = {}
@@ -215,10 +222,21 @@ def _get_info_multi_v1(file_path):
     return info
 
 
+def get_quadtree_depth(chromsizes, binsize):
+    """
+    Depth of quad tree necessary to tesselate the concatenated genome with quad
+    tiles such that linear dimension of the tiles is a preset multiple of the
+    genomic resolution.
+
+    """
+    tile_size_bp = TILE_SIZE * binsize
+    min_tile_cover = np.ceil(sum(chromsizes) / tile_size_bp)
+    return int(np.ceil(np.log2(min_tile_cover)))
+
+
 def get_zoom_resolutions(chromsizes, base_res):
     return [
-        base_res * 2 ** x
-        for x in range(hgut.get_quadtree_depth(chromsizes, base_res * TILE_SIZE) + 1)
+        base_res * 2**x for x in range(get_quadtree_depth(chromsizes, base_res) + 1)
     ]
 
 
@@ -278,8 +296,6 @@ def make_tiles(
     # print("resolution:", resolution)
     # print("tile_size:", tile_size)
     # print("transform_type:", transform_type);
-    # print('start1:', start1, end1)
-    # print('start2:', start2, end2)
 
     c = cooler.Cooler(hdf_for_resolution)
     (chroms, chrom_sizes, chrom_cum_lengths) = get_chromosome_names_cumul_lengths(c)
@@ -307,7 +323,6 @@ def make_tiles(
 
     for x_offset in range(0, x_width):
         for y_offset in range(0, y_width):
-
             start1 = (x_pos + x_offset) * tile_size
             end1 = (x_pos + x_offset + 1) * tile_size
             start2 = (y_pos + y_offset) * tile_size
@@ -316,8 +331,8 @@ def make_tiles(
             # print("resolution:", resolution)
             # print("tile_size", tile_size)
             # print("x_pos:", x_pos, "x_offset", x_offset)
-            # print("start1", start1, 'end1', end1)
-            # print("start2", start2, 'end2', end2)
+            # print("start1", start1, "end1", end1)
+            # print("start2", start2, "end2", end2)
 
             df = data[data["genome_start1"] >= start1]
             df = df[df["genome_start1"] < end1]
@@ -329,6 +344,10 @@ def make_tiles(
 
             j = ((df["genome_start1"].values - start1) // binsize).astype(int)
             i = ((df["genome_start2"].values - start2) // binsize).astype(int)
+
+            # print("df", df)
+            # print("j", j)
+            # print("i", i)
 
             if "balanced" in df:
                 v = np.nan_to_num(df["balanced"].values)
@@ -495,7 +514,7 @@ def make_mats(filepath):
 
         # get the genome size
         resolution = list(f["resolutions"].keys())[0]
-        genome_length = int(np.sum(f["resolutions"][resolution]["chroms"]["length"]))
+        genome_length = int(sum(f["resolutions"][resolution]["chroms"]["length"]))
 
         info["max_pos"] = [genome_length, genome_length]
         info["min_pos"] = [1, 1]
@@ -653,7 +672,7 @@ def generate_tiles(filepath, tile_ids):
                 # this tile has too high of a zoom level specified
                 continue
             hdf_for_resolution = tileset_file[str(zoom_level)]
-            resolution = (tileset_info["max_width"] / 2 ** zoom_level) / BINS_PER_TILE
+            resolution = (tileset_info["max_width"] / 2**zoom_level) / BINS_PER_TILE
 
         tile_positions = [[int(x) for x in t.split(".")[2:4]] for t in tile_group]
 
