@@ -6,7 +6,6 @@ import clodius.tiles.tabix as rtt
 from clodius.tiles.bigwig import abs2genomic
 from clodius.utils import TILE_OPTIONS_CHAR
 
-from pysam import VariantFile
 
 
 def grouper(n, iterable):
@@ -51,6 +50,8 @@ def regions(filename, chromsizes, offset, limit):
             fetching entries
         limit: The total number of entries to fetch
     """
+    from pysam import VariantFile
+ 
     vcf = VariantFile(filename)  # auto-detect input format
 
     fetcher = vcf.fetch()
@@ -121,6 +122,8 @@ def tileset_info(filename, chromsizes):
 def single_tile(
     filename, index_filename, chromsizes, tsinfo, z, x, max_tile_width, tbx_index=None
 ):
+    from pysam import VariantFile
+
     # TODO: replace this function with the one in clodius.tiles.tabix
     tile_width = tsinfo["max_width"] / 2**z
 
