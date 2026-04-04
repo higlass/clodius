@@ -7,7 +7,6 @@ from clodius.tiles.bigwig import abs2genomic
 from clodius.utils import TILE_OPTIONS_CHAR
 
 
-
 def grouper(n, iterable):
     it = iter(iterable)
     while True:
@@ -51,7 +50,7 @@ def regions(filename, chromsizes, offset, limit):
         limit: The total number of entries to fetch
     """
     from pysam import VariantFile
- 
+
     vcf = VariantFile(filename)  # auto-detect input format
 
     fetcher = vcf.fetch()
