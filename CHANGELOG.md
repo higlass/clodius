@@ -1,3 +1,7 @@
+v0.21.1
+
+- Ability to pass in feature_type to clodius single_tile function
+
 v0.21.0
 
 - Huge set of changes to support file-pointer based tileset functions
