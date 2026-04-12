@@ -43,7 +43,7 @@ def row_to_bedlike(row, css, orig_columns):
         "xEnd": row["xEnd"],
         "chrOffset": css[row[0]],
         "importance": random.random(),
-        "fields": [row[0], row[3], row[4], attrs["Name"], "-", row[6]],
+        "fields": [row[0], row[3], row[4], attrs.get("Name", attrs.get("ID", "")), "-", row[6]],
     }
 
     return ret
@@ -97,10 +97,12 @@ def single_tile(filename, chromsizes, tsinfo, z, x, settings=None):
     if isinstance(filename, str):
         filename = open(filename, "rb")
 
-    hash_ = ctb.ts_hash(filename, chromsizes)
-
     if settings is None:
         settings = {}
+
+    target_feature = settings.get("feature_type", "gene")
+    hash_ = f"{ctb.ts_hash(filename, chromsizes)}:{target_feature}"
+
     # hash the loaded data table so that we don't have to read the entire thing
     # and calculate cumulative start and end positions
     val = ctb.cache.get(hash_)
@@ -113,14 +115,14 @@ def single_tile(filename, chromsizes, tsinfo, z, x, settings=None):
             delimiter="\t",
             compression=get_file_compression(filename),
         )
-        t = t[t[2] == "gene"]
+        t = t[t[2] == target_feature]
 
         orig_columns = t.columns
         css = chromsizes.cumsum().shift().fillna(0).to_dict()
 
         # xStart and xEnd are cumulative start and end positions calculated
         # as if the chromosomes are concatenated from end to end
-        t["chromStart"] = t[0].map(lambda x: css[x])
+        t["chromStart"] = t[0].map(lambda x: css[x]).astype(float)
         t["xStart"] = t["chromStart"] + t[3]
         t["xEnd"] = t["chromStart"] + t[4]
         t["ix"] = t.index
