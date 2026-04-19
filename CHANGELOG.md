@@ -1,3 +1,13 @@
+v0.22.0
+
+- Add parasail alignment backend to pileup tile functions (`tile_functions_parasail`,
+  `cigar_to_subs`) and expose it via a `method` parameter on `get_pileup_alignment_data`
+  (~9× faster than BioPython PairwiseAligner on large batches)
+- Fix `get_pileup_alignment_data` tile ID bug (`"0.0"` → `"x.0.0"`) and rename
+  return key `"type"` → `"tileset_info"` for consistency
+- Make `csv_sequence_tileset_functions` import lazy to avoid pulling in `smart_open`
+  on every `import clodius.tiles.pileup`
+
 v0.21.1
 
 - Ability to pass in feature_type to clodius single_tile function
