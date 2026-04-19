@@ -1,4 +1,4 @@
-v0.21.2
+v0.22.0
 
 - Add parasail alignment backend to pileup tile functions (`tile_functions_parasail`,
   `cigar_to_subs`) and expose it via a `method` parameter on `get_pileup_alignment_data`
