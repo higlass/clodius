@@ -1,7 +1,8 @@
+import re
+
 from Bio import Align
 import tempfile
 from clodius.alignment import alignment_to_subs, order_by_clustering
-from clodius.tiles.csv import csv_sequence_tileset_functions
 
 
 def get_subs(alignment):
@@ -9,18 +10,77 @@ def get_subs(alignment):
     return alignment_to_subs(alignment)
 
 
-def get_pileup_alignment_data(refseq, seqs, cluster=None, values=None):
-    """Get pileup alignment data for a reference sequence and a list of sequences."""
+def cigar_to_subs(cigar_bytes: bytes, ref: str, query: str) -> tuple:
+    """Convert a parasail extended-CIGAR (=, X, I, D) to the subs format used
+    by the HiGlass pileup track.
+
+    Returns (start, end, substitutions) with 1-based closed coordinates for
+    start/end, matching the convention of alignment_to_subs().
+    """
+    ops = re.findall(r"(\d+)([=XID])", cigar_bytes.decode())
+
+    ref_pos = 0
+    qry_pos = 0
+    subs = []
+
+    for length_str, op in ops:
+        length = int(length_str)
+        if op == "=":
+            ref_pos += length
+            qry_pos += length
+        elif op == "X":
+            for k in range(length):
+                subs.append(
+                    {
+                        "pos": ref_pos + k,
+                        "type": "X",
+                        "length": 1,
+                        "base": ref[ref_pos + k],
+                        "variant": query[qry_pos + k],
+                    }
+                )
+            ref_pos += length
+            qry_pos += length
+        elif op == "I":
+            subs.append({"pos": ref_pos, "type": "I", "length": length})
+            qry_pos += length
+        elif op == "D":
+            subs.append({"pos": ref_pos, "type": "D", "length": length})
+            ref_pos += length
+
+    return 1, len(ref), subs
+
+
+def get_pileup_alignment_data(refseq, seqs, cluster=None, values=None, method="biopython"):
+    """Get pileup alignment data for a reference sequence and a list of sequences.
+
+    Parameters
+    ----------
+    refseq : str
+        The reference sequence.
+    seqs : list of str
+        Query sequences to align against the reference.
+    cluster : optional
+        Clustering method to reorder sequences (e.g. "linkage").
+    values : optional
+        Per-sequence extra metadata forwarded to each tile entry.
+    method : {"biopython", "parasail"}
+        Alignment backend.  "biopython" uses BioPython PairwiseAligner
+        (default).  "parasail" builds a scoring profile from the reference
+        once and aligns all queries against it, which is substantially faster.
+    """
     chromsizes = [("ref", len(refseq))]
     refseqs = [{"id": "ref", "seq": refseq}]
 
-    tf = tile_functions(
+    fn = tile_functions_parasail if method == "parasail" else tile_functions
+
+    tf = fn(
         seqs, refseqs, cluster=cluster, values=values, chromsizes=chromsizes
     )
     tsinfo = tf["tileset_info"]()
-    tiles = tf["tiles"](["0.0"])
+    tiles = tf["tiles"](["x.0.0"])
 
-    return {"type": tsinfo, "tiles": dict(tiles)}
+    return {"tileset_info": tsinfo, "tiles": dict(tiles)}
 
 
 def calc_chr_offset(chromsizes, chrom_id):
@@ -201,6 +261,75 @@ def tile_functions(seqs, refseqs, cluster=None, values=None, chromsizes=None):
     return {"tileset_info": tileset_info, "tiles": tiles}
 
 
+def tile_functions_parasail(seqs, refseqs, cluster=None, values=None, chromsizes=None):
+    """Return tile functions that use parasail for alignment.
+
+    A scoring profile is built from the reference sequence once; all query
+    sequences are then aligned against that profile (NW global, 16-bit
+    striped scan).  This is significantly faster than the BioPython path for
+    large batches.
+    """
+    import parasail
+
+    longest_seq = sum([c[1] for c in chromsizes])
+
+    def tileset_info():
+        return {
+            "tile_size": longest_seq,
+            "resolutions": [1],
+            "max_tile_width": longest_seq,
+            "format": "subs",
+            "min_pos": [0],
+            "max_pos": [longest_seq],
+            "chromsizes": chromsizes,
+        }
+
+    if cluster == "linkage":
+        seqs = order_by_clustering(seqs)
+
+    matrix = parasail.matrix_create("ACGT", 1, -4)
+    OPEN, EXTEND = 6, 1
+
+    # Pre-build one profile per reference sequence.
+    profiles = {r["id"]: parasail.profile_create_16(r["seq"], matrix) for r in refseqs}
+
+    tile = []
+    for i, seq in enumerate(seqs):
+        for refseq in refseqs:
+            profile = profiles[refseq["id"]]
+            result = parasail.nw_trace_scan_profile_16(profile, seq, OPEN, EXTEND)
+            start, end, subs = cigar_to_subs(result.cigar.decode, refseq["seq"], seq)
+
+            chr_offset = calc_chr_offset(chromsizes, refseq["id"])
+
+            tv = {
+                "id": f"r{i}_{refseq['id']}",
+                "from": start + chr_offset,
+                "to": end + chr_offset,
+                "substitutions": subs,
+                "color": 0,
+            }
+
+            if values:
+                tv["extra"] = values[i]
+
+            tile.append(tv)
+
+    def tiles(tile_ids):
+        result_tiles = []
+        for tile_id in tile_ids:
+            parts = tile_id.split(".")
+            z = int(parts[1])
+            x = int(parts[2])
+            if z != 0 and x != 0:
+                result_tiles += [(tile_id, [])]
+            else:
+                result_tiles += [(tile_id, tile)]
+        return result_tiles
+
+    return {"tileset_info": tileset_info, "tiles": tiles}
+
+
 def tile_functions_fasta(seqs, refseqs, cluster=None, values=None, chromsizes=None):
     """Return a dictionary of tile functions for the pileup track using FASTA and mappy."""
     import mappy as mp
@@ -293,6 +422,8 @@ def csv_tileset_info(filename, *csv_args, **csv_kwargs):
     refrow: A row to use as a reference sequence when calculating
         alignments. Should be 1-based
     """
+    from clodius.tiles.csv import csv_sequence_tileset_functions
+
     tf = csv_sequence_tileset_functions(
         filename, tile_functions=tile_functions, *csv_args, **csv_kwargs
     )
@@ -300,6 +431,8 @@ def csv_tileset_info(filename, *csv_args, **csv_kwargs):
 
 
 def csv_tiles(filename, tile_ids, *csv_args, **csv_kwargs):
+    from clodius.tiles.csv import csv_sequence_tileset_functions
+
     tf = csv_sequence_tileset_functions(
         filename, tile_functions=tile_functions, *csv_args, **csv_kwargs
     )
