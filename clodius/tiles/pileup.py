@@ -30,15 +30,18 @@ def cigar_to_subs(cigar_bytes: bytes, ref: str, query: str) -> tuple:
             qry_pos += length
         elif op == "X":
             for k in range(length):
-                subs.append(
-                    {
-                        "pos": ref_pos + k,
-                        "type": "X",
-                        "length": 1,
-                        "base": ref[ref_pos + k],
-                        "variant": query[qry_pos + k],
-                    }
-                )
+                rp = ref_pos + k
+                qp = qry_pos + k
+                if rp < len(ref) and qp < len(query):
+                    subs.append(
+                        {
+                            "pos": rp,
+                            "type": "X",
+                            "length": 1,
+                            "base": ref[rp],
+                            "variant": query[qp],
+                        }
+                    )
             ref_pos += length
             qry_pos += length
         elif op == "I":
@@ -298,7 +301,18 @@ def tile_functions_parasail(seqs, refseqs, cluster=None, values=None, chromsizes
         for refseq in refseqs:
             profile = profiles[refseq["id"]]
             result = parasail.nw_trace_scan_profile_16(profile, seq, OPEN, EXTEND)
-            start, end, subs = cigar_to_subs(result.cigar.decode, refseq["seq"], seq)
+            # nw_trace_scan_profile builds the profile from the reference, so
+            # the returned CIGAR describes the alignment from the *profile's*
+            # perspective: its D/I ops are swapped relative to SAM convention.
+            # Normalise to SAM (I = extra base in query, D = missing base in
+            # query) before passing to cigar_to_subs.
+            cigar = (
+                result.cigar.decode
+                .replace(b"D", b"\x00")
+                .replace(b"I", b"D")
+                .replace(b"\x00", b"I")
+            )
+            start, end, subs = cigar_to_subs(cigar, refseq["seq"], seq)
 
             chr_offset = calc_chr_offset(chromsizes, refseq["id"])
 

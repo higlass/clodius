@@ -1,7 +1,7 @@
 """
 Sequence pileup benchmark:
   1. Generate a random 250nt base sequence.
-  2. Generate 20 000 mutated sequences (~30 SNPs each from the base).
+  2. Generate 50 000 mutated sequences (~30 SNPs, ~3 deletions, ~3 insertions each).
   3. Build a pileup tile with parasail (profile-based, one profile per reference).
 """
 
@@ -69,20 +69,47 @@ BASES = list("ACGT")
 SEQ_LEN = 250
 N_SEQS = 50_000
 AVG_MUTATIONS = 30
+AVG_INSERTIONS = 3
+AVG_DELETIONS = 3
 
 
 def random_sequence(length: int, rng: random.Random) -> str:
     return "".join(rng.choices(BASES, k=length))
 
 
-def mutate_sequence(seq: str, avg_mutations: int, rng: random.Random) -> str:
-    """Return a copy of *seq* with Poisson(avg_mutations) random SNPs."""
-    n_muts = np.random.poisson(avg_mutations)
-    positions = rng.sample(range(len(seq)), min(n_muts, len(seq)))
+def mutate_sequence(
+    seq: str,
+    avg_mutations: int,
+    avg_insertions: int,
+    avg_deletions: int,
+    rng: random.Random,
+) -> str:
+    """Return a copy of *seq* with Poisson SNPs, deletions, and insertions."""
     seq_list = list(seq)
-    for pos in positions:
+
+    # SNPs
+    n_muts = np.random.poisson(avg_mutations)
+    snp_positions = rng.sample(range(len(seq_list)), min(n_muts, len(seq_list)))
+    for pos in snp_positions:
         alt_bases = [b for b in BASES if b != seq_list[pos]]
         seq_list[pos] = rng.choice(alt_bases)
+
+    # Deletions — remove positions high-to-low so earlier indices stay valid
+    n_dels = np.random.poisson(avg_deletions)
+    if n_dels > 0:
+        del_positions = sorted(
+            rng.sample(range(len(seq_list)), min(n_dels, len(seq_list))),
+            reverse=True,
+        )
+        for pos in del_positions:
+            del seq_list[pos]
+
+    # Insertions — insert random bases at random positions
+    n_ins = np.random.poisson(avg_insertions)
+    for _ in range(n_ins):
+        pos = rng.randint(0, len(seq_list))
+        seq_list.insert(pos, rng.choice(BASES))
+
     return "".join(seq_list)
 
 
@@ -91,13 +118,15 @@ np.random.seed(42)
 
 print("Generating sequences …")
 base_seq = random_sequence(SEQ_LEN, rng)
-mutated_seqs = [mutate_sequence(base_seq, AVG_MUTATIONS, rng) for _ in range(N_SEQS)]
-actual_avg = (
-    sum(sum(a != b for a, b in zip(base_seq, s)) for s in mutated_seqs) / N_SEQS
-)
-print(f"  Base sequence length : {SEQ_LEN} nt")
-print(f"  Number of sequences  : {N_SEQS}")
-print(f"  Actual mean SNPs/seq : {actual_avg:.1f}")
+mutated_seqs = [
+    mutate_sequence(base_seq, AVG_MUTATIONS, AVG_INSERTIONS, AVG_DELETIONS, rng)
+    for _ in range(N_SEQS)
+]
+seq_lengths = [len(s) for s in mutated_seqs]
+print(f"  Base sequence length      : {SEQ_LEN} nt")
+print(f"  Number of sequences       : {N_SEQS}")
+print(f"  Mutated seq length range  : {min(seq_lengths)}–{max(seq_lengths)} nt")
+print(f"  Mutated seq mean length   : {sum(seq_lengths)/N_SEQS:.1f} nt")
 
 
 # ---------------------------------------------------------------------------
@@ -112,9 +141,18 @@ tile_parasail = result_parasail["tiles"]["x.0.0"]
 print(f"  Time : {t_parasail:.2f} s  ({t_parasail / N_SEQS * 1000:.2f} ms/seq)")
 save_result(result_parasail, "pileup_parasail")
 
-# Aggregate substitution counts
-ps_total_subs = sum(len(r["substitutions"]) for r in tile_parasail)
-print(f"\n  Total substitution entries : {ps_total_subs}")
-print(f"  Per-read average           : {ps_total_subs / N_SEQS:.2f}")
+# Aggregate alignment event counts
+ps_total_snps = sum(
+    sum(1 for e in r["substitutions"] if e["type"] == "X") for r in tile_parasail
+)
+ps_total_ins = sum(
+    sum(1 for e in r["substitutions"] if e["type"] == "I") for r in tile_parasail
+)
+ps_total_dels = sum(
+    sum(1 for e in r["substitutions"] if e["type"] == "D") for r in tile_parasail
+)
+print(f"\n  SNPs  — total: {ps_total_snps:>8,}  per-read avg: {ps_total_snps / N_SEQS:.2f}")
+print(f"  INS   — total: {ps_total_ins:>8,}  per-read avg: {ps_total_ins / N_SEQS:.2f}")
+print(f"  DEL   — total: {ps_total_dels:>8,}  per-read avg: {ps_total_dels / N_SEQS:.2f}")
 
 print("\nDone.")
