@@ -1,4 +1,4 @@
-v0.22.1
+v0.22.2
 
 - Fix `tile_functions_parasail` D/I CIGAR inversion: `nw_trace_scan_profile_16`
   returns a CIGAR from the profile's perspective, so insertion and deletion ops
@@ -7,6 +7,10 @@ v0.22.1
   the reference (triggered when query sequences are longer than the reference)
 - Add insertion and deletion generation to `sequence_pileup.py` benchmark
   (Poisson-sampled ~3 insertions and ~3 deletions per sequence in addition to SNPs)
+
+v0.22.1
+
+- Fix release to actually include latest files
 
 v0.22.0
 
