@@ -1,3 +1,13 @@
+v0.22.1
+
+- Fix `tile_functions_parasail` D/I CIGAR inversion: `nw_trace_scan_profile_16`
+  returns a CIGAR from the profile's perspective, so insertion and deletion ops
+  were swapped relative to SAM convention; normalize before parsing
+- Fix `cigar_to_subs` bounds guard: skip X ops that would index past the end of
+  the reference (triggered when query sequences are longer than the reference)
+- Add insertion and deletion generation to `sequence_pileup.py` benchmark
+  (Poisson-sampled ~3 insertions and ~3 deletions per sequence in addition to SNPs)
+
 v0.22.0
 
 - Add parasail alignment backend to pileup tile functions (`tile_functions_parasail`,

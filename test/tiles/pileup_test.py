@@ -184,6 +184,16 @@ class TestCigarToSubs:
         mismatch_positions = [s["pos"] for s in subs if s["type"] == "X"]
         assert mismatch_positions == [0, 4]
 
+    def test_x_op_clipped_at_ref_boundary(self):
+        """X ops that would index past the end of the reference are silently skipped."""
+        # CIGAR "3=3X": ref "ACGTA" (len 5); after 3= ref_pos=3; the 3X would
+        # try ref[3], ref[4], ref[5] — the last is out of bounds and must be skipped.
+        start, end, subs = cigar_to_subs(b"3=3X", "ACGTA", "ACGXYZ")
+        x_subs = [s for s in subs if s["type"] == "X"]
+        assert len(x_subs) == 2
+        assert x_subs[0]["pos"] == 3
+        assert x_subs[1]["pos"] == 4
+
 
 class TestGetPileupAlignmentDataParasail:
     @pytest.fixture(autouse=True)
@@ -248,3 +258,42 @@ class TestGetPileupAlignmentDataParasail:
         tile = result["tiles"]["x.0.0"]
         assert tile[0]["id"] == "r0_ref"
         assert tile[1]["id"] == "r1_ref"
+
+    def test_insertion_detected(self):
+        """A sequence longer than the reference produces an I event."""
+        seq_with_ins = self.REF[:5] + "T" + self.REF[5:]
+        result = get_pileup_alignment_data(self.REF, [seq_with_ins], method="parasail")
+        entry = result["tiles"]["x.0.0"][0]
+        assert any(s["type"] == "I" for s in entry["substitutions"])
+
+    def test_deletion_detected(self):
+        """A sequence shorter than the reference produces a D event."""
+        seq_with_del = self.REF[:5] + self.REF[6:]
+        result = get_pileup_alignment_data(self.REF, [seq_with_del], method="parasail")
+        entry = result["tiles"]["x.0.0"][0]
+        assert any(s["type"] == "D" for s in entry["substitutions"])
+
+    def test_mixed_indels_and_snps(self):
+        """A sequence with an insertion, a deletion, and a SNP produces all three event types."""
+        seq = list(self.REF)
+        seq[50] = "A" if seq[50] != "A" else "C"  # SNP
+        del seq[30]                                 # deletion  → len 59
+        seq.insert(10, "A")                         # insertion → len 60
+        result = get_pileup_alignment_data(self.REF, ["".join(seq)], method="parasail")
+        entry = result["tiles"]["x.0.0"][0]
+        types = {s["type"] for s in entry["substitutions"]}
+        assert "I" in types
+        assert "D" in types
+        assert "X" in types
+
+    def test_variable_length_sequences_align_without_error(self):
+        """Batch of sequences with different lengths all align and produce the correct event type."""
+        seqs = [
+            self.REF[:5] + "T" + self.REF[5:],  # one insertion → len 61
+            self.REF[:5] + self.REF[6:],          # one deletion  → len 59
+        ]
+        result = get_pileup_alignment_data(self.REF, seqs, method="parasail")
+        tile = result["tiles"]["x.0.0"]
+        assert len(tile) == 2
+        assert any(s["type"] == "I" for s in tile[0]["substitutions"])
+        assert any(s["type"] == "D" for s in tile[1]["substitutions"])
