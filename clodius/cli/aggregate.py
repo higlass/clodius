@@ -906,8 +906,8 @@ def _bedgraph(
     def add_values_to_data_buffers(buffers_to_add, nan_buffers_to_add):
         curr_zoom = 0
 
-        data_buffers[0] += buffers_to_add
-        nan_data_buffers[0] += nan_buffers_to_add
+        data_buffers[0] += [np.float64(bta) for bta in buffers_to_add]
+        nan_data_buffers[0] += [np.float64(nbta) for nbta in nan_buffers_to_add]
 
         curr_time = time.time() - t1
         percent_progress = (positions[curr_zoom] + 1) / float(assembly_size)
